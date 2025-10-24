@@ -195,6 +195,11 @@ const App: React.FC = () => {
         setLoginError('');
         const userFound = users.find(u => u.usuario.toLowerCase() === username.toLowerCase());
         if (userFound) {
+            // Check password if it exists on the user object
+            if (userFound.password && userFound.password !== password) {
+                 setLoginError('Usuario o contraseña incorrectos.');
+                 return;
+            }
             setCurrentUser(userFound);
             setIsAuthenticated(true);
             setCurrentPage('dashboard');

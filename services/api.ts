@@ -110,6 +110,7 @@ if (isDevelopment) {
             nombres: 'Admin',
             apellidos: 'Munnay',
             usuario: 'admin',
+            password: '123',
             rolId: 1,
             avatarUrl: 'https://picsum.photos/id/1005/100/100',
             position: 'Gerente General'
