@@ -1,4 +1,5 @@
-import type { Request, Response } from 'express';
+
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
 export const getExpenses = async (req: Request, res: Response) => {

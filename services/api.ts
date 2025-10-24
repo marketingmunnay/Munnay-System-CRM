@@ -96,13 +96,29 @@ export const saveRole = (role: Role): Promise<Role> => {
 };
 export const deleteRole = (roleId: number): Promise<void> => apiRequest(`/roles/${roleId}`, 'DELETE');
 
+// Publicaciones
+export const getPublicaciones = (): Promise<Publicacion[]> => apiRequest<Publicacion[]>('/publicaciones', 'GET');
+export const savePublicacion = (pub: Publicacion): Promise<Publicacion> => {
+    if (String(pub.id).length > 7) {
+        const { id, ...data } = pub;
+        return apiRequest<Publicacion>('/publicaciones', 'POST', data);
+    }
+    return apiRequest<Publicacion>(`/publicaciones/${pub.id}`, 'PUT', pub);
+};
+export const deletePublicacion = (pubId: number): Promise<void> => apiRequest(`/publicaciones/${pubId}`, 'DELETE');
 
-export let getPublicaciones: () => Promise<Publicacion[]> = async () => { console.warn("getPublicaciones not implemented"); return []; };
-export let savePublicacion: (pub: Publicacion) => Promise<Publicacion> = async (p) => { console.warn("savePublicacion not implemented"); return p; };
-export let deletePublicacion: (pubId: number) => Promise<number> = async (id) => { console.warn("deletePublicacion not implemented"); return id; };
-export let getSeguidores: () => Promise<Seguidor[]> = async () => { console.warn("getSeguidores not implemented"); return []; };
-export let saveSeguidor: (seg: Seguidor) => Promise<Seguidor> = async (s) => { console.warn("saveSeguidor not implemented"); return s; };
-export let deleteSeguidor: (segId: number) => Promise<number> = async (id) => { console.warn("deleteSeguidor not implemented"); return id; };
+// Seguidores
+export const getSeguidores = (): Promise<Seguidor[]> => apiRequest<Seguidor[]>('/seguidores', 'GET');
+export const saveSeguidor = (seg: Seguidor): Promise<Seguidor> => {
+    if (String(seg.id).length > 7) {
+        const { id, ...data } = seg;
+        return apiRequest<Seguidor>('/seguidores', 'POST', data);
+    }
+    return apiRequest<Seguidor>(`/seguidores/${seg.id}`, 'PUT', seg);
+};
+export const deleteSeguidor = (segId: number): Promise<void> => apiRequest(`/seguidores/${segId}`, 'DELETE');
+
+
 export let getVentasExtra: () => Promise<VentaExtra[]> = async () => { console.warn("getVentasExtra not implemented"); return []; };
 export let saveVentaExtra: (venta: VentaExtra) => Promise<VentaExtra> = async (v) => { console.warn("saveVentaExtra not implemented"); return v; };
 export let deleteVentaExtra: (ventaId: number) => Promise<number> = async (id) => { console.warn("deleteVentaExtra not implemented"); return id; };
@@ -114,7 +130,6 @@ export let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor> = async (
 export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id) => { console.warn("deleteProveedor not implemented"); return id; };
 export let getTiposProveedor: () => Promise<TipoProveedor[]> = async () => { console.warn("getTiposProveedor not implemented"); return []; };
 export let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor> = async (t) => { console.warn("saveTipoProveedor not implemented"); return t; };
-export let deleteTipoProveedor: (id: number) => Promise<number> = async (id) => { console.warn("deleteTipoProveedor not implemented"); return id; };
 export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
 export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
 export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };

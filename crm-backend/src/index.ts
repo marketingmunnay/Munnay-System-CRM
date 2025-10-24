@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -27,9 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// FIX: Explicitly type req and res to avoid type conflicts.
-// Corrected Request and Response types to use the ones directly from 'express'.
-app.get('/', (req: express.Request, res: express.Response) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('CRM Munnay Backend is running!');
 });
 
