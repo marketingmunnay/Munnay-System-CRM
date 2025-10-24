@@ -7,7 +7,19 @@ import type {
     Goal
 } from '../types.ts';
 
+// ===================================================================================
+// ¡IMPORTANTE PARA LA PUESTA EN PRODUCCIÓN (HOSTING)!
+// ===================================================================================
+// Cuando despliegues el backend en un servicio de hosting (como Vercel, Railway, etc.),
+// obtendrás una URL pública (ej: https://mi-crm-backend.vercel.app).
+//
+// **DEBES REEMPLAZAR 'http://localhost:4000' POR ESA URL PÚBLICA.**
+//
+// const API_URL = 'https://mi-crm-backend.vercel.app/api'; // <--- ASÍ DEBERÍA QUEDAR
+//
+// Mientras tanto, se mantiene 'localhost' para que las pruebas locales sigan funcionando.
 const API_URL = 'http://localhost:4000/api';
+
 
 const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {
     const options: RequestInit = {
@@ -131,7 +143,7 @@ export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id
 export let getTiposProveedor: () => Promise<TipoProveedor[]> = async () => { console.warn("getTiposProveedor not implemented"); return []; };
 export let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor> = async (t) => { console.warn("saveTipoProveedor not implemented"); return t; };
 // FIX: Add missing deleteTipoProveedor function export to resolve error in App.tsx
-export let deleteTipoProveedor: (id: number) => Promise<void> = async (id) => { console.warn("deleteTipoProveedor not implemented"); };
+export let deleteTipoProveedor: (id: number) => Promise<void> = async (id) => { console.warn("deleteTipoProveedor not implemented for id:", id); };
 export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
 export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
 export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };

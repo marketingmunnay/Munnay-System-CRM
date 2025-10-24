@@ -1,5 +1,5 @@
 // FIX: Use value import for Express types to resolve compilation errors in handlers
-import type { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
 export const getPublicaciones = async (req: Request, res: Response) => {
@@ -59,11 +59,11 @@ export const updatePublicacion = async (req: Request, res: Response) => {
 };
 
 export const deletePublicacion = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    await prisma.publicacion.delete({ where: { id: parseInt(id) } });
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
-  }
+    const { id } = req.params;
+    try {
+        await prisma.publicacion.delete({ where: { id: parseInt(id) } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
+    }
 };

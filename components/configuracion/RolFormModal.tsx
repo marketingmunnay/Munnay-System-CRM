@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Role, Page } from '../../types.ts';
 import { ALL_PAGES_CONFIG, DASHBOARD_METRICS_CONFIG } from '../../constants.ts';

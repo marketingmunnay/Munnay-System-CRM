@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { User, Role, Address, EmergencyContact, JobPosition } from '../../types.ts';
 import { DocumentType } from '../../types.ts';
