@@ -1,5 +1,6 @@
-// FIX: Use `import type` to ensure correct type resolution for Express Request and Response.
-import type { Request, Response } from 'express';
+
+// FIX: Add missing import for Express Request and Response types.
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
 export const getExpenses = async (req: Request, res: Response) => {

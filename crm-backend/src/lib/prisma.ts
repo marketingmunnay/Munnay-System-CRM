@@ -1,9 +1,9 @@
-// FIX: Changed to namespace import to handle potential module resolution issues.
-import * as Prisma from '@prisma/client';
 
+// FIX: Changed import style to potentially resolve module resolution issues with Prisma Client.
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 // Ensure `npx prisma generate` has been run.
-const { PrismaClient } = Prisma;
 const prisma = new PrismaClient();
 
 export default prisma;

@@ -1,6 +1,5 @@
-// FIX: Separated default express import from type imports to resolve type errors.
-import express from 'express';
-import type { Request, Response } from 'express';
+
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -28,7 +27,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/', (req: Request, res: Response) => {
+// FIX: Removed explicit Request and Response types to rely on Express's type inference, which should fix the errors.
+app.get('/', (req, res) => {
   res.send('CRM Munnay Backend is running!');
 });
 

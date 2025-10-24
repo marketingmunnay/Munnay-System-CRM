@@ -1,4 +1,6 @@
-import type { Request, Response } from 'express';
+
+// FIX: Add missing import for Express Request and Response types.
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 
@@ -21,7 +23,7 @@ export const getUsers = async (req: Request, res: Response) => {
         startDate: true,
         addresses: true,
         emergencyContacts: true,
-        reconocimientos: true,
+        reconocimientosRecibidos: true,
         salary: true,
         contractType: true,
         maritalStatus: true,
