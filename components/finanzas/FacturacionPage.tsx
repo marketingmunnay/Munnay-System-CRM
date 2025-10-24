@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
 import { SunatStatus, TipoComprobanteElectronico } from '../../types.ts';

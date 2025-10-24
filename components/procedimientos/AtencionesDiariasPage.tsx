@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Lead, Procedure, ClientSource, Service, MetaCampaign } from '../../types.ts';
+import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
 import { AtencionStatus, ReceptionStatus } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons.tsx';
@@ -16,6 +16,8 @@ interface AtencionesDiariasPageProps {
   clientSources: ClientSource[];
   services: Service[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
+  onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+  comprobantes: ComprobanteElectronico[];
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -142,7 +144,7 @@ const AtencionesTable: React.FC<{ atenciones: Atencion[], onEdit: (lead: Lead) =
 
 // FIX: Destructure metaCampaigns from props.
 // FIX: Fix function component return type by completing the component.
-const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation }) => {
+const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -259,6 +261,8 @@ const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, me
         clientSources={clientSources}
         services={services}
         requestConfirmation={requestConfirmation}
+        onSaveComprobante={onSaveComprobante}
+        comprobantes={comprobantes}
       />
     </div>
   );

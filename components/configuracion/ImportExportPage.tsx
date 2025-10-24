@@ -1,5 +1,5 @@
-
 import React, { useRef } from 'react';
+import type { ComprobanteElectronico } from '../../types.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -76,8 +76,11 @@ const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templ
     );
 };
 
+interface ImportExportPageProps {
+    comprobantes: ComprobanteElectronico[];
+}
 
-const ImportExportPage: React.FC = () => {
+const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes }) => {
 
     const handleFileImport = (file: File, type: string) => {
         // In a real app, you would parse the CSV and send it to the backend.
@@ -107,7 +110,7 @@ const ImportExportPage: React.FC = () => {
                     "id", "fechaLead", "nombres", "apellidos", "numero", "sexo", "redSocial", "anuncio", 
                     "vendedor", "estado", "montoPagado", "metodoPago", "fechaHoraAgenda", "servicios", 
                     "categoria", "fechaVolverLlamar", "horaVolverLlamar", "notas", "nHistoria", 
-                    "birthDate"
+                    "birthDate", "documentType", "documentNumber", "razonSocial", "direccionFiscal"
                 ]}
                 onImport={(file) => handleFileImport(file, 'Pacientes')}
             />
@@ -173,8 +176,9 @@ const ImportExportPage: React.FC = () => {
                 onImport={(file) => handleFileImport(file, 'Seguimientos')}
             />
 
-        </div>
-    );
-};
-
-export default ImportExportPage;
+            <ImportSection
+                title="Comprobantes Electrónicos"
+                description="Importa comprobantes electrónicos ya emitidos."
+                templateFilename="plantilla_comprobantes.csv"
+                headers={[
+                    "id", "tipoDocumento", "serie", "correlativo", "fechaEm

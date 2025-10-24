@@ -1,12 +1,10 @@
-
-
 import React, { useState, useMemo } from 'react';
 import KanbanView from './KanbanView.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 import LeadFormModal from './LeadFormModal.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import type { Lead, MetaCampaign, ClientSource, Service } from '../../types.ts';
+import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
 interface LeadsPageProps {
@@ -17,6 +15,8 @@ interface LeadsPageProps {
     clientSources: ClientSource[];
     services: Service[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
+    onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+    comprobantes: ComprobanteElectronico[];
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -82,7 +82,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -241,6 +241,8 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}
+            onSaveComprobante={onSaveComprobante}
+            comprobantes={comprobantes}
         />
     </div>
   );

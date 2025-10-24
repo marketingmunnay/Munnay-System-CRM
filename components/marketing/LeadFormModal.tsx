@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service } from '../../types.ts';
-import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada } from '../../types.ts';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
+import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
+import FacturacionModal from '../finanzas/FacturacionModal.tsx';
 import { RESOURCES } from '../../constants.ts';
 import * as api from '../../services/api.ts';
 
@@ -15,6 +16,8 @@ interface LeadFormModalProps {
   clientSources: ClientSource[];
   services: Service[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
+  onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+  comprobantes: ComprobanteElectronico[];
 }
 
 // FIX: Add 'Vanesa' to PERSONAL_OPTIONS to be consistent with the updated Personal type.
@@ -1009,7 +1012,132 @@ const SeguimientoTabContent: React.FC<{
     );
 }
 
-const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, onDelete, lead, metaCampaigns, clientSources, services, requestConfirmation }) => {
+const FacturacionTabContent: React.FC<{
+  formData: Partial<Lead>;
+  comprobantes: ComprobanteElectronico[];
+  onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+}> = ({ formData, comprobantes, onSaveComprobante }) => {
+    const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [selectedVenta, setSelectedVenta] = useState<any | null>(null);
+
+    const facturasDelLead = useMemo(() => {
+        return comprobantes.filter(c => c.ventaId === formData.id && c.ventaType === 'lead');
+    }, [comprobantes, formData.id]);
+    
+    const hasPaidAmount = (formData.montoPagado || 0) > 0;
+    const hasTreatmentPayments = (formData.tratamientos || []).some(t => t.montoPagado > 0);
+
+    const handleOpenFacturacionModal = (ventaData: any, ventaType: 'lead' | 'venta_extra') => {
+        setSelectedVenta({ ...ventaData, ventaType });
+        setIsFacturacionModalOpen(true);
+    };
+
+    const handleCloseFacturacionModal = () => {
+        setIsFacturacionModalOpen(false);
+        setSelectedVenta(null);
+    };
+
+    const handleFacturacionSave = async (comprobante: ComprobanteElectronico) => {
+        await onSaveComprobante(comprobante);
+        handleCloseFacturacionModal();
+    };
+
+    const statusColors: Record<SunatStatus, string> = {
+        [SunatStatus.Aceptado]: 'bg-green-100 text-green-800',
+        [SunatStatus.Pendiente]: 'bg-yellow-100 text-yellow-800',
+        [SunatStatus.Rechazado]: 'bg-red-100 text-red-800',
+        [SunatStatus.ConObservaciones]: 'bg-orange-100 text-orange-800',
+        [SunatStatus.Anulado]: 'bg-gray-200 text-gray-800',
+    };
+
+    return (
+        <div className="space-y-6">
+            <fieldset className="border p-4 rounded-md">
+                <legend className="text-lg font-bold px-2 text-black flex items-center">
+                    <GoogleIcon name="receipt_long" className="text-xl mr-2 text-[#aa632d]" />
+                    Comprobantes Emitidos
+                </legend>
+                <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Tipo</th>
+                                <th scope="col" className="px-6 py-3">Serie-Correlativo</th>
+                                <th scope="col" className="px-6 py-3">Fecha Emisión</th>
+                                <th scope="col" className="px-6 py-3">Total</th>
+                                <th scope="col" className="px-6 py-3">Estado SUNAT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {facturasDelLead.length > 0 ? (
+                                facturasDelLead.map(comp => (
+                                    <tr key={comp.id} className="bg-white border-b">
+                                        <td className="px-6 py-4">{comp.tipoDocumento}</td>
+                                        <td className="px-6 py-4">{comp.serie}-{comp.correlativo.toString().padStart(6, '0')}</td>
+                                        <td className="px-6 py-4">{new Date(comp.fechaEmision + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                        <td className="px-6 py-4">{formatCurrency(comp.total)}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[comp.sunatStatus]}`}>
+                                                {comp.sunatStatus}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={5} className="text-center py-4 text-gray-500">No hay comprobantes electrónicos emitidos para este lead.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                {(hasPaidAmount || hasTreatmentPayments) && (
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => handleOpenFacturacionModal({
+                                id: formData.id,
+                                servicio: formData.servicios?.[0] || 'Servicio de Clínica',
+                                montoPagado: (formData.montoPagado || 0) + (formData.tratamientos?.reduce((sum,t) => sum + t.montoPagado,0) || 0)
+                            }, 'lead')}
+                            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+                        >
+                            <GoogleIcon name="add_to_photos" className="mr-2 text-xl" />
+                            Generar Comprobante
+                        </button>
+                    </div>
+                )}
+            </fieldset>
+
+            {isFacturacionModalOpen && selectedVenta && formData.id && (
+                <FacturacionModal
+                    isOpen={isFacturacionModalOpen}
+                    onClose={handleCloseFacturacionModal}
+                    onSave={handleFacturacionSave}
+                    paciente={formData as Lead}
+                    venta={{
+                        id: selectedVenta.id,
+                        codigoVenta: 'N/A', // Not applicable for lead initial payment
+                        fechaVenta: formData.fechaLead || new Date().toISOString().split('T')[0],
+                        pacienteId: formData.id,
+                        nHistoria: formData.nHistoria || '',
+                        nombrePaciente: `${formData.nombres} ${formData.apellidos}`,
+                        servicio: selectedVenta.servicio,
+                        categoria: formData.categoria || '',
+                        precio: selectedVenta.montoPagado,
+                        montoPagado: selectedVenta.montoPagado,
+                        metodoPago: formData.metodoPago || MetodoPago.Efectivo,
+                        deuda: 0,
+                    }}
+                    ventaType={selectedVenta.ventaType}
+                />
+            )}
+        </div>
+    );
+}
+
+
+const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, onDelete, lead, metaCampaigns, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [activeTab, setActiveTab] = useState('marketing');
   const [serviceOptions, setServiceOptions] = useState<string[]>([]);
@@ -1044,6 +1172,7 @@ const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, 
                 vendedor: Seller.Vanesa,
                 servicios: [],
                 categoria: '',
+                documentType: DocumentType.DNI, // Default for new leads
               };
         setFormData(initialData);
         setGeneratedMessage('');
@@ -1311,7 +1440,7 @@ const copyToClipboard = () => {
             <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>
             {type === 'select' ? (
               <select id={name} name={name} value={formData[name] as string || ''} onChange={handleChange} className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]">
-                 {['metodoPago', 'categoria', 'redSocial', 'anuncio'].includes(name) && <option value="">Seleccionar...</option>}
+                 {['metodoPago', 'categoria', 'redSocial', 'anuncio', 'documentType'].includes(name) && <option value="">Seleccionar...</option>}
                 {options?.map(opt => typeof opt === 'string' ? <option key={opt} value={opt}>{opt}</option> : <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             ) : (
@@ -1327,6 +1456,7 @@ const copyToClipboard = () => {
       { id: 'recepcion', label: 'Recepción', icon: <GoogleIcon name="event" className="text-lg" /> },
       { id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-lg" /> },
       { id: 'seguimiento', label: 'Seguimiento', icon: <GoogleIcon name="follow_the_signs" className="text-lg" /> },
+      { id: 'facturacion', label: 'Facturación', icon: <GoogleIcon name="receipt" className="text-lg" /> },
   ];
 
   const totales = useMemo(() => {
@@ -1378,8 +1508,8 @@ const copyToClipboard = () => {
                 </button>
             ))}
         </div>
-      <div className="p-6 bg-gray-50/50">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="p-0 overflow-y-auto max-h-[calc(90vh-130px)] bg-gray-50/50">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {activeTab === 'marketing' && (
                 <div className="space-y-6">
                     <fieldset className="border p-4 rounded-md">
@@ -1394,6 +1524,20 @@ const copyToClipboard = () => {
                                     <label className="flex items-center text-black"><input type="radio" name="sexo" value="M" checked={formData.sexo === 'M'} onChange={handleChange} className="mr-2 text-[#aa632d] focus:ring-[#aa632d]"/> Masculino</label>
                                     <label className="flex items-center text-black"><input type="radio" name="sexo" value="F" checked={formData.sexo === 'F'} onChange={handleChange} className="mr-2 text-[#aa632d] focus:ring-[#aa632d]"/> Femenino</label>
                                 </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset className="border p-4 rounded-md">
+                        <legend className="text-lg font-bold px-2 text-black">Información de Facturación (Opcional)</legend>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            {renderFormField('Tipo de Documento', 'documentType', 'select', Object.values(DocumentType).map(dt => ({ value: dt, label: dt })))}
+                            {renderFormField('N° de Documento', 'documentNumber')}
+                            <div className="md:col-span-2">
+                                {renderFormField('Razón Social / Nombre Completo', 'razonSocial')}
+                            </div>
+                            <div className="md:col-span-2">
+                                {renderFormField('Dirección Fiscal', 'direccionFiscal')}
                             </div>
                         </div>
                     </fieldset>
@@ -1577,6 +1721,7 @@ const copyToClipboard = () => {
              {activeTab === 'recepcion' && <RecepcionTabContent formData={formData} handleChange={handleChange} handleGenerateHistoryNumber={handleGenerateHistoryNumber} handleSetFormData={setFormData} totales={totales} services={services} />}
              {activeTab === 'procedimientos' && <ProcedimientosTabContent formData={formData} handleSetFormData={setFormData} />}
              {activeTab === 'seguimiento' && <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} />}
+             {activeTab === 'facturacion' && <FacturacionTabContent formData={formData} comprobantes={comprobantes} onSaveComprobante={onSaveComprobante} />}
 
         </form>
       </div>

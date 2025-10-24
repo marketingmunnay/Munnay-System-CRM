@@ -26,7 +26,7 @@ import type {
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
     ServiceCategory, JobPosition, ProductCategory, MetaCampaign, EgresoCategory, Notification,
     TipoProveedor,
-    Goal
+    Goal, ComprobanteElectronico
 } from './types';
 import * as api from './services/api';
 import { generateNotifications } from './services/notificationService';
@@ -63,6 +63,7 @@ const App: React.FC = () => {
     const [egresoCategories, setEgresoCategories] = useState<EgresoCategory[]>([]);
     const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [comprobantes, setComprobantes] = useState<ComprobanteElectronico[]>([]);
     
     const [loading, setLoading] = useState(true);
     const [loginError, setLoginError] = useState('');
@@ -98,7 +99,7 @@ const App: React.FC = () => {
                 businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
                 serviceCategoriesData, productCategoriesData, jobPositionsData,
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
-                tiposProveedorData, goalsData
+                tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
                 api.getLeads(), api.getCampaigns(), api.getVentasExtra(),
                 api.getIncidencias(), api.getEgresos(), api.getProveedores(),
@@ -106,7 +107,7 @@ const App: React.FC = () => {
                 api.getClientSources(), api.getServices(), api.getProducts(), api.getMemberships(),
                 api.getServiceCategories(), api.getProductCategories(), api.getJobPositions(),
                 api.getPublicaciones(), api.getSeguidores(), api.getMetaCampaigns(), api.getEgresoCategories(),
-                api.getTiposProveedor(), api.getGoals()
+                api.getTiposProveedor(), api.getGoals(), api.getComprobantes()
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
@@ -130,6 +131,7 @@ const App: React.FC = () => {
             setEgresoCategories(egresoCategoriesData);
             setTiposProveedor(tiposProveedorData);
             setGoals(goalsData);
+            setComprobantes(comprobantesData);
             
             setNotifications(generateNotifications({ leads: leadsData, egresos: egresosData }));
 
@@ -169,6 +171,8 @@ const App: React.FC = () => {
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
+    const handleSaveComprobante = async (comprobante: ComprobanteElectronico) => { await api.saveComprobante(comprobante); await loadData(); };
+    const handleDeleteComprobante = async (comprobanteId: number) => { await api.deleteComprobante(comprobanteId); await loadData(); };
     
     // Business Config Handlers
     const handleSaveBusinessInfo = async (info: BusinessInfo) => { await api.saveBusinessInfo(info); await loadData(); };
@@ -270,7 +274,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} />;
+                return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
                     campaigns={campaigns} 
@@ -287,21 +291,21 @@ const App: React.FC = () => {
             case 'redes-sociales-seguidores':
                 return <SeguidoresPage seguidores={seguidores} onSave={handleSaveSeguidor} onDelete={handleDeleteSeguidor} requestConfirmation={requestConfirmation} />;
             case 'recepcion-agendados':
-                return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} />;
+                return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
-                return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} />;
+                return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
-                return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} />;
+                return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-seguimiento':
                 return <AnalisisSeguimientoPage leads={leads} />;
             case 'pacientes-historia':
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
-                return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} />;
+                return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} />;
+                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
@@ -313,6 +317,8 @@ const App: React.FC = () => {
                     egresoCategories={egresoCategories}
                     requestConfirmation={requestConfirmation}
                 />;
+            case 'finanzas-facturacion':
+                return <FacturacionPage comprobantes={comprobantes} />;
             case 'configuracion':
                 return <ConfiguracionPage
                     users={users}
@@ -357,6 +363,7 @@ const App: React.FC = () => {
                     onSaveEgresoCategory={handleSaveEgresoCategory}
                     onDeleteEgresoCategory={handleDeleteEgresoCategory}
                     requestConfirmation={requestConfirmation}
+                    comprobantes={comprobantes}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 

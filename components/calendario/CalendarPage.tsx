@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign } from '../../types.ts';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus, Seller } from '../../types.ts';
 import { RESOURCES } from '../../constants.ts';
 import LeadFormModal from '../marketing/LeadFormModal.tsx';
@@ -15,6 +15,8 @@ interface CalendarPageProps {
     clientSources: ClientSource[];
     services: Service[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
+    onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+    comprobantes: ComprobanteElectronico[];
 }
 
 const BLOCKED_TIMES = [
@@ -66,7 +68,7 @@ const durationToHeight = (startStr: string, endStr: string) => {
 
 
 // FIX: Destructure metaCampaigns from props.
-const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation }) => {
+const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -298,6 +300,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}
+                onSaveComprobante={onSaveComprobante}
+                comprobantes={comprobantes}
             />
         </div>
     );

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
 import { MetodoPago } from '../../types';
 import Modal from '../shared/Modal.tsx';
+import FacturacionModal from '../finanzas/FacturacionModal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
 
 interface VentaExtraFormModalProps {
@@ -14,17 +15,20 @@ interface VentaExtraFormModalProps {
   services: Service[];
   products: Product[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
+  onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+  comprobantes: ComprobanteElectronico[];
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation }) => {
+const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);
   const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | ''>('');
+  const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
 
   const serviceCategoriesAndItems = useMemo(() => {
     return services.reduce((acc, s) => {
@@ -194,6 +198,20 @@ const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClo
     }
   };
 
+  const handleOpenFacturacionModal = () => {
+    setIsFacturacionModalOpen(true);
+  };
+
+  const handleCloseFacturacionModal = () => {
+    setIsFacturacionModalOpen(false);
+  };
+
+  const handleFacturacionSave = async (comprobante: ComprobanteElectronico) => {
+    await onSaveComprobante(comprobante);
+    handleCloseFacturacionModal();
+  };
+
+
   const formIsDisabled = !pacienteEncontrado;
 
   return (
@@ -259,63 +277,4 @@ const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClo
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
                     <div>
                         <label htmlFor="saleType" className="mb-1 text-sm font-medium text-gray-700">Tipo de Venta</label>
-                        <select id="saleType" name="saleType" value={saleType} onChange={handleSaleTypeChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
-                            <option value="">Seleccionar...</option>
-                            <option value="Servicio">Servicio</option>
-                            <option value="Productos">Productos</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría</label>
-                        <select id="categoria" name="categoria" value={formData.categoria || ''} onChange={handleChange} disabled={!saleType} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black disabled:bg-gray-100">
-                             <option value="">Seleccionar...</option>
-                             {categoryOptions.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                        </select>
-                    </div>
-                     <div>
-                        <label htmlFor="servicio" className="mb-1 text-sm font-medium text-gray-700">Servicio / Producto</label>
-                        <select id="servicio" name="servicio" value={formData.servicio || ''} onChange={handleChange} disabled={!formData.categoria} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black disabled:bg-gray-100">
-                             <option value="">Seleccionar...</option>
-                             {itemOptions.map(item => <option key={item} value={item}>{item}</option>)}
-                        </select>
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                     <div>
-                        <label htmlFor="precio" className="mb-1 text-sm font-medium text-gray-700">Precio (S/)</label>
-                        <input type="number" id="precio" name="precio" value={formData.precio || ''} readOnly className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm p-2 text-black"/>
-                    </div>
-                    <div>
-                        <label htmlFor="montoPagado" className="mb-1 text-sm font-medium text-gray-700">Monto Pagado (S/)</label>
-                        <input type="number" id="montoPagado" name="montoPagado" value={formData.montoPagado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"/>
-                    </div>
-                     <div>
-                        <label htmlFor="deuda" className="mb-1 text-sm font-medium text-gray-700">Deuda (S/)</label>
-                        <input type="number" id="deuda" name="deuda" value={formData.deuda || 0} readOnly className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 bg-gray-100 font-bold text-red-600"/>
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                     <div>
-                        <label htmlFor="metodoPago" className="mb-1 text-sm font-medium text-gray-700">Método de Pago</label>
-                         <select id="metodoPago" name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
-                             {Object.values(MetodoPago).map(m => <option key={m} value={m}>{m}</option>)}
-                         </select>
-                    </div>
-                    <div>
-                        <label htmlFor="fechaPagoDeuda" className="mb-1 text-sm font-medium text-gray-700">Fecha Límite Pago Deuda</label>
-                        <input type="date" id="fechaPagoDeuda" name="fechaPagoDeuda" value={formData.fechaPagoDeuda || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
-                    </div>
-                     <div>
-                        <label htmlFor="codigoVenta" className="mb-1 text-sm font-medium text-gray-700">Código de Venta</label>
-                        <input type="text" id="codigoVenta" name="codigoVenta" value={formData.codigoVenta || ''} onChange={handleChange} required className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"/>
-                    </div>
-                 </div>
-            </fieldset>
-        </form>
-      </div>
-    </Modal>
-    </>
-  );
-};
-
-export default VentaExtraFormModal;
+                        <select id="saleType

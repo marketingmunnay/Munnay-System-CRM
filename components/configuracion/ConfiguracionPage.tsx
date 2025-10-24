@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, FC, useEffect, useRef } from 'react';
-import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal } from '../../types.ts';
+import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico } from '../../types.ts';
 import { PlusIcon, TrashIcon } from '../shared/Icons.tsx';
 import UsuarioFormModal from './UsuarioFormModal.tsx';
 import RolFormModal from './RolFormModal.tsx';
@@ -56,6 +55,7 @@ interface ConfiguracionPageProps {
     onSaveEgresoCategory: (category: EgresoCategory) => void;
     onDeleteEgresoCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
+    comprobantes: ComprobanteElectronico[];
 }
 
 const SETTINGS_SECTIONS = [
@@ -322,7 +322,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
         onSaveMembership, onDeleteMembership, onSaveServiceCategory, onDeleteServiceCategory,
         onSaveProductCategory, onDeleteProductCategory, onSaveJobPosition, onDeleteJobPosition,
         onSaveProveedor, onDeleteProveedor, onSaveTipoProveedor, onDeleteTipoProveedor, 
-        onSaveEgresoCategory, onDeleteEgresoCategory, requestConfirmation
+        onSaveEgresoCategory, onDeleteEgresoCategory, requestConfirmation, comprobantes
     } = props;
 
     const [activeSection, setActiveSection] = useState('miembros');
@@ -589,7 +589,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     requestConfirmation={requestConfirmation}
                 />;
             case 'importar-exportar':
-                return <ImportExportPage />;
+                return <ImportExportPage comprobantes={comprobantes} />;
             default:
                 return <div>Selecciona una sección</div>;
         }

@@ -1,7 +1,5 @@
-
-
 import React, { useState, useMemo } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign } from '../../types.ts';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus, ReceptionStatus } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons.tsx';
@@ -17,6 +15,8 @@ interface AgendadosPageProps {
   clientSources: ClientSource[];
   services: Service[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
+  onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+  comprobantes: ComprobanteElectronico[];
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -157,7 +157,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 };
 
 
-const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation }) => {
+const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -314,6 +314,8 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}
+            onSaveComprobante={onSaveComprobante}
+            comprobantes={comprobantes}
         />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 import VentaExtraFormModal from './VentaExtraFormModal.tsx';
@@ -13,9 +13,11 @@ interface VentasExtraPageProps {
     services: Service[];
     products: Product[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
+    onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
+    comprobantes: ComprobanteElectronico[];
 }
 
-const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacientes, onSaveVenta, onDeleteVenta, services, products, requestConfirmation }) => {
+const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacientes, onSaveVenta, onDeleteVenta, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -146,6 +148,8 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacien
                 services={services}
                 products={products}
                 requestConfirmation={requestConfirmation}
+                onSaveComprobante={onSaveComprobante}
+                comprobantes={comprobantes}
             />
         </div>
     );
