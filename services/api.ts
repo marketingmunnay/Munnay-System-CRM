@@ -53,12 +53,50 @@ export const deleteLead = (leadId: number): Promise<void> => apiRequest(`/leads/
 
 
 // Campaigns
-export let getCampaigns: () => Promise<Campaign[]> = async () => { console.warn("getCampaigns not implemented"); return []; };
-export let saveCampaign: (campaign: Campaign) => Promise<Campaign> = async (c) => { console.warn("saveCampaign not implemented"); return c; };
-export let deleteCampaign: (campaignId: number) => Promise<number> = async (id) => { console.warn("deleteCampaign not implemented"); return id; };
-export let getMetaCampaigns: () => Promise<MetaCampaign[]> = async () => { console.warn("getMetaCampaigns not implemented"); return []; };
-export let saveMetaCampaign: (campaign: MetaCampaign) => Promise<MetaCampaign> = async (c) => { console.warn("saveMetaCampaign not implemented"); return c; };
-export let deleteMetaCampaign: (campaignId: number) => Promise<number> = async (id) => { console.warn("deleteMetaCampaign not implemented"); return id; };
+export const getCampaigns = (): Promise<Campaign[]> => apiRequest<Campaign[]>('/campaigns', 'GET');
+export const saveCampaign = (campaign: Campaign): Promise<Campaign> => {
+    if (String(campaign.id).length > 7) {
+        const { id, ...data } = campaign;
+        return apiRequest<Campaign>('/campaigns', 'POST', data);
+    }
+    return apiRequest<Campaign>(`/campaigns/${campaign.id}`, 'PUT', campaign);
+};
+export const deleteCampaign = (campaignId: number): Promise<void> => apiRequest(`/campaigns/${campaignId}`, 'DELETE');
+
+// MetaCampaigns
+export const getMetaCampaigns = (): Promise<MetaCampaign[]> => apiRequest<MetaCampaign[]>('/campaigns/meta', 'GET');
+export const saveMetaCampaign = (campaign: MetaCampaign): Promise<MetaCampaign> => {
+    if (String(campaign.id).length > 7) {
+        const { id, ...data } = campaign;
+        return apiRequest<MetaCampaign>('/campaigns/meta', 'POST', data);
+    }
+    return apiRequest<MetaCampaign>(`/campaigns/meta/${campaign.id}`, 'PUT', campaign);
+};
+export const deleteMetaCampaign = (campaignId: number): Promise<void> => apiRequest(`/campaigns/meta/${campaignId}`, 'DELETE');
+
+// Egresos
+export const getEgresos = (): Promise<Egreso[]> => apiRequest<Egreso[]>('/expenses', 'GET');
+export const saveEgreso = (egreso: Egreso): Promise<Egreso> => {
+    if (String(egreso.id).length > 7) {
+        const { id, ...data } = egreso;
+        return apiRequest<Egreso>('/expenses', 'POST', data);
+    }
+    return apiRequest<Egreso>(`/expenses/${egreso.id}`, 'PUT', egreso);
+};
+export const deleteEgreso = (egresoId: number): Promise<void> => apiRequest(`/expenses/${egresoId}`, 'DELETE');
+
+// Roles
+export const getRoles = (): Promise<Role[]> => apiRequest<Role[]>('/roles', 'GET');
+export const saveRole = (role: Role): Promise<Role> => {
+    if (String(role.id).length > 7) {
+        const { id, ...data } = role;
+        return apiRequest<Role>('/roles', 'POST', data);
+    }
+    return apiRequest<Role>(`/roles/${role.id}`, 'PUT', role);
+};
+export const deleteRole = (roleId: number): Promise<void> => apiRequest(`/roles/${roleId}`, 'DELETE');
+
+
 export let getPublicaciones: () => Promise<Publicacion[]> = async () => { console.warn("getPublicaciones not implemented"); return []; };
 export let savePublicacion: (pub: Publicacion) => Promise<Publicacion> = async (p) => { console.warn("savePublicacion not implemented"); return p; };
 export let deletePublicacion: (pubId: number) => Promise<number> = async (id) => { console.warn("deletePublicacion not implemented"); return id; };
@@ -71,9 +109,6 @@ export let deleteVentaExtra: (ventaId: number) => Promise<number> = async (id) =
 export let getIncidencias: () => Promise<Incidencia[]> = async () => { console.warn("getIncidencias not implemented"); return []; };
 export let saveIncidencia: (incidencia: Incidencia) => Promise<Incidencia> = async (i) => { console.warn("saveIncidencia not implemented"); return i; };
 export let deleteIncidencia: (incidenciaId: number) => Promise<number> = async (id) => { console.warn("deleteIncidencia not implemented"); return id; };
-export let getEgresos: () => Promise<Egreso[]> = async () => { console.warn("getEgresos not implemented"); return []; };
-export let saveEgreso: (egreso: Egreso) => Promise<Egreso> = async (e) => { console.warn("saveEgreso not implemented"); return e; };
-export let deleteEgreso: (egresoId: number) => Promise<number> = async (id) => { console.warn("deleteEgreso not implemented"); return id; };
 export let getProveedores: () => Promise<Proveedor[]> = async () => { console.warn("getProveedores not implemented"); return []; };
 export let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor> = async (p) => { console.warn("saveProveedor not implemented"); return p; };
 export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id) => { console.warn("deleteProveedor not implemented"); return id; };
@@ -83,9 +118,6 @@ export let deleteTipoProveedor: (id: number) => Promise<number> = async (id) => 
 export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
 export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
 export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };
-export let getRoles: () => Promise<Role[]> = async () => { console.warn("getRoles not implemented"); return []; };
-export let saveRole: (role: Role) => Promise<Role> = async (r) => { console.warn("saveRole not implemented"); return r; };
-export let deleteRole: (roleId: number) => Promise<number> = async (id) => { console.warn("deleteRole not implemented"); return id; };
 export let getBusinessInfo: () => Promise<BusinessInfo> = async () => { console.warn("getBusinessInfo not implemented"); return { nombre: 'Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: 'https://i.imgur.com/JmZt2eU.png', loginImageUrl: '' }; };
 export let saveBusinessInfo: (info: BusinessInfo) => Promise<BusinessInfo> = async (i) => { console.warn("saveBusinessInfo not implemented"); return i; };
 export let getClientSources: () => Promise<ClientSource[]> = async () => { console.warn("getClientSources not implemented"); return []; };
