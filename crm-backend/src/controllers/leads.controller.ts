@@ -1,4 +1,4 @@
-// FIX: Change to type-only import to fix Express type resolution issues
+// FIX: Use value import for Express types to resolve compilation errors in handlers
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 

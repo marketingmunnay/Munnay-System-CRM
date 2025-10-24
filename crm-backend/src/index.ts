@@ -1,6 +1,5 @@
-// FIX: Separate default import from type imports to resolve type conflicts
-import express from 'express';
-import type { Request, Response } from 'express';
+// FIX: Use combined import for Express types to resolve compilation errors
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
