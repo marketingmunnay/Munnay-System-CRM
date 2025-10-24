@@ -1,20 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Munnay-System-CRM — Backend scaffold
 
-# Run and deploy your AI Studio app
+Este repo contiene el scaffold del backend en Node.js + TypeScript + Express + Prisma (Postgres) con autenticación JWT + refresh tokens.
 
-This contains everything you need to run your app locally.
+Rama propuesta: feature/backend-scaffold
 
-View your app in AI Studio: https://ai.studio/apps/drive/1QNcUmZdPjS5HIwjoqinXlY5NShuSnBSl
+Quick start (local)
+1. Copia .env.example a .env y ajusta variables.
+2. Levanta Postgres y el app:
+   - con Docker: docker-compose up --build
+3. Generar cliente Prisma y migraciones:
+   - npx prisma generate
+   - npx prisma migrate dev --name init
+4. En desarrollo:
+   - npm run dev
 
-## Run Locally
+Endpoints principales (implementados como ejemplo)
+- POST /api/auth/login
+- POST /api/auth/refresh
+- GET /api/auth/me
+- POST /api/auth/logout
+- CRUD /api/users
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Siguientes pasos
+- Implementar routers CRUD para roles, leads, campaigns, meta-campaigns, publications, followers, extra-sales, incidents, expenses, providers, goals, y los endpoints /config/* (estructuras de ejemplo en Prisma).
+- Añadir validaciones (zod/joi), tests, y documentación OpenAPI/Swagger.
