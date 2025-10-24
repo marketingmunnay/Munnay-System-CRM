@@ -1,6 +1,7 @@
+
 // FIX: Use combined import for Express types to resolve compilation errors
 import express from 'express';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
