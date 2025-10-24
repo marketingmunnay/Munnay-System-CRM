@@ -1,1 +1,657 @@
-���Ȭʋ�>���
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Ensure you have configured your database connection in a .env file
+// e.g., DATABASE_URL="postgresql://user:password@host:port/database?schema=public"
+datasource db {
+  provider = "postgresql" // Or "mysql", "sqlite", etc.
+  url      = env("DATABASE_URL")
+}
+
+// ====================================================================
+// Enums
+// ====================================================================
+
+enum LeadStatus {
+  Nuevo
+  Seguimiento
+  PorPagar
+  Agendado
+  Perdido
+}
+
+enum ReceptionStatus {
+  Agendado
+  PorAtender
+  Atendido
+  Reprogramado
+  Cancelado
+  NoAsistio
+}
+
+enum AtencionStatus {
+  PorAtender
+  EnSeguimiento
+  SeguimientoHecho
+}
+
+enum MetodoPago {
+  Efectivo
+  Tarjeta
+  Transferencia
+  Yape
+  Plin
+}
+
+enum EstadoLlamada {
+  Contesto
+  NoContesto
+  NumeroEquivocado
+  Ocupado
+}
+
+enum TipoPost {
+  Reel
+  Historia
+  Carrusel
+  Post
+}
+
+enum RedSocialPost {
+  Facebook
+  Instagram
+  Tiktok
+  YouTube
+}
+
+enum TipoComprobanteElectronico {
+  Boleta
+  Factura
+}
+
+enum SunatStatus {
+  Aceptado
+  Pendiente
+  Rechazado
+  ConObservaciones
+  Anulado
+}
+
+enum TipoComprobante {
+  Factura
+  Boleta
+  ReciboHonorarios
+  SinComprobante
+}
+
+enum ModoPagoEgreso {
+  Efectivo
+  Transferencia
+  Tarjeta
+  Yape
+}
+
+enum DocumentType {
+  DNI
+  RUC
+  Pasaporte
+  CarnetExtranjeria
+}
+
+enum GoalUnit {
+  cantidad
+  porcentaje
+}
+
+enum GoalArea {
+  Comercial
+  Administracion
+  Recepcion
+  Procedimientos
+}
+
+enum GoalObjective {
+  Leads
+  Agendados
+  Asistidos
+  CostoPorResultado
+  VentasServicios
+  VentasProductos
+  Recuperados
+  ConversionLeads
+  ROI
+  Seguidores
+  Visualizaciones
+  Alcance
+  Engagement
+  CierreEvaluaciones
+  AceptacionTratamientos
+  EfectividadTratamientos
+  SeguimientosCompletados
+  RotacionPersonal
+  NivelStock
+}
+
+// ====================================================================
+// Core Models
+// ====================================================================
+
+model Lead {
+  id                    Int              @id @default(autoincrement())
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  fechaLead             DateTime
+  nombres               String
+  apellidos             String
+  numero                String
+  sexo                  String // 'M' | 'F' - using String because original type is union literal
+  redSocial             String
+  anuncio               String
+  vendedor              String // From Seller enum or custom string - using String because original type is union literal
+  estado                LeadStatus
+  montoPagado           Float
+  metodoPago            MetodoPago?
+  fechaHoraAgenda       DateTime?
+  servicios             String[] // Array of service names (PostgreSQL specific type)
+  categoria             String // Category of service
+  fechaVolverLlamar     DateTime?
+  horaVolverLlamar      String?
+  notas                 String?
+
+  // Reception properties
+  nHistoria             String?          @unique
+  aceptoTratamiento     String? // 'Si' | 'No'
+  motivoNoCierre        String?
+  estadoRecepcion       ReceptionStatus?
+  recursoId             String? // Link to resource, e.g., 'Dr. Carlos', 'Consultorio 1'
+
+  // History Paciente/Billing Info
+  birthDate             DateTime?
+  precioCita            Float?
+  deudaCita             Float?
+  metodoPagoDeuda       MetodoPago?
+  documentType          DocumentType?
+  documentNumber        String?
+  razonSocial           String?
+  direccionFiscal       String?
+
+  // Relationships
+  registrosLlamada      RegistroLlamada[]
+  tratamientos          Treatment[]
+  procedimientos        Procedure[]
+  seguimientos          Seguimiento[]
+  alergias              Alergia[]
+  membresiasAdquiridas  AcquiredMembership[] // Many-to-many relationship with Membership
+  ventasExtra           VentaExtra[]
+  incidencias           Incidencia[]
+}
+
+model RegistroLlamada {
+  id               Int          @id @default(autoincrement())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  numeroLlamada    Int
+  duracionLlamada  String // HH:mm:ss
+  estadoLlamada    EstadoLlamada
+  observacion      String?
+
+  leadId           Int
+  lead             Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Treatment {
+  id               Int          @id @default(autoincrement())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  nombre           String
+  cantidadSesiones Int
+  precio           Float
+  montoPagado      Float
+  metodoPago       MetodoPago?
+  deuda            Float
+
+  leadId           Int
+  lead             Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Procedure {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  fechaAtencion     DateTime
+  personal          String // 'Elvira', 'Janela', etc. - using String because original type is union literal
+  horaInicio        String // HH:mm
+  horaFin           String // HH:mm
+  tratamientoId     Int
+  nombreTratamiento String
+  sesionNumero      Int
+  asistenciaMedica  Boolean
+  medico            String? // 'Dra. Marilia', 'Dr. Carlos' - using String because original type is union literal
+  observacion       String?
+
+  leadId            Int
+  lead              Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Seguimiento {
+  id                 Int          @id @default(autoincrement())
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  procedimientoId    Int
+  nombreProcedimiento String
+  fechaSeguimiento   DateTime
+  personal           String // 'Elvira', 'Janela', etc. - using String because original type is union literal
+  inflamacion        Boolean
+  ampollas           Boolean
+  alergias           Boolean
+  malestarGeneral    Boolean
+  brote              Boolean
+  dolorDeCabeza      Boolean
+  moretones          Boolean
+  observacion        String?
+
+  leadId             Int
+  lead               Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Alergia {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String
+  gravedad  Int // 1 | 2 | 3 | 4 | 5
+
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Campaign { // Anuncios
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  nombreAnuncio     String
+  categoria         String // Refers to MetaCampaign.nombre
+  alcance           Int
+  resultados        Int
+  costoPorResultado Float
+  importeGastado    Float
+  fecha             DateTime
+}
+
+model MetaCampaign {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  nombre      String   @unique
+  fechaInicio DateTime
+  fechaFin    DateTime
+  categoria   String
+}
+
+model Publicacion {
+  id                   Int           @id @default(autoincrement())
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  fechaPost            DateTime
+  horaPost             String?
+  temaVideo            String
+  tipoPost             TipoPost
+  redSocial            RedSocialPost
+  publicacionUrl       String
+  imageUrl             String?
+  vistas               Int
+  comentarios          Int
+  reacciones           Int
+  conversacionesIniciadas Int
+  convertidos          Int
+}
+
+model Seguidor {
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  fecha          DateTime
+  cuenta         String
+  redSocial      RedSocialPost
+  seguidores     Int
+  dejaronDeSeguir Int
+}
+
+model VentaExtra {
+  id            Int          @id @default(autoincrement())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  codigoVenta   String       @unique
+  fechaVenta    DateTime
+  pacienteId    Int
+  nHistoria     String
+  nombrePaciente String
+  servicio      String
+  categoria     String
+  precio        Float
+  montoPagado   Float
+  metodoPago    MetodoPago
+  deuda         Float
+  fechaPagoDeuda DateTime?
+
+  paciente      Lead         @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+}
+
+model Incidencia {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  fecha             DateTime
+  hora              String // HH:mm
+  pacienteId        Int
+  nHistoria         String
+  nombrePaciente    String
+  tipoIncidencia    String
+  detalleIncidencia String
+  descripcion       String
+  solucionado       Boolean
+
+  paciente          Lead     @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+}
+
+// New Models for Electronic Invoicing (Comprobantes Electronicos)
+model ComprobanteItem {
+  id               Int                @id @default(autoincrement())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  descripcion      String
+  cantidad         Int
+  valorUnitario    Float
+  precioUnitario   Float
+  igv              Float
+  montoTotal       Float
+
+  comprobanteId    Int
+  comprobante      ComprobanteElectronico @relation(fields: [comprobanteId], references: [id], onDelete: Cascade)
+}
+
+model ComprobanteElectronico {
+  id                   Int                       @id @default(autoincrement())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  tipoDocumento        TipoComprobanteElectronico
+  serie                String
+  correlativo          Int
+  fechaEmision         DateTime
+  clienteTipoDocumento DocumentType
+  clienteNumeroDocumento String
+  clienteDenominacion  String
+  clienteDireccion     String?
+  opGravadas           Float
+  igv                  Float
+  total                Float
+  sunatStatus          SunatStatus
+
+  // Polymorphic association: links to either a Lead or a VentaExtra
+  // The application logic will determine which type it is.
+  ventaId              Int // The ID of the associated Lead or VentaExtra
+  ventaType            String // 'lead' or 'venta_extra'
+
+  items                ComprobanteItem[]
+}
+
+
+model Egreso {
+  id              Int         @id @default(autoincrement())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  fechaRegistro   DateTime
+  fechaPago       DateTime
+  proveedor       String // Could link to Proveedor.razonSocial, but currently string in type
+  categoria       String // Could link to EgresoCategory.nombre, but currently string in type
+  descripcion     String
+  tipoComprobante TipoComprobante
+  serieComprobante String?
+  nComprobante    String?
+  montoTotal      Float
+  montoPagado     Float
+  deuda           Float
+  modoPago        ModoPagoEgreso?
+  fotoUrl         String?
+  tipoMoneda      String // 'Soles' | 'Dólares'
+  observaciones   String?
+}
+
+model TipoProveedor {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model Proveedor {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  razonSocial    String   @unique
+  ruc            String   @unique
+  tipo           String // Link to TipoProveedor.nombre
+  numeroContacto String
+}
+
+model User {
+  id                     Int          @id @default(autoincrement())
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  nombres                String
+  apellidos              String
+  usuario                String       @unique
+  password               String // Hashed password
+  rolId                  Int
+  avatarUrl              String
+  position               String? // Link to JobPosition.nombre
+  documentType           DocumentType?
+  documentNumber         String?
+  phone                  String?
+  birthDate              DateTime?
+  startDate              DateTime?
+  salary                 Float?
+  contractType           String? // 'Plazo Fijo' | 'Indefinido'
+  maritalStatus          String? // 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)'
+  sex                    String? // 'M' | 'F'
+
+  role                   Role         @relation(fields: [rolId], references: [id])
+  addresses              Address[]
+  emergencyContacts      EmergencyContact[]
+  reconocimientosRecibidos Reconocimiento[] // Renamed from 'reconocimientos' for clarity
+}
+
+model Role {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  nombre         String   @unique
+  permissions    String[] // Array of Page enum values (PostgreSQL specific type)
+  dashboardMetrics String[] // Array of dashboard metric IDs (PostgreSQL specific type)
+
+  users          User[]
+}
+
+model Address {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  direccion   String
+  distrito    String
+  ciudad      String
+  referencia  String?
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyContact {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  nombre      String
+  parentesco  String
+  numero      String
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reconocimiento {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  otorgadoPorId   Int // User ID of the sender
+  otorgadoPorNombre String
+  mensaje         String
+  fecha           DateTime
+
+  toUserId        Int
+  toUser          User     @relation(fields: [toUserId], references: [id], onDelete: Cascade)
+}
+
+
+model BusinessInfo {
+  // Assuming this is a singleton table, where ID is always 1.
+  id            Int      @id @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  nombre        String
+  ruc           String
+  direccion     String
+  telefono      String
+  email         String
+  logoUrl       String
+  loginImageUrl String?
+}
+
+model ClientSource {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model ServiceCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model EgresoCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model ProductCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model JobPosition {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String   @unique
+}
+
+model Service {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String
+  categoria String // Link to ServiceCategory.nombre
+  precio    Float
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nombre    String
+  categoria String // Link to ProductCategory.nombre
+  precio    Float
+}
+
+model Membership { // Catalog item
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  nombre        String   @unique
+  precio        Float
+  numeroSesiones Int
+  descripcion   String
+  
+  acquiredByLeads AcquiredMembership[]
+}
+
+model AcquiredMembership {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  leadId      Int
+  membershipId Int
+  fechaAdquisicion DateTime @default(now())
+
+  lead        Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  membership  Membership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+
+  @@unique([leadId, membershipId]) // A lead can acquire a specific membership only once
+}
+
+
+model Goal {
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  name        String
+  area        GoalArea
+  objective   GoalObjective
+  value       Float
+  unit        GoalUnit
+  personal    String? // 'Vanesa', 'Elvira', etc. - using String because original type is union literal
+  startDate   DateTime
+  endDate     DateTime
+}
