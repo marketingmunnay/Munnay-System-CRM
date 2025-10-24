@@ -81,50 +81,49 @@ let getGoals: () => Promise<Goal[]>;
 let saveGoal: (goal: Goal) => Promise<Goal>;
 let deleteGoal: (goalId: number) => Promise<number>;
 
+// MOCK DATABASES (Available in both dev and prod for demo purposes)
+let rolesDB: Role[] = [
+    {
+        id: 1,
+        nombre: 'Administrador',
+        permissions: ['dashboard', 'calendario', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores', 'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias', 'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra', 'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos', 'rrhh-perfiles', 'informes', 'configuracion'],
+        dashboardMetrics: ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh']
+    },
+    {
+        id: 2,
+        nombre: 'Marketing',
+        permissions: ['dashboard', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores'],
+        dashboardMetrics: ['marketing']
+    }
+];
+
+let usersDB: User[] = [
+    {
+        id: 1,
+        nombres: 'Admin',
+        apellidos: 'Munnay',
+        usuario: 'admin',
+        password: '123',
+        rolId: 1,
+        avatarUrl: 'https://picsum.photos/id/1005/100/100',
+        position: 'Gerente General'
+    },
+    {
+        id: 2,
+        nombres: 'Vanesa',
+        apellidos: 'Marketing',
+        usuario: 'vanesa',
+        rolId: 2,
+        avatarUrl: 'https://picsum.photos/id/1027/100/100',
+        position: 'Jefa de Marketing'
+    }
+];
 
 if (isDevelopment) {
     // --- DEVELOPMENT ENVIRONMENT: MOCK API ---
     console.log("Running in development mode. Using mock API.");
 
     const mockApiCall = <T>(data: T): Promise<T> => new Promise(resolve => setTimeout(() => resolve(data), 100));
-
-    // MOCK DATABASES
-    let rolesDB: Role[] = [
-        {
-            id: 1,
-            nombre: 'Administrador',
-            permissions: ['dashboard', 'calendario', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores', 'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias', 'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra', 'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos', 'rrhh-perfiles', 'informes', 'configuracion'],
-            dashboardMetrics: ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh']
-        },
-        {
-            id: 2,
-            nombre: 'Marketing',
-            permissions: ['dashboard', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores'],
-            dashboardMetrics: ['marketing']
-        }
-    ];
-
-    let usersDB: User[] = [
-        {
-            id: 1,
-            nombres: 'Admin',
-            apellidos: 'Munnay',
-            usuario: 'admin',
-            password: '123',
-            rolId: 1,
-            avatarUrl: 'https://picsum.photos/id/1005/100/100',
-            position: 'Gerente General'
-        },
-        {
-            id: 2,
-            nombres: 'Vanesa',
-            apellidos: 'Marketing',
-            usuario: 'vanesa',
-            rolId: 2,
-            avatarUrl: 'https://picsum.photos/id/1027/100/100',
-            position: 'Jefa de Marketing'
-        }
-    ];
     
     let leadsDB: Lead[] = [
         { id: 1, fechaLead: '2023-11-01', nombres: 'Ana (Mock)', apellidos: 'García', numero: '987654321', sexo: 'F', redSocial: 'Instagram', anuncio: 'Promo Noviembre', vendedor: Seller.Vanesa, estado: LeadStatus.Nuevo, montoPagado: 0, servicios: ['Limpieza Facial'], categoria: 'Faciales', registrosLlamada: [] },
@@ -287,12 +286,26 @@ if (isDevelopment) {
     getTiposProveedor = () => mockApiCallProd([]);
     saveTipoProveedor = (tipo: TipoProveedor) => mockApiCallProd(tipo);
     deleteTipoProveedor = (id: number) => mockApiCallProd(id);
-    getUsers = () => mockApiCallProd([]);
-    saveUser = (user: User) => mockApiCallProd(user);
-    deleteUser = (userId: number) => mockApiCallProd(userId);
-    getRoles = () => mockApiCallProd([]);
-    saveRole = (role: Role) => mockApiCallProd(role);
-    deleteRole = (roleId: number) => mockApiCallProd(roleId);
+    getUsers = () => mockApiCallProd([...usersDB]);
+    saveUser = async (user: User) => {
+        const index = usersDB.findIndex(u => u.id === user.id);
+        if (index > -1) { usersDB[index] = user; } else { usersDB.push({ ...user, id: user.id || Date.now() }); }
+        return mockApiCallProd(user);
+    };
+    deleteUser = async (userId: number) => {
+        usersDB = usersDB.filter(u => u.id !== userId);
+        return mockApiCallProd(userId);
+    };
+    getRoles = () => mockApiCallProd([...rolesDB]);
+    saveRole = async (role: Role) => {
+        const index = rolesDB.findIndex(r => r.id === role.id);
+        if (index > -1) { rolesDB[index] = role; } else { rolesDB.push({ ...role, id: role.id || Date.now() }); }
+        return mockApiCallProd(role);
+    };
+    deleteRole = async (roleId: number) => {
+        rolesDB = rolesDB.filter(r => r.id !== roleId);
+        return mockApiCallProd(roleId);
+    };
     getBusinessInfo = () => mockApiCallProd({
         nombre: 'Munnay', ruc: '12345678901', direccion: 'Av. Principal 123, Miraflores, Lima',
         telefono: '01-555-1234', email: 'contacto@munnay.pe', logoUrl: 'https://i.imgur.com/JmZt2eU.png',
