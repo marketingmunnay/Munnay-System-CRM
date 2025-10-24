@@ -152,14 +152,14 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     {renderFormField('Fecha de Pago', 'fechaPago', 'date', [], true)}
                     
                     <div className="flex flex-col">
-                        <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría<span className="text-red-500">*</span>}</label>
+                        <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría<span className="text-red-500">*</span></label>
                         <select id="categoria" name="categoria" value={formData.categoria || ''} onChange={handleChange} className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]">
                             {egresoCategories.map(cat => <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>)}
                         </select>
                     </div>
                     
                     <div className="flex flex-col">
-                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">Proveedor<span className="text-red-500">*</span>}</label>
+                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">Proveedor<span className="text-red-500">*</span></label>
                         <select 
                             id="proveedor" 
                             name="proveedor" 
@@ -173,7 +173,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         </select>
                     </div>
                     <div className="md:col-span-2">
-                        <label htmlFor="descripcion" className="mb-1 text-sm font-medium text-gray-700">Descripción<span className="text-red-500">*</span>}</label>
+                        <label htmlFor="descripcion" className="mb-1 text-sm font-medium text-gray-700">Descripción<span className="text-red-500">*</span></label>
                         <textarea id="descripcion" name="descripcion" value={formData.descripcion || ''} onChange={handleChange} required rows={2} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]" />
                     </div>
                     <div className="md:col-span-2">
@@ -196,7 +196,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                  <legend className="text-md font-bold px-2 text-black">Información del Pago</legend>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-2 items-end">
                     <div>
-                        <label htmlFor="tipoMoneda" className="mb-1 text-sm font-medium text-gray-700">Moneda<span className="text-red-500">*</span>}</label>
+                        <label htmlFor="tipoMoneda" className="mb-1 text-sm font-medium text-gray-700">Moneda<span className="text-red-500">*</span></label>
                         <select id="tipoMoneda" name="tipoMoneda" value={formData.tipoMoneda || 'Soles'} onChange={handleChange} required className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]">
                             <option value="Soles">Soles (S/)</option>
                             <option value="Dólares">Dólares ($)</option>

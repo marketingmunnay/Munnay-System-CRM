@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { User, Role, Address, EmergencyContact, JobPosition } from '../../types.ts';
 import { DocumentType } from '../../types.ts';
@@ -44,7 +45,8 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    // FIX: Ensure rolId is stored as a number to match the type definition.
+    setFormData(prev => ({ ...prev, [name]: name === 'rolId' ? Number(value) : value }));
   };
   
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,8 +222,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                             <select name="rolId" value={formData.rolId || ''} onChange={handleChange} required className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2">
-                                {/* FIX: Convert role.id to string for select option value */}
-                                {roles.map(role => <option key={role.id} value={String(role.id)}>{role.nombre}</option>)}
+                                {roles.map(role => <option key={role.id} value={role.id}>{role.nombre}</option>)}
                             </select>
                         </div>
                         <div>

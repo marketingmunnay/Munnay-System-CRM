@@ -27,17 +27,17 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
   }, [role, isOpen]);
 
   const groupedPages = useMemo(() => {
-    // FIX: Explicitly typing the accumulator for the `reduce` function by using a generic.
+    // FIX: Explicitly typing the initial value of reduce to correctly type the accumulator.
     // This ensures that TypeScript correctly infers the type of `groupedPages`
     // and resolves errors related to calling array methods on 'unknown' types.
-    return ALL_PAGES_CONFIG.reduce<Record<string, { id: Page; label: string; group: string }[]>>((acc, page) => {
+    return ALL_PAGES_CONFIG.reduce((acc, page) => {
         const group = page.group;
         if (!acc[group]) {
             acc[group] = [];
         }
         acc[group].push(page);
         return acc;
-    }, {});
+    }, {} as Record<string, { id: Page; label: string; group: string }[]>);
   }, []);
 
   useEffect(() => {
