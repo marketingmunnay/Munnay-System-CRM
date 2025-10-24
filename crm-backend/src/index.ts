@@ -1,5 +1,4 @@
-
-// FIX: Use combined import for Express types to resolve compilation errors
+// FIX: Separated default express import from type imports to resolve type errors.
 import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';

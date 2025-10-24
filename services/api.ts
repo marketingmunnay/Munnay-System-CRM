@@ -130,52 +130,134 @@ export const saveSeguidor = (seg: Seguidor): Promise<Seguidor> => {
 };
 export const deleteSeguidor = (segId: number): Promise<void> => apiRequest(`/seguidores/${segId}`, 'DELETE');
 
+// Ventas Extra
+export const getVentasExtra = (): Promise<VentaExtra[]> => apiRequest<VentaExtra[]>('/ventas-extra', 'GET');
+export const saveVentaExtra = (venta: VentaExtra): Promise<VentaExtra> => {
+    if (String(venta.id).length > 7) {
+        const { id, ...data } = venta;
+        return apiRequest<VentaExtra>('/ventas-extra', 'POST', data);
+    }
+    return apiRequest<VentaExtra>(`/ventas-extra/${venta.id}`, 'PUT', venta);
+};
+export const deleteVentaExtra = (ventaId: number): Promise<void> => apiRequest(`/ventas-extra/${ventaId}`, 'DELETE');
 
-export let getVentasExtra: () => Promise<VentaExtra[]> = async () => { console.warn("getVentasExtra not implemented"); return []; };
-export let saveVentaExtra: (venta: VentaExtra) => Promise<VentaExtra> = async (v) => { console.warn("saveVentaExtra not implemented"); return v; };
-export let deleteVentaExtra: (ventaId: number) => Promise<number> = async (id) => { console.warn("deleteVentaExtra not implemented"); return id; };
-export let getIncidencias: () => Promise<Incidencia[]> = async () => { console.warn("getIncidencias not implemented"); return []; };
-export let saveIncidencia: (incidencia: Incidencia) => Promise<Incidencia> = async (i) => { console.warn("saveIncidencia not implemented"); return i; };
-export let deleteIncidencia: (incidenciaId: number) => Promise<number> = async (id) => { console.warn("deleteIncidencia not implemented"); return id; };
-export let getProveedores: () => Promise<Proveedor[]> = async () => { console.warn("getProveedores not implemented"); return []; };
-export let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor> = async (p) => { console.warn("saveProveedor not implemented"); return p; };
-export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id) => { console.warn("deleteProveedor not implemented"); return id; };
-export let getTiposProveedor: () => Promise<TipoProveedor[]> = async () => { console.warn("getTiposProveedor not implemented"); return []; };
-export let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor> = async (t) => { console.warn("saveTipoProveedor not implemented"); return t; };
-// FIX: Add missing deleteTipoProveedor function export to resolve error in App.tsx
-export let deleteTipoProveedor: (id: number) => Promise<void> = async (id) => { console.warn("deleteTipoProveedor not implemented for id:", id); };
-export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
-export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
-export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };
-export let getBusinessInfo: () => Promise<BusinessInfo> = async () => { console.warn("getBusinessInfo not implemented"); return { nombre: 'Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: 'https://i.imgur.com/JmZt2eU.png', loginImageUrl: '' }; };
-export let saveBusinessInfo: (info: BusinessInfo) => Promise<BusinessInfo> = async (i) => { console.warn("saveBusinessInfo not implemented"); return i; };
-export let getClientSources: () => Promise<ClientSource[]> = async () => { console.warn("getClientSources not implemented"); return []; };
-export let saveClientSource: (source: ClientSource) => Promise<ClientSource> = async (s) => { console.warn("saveClientSource not implemented"); return s; };
-export let deleteClientSource: (id: number) => Promise<number> = async (id) => { console.warn("deleteClientSource not implemented"); return id; };
-export let getServices: () => Promise<Service[]> = async () => { console.warn("getServices not implemented"); return []; };
-export let saveService: (service: Service) => Promise<Service> = async (s) => { console.warn("saveService not implemented"); return s; };
-export let deleteService: (id: number) => Promise<number> = async (id) => { console.warn("deleteService not implemented"); return id; };
-export let getProducts: () => Promise<Product[]> = async () => { console.warn("getProducts not implemented"); return []; };
-export let saveProduct: (product: Product) => Promise<Product> = async (p) => { console.warn("saveProduct not implemented"); return p; };
-export let deleteProduct: (id: number) => Promise<number> = async (id) => { console.warn("deleteProduct not implemented"); return id; };
-export let getMemberships: () => Promise<Membership[]> = async () => { console.warn("getMemberships not implemented"); return []; };
-export let saveMembership: (membership: Membership) => Promise<Membership> = async (m) => { console.warn("saveMembership not implemented"); return m; };
-export let deleteMembership: (id: number) => Promise<number> = async (id) => { console.warn("deleteMembership not implemented"); return id; };
-export let getServiceCategories: () => Promise<ServiceCategory[]> = async () => { console.warn("getServiceCategories not implemented"); return []; };
-export let saveServiceCategory: (category: ServiceCategory) => Promise<ServiceCategory> = async (c) => { console.warn("saveServiceCategory not implemented"); return c; };
-export let deleteServiceCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteServiceCategory not implemented"); return id; };
-export let getProductCategories: () => Promise<ProductCategory[]> = async () => { console.warn("getProductCategories not implemented"); return []; };
-export let saveProductCategory: (category: ProductCategory) => Promise<ProductCategory> = async (c) => { console.warn("saveProductCategory not implemented"); return c; };
-export let deleteProductCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteProductCategory not implemented"); return id; };
-export let getEgresoCategories: () => Promise<EgresoCategory[]> = async () => { console.warn("getEgresoCategories not implemented"); return []; };
-export let saveEgresoCategory: (category: EgresoCategory) => Promise<EgresoCategory> = async (c) => { console.warn("saveEgresoCategory not implemented"); return c; };
-export let deleteEgresoCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteEgresoCategory not implemented"); return id; };
-export let getJobPositions: () => Promise<JobPosition[]> = async () => { console.warn("getJobPositions not implemented"); return []; };
-export let saveJobPosition: (position: JobPosition) => Promise<JobPosition> = async (p) => { console.warn("saveJobPosition not implemented"); return p; };
-export let deleteJobPosition: (id: number) => Promise<number> = async (id) => { console.warn("deleteJobPosition not implemented"); return id; };
-export let getGoals: () => Promise<Goal[]> = async () => { console.warn("getGoals not implemented"); return []; };
-export let saveGoal: (goal: Goal) => Promise<Goal> = async (g) => { console.warn("saveGoal not implemented"); return g; };
-export let deleteGoal: (goalId: number) => Promise<number> = async (id) => { console.warn("deleteGoal not implemented"); return id; };
+// Incidencias
+export const getIncidencias = (): Promise<Incidencia[]> => apiRequest<Incidencia[]>('/incidencias', 'GET');
+export const saveIncidencia = (incidencia: Incidencia): Promise<Incidencia> => {
+    if (String(incidencia.id).length > 7) {
+        const { id, ...data } = incidencia;
+        return apiRequest<Incidencia>('/incidencias', 'POST', data);
+    }
+    return apiRequest<Incidencia>(`/incidencias/${incidencia.id}`, 'PUT', incidencia);
+};
+export const deleteIncidencia = (incidenciaId: number): Promise<void> => apiRequest(`/incidencias/${incidenciaId}`, 'DELETE');
+
+// Proveedores
+export const getProveedores = (): Promise<Proveedor[]> => apiRequest<Proveedor[]>('/proveedores', 'GET');
+export const saveProveedor = (proveedor: Proveedor): Promise<Proveedor> => {
+    if (String(proveedor.id).length > 7) {
+        const { id, ...data } = proveedor;
+        return apiRequest<Proveedor>('/proveedores', 'POST', data);
+    }
+    return apiRequest<Proveedor>(`/proveedores/${proveedor.id}`, 'PUT', proveedor);
+};
+export const deleteProveedor = (proveedorId: number): Promise<void> => apiRequest(`/proveedores/${proveedorId}`, 'DELETE');
+
+// Tipos de Proveedor
+export const getTiposProveedor = (): Promise<TipoProveedor[]> => apiRequest<TipoProveedor[]>('/proveedores/tipos', 'GET');
+export const saveTipoProveedor = (tipo: TipoProveedor): Promise<TipoProveedor> => {
+    if (String(tipo.id).length > 7) {
+        const { id, ...data } = tipo;
+        return apiRequest<TipoProveedor>('/proveedores/tipos', 'POST', data);
+    }
+    return apiRequest<TipoProveedor>(`/proveedores/tipos/${tipo.id}`, 'PUT', tipo);
+};
+export const deleteTipoProveedor = (id: number): Promise<void> => apiRequest(`/proveedores/tipos/${id}`, 'DELETE');
+
+// Users
+export const getUsers = (): Promise<User[]> => apiRequest<User[]>('/users', 'GET');
+export const saveUser = (user: User): Promise<User> => {
+    if (String(user.id).length > 7) {
+        const { id, ...data } = user;
+        return apiRequest<User>('/users', 'POST', data);
+    }
+    return apiRequest<User>(`/users/${user.id}`, 'PUT', user);
+};
+export const deleteUser = (userId: number): Promise<void> => apiRequest(`/users/${userId}`, 'DELETE');
+
+
+// Generic Config Handlers
+const createConfigApi = <T extends { id: number, nombre?: string }>(endpoint: string) => ({
+    getAll: (): Promise<T[]> => apiRequest<T[]>(`/config/${endpoint}`, 'GET'),
+    save: (item: T): Promise<T> => {
+        if (String(item.id).length > 7) {
+            const { id, ...data } = item;
+            return apiRequest<T>(`/config/${endpoint}`, 'POST', data);
+        }
+        return apiRequest<T>(`/config/${endpoint}/${item.id}`, 'PUT', item);
+    },
+    delete: (id: number): Promise<void> => apiRequest(`/config/${endpoint}/${id}`, 'DELETE'),
+});
+
+const businessInfoApi = {
+    get: (): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'GET'),
+    save: (info: BusinessInfo): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'PUT', info),
+};
+
+
+export const getBusinessInfo = businessInfoApi.get;
+export const saveBusinessInfo = businessInfoApi.save;
+
+const clientSourceApi = createConfigApi<ClientSource>('client-sources');
+export const getClientSources = clientSourceApi.getAll;
+export const saveClientSource = clientSourceApi.save;
+export const deleteClientSource = clientSourceApi.delete;
+
+const serviceApi = createConfigApi<Service>('services');
+export const getServices = serviceApi.getAll;
+export const saveService = serviceApi.save;
+export const deleteService = serviceApi.delete;
+
+const productApi = createConfigApi<Product>('products');
+export const getProducts = productApi.getAll;
+export const saveProduct = productApi.save;
+export const deleteProduct = productApi.delete;
+
+const membershipApi = createConfigApi<Membership>('memberships');
+export const getMemberships = membershipApi.getAll;
+export const saveMembership = membershipApi.save;
+export const deleteMembership = membershipApi.delete;
+
+const serviceCategoryApi = createConfigApi<ServiceCategory>('service-categories');
+export const getServiceCategories = serviceCategoryApi.getAll;
+export const saveServiceCategory = serviceCategoryApi.save;
+export const deleteServiceCategory = serviceCategoryApi.delete;
+
+const productCategoryApi = createConfigApi<ProductCategory>('product-categories');
+export const getProductCategories = productCategoryApi.getAll;
+export const saveProductCategory = productCategoryApi.save;
+export const deleteProductCategory = productCategoryApi.delete;
+
+const egresoCategoryApi = createConfigApi<EgresoCategory>('egreso-categories');
+export const getEgresoCategories = egresoCategoryApi.getAll;
+export const saveEgresoCategory = egresoCategoryApi.save;
+export const deleteEgresoCategory = egresoCategoryApi.delete;
+
+const jobPositionApi = createConfigApi<JobPosition>('job-positions');
+export const getJobPositions = jobPositionApi.getAll;
+export const saveJobPosition = jobPositionApi.save;
+export const deleteJobPosition = jobPositionApi.delete;
+
+// Goals
+export const getGoals = (): Promise<Goal[]> => apiRequest<Goal[]>('/goals', 'GET');
+export const saveGoal = (goal: Goal): Promise<Goal> => {
+    if (String(goal.id).length > 7) {
+        const { id, ...data } = goal;
+        return apiRequest<Goal>('/goals', 'POST', data);
+    }
+    return apiRequest<Goal>(`/goals/${goal.id}`, 'PUT', goal);
+};
+export const deleteGoal = (goalId: number): Promise<void> => apiRequest(`/goals/${goalId}`, 'DELETE');
 
 
 // AI function is common for both environments

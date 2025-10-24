@@ -924,7 +924,6 @@ const SeguimientoTabContent: React.FC<{
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Procedimiento</label>
                                 <select value={currentSeguimiento.procedimientoId || ''} onChange={e => handleCurrentSeguimientoSelectChange('procedimientoId', e.target.value)} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2">
                                     <option value="">Seleccionar...</option>
-                                    {/* FIX: Use `nombreTratamiento` instead of non-existent `nombreProcedimiento`. */}
                                     {formData.procedimientos?.map(p => <option key={p.id} value={String(p.id)}>{p.nombreTratamiento} (Sesión {p.sesionNumero})</option>)}
                                 </select>
                              </div>

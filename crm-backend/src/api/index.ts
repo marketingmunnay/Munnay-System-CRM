@@ -5,6 +5,12 @@ import campaignsRouter from './campaigns.routes';
 import expensesRouter from './expenses.routes';
 import publicacionesRouter from './publicaciones.routes';
 import seguidoresRouter from './seguidores.routes';
+import ventasRouter from './ventas.routes';
+import incidenciasRouter from './incidencias.routes';
+import proveedoresRouter from './proveedores.routes';
+import usersRouter from './users.routes';
+import configRouter from './config.routes';
+import goalsRouter from './goals.routes';
 
 const router = Router();
 
@@ -14,7 +20,11 @@ router.use('/campaigns', campaignsRouter);
 router.use('/expenses', expensesRouter);
 router.use('/publicaciones', publicacionesRouter);
 router.use('/seguidores', seguidoresRouter);
-// router.use('/users', usersRouter);
-// ... etc
+router.use('/ventas-extra', ventasRouter);
+router.use('/incidencias', incidenciasRouter);
+router.use('/proveedores', proveedoresRouter);
+router.use('/users', usersRouter);
+router.use('/config', configRouter);
+router.use('/goals', goalsRouter);
 
 export default router;
