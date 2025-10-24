@@ -1,5 +1,5 @@
-
-import { Request, Response } from 'express';
+// FIX: Change to type-only import to fix Express type resolution issues
+import type { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
 export const getRoles = async (req: Request, res: Response) => {

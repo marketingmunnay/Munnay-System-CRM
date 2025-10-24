@@ -1,8 +1,7 @@
+// FIX: Use named import for PrismaClient for correct type resolution
+import { PrismaClient } from '@prisma/client';
 
-import * as Prisma from '@prisma/client';
-
-// Using namespace import as a workaround for potential module resolution issues.
 // Ensure `npx prisma generate` has been run.
-const prisma = new Prisma.PrismaClient();
+const prisma = new PrismaClient();
 
 export default prisma;

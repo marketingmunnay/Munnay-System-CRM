@@ -130,6 +130,8 @@ export let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor> = async (
 export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id) => { console.warn("deleteProveedor not implemented"); return id; };
 export let getTiposProveedor: () => Promise<TipoProveedor[]> = async () => { console.warn("getTiposProveedor not implemented"); return []; };
 export let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor> = async (t) => { console.warn("saveTipoProveedor not implemented"); return t; };
+// FIX: Add missing deleteTipoProveedor function export to resolve error in App.tsx
+export let deleteTipoProveedor: (id: number) => Promise<void> = async (id) => { console.warn("deleteTipoProveedor not implemented"); };
 export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
 export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
 export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };
