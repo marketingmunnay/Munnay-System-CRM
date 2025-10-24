@@ -6,223 +6,115 @@ import type {
     TipoProveedor,
     Goal
 } from '../types.ts';
-import { LeadStatus, Seller, MetodoPago } from '../types';
 
-// This simple check allows us to use mock data, which is necessary for the demo to work on Vercel.
-const isDevelopment = (typeof import.meta.env !== 'undefined' && import.meta.env.DEV) || 
-                      (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname));
+const API_URL = 'http://localhost:4000/api';
 
-
-// Declare functions that will be defined below
-let getLeads: () => Promise<Lead[]>;
-let saveLead: (lead: Lead) => Promise<Lead>;
-let deleteLead: (leadId: number) => Promise<{ id: number }>;
-let getCampaigns: () => Promise<Campaign[]>;
-let saveCampaign: (campaign: Campaign) => Promise<Campaign>;
-let deleteCampaign: (campaignId: number) => Promise<number>;
-let getMetaCampaigns: () => Promise<MetaCampaign[]>;
-let saveMetaCampaign: (campaign: MetaCampaign) => Promise<MetaCampaign>;
-let deleteMetaCampaign: (campaignId: number) => Promise<number>;
-let getPublicaciones: () => Promise<Publicacion[]>;
-let savePublicacion: (pub: Publicacion) => Promise<Publicacion>;
-let deletePublicacion: (pubId: number) => Promise<number>;
-let getSeguidores: () => Promise<Seguidor[]>;
-let saveSeguidor: (seg: Seguidor) => Promise<Seguidor>;
-let deleteSeguidor: (segId: number) => Promise<number>;
-let getVentasExtra: () => Promise<VentaExtra[]>;
-let saveVentaExtra: (venta: VentaExtra) => Promise<VentaExtra>;
-let deleteVentaExtra: (ventaId: number) => Promise<number>;
-let getIncidencias: () => Promise<Incidencia[]>;
-let saveIncidencia: (incidencia: Incidencia) => Promise<Incidencia>;
-let deleteIncidencia: (incidenciaId: number) => Promise<number>;
-let getEgresos: () => Promise<Egreso[]>;
-let saveEgreso: (egreso: Egreso) => Promise<Egreso>;
-let deleteEgreso: (egresoId: number) => Promise<number>;
-let getProveedores: () => Promise<Proveedor[]>;
-let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor>;
-let deleteProveedor: (proveedorId: number) => Promise<number>;
-let getTiposProveedor: () => Promise<TipoProveedor[]>;
-let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor>;
-let deleteTipoProveedor: (id: number) => Promise<number>;
-let getUsers: () => Promise<User[]>;
-let saveUser: (user: User) => Promise<User>;
-let deleteUser: (userId: number) => Promise<number>;
-let getRoles: () => Promise<Role[]>;
-let saveRole: (role: Role) => Promise<Role>;
-let deleteRole: (roleId: number) => Promise<number>;
-let getBusinessInfo: () => Promise<BusinessInfo>;
-let saveBusinessInfo: (info: BusinessInfo) => Promise<BusinessInfo>;
-let getClientSources: () => Promise<ClientSource[]>;
-let saveClientSource: (source: ClientSource) => Promise<ClientSource>;
-let deleteClientSource: (id: number) => Promise<number>;
-let getServices: () => Promise<Service[]>;
-let saveService: (service: Service) => Promise<Service>;
-let deleteService: (id: number) => Promise<number>;
-let getProducts: () => Promise<Product[]>;
-let saveProduct: (product: Product) => Promise<Product>;
-let deleteProduct: (id: number) => Promise<number>;
-let getMemberships: () => Promise<Membership[]>;
-let saveMembership: (membership: Membership) => Promise<Membership>;
-let deleteMembership: (id: number) => Promise<number>;
-let getServiceCategories: () => Promise<ServiceCategory[]>;
-let saveServiceCategory: (category: ServiceCategory) => Promise<ServiceCategory>;
-let deleteServiceCategory: (id: number) => Promise<number>;
-let getProductCategories: () => Promise<ProductCategory[]>;
-let saveProductCategory: (category: ProductCategory) => Promise<ProductCategory>;
-let deleteProductCategory: (id: number) => Promise<number>;
-let getEgresoCategories: () => Promise<EgresoCategory[]>;
-let saveEgresoCategory: (category: EgresoCategory) => Promise<EgresoCategory>;
-let deleteEgresoCategory: (id: number) => Promise<number>;
-let getJobPositions: () => Promise<JobPosition[]>;
-let saveJobPosition: (position: JobPosition) => Promise<JobPosition>;
-let deleteJobPosition: (id: number) => Promise<number>;
-let getGoals: () => Promise<Goal[]>;
-let saveGoal: (goal: Goal) => Promise<Goal>;
-let deleteGoal: (goalId: number) => Promise<number>;
-
-// --- MOCK API IMPLEMENTATION ---
-// This will be used for both development and production to ensure the app works on Vercel.
-
-console.log("Using mock API for all data sources.");
-
-const mockApiCall = <T>(data: T): Promise<T> => new Promise(resolve => setTimeout(() => resolve(data), 100));
-
-// MOCK DATABASES
-let leadsDB: Lead[] = [
-    { id: 1, fechaLead: '2023-11-01', nombres: 'Ana (Mock)', apellidos: 'García', numero: '987654321', sexo: 'F', redSocial: 'Instagram', anuncio: 'Promo Noviembre', vendedor: Seller.Vanesa, estado: LeadStatus.Nuevo, montoPagado: 0, servicios: ['Limpieza Facial'], categoria: 'Faciales', registrosLlamada: [] },
-    { id: 2, fechaLead: '2023-11-02', nombres: 'Luis (Mock)', apellidos: 'Martinez', numero: '912345678', sexo: 'M', redSocial: 'Facebook', anuncio: 'Campaña Skincare', vendedor: Seller.Liz, estado: LeadStatus.Agendado, montoPagado: 50, metodoPago: MetodoPago.Yape, fechaHoraAgenda: '2023-11-05T10:00:00', servicios: ['Evaluación'], categoria: 'Evaluaciones', nHistoria: 'H-MOCK-123' }
-];
-let rolesDB: Role[] = [
-    {
-        id: 1,
-        nombre: 'Administrador',
-        permissions: ['dashboard', 'calendario', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores', 'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias', 'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra', 'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos', 'rrhh-perfiles', 'informes', 'configuracion'],
-        dashboardMetrics: ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh']
-    },
-    {
-        id: 2,
-        nombre: 'Marketing',
-        permissions: ['dashboard', 'marketing-campanas', 'marketing-leads', 'redes-sociales-publicaciones', 'redes-sociales-seguidores'],
-        dashboardMetrics: ['marketing']
+const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {
+    const options: RequestInit = {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+    if (body) {
+        options.body = JSON.stringify(body);
     }
-];
-let usersDB: User[] = [
-    {
-        id: 1,
-        nombres: 'Admin',
-        apellidos: 'Munnay',
-        usuario: 'admin',
-        password: '123',
-        rolId: 1,
-        avatarUrl: 'https://picsum.photos/id/1005/100/100',
-        position: 'Gerente General'
-    },
-    {
-        id: 2,
-        nombres: 'Vanesa',
-        apellidos: 'Marketing',
-        usuario: 'vanesa',
-        rolId: 2,
-        avatarUrl: 'https://picsum.photos/id/1027/100/100',
-        position: 'Jefa de Marketing'
+
+    const response = await fetch(`${API_URL}${endpoint}`, options);
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorData.message || 'Error en la petición a la API');
     }
-];
+    
+    if (response.status === 204) { // No Content
+        return {} as T;
+    }
 
-// Assign mock implementations to all functions
-getLeads = () => mockApiCall([...leadsDB]);
-saveLead = async (lead: Lead) => {
-    const index = leadsDB.findIndex(l => l.id === lead.id);
-    if (index > -1) { leadsDB[index] = lead; } else { leadsDB.unshift({ ...lead, id: lead.id || Date.now() }); }
-    return mockApiCall(lead);
-};
-deleteLead = async (leadId: number) => {
-    leadsDB = leadsDB.filter(l => l.id !== leadId);
-    return mockApiCall({ id: leadId });
+    return response.json();
 };
 
-getUsers = () => mockApiCall([...usersDB]);
-saveUser = async (user: User) => {
-    const index = usersDB.findIndex(u => u.id === user.id);
-    if (index > -1) { usersDB[index] = user; } else { usersDB.push({ ...user, id: user.id || Date.now() }); }
-    return mockApiCall(user);
-};
-deleteUser = async (userId: number) => {
-    usersDB = usersDB.filter(u => u.id !== userId);
-    return mockApiCall(userId);
+
+// --- LIVE API IMPLEMENTATION ---
+
+// Leads
+export const getLeads = (): Promise<Lead[]> => apiRequest<Lead[]>('/leads', 'GET');
+
+export const saveLead = (lead: Lead): Promise<Lead> => {
+    // A simple check to see if it's a new lead with a temporary frontend ID
+    if (String(lead.id).length > 7) { 
+        const { id, ...leadToCreate } = lead;
+        return apiRequest<Lead>('/leads', 'POST', leadToCreate);
+    }
+    return apiRequest<Lead>(`/leads/${lead.id}`, 'PUT', lead);
 };
 
-getRoles = () => mockApiCall([...rolesDB]);
-saveRole = async (role: Role) => {
-    const index = rolesDB.findIndex(r => r.id === role.id);
-    if (index > -1) { rolesDB[index] = role; } else { rolesDB.push({ ...role, id: role.id || Date.now() }); }
-    return mockApiCall(role);
-};
-deleteRole = async (roleId: number) => {
-    rolesDB = rolesDB.filter(r => r.id !== roleId);
-    return mockApiCall(roleId);
-};
+export const deleteLead = (leadId: number): Promise<void> => apiRequest(`/leads/${leadId}`, 'DELETE');
 
-// --- Fallback for all other functions ---
-getCampaigns = () => mockApiCall([]);
-saveCampaign = (campaign: Campaign) => mockApiCall(campaign);
-deleteCampaign = (campaignId: number) => mockApiCall(campaignId);
-getMetaCampaigns = () => mockApiCall([]);
-saveMetaCampaign = (campaign: MetaCampaign) => mockApiCall(campaign);
-deleteMetaCampaign = (campaignId: number) => mockApiCall(campaignId);
-getPublicaciones = () => mockApiCall([]);
-savePublicacion = (pub: Publicacion) => mockApiCall(pub);
-deletePublicacion = (pubId: number) => mockApiCall(pubId);
-getSeguidores = () => mockApiCall([]);
-saveSeguidor = (seg: Seguidor) => mockApiCall(seg);
-deleteSeguidor = (segId: number) => mockApiCall(segId);
-getVentasExtra = () => mockApiCall([]);
-saveVentaExtra = (venta: VentaExtra) => mockApiCall(venta);
-deleteVentaExtra = (ventaId: number) => mockApiCall(ventaId);
-getIncidencias = () => mockApiCall([]);
-saveIncidencia = (incidencia: Incidencia) => mockApiCall(incidencia);
-deleteIncidencia = (incidenciaId: number) => mockApiCall(incidenciaId);
-getEgresos = () => mockApiCall([]);
-saveEgreso = (egreso: Egreso) => mockApiCall(egreso);
-deleteEgreso = (egresoId: number) => mockApiCall(egresoId);
-getProveedores = () => mockApiCall([]);
-saveProveedor = (proveedor: Proveedor) => mockApiCall(proveedor);
-deleteProveedor = (proveedorId: number) => mockApiCall(proveedorId);
-getTiposProveedor = () => mockApiCall([]);
-saveTipoProveedor = (tipo: TipoProveedor) => mockApiCall(tipo);
-deleteTipoProveedor = (id: number) => mockApiCall(id);
-getBusinessInfo = () => mockApiCall({
-    nombre: 'Munnay', ruc: '12345678901', direccion: 'Av. Principal 123, Miraflores, Lima',
-    telefono: '01-555-1234', email: 'contacto@munnay.pe', logoUrl: 'https://i.imgur.com/JmZt2eU.png',
-    loginImageUrl: 'https://images.unsplash.com/photo-1473170611423-22489201d961?auto=format&fit=crop&q=80&w=2070',
-});
-saveBusinessInfo = (info: BusinessInfo) => mockApiCall(info);
-getClientSources = () => mockApiCall([]);
-saveClientSource = (source: ClientSource) => mockApiCall(source);
-deleteClientSource = (id: number) => mockApiCall(id);
-getServices = () => mockApiCall([]);
-saveService = (service: Service) => mockApiCall(service);
-deleteService = (id: number) => mockApiCall(id);
-getProducts = () => mockApiCall([]);
-saveProduct = (product: Product) => mockApiCall(product);
-deleteProduct = (id: number) => mockApiCall(id);
-getMemberships = () => mockApiCall([]);
-saveMembership = (membership: Membership) => mockApiCall(membership);
-deleteMembership = (id: number) => mockApiCall(id);
-getServiceCategories = () => mockApiCall([]);
-saveServiceCategory = (category: ServiceCategory) => mockApiCall(category);
-deleteServiceCategory = (id: number) => mockApiCall(id);
-getProductCategories = () => mockApiCall([]);
-saveProductCategory = (category: ProductCategory) => mockApiCall(category);
-deleteProductCategory = (id: number) => mockApiCall(id);
-getEgresoCategories = () => mockApiCall([]);
-saveEgresoCategory = (category: EgresoCategory) => mockApiCall(category);
-deleteEgresoCategory = (id: number) => mockApiCall(id);
-getJobPositions = () => mockApiCall([]);
-saveJobPosition = (position: JobPosition) => mockApiCall(position);
-deleteJobPosition = (id: number) => mockApiCall(id);
-getGoals = () => mockApiCall([]);
-saveGoal = (goal: Goal) => mockApiCall(goal);
-deleteGoal = (goalId: number) => mockApiCall(goalId);
+
+// Campaigns
+export let getCampaigns: () => Promise<Campaign[]> = async () => { console.warn("getCampaigns not implemented"); return []; };
+export let saveCampaign: (campaign: Campaign) => Promise<Campaign> = async (c) => { console.warn("saveCampaign not implemented"); return c; };
+export let deleteCampaign: (campaignId: number) => Promise<number> = async (id) => { console.warn("deleteCampaign not implemented"); return id; };
+export let getMetaCampaigns: () => Promise<MetaCampaign[]> = async () => { console.warn("getMetaCampaigns not implemented"); return []; };
+export let saveMetaCampaign: (campaign: MetaCampaign) => Promise<MetaCampaign> = async (c) => { console.warn("saveMetaCampaign not implemented"); return c; };
+export let deleteMetaCampaign: (campaignId: number) => Promise<number> = async (id) => { console.warn("deleteMetaCampaign not implemented"); return id; };
+export let getPublicaciones: () => Promise<Publicacion[]> = async () => { console.warn("getPublicaciones not implemented"); return []; };
+export let savePublicacion: (pub: Publicacion) => Promise<Publicacion> = async (p) => { console.warn("savePublicacion not implemented"); return p; };
+export let deletePublicacion: (pubId: number) => Promise<number> = async (id) => { console.warn("deletePublicacion not implemented"); return id; };
+export let getSeguidores: () => Promise<Seguidor[]> = async () => { console.warn("getSeguidores not implemented"); return []; };
+export let saveSeguidor: (seg: Seguidor) => Promise<Seguidor> = async (s) => { console.warn("saveSeguidor not implemented"); return s; };
+export let deleteSeguidor: (segId: number) => Promise<number> = async (id) => { console.warn("deleteSeguidor not implemented"); return id; };
+export let getVentasExtra: () => Promise<VentaExtra[]> = async () => { console.warn("getVentasExtra not implemented"); return []; };
+export let saveVentaExtra: (venta: VentaExtra) => Promise<VentaExtra> = async (v) => { console.warn("saveVentaExtra not implemented"); return v; };
+export let deleteVentaExtra: (ventaId: number) => Promise<number> = async (id) => { console.warn("deleteVentaExtra not implemented"); return id; };
+export let getIncidencias: () => Promise<Incidencia[]> = async () => { console.warn("getIncidencias not implemented"); return []; };
+export let saveIncidencia: (incidencia: Incidencia) => Promise<Incidencia> = async (i) => { console.warn("saveIncidencia not implemented"); return i; };
+export let deleteIncidencia: (incidenciaId: number) => Promise<number> = async (id) => { console.warn("deleteIncidencia not implemented"); return id; };
+export let getEgresos: () => Promise<Egreso[]> = async () => { console.warn("getEgresos not implemented"); return []; };
+export let saveEgreso: (egreso: Egreso) => Promise<Egreso> = async (e) => { console.warn("saveEgreso not implemented"); return e; };
+export let deleteEgreso: (egresoId: number) => Promise<number> = async (id) => { console.warn("deleteEgreso not implemented"); return id; };
+export let getProveedores: () => Promise<Proveedor[]> = async () => { console.warn("getProveedores not implemented"); return []; };
+export let saveProveedor: (proveedor: Proveedor) => Promise<Proveedor> = async (p) => { console.warn("saveProveedor not implemented"); return p; };
+export let deleteProveedor: (proveedorId: number) => Promise<number> = async (id) => { console.warn("deleteProveedor not implemented"); return id; };
+export let getTiposProveedor: () => Promise<TipoProveedor[]> = async () => { console.warn("getTiposProveedor not implemented"); return []; };
+export let saveTipoProveedor: (tipo: TipoProveedor) => Promise<TipoProveedor> = async (t) => { console.warn("saveTipoProveedor not implemented"); return t; };
+export let deleteTipoProveedor: (id: number) => Promise<number> = async (id) => { console.warn("deleteTipoProveedor not implemented"); return id; };
+export let getUsers: () => Promise<User[]> = async () => { console.warn("getUsers not implemented"); return []; };
+export let saveUser: (user: User) => Promise<User> = async (u) => { console.warn("saveUser not implemented"); return u; };
+export let deleteUser: (userId: number) => Promise<number> = async (id) => { console.warn("deleteUser not implemented"); return id; };
+export let getRoles: () => Promise<Role[]> = async () => { console.warn("getRoles not implemented"); return []; };
+export let saveRole: (role: Role) => Promise<Role> = async (r) => { console.warn("saveRole not implemented"); return r; };
+export let deleteRole: (roleId: number) => Promise<number> = async (id) => { console.warn("deleteRole not implemented"); return id; };
+export let getBusinessInfo: () => Promise<BusinessInfo> = async () => { console.warn("getBusinessInfo not implemented"); return { nombre: 'Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: 'https://i.imgur.com/JmZt2eU.png', loginImageUrl: '' }; };
+export let saveBusinessInfo: (info: BusinessInfo) => Promise<BusinessInfo> = async (i) => { console.warn("saveBusinessInfo not implemented"); return i; };
+export let getClientSources: () => Promise<ClientSource[]> = async () => { console.warn("getClientSources not implemented"); return []; };
+export let saveClientSource: (source: ClientSource) => Promise<ClientSource> = async (s) => { console.warn("saveClientSource not implemented"); return s; };
+export let deleteClientSource: (id: number) => Promise<number> = async (id) => { console.warn("deleteClientSource not implemented"); return id; };
+export let getServices: () => Promise<Service[]> = async () => { console.warn("getServices not implemented"); return []; };
+export let saveService: (service: Service) => Promise<Service> = async (s) => { console.warn("saveService not implemented"); return s; };
+export let deleteService: (id: number) => Promise<number> = async (id) => { console.warn("deleteService not implemented"); return id; };
+export let getProducts: () => Promise<Product[]> = async () => { console.warn("getProducts not implemented"); return []; };
+export let saveProduct: (product: Product) => Promise<Product> = async (p) => { console.warn("saveProduct not implemented"); return p; };
+export let deleteProduct: (id: number) => Promise<number> = async (id) => { console.warn("deleteProduct not implemented"); return id; };
+export let getMemberships: () => Promise<Membership[]> = async () => { console.warn("getMemberships not implemented"); return []; };
+export let saveMembership: (membership: Membership) => Promise<Membership> = async (m) => { console.warn("saveMembership not implemented"); return m; };
+export let deleteMembership: (id: number) => Promise<number> = async (id) => { console.warn("deleteMembership not implemented"); return id; };
+export let getServiceCategories: () => Promise<ServiceCategory[]> = async () => { console.warn("getServiceCategories not implemented"); return []; };
+export let saveServiceCategory: (category: ServiceCategory) => Promise<ServiceCategory> = async (c) => { console.warn("saveServiceCategory not implemented"); return c; };
+export let deleteServiceCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteServiceCategory not implemented"); return id; };
+export let getProductCategories: () => Promise<ProductCategory[]> = async () => { console.warn("getProductCategories not implemented"); return []; };
+export let saveProductCategory: (category: ProductCategory) => Promise<ProductCategory> = async (c) => { console.warn("saveProductCategory not implemented"); return c; };
+export let deleteProductCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteProductCategory not implemented"); return id; };
+export let getEgresoCategories: () => Promise<EgresoCategory[]> = async () => { console.warn("getEgresoCategories not implemented"); return []; };
+export let saveEgresoCategory: (category: EgresoCategory) => Promise<EgresoCategory> = async (c) => { console.warn("saveEgresoCategory not implemented"); return c; };
+export let deleteEgresoCategory: (id: number) => Promise<number> = async (id) => { console.warn("deleteEgresoCategory not implemented"); return id; };
+export let getJobPositions: () => Promise<JobPosition[]> = async () => { console.warn("getJobPositions not implemented"); return []; };
+export let saveJobPosition: (position: JobPosition) => Promise<JobPosition> = async (p) => { console.warn("saveJobPosition not implemented"); return p; };
+export let deleteJobPosition: (id: number) => Promise<number> = async (id) => { console.warn("deleteJobPosition not implemented"); return id; };
+export let getGoals: () => Promise<Goal[]> = async () => { console.warn("getGoals not implemented"); return []; };
+export let saveGoal: (goal: Goal) => Promise<Goal> = async (g) => { console.warn("saveGoal not implemented"); return g; };
+export let deleteGoal: (goalId: number) => Promise<number> = async (id) => { console.warn("deleteGoal not implemented"); return id; };
 
 
 // AI function is common for both environments
@@ -243,20 +135,4 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
         console.error("Error al generar contenido con IA:", error);
         return "Error al conectar con el servicio de IA. Por favor, intente de nuevo más tarde.";
     }
-};
-
-// Export all functions
-export {
-    getLeads, saveLead, deleteLead, getCampaigns, saveCampaign, deleteCampaign, getMetaCampaigns,
-    saveMetaCampaign, deleteMetaCampaign, getPublicaciones, savePublicacion, deletePublicacion,
-    getSeguidores, saveSeguidor, deleteSeguidor, getVentasExtra, saveVentaExtra, deleteVentaExtra,
-    getIncidencias, saveIncidencia, deleteIncidencia, getEgresos, saveEgreso, deleteEgreso,
-    getProveedores, saveProveedor, deleteProveedor, getTiposProveedor, saveTipoProveedor,
-    deleteTipoProveedor, getUsers, saveUser, deleteUser, getRoles, saveRole, deleteRole,
-    getBusinessInfo, saveBusinessInfo, getClientSources, saveClientSource, deleteClientSource,
-    getServices, saveService, deleteService, getProducts, saveProduct, deleteProduct, getMemberships,
-    saveMembership, deleteMembership, getServiceCategories, saveServiceCategory, deleteServiceCategory,
-    getProductCategories, saveProductCategory, deleteProductCategory, getEgresoCategories,
-    saveEgresoCategory, deleteEgresoCategory, getJobPositions, saveJobPosition, deleteJobPosition,
-    getGoals, saveGoal, deleteGoal
 };
