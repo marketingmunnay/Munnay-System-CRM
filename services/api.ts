@@ -18,7 +18,7 @@ import type {
 // const API_URL = 'https://mi-crm-backend.vercel.app/api'; // <--- ASÍ DEBERÍA QUEDAR
 //
 // Mientras tanto, se mantiene 'localhost' para que las pruebas locales sigan funcionando.
-const API_URL = 'http://localhost:4000/api';
+const API_URL = 'https://mcc.munnaymedicinaestetica.com/api'; // <--- ¡ACTUALIZADO A TU SUBDOMINIO!
 
 
 const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {

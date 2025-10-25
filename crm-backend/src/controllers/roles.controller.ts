@@ -1,7 +1,7 @@
-import express from 'express'; // FIX: Use named import for express
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getRoles = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getRoles = async (req: express.Request, res: express.Response) => {
   try {
     const roles = await prisma.role.findMany();
     res.status(200).json(roles);
@@ -10,7 +10,7 @@ export const getRoles = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const getRoleById = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getRoleById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const role = await prisma.role.findUnique({ where: { id: parseInt(id) } });
@@ -23,7 +23,7 @@ export const getRoleById = async (req: express.Request, res: express.Response) =
   }
 };
 
-export const createRole = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const createRole = async (req: express.Request, res: express.Response) => {
   const { id, ...roleData } = req.body;
   try {
     const newRole = await prisma.role.create({
@@ -35,7 +35,7 @@ export const createRole = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const updateRole = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const updateRole = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { ...roleData } = req.body;
   try {
@@ -49,7 +49,7 @@ export const updateRole = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const deleteRole = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const deleteRole = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.role.delete({

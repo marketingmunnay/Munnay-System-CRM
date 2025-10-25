@@ -1,7 +1,7 @@
-import express from 'express'; // FIX: Use named import for express
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getLeads = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getLeads = async (req: express.Request, res: express.Response) => {
   try {
     const leads = await prisma.lead.findMany({
       orderBy: {
@@ -24,7 +24,7 @@ export const getLeads = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const getLeadById = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getLeadById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const lead = await prisma.lead.findUnique({
@@ -49,7 +49,7 @@ export const getLeadById = async (req: express.Request, res: express.Response) =
   }
 };
 
-export const createLead = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const createLead = async (req: express.Request, res: express.Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
@@ -78,7 +78,7 @@ export const createLead = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const updateLead = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const updateLead = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { 
     createdAt, updatedAt, 
@@ -120,7 +120,7 @@ export const updateLead = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const deleteLead = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const deleteLead = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.

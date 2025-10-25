@@ -1,7 +1,7 @@
-import express from 'express'; // FIX: Use named import for express
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getExpenses = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getExpenses = async (req: express.Request, res: express.Response) => {
   try {
     const expenses = await prisma.egreso.findMany();
     res.status(200).json(expenses);
@@ -10,7 +10,7 @@ export const getExpenses = async (req: express.Request, res: express.Response) =
   }
 };
 
-export const getExpenseById = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const getExpenseById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const expense = await prisma.egreso.findUnique({ where: { id: parseInt(id) } });
@@ -21,7 +21,7 @@ export const getExpenseById = async (req: express.Request, res: express.Response
   }
 };
 
-export const createExpense = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const createExpense = async (req: express.Request, res: express.Response) => {
   const { id, fechaRegistro, fechaPago, ...data } = req.body;
   try {
     const newExpense = await prisma.egreso.create({
@@ -37,7 +37,7 @@ export const createExpense = async (req: express.Request, res: express.Response)
   }
 };
 
-export const updateExpense = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const updateExpense = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fechaRegistro, fechaPago, ...data } = req.body;
   try {
@@ -55,7 +55,7 @@ export const updateExpense = async (req: express.Request, res: express.Response)
   }
 };
 
-export const deleteExpense = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
+export const deleteExpense = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.egreso.delete({ where: { id: parseInt(id) } });
