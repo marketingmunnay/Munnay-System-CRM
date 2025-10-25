@@ -26,4 +26,16 @@
     "typescript": "^5.5.2",
     "vite": "^5.3.1"
   }
+  {
+  "name": "crm-backend",
+  "version": "1.0.0",
+  // ... otras propiedades
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prisma:seed": "ts-node prisma/seed.ts" // Asegúrate de que esta línea exista
+  },
+  // ... dependencias
+
 }
