@@ -3,6 +3,8 @@ import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
+// FIX: Changed to named import for LeadFormModal
+import { LeadFormModal } from './components/marketing/LeadFormModal';
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
 import PublicacionesPage from './components/redes-sociales/PublicacionesPage';
@@ -11,7 +13,8 @@ import AgendadosPage from './components/recepcion/AgendadosPage';
 import VentasExtraPage from './components/recepcion/VentasExtraPage';
 import IncidenciasPage from './components/recepcion/IncidenciasPage';
 import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage';
-import AtencionesDiariasPage from './components/procedimientos/AtencionesDiariasPage';
+// FIX: Changed to named import for AtencionesDiariasPage
+import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
 import CalendarPage from './components/calendario/CalendarPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
@@ -170,6 +173,7 @@ const App: React.FC = () => {
     const handleDeleteTipoProveedor = async (id: number) => { await api.deleteTipoProveedor(id); await loadData(); };
     const handleSaveUser = async (user: User) => { await api.saveUser(user); await loadData(); };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
+    // FIX: Add handlers for `roles`.
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
     // FIX: Add handlers for `comprobantes`.

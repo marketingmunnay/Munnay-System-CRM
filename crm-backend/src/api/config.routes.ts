@@ -29,7 +29,7 @@ router.delete('/products/:id', controller.deleteProduct);
 router.get('/memberships', controller.getMemberships);
 router.post('/memberships', controller.createMembership);
 router.put('/memberships/:id', controller.updateMembership);
-router.delete('/memberships/:id', controller.deleteMembership);
+router.delete('/memberships/:id', controller.deleteMemberships);
 
 // Service Categories
 router.get('/service-categories', controller.getServiceCategories);

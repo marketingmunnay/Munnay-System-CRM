@@ -1137,7 +1137,7 @@ const FacturacionTabContent: React.FC<{
 }
 
 
-const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, onDelete, lead, metaCampaigns, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+export const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, onDelete, lead, metaCampaigns, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [activeTab, setActiveTab] = useState('marketing');
   const [serviceOptions, setServiceOptions] = useState<string[]>([]);
@@ -1172,6 +1172,7 @@ const LeadFormModal: React.FC<LeadFormModalProps> = ({ isOpen, onClose, onSave, 
                 vendedor: Seller.Vanesa,
                 servicios: [],
                 categoria: '',
+                anuncio: '',
                 documentType: DocumentType.DNI, // Default for new leads
               };
         setFormData(initialData);
@@ -1420,7 +1421,7 @@ const copyToClipboard = () => {
       if (type === 'date' || type === 'datetime-local' || type === 'time') {
         return (
             <div className="flex flex-col">
-                <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>
+                <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}{errors[name] && <span className="text-red-500 text-xs ml-1">{errors[name]}</span>}</label>
                 <input
                     type={type}
                     id={name}
@@ -1430,303 +1431,273 @@ const copyToClipboard = () => {
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                     style={{ colorScheme: 'light' }}
                 />
-                {errors[name] && <p className="mt-1 text-xs text-red-600">{errors[name]}</p>}
             </div>
         );
+      } else if (type === 'textarea') {
+          return (
+              <div className="flex flex-col">
+                <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}{errors[name] && <span className="text-red-500 text-xs ml-1">{errors[name]}</span>}</label>
+                <textarea
+                    id={name}
+                    name={name}
+                    value={String(formData[name] ?? '')}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                />
+              </div>
+          );
       }
 
       return (
-         <div className="flex flex-col">
-            <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>
+        <div className="flex flex-col">
+            <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}{errors[name] && <span className="text-red-500 text-xs ml-1">{errors[name]}</span>}</label>
             {type === 'select' ? (
-              <select id={name} name={name} value={formData[name] as string || ''} onChange={handleChange} className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]">
-                 {['metodoPago', 'categoria', 'redSocial', 'anuncio', 'documentType'].includes(name) && <option value="">Seleccionar...</option>}
-                {options?.map(opt => typeof opt === 'string' ? <option key={opt} value={opt}>{opt}</option> : <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
+                <select
+                    id={name}
+                    name={name}
+                    value={String(formData[name] ?? '')}
+                    onChange={handleChange}
+                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                >
+                    <option value="">Seleccionar...</option>
+                    {options?.map(opt => (
+                        typeof opt === 'string' ? <option key={opt} value={opt}>{opt}</option> : <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
             ) : (
-              <input type={type} id={name} name={name} {...phoneProps} onChange={handleChange} className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]" />
+                <input
+                    type={type}
+                    id={name}
+                    name={name}
+                    {...phoneProps}
+                    onChange={handleChange}
+                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                />
             )}
-             {errors[name] && <p className="mt-1 text-xs text-red-600">{errors[name]}</p>}
-          </div>
-      );
-  }
-  
-  const tabs = [
-      { id: 'marketing', label: 'Ficha de Paciente', icon: <GoogleIcon name="person" className="text-lg" /> },
-      { id: 'recepcion', label: 'Recepción', icon: <GoogleIcon name="event" className="text-lg" /> },
-      { id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-lg" /> },
-      { id: 'seguimiento', label: 'Seguimiento', icon: <GoogleIcon name="follow_the_signs" className="text-lg" /> },
-      { id: 'facturacion', label: 'Facturación', icon: <GoogleIcon name="receipt" className="text-lg" /> },
-  ];
-
-  const totales = useMemo(() => {
-    const treatments = formData.tratamientos || [];
-    const precio = treatments.reduce((sum, t) => sum + t.precio, 0);
-    const pagado = treatments.reduce((sum, t) => sum + t.montoPagado, 0);
-    const deuda = precio - pagado;
-    return { precio, pagado, deuda };
-}, [formData.tratamientos]);
+        </div>
+    );
+  };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={lead ? `Ficha del Paciente: ${lead.nombres} ${lead.apellidos}` : 'Añadir Nuevo Lead'}
+      title={lead ? 'Editar Lead' : 'Registrar Nuevo Lead'}
       maxWidthClass="max-w-7xl"
       footer={
         <div className="w-full flex justify-between items-center">
-          {lead && onDelete ? (
-             <button
-                type="button"
-                onClick={handleDelete}
-                className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                >
-                <GoogleIcon name="delete" className="mr-2 text-xl" />
-                Eliminar Lead
-            </button>
-          ) : <div />}
-          <div className="space-x-2">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">Cancelar</button>
-            <button onClick={handleSubmit} className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] transition-colors">Guardar Cambios</button>
-          </div>
+            {lead ? (
+                 <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                    >
+                    <GoogleIcon name="delete" className="mr-2 h-5 w-5" />
+                    Eliminar
+                </button>
+            ) : <div />}
+            <div className="space-x-2">
+                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                <button type="submit" form="lead-form" className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225]">Guardar Cambios</button>
+            </div>
         </div>
       }
     >
-        <div className="flex border-b">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === tab.id
-                            ? 'border-[#aa632d] text-[#aa632d]'
-                            : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                    <span className="w-5 h-5 flex items-center justify-center mr-2">{tab.icon}</span>
-                    {tab.label}
-                </button>
-            ))}
-        </div>
-      <div className="p-0 overflow-y-auto max-h-[calc(90vh-130px)] bg-gray-50/50">
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {activeTab === 'marketing' && (
-                <div className="space-y-6">
-                    <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Información de Contacto</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 items-center">
-                            {renderFormField('Nombres', 'nombres')}
-                            {renderFormField('Apellidos', 'apellidos')}
-                            {renderFormField('Número de Contacto', 'numero')}
-                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium text-gray-700">Sexo</label>
-                                <div className="flex space-x-4 pt-2">
-                                    <label className="flex items-center text-black"><input type="radio" name="sexo" value="M" checked={formData.sexo === 'M'} onChange={handleChange} className="mr-2 text-[#aa632d] focus:ring-[#aa632d]"/> Masculino</label>
-                                    <label className="flex items-center text-black"><input type="radio" name="sexo" value="F" checked={formData.sexo === 'F'} onChange={handleChange} className="mr-2 text-[#aa632d] focus:ring-[#aa632d]"/> Femenino</label>
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Información de Facturación (Opcional)</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            {renderFormField('Tipo de Documento', 'documentType', 'select', Object.values(DocumentType).map(dt => ({ value: dt, label: dt })))}
-                            {renderFormField('N° de Documento', 'documentNumber')}
-                            <div className="md:col-span-2">
-                                {renderFormField('Razón Social / Nombre Completo', 'razonSocial')}
-                            </div>
-                            <div className="md:col-span-2">
-                                {renderFormField('Dirección Fiscal', 'direccionFiscal')}
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Información del Lead</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            {renderFormField('Fecha Lead', 'fechaLead', 'date')}
-                            {renderFormField('Origen del Cliente', 'redSocial', 'select', clientSources.map(s => ({ value: s.nombre, label: s.nombre })))}
-                            {renderFormField('Campaña/Anuncio', 'anuncio', 'select', metaCampaigns.map(c => c.nombre))}
-                            {renderFormField('Vendedor(a)', 'vendedor', 'select', Object.values(Seller))}
-                            {renderFormField('Estado del Lead', 'estado', 'select', Object.values(LeadStatus))}
-                        </div>
-                    </fieldset>
-
-                    <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Registro de llamada</legend>
-                        <div className="mt-4 overflow-x-auto">
-                            <table className="w-full text-sm text-left text-gray-500">
-                                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                                    <tr>
-                                        <th className="px-4 py-2">N° Llamada</th>
-                                        <th className="px-4 py-2">Duración</th>
-                                        <th className="px-4 py-2">Estado</th>
-                                        <th className="px-4 py-2">Observación</th>
-                                        <th className="px-4 py-2 text-center">Acción</th>
+      <div className="flex border-b">
+            <button onClick={() => setActiveTab('marketing')} className={`px-4 py-2 text-sm ${activeTab === 'marketing' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`}>Ficha de Paciente</button>
+            <button onClick={() => setActiveTab('recepcion')} className={`px-4 py-2 text-sm ${activeTab === 'recepcion' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`} disabled={!lead}>Recepción</button>
+            <button onClick={() => setActiveTab('procedimientos')} className={`px-4 py-2 text-sm ${activeTab === 'procedimientos' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`} disabled={!lead || formData.aceptoTratamiento !== 'Si' || !formData.tratamientos || formData.tratamientos.length === 0}>Procedimientos</button>
+            <button onClick={() => setActiveTab('seguimiento')} className={`px-4 py-2 text-sm ${activeTab === 'seguimiento' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`} disabled={!lead || formData.aceptoTratamiento !== 'Si' || !formData.tratamientos || formData.tratamientos.length === 0 || !formData.procedimientos || formData.procedimientos.length === 0}>Seguimiento</button>
+            <button onClick={() => setActiveTab('comunicacion')} className={`px-4 py-2 text-sm ${activeTab === 'comunicacion' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`} disabled={!lead}>Comunicación</button>
+            <button onClick={() => setActiveTab('facturacion')} className={`px-4 py-2 text-sm ${activeTab === 'facturacion' ? 'border-b-2 border-[#aa632d] text-[#aa632d]' : 'text-gray-500'}`} disabled={!lead}>Facturación</button>
+      </div>
+      <form id="lead-form" onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
+        {activeTab === 'marketing' && (
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {renderFormField('Fecha Lead', 'fechaLead', 'date')}
+                    {renderFormField('Nombres', 'nombres')}
+                    {renderFormField('Apellidos', 'apellidos')}
+                    {renderFormField('Número de Contacto', 'numero', 'tel')}
+                    {renderFormField('Sexo', 'sexo', 'select', [{value: 'F', label: 'Femenino'}, {value: 'M', label: 'Masculino'}])}
+                    {renderFormField('Fuente de Contacto', 'redSocial', 'select', clientSources.map(s => s.nombre))}
+                    {renderFormField('Anuncio/Campaña', 'anuncio', 'select', metaCampaigns.map(mc => mc.nombre))}
+                    {renderFormField('Vendedor Asignado', 'vendedor', 'select', Object.values(Seller))}
+                    {renderFormField('Estado Actual', 'estado', 'select', Object.values(LeadStatus))}
+                    {renderFormField('Categoría de Servicio', 'categoria', 'select', CATEGORY_OPTIONS)}
+                    {renderFormField('Servicio de Interés', 'servicios', 'select', serviceOptions)}
+                    {renderFormField('Monto Pagado', 'montoPagado', 'number')}
+                    {renderFormField('Método de Pago', 'metodoPago', 'select', Object.values(MetodoPago))}
+                    {renderFormField('Fecha/Hora Agenda', 'fechaHoraAgenda', 'datetime-local')}
+                    {renderFormField('Fecha Volver a Llamar', 'fechaVolverLlamar', 'date')}
+                    {renderFormField('Hora Volver a Llamar', 'horaVolverLlamar', 'time')}
+                    
+                    <div>
+                        <label htmlFor="documentType" className="mb-1 text-sm font-medium text-gray-700">Tipo Documento</label>
+                        <select id="documentType" name="documentType" value={formData.documentType || DocumentType.DNI} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                            {Object.values(DocumentType).map(dt => <option key={dt} value={dt}>{dt}</option>)}
+                        </select>
+                    </div>
+                    {renderFormField('N° Documento', 'documentNumber')}
+                    {renderFormField('Razón Social', 'razonSocial')}
+                    {renderFormField('Dirección Fiscal', 'direccionFiscal')}
+                </div>
+                {renderFormField('Notas Adicionales', 'notas', 'textarea')}
+            </div>
+        )}
+        {activeTab === 'recepcion' && (
+            <RecepcionTabContent 
+                formData={formData} 
+                handleChange={handleChange} 
+                handleGenerateHistoryNumber={handleGenerateHistoryNumber} 
+                handleSetFormData={setFormData}
+                totales={{
+                    precio: (formData.tratamientos || []).reduce((sum, t) => sum + (t.precio || 0), 0),
+                    pagado: (formData.tratamientos || []).reduce((sum, t) => sum + (t.montoPagado || 0), 0),
+                    deuda: (formData.tratamientos || []).reduce((sum, t) => sum + (t.deuda || 0), 0),
+                }}
+                services={services}
+            />
+        )}
+        {activeTab === 'procedimientos' && (
+            <ProcedimientosTabContent 
+                formData={formData} 
+                handleSetFormData={setFormData}
+            />
+        )}
+        {activeTab === 'seguimiento' && (
+            <SeguimientoTabContent
+                formData={formData}
+                handleSetFormData={setFormData}
+            />
+        )}
+        {activeTab === 'comunicacion' && (
+            <div className="space-y-6">
+                <fieldset className="border p-4 rounded-md">
+                    <legend className="text-lg font-bold px-2 text-black flex items-center">
+                        <GoogleIcon name="call" className="text-xl mr-2 text-blue-500" />
+                        Registro de Llamadas
+                    </legend>
+                    <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-500">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th className="px-4 py-2">N° Llamada</th>
+                                    <th className="px-4 py-2">Duración</th>
+                                    <th className="px-4 py-2">Estado</th>
+                                    <th className="px-4 py-2">Observación</th>
+                                    <th className="px-4 py-2">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(formData.registrosLlamada || []).map(registro => (
+                                    <tr key={registro.id} className="bg-white border-b">
+                                        <td className="px-4 py-2">{registro.numeroLlamada}</td>
+                                        <td className="px-4 py-2">{registro.duracionLlamada}</td>
+                                        <td className="px-4 py-2">{registro.estadoLlamada}</td>
+                                        <td className="px-4 py-2">{registro.observacion || 'N/A'}</td>
+                                        <td className="px-4 py-2">
+                                            <button type="button" onClick={() => handleRemoveRegistro(registro.id)} className="text-red-500 hover:text-red-700 p-1"><GoogleIcon name="delete" className="text-lg" /></button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {(formData.registrosLlamada || []).map(registro => (
-                                        <tr key={registro.id} className="bg-white border-b">
-                                            <td className="px-4 py-2 font-medium text-gray-900">{registro.numeroLlamada}</td>
-                                            <td className="px-4 py-2">{registro.duracionLlamada}</td>
-                                            <td className="px-4 py-2">{registro.estadoLlamada}</td>
-                                            <td className="px-4 py-2 truncate max-w-sm">{registro.observacion}</td>
-                                            <td className="px-4 py-2 text-center">
-                                                <button type="button" onClick={() => handleRemoveRegistro(registro.id)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
-                                                    <GoogleIcon name="delete" className="text-lg" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {(!formData.registrosLlamada || formData.registrosLlamada.length === 0) && (
-                                        <tr>
-                                            <td colSpan={5} className="text-center py-4 text-gray-500">No hay llamadas registradas.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        {currentRegistro && (
-                            <div className="mt-6 p-4 rounded-md border space-y-4 bg-gray-50">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Duración de llamada</label>
-                                        <input type="time" step="1" placeholder="hh:mm:ss" value={currentRegistro.duracionLlamada || ''} onChange={e => handleCurrentRegistroChange('duracionLlamada', e.target.value)} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2 shadow-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]" style={{ colorScheme: 'light' }}/>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
-                                        <select value={currentRegistro.estadoLlamada || ''} onChange={e => handleCurrentRegistroChange('estadoLlamada', e.target.value)} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2 shadow-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]">
-                                            <option value="">Seleccionar...</option>
-                                            {Object.values(EstadoLlamada).map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </div>
+                                ))}
+                                {(!formData.registrosLlamada || formData.registrosLlamada.length === 0) && (
+                                    <tr>
+                                        <td colSpan={5} className="text-center py-4 text-gray-500">No hay registros de llamadas.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    {currentRegistro && (
+                        <div className="mt-6 p-4 rounded-md border space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">Duración (HH:mm:ss)</label>
+                                    <input type="text" value={currentRegistro.duracionLlamada || ''} onChange={e => handleCurrentRegistroChange('duracionLlamada', e.target.value)} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2"/>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-600 mb-1">Observación</label>
-                                    <textarea value={currentRegistro.observacion || ''} onChange={e => handleCurrentRegistroChange('observacion', e.target.value)} rows={3} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2 shadow-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]" />
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">Estado de la Llamada</label>
+                                    <select value={currentRegistro.estadoLlamada || ''} onChange={e => handleCurrentRegistroChange('estadoLlamada', e.target.value)} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2">
+                                        {Object.values(EstadoLlamada).map(estado => <option key={estado} value={estado}>{estado}</option>)}
+                                    </select>
                                 </div>
-                                <div className="flex justify-end space-x-2">
-                                    <button type="button" onClick={() => setCurrentRegistro(null)} className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
-                                    <button type="button" onClick={handleSaveCurrentRegistro} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700">Añadir Registro</button>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {!currentRegistro && (
-                            <div className="mt-6 flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={handleShowAddRegistroForm}
-                                    className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
-                                >
-                                    <GoogleIcon name="add_ic_call" className="mr-2 text-xl" />
-                                    Añadir Registro
-                                </button>
-                            </div>
-                        )}
-                    </fieldset>
-
-                     <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Servicio y Agenda</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
-                            <div>
-                                {renderFormField('Categoría de Servicio', 'categoria', 'select', CATEGORY_OPTIONS)}
                             </div>
                             <div>
-                                <label htmlFor="servicios" className="mb-1 text-sm font-medium text-gray-700">Servicio de Interés</label>
-                                <select
-                                    id="servicios"
-                                    name="servicios"
-                                    value={formData.servicios?.[0] || ''}
-                                    onChange={handleChange}
-                                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
-                                    disabled={!serviceOptions.length}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {serviceOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                                {errors.servicios && <p className="mt-1 text-xs text-red-600">{errors.servicios}</p>}
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Observación</label>
+                                <textarea value={currentRegistro.observacion || ''} onChange={e => handleCurrentRegistroChange('observacion', e.target.value)} rows={3} className="w-full border-black bg-[#f9f9fa] text-black rounded-md text-sm p-2" />
                             </div>
-                            <div className="md:col-span-2 grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="mb-1 text-sm font-medium text-gray-700">Precio de Cita</label>
-                                    <input type="text" readOnly value={formatCurrency(formData.precioCita)} className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm p-2 text-black" />
-                                </div>
-                                {renderFormField('Monto Pagado (Cita)', 'montoPagado', 'number')}
-                                <div>
-                                    <label className="mb-1 text-sm font-medium text-gray-700">Deuda de Cita</label>
-                                    <input type="text" readOnly value={formatCurrency(formData.deudaCita)} className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm p-2 font-bold text-red-600"/>
-                                </div>
-                            </div>
-                            <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                                {renderFormField('Método de Pago', 'metodoPago', 'select', Object.values(MetodoPago))}
-                                {renderFormField('Fecha y Hora de Agenda', 'fechaHoraAgenda', 'datetime-local')}
+                            <div className="flex justify-end space-x-2">
+                                <button type="button" onClick={() => setCurrentRegistro(null)} className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                                <button type="button" onClick={handleSaveCurrentRegistro} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700">Añadir Registro</button>
                             </div>
                         </div>
-                    </fieldset>
-
-                    <fieldset className="border p-4 rounded-md">
-                        <legend className="text-lg font-bold px-2 text-black">Seguimiento y Notas</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            {renderFormField('Fecha para Volver a Llamar', 'fechaVolverLlamar', 'date')}
-                            {renderFormField('Hora para Volver a Llamar', 'horaVolverLlamar', 'time')}
+                    )}
+                    {!currentRegistro && (
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleShowAddRegistroForm}
+                                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+                            >
+                                <GoogleIcon name="add" className="mr-2 text-xl" />
+                                Añadir Registro de Llamada
+                            </button>
                         </div>
-                        <div className="mt-4">
-                             <label htmlFor="notas" className="mb-1 text-sm font-medium text-gray-700">Notas Adicionales</label>
-                             <textarea id="notas" name="notas" value={formData.notas || ''} onChange={handleChange} rows={4} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]" />
+                    )}
+                </fieldset>
+                <fieldset className="border p-4 rounded-md">
+                    <legend className="text-lg font-bold px-2 text-black flex items-center">
+                        <GoogleIcon name="chat" className="text-xl mr-2 text-green-500" />
+                        Generador de Mensajes (WhatsApp)
+                    </legend>
+                    <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-3">
+                            Genera un mensaje de seguimiento rápido y profesional para enviar por WhatsApp. La IA utilizará
+                            el nombre del paciente, sus servicios de interés y las notas para personalizar el mensaje.
+                        </p>
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleGenerateMessage}
+                                disabled={isGenerating || !formData.nombres || !formData.servicios || formData.servicios.length === 0}
+                                className="flex items-center bg-green-600 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-green-700 transition-colors text-sm disabled:bg-green-300"
+                            >
+                                <GoogleIcon name="auto_awesome" className="mr-2 text-base" />
+                                {isGenerating ? 'Generando mensaje...' : 'Generar Mensaje con IA'}
+                            </button>
                         </div>
-                        <div className="mt-6 pt-4 border-t border-dashed">
-                            <div className="flex justify-between items-center">
-                                <h4 className="text-md font-semibold text-gray-800 flex items-center">
-                                    <GoogleIcon name="auto_awesome" className="mr-2 text-indigo-500" />
-                                    Asistente IA para Seguimiento
-                                </h4>
-                                <button
-                                    type="button"
-                                    onClick={handleGenerateMessage}
-                                    disabled={isGenerating}
-                                    className="flex items-center bg-indigo-600 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-indigo-700 transition-colors text-sm disabled:bg-indigo-300"
-                                >
-                                    <GoogleIcon name="auto_awesome" className="mr-2 text-base" />
-                                    {isGenerating ? 'Generando...' : 'Generar mensaje de seguimiento'}
-                                </button>
-                            </div>
+                        {generatedMessage && (
                             <div className="mt-3 relative">
                                 <textarea
                                     value={generatedMessage}
-                                    onChange={(e) => setGeneratedMessage(e.target.value)}
-                                    rows={5}
+                                    readOnly
+                                    rows={6}
                                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
-                                    placeholder="El mensaje generado por la IA aparecerá aquí..."
+                                    placeholder="El mensaje generado aparecerá aquí..."
                                 />
-                                {generatedMessage && (
-                                    <button
-                                        type="button"
-                                        onClick={copyToClipboard}
-                                        title="Copiar al portapapeles"
-                                        className="absolute top-2 right-2 p-1.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                                    >
-                                        <GoogleIcon name="content_copy" className="text-base" />
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={copyToClipboard}
+                                    className="absolute bottom-3 right-3 bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs hover:bg-gray-300"
+                                >
+                                    Copiar
+                                </button>
                             </div>
-                        </div>
-                    </fieldset>
-                </div>
-            )}
-            
-             {activeTab === 'recepcion' && <RecepcionTabContent formData={formData} handleChange={handleChange} handleGenerateHistoryNumber={handleGenerateHistoryNumber} handleSetFormData={setFormData} totales={totales} services={services} />}
-             {activeTab === 'procedimientos' && <ProcedimientosTabContent formData={formData} handleSetFormData={setFormData} />}
-             {activeTab === 'seguimiento' && <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} />}
-             {activeTab === 'facturacion' && <FacturacionTabContent formData={formData} comprobantes={comprobantes} onSaveComprobante={onSaveComprobante} />}
-
-        </form>
-      </div>
+                        )}
+                    </div>
+                </fieldset>
+            </div>
+        )}
+        {activeTab === 'facturacion' && (
+            <FacturacionTabContent
+                formData={formData}
+                comprobantes={comprobantes}
+                onSaveComprobante={onSaveComprobante}
+            />
+        )}
+      </form>
     </Modal>
   );
 };
-
-export default LeadFormModal;

@@ -257,24 +257,4 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                 placeholder="Ingrese N° historia, nombre o teléfono"
                             />
                             {!pacienteEncontrado ? (
-                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>
-                            ) : (
-                                <button type="button" onClick={handleResetSearch} className="px-4 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</button>
-                            )}
-                        </div>
-                    </div>
-                     {pacienteEncontrado && (
-                        <div>
-                             <p className="mb-1 text-sm font-medium text-gray-700">Paciente</p>
-                             <p className="border bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 font-semibold text-gray-900">{pacienteEncontrado.nombres} {pacienteEncontrado.apellidos}</p>
-                        </div>
-                    )}
-                </div>
-            </fieldset>
-
-            <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
-                 <legend className="text-md font-bold px-2 text-black">2. Detalles de la Venta</legend>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-                    <div>
-                        <label htmlFor="saleType" className="mb-1 text-sm font-medium text-gray-700">Tipo de Venta</label>
-                        <select id="saleType
+                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-

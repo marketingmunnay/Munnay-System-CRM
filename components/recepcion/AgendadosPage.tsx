@@ -3,9 +3,10 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, ReceptionStatus } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons.tsx';
-import StatCard from '../dashboard/StatCard.tsx';
-import LeadFormModal from '../marketing/LeadFormModal.tsx';
+// FIX: Changed to named import for LeadFormModal
+import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
 import { RESOURCES } from '../../constants.ts';
+import StatCard from '../dashboard/StatCard.tsx'; // FIX: Add missing import for StatCard
 
 interface AgendadosPageProps {
   leads: Lead[];

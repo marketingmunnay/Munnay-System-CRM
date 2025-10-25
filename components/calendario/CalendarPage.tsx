@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus, Seller } from '../../types.ts';
 import { RESOURCES } from '../../constants.ts';
-import LeadFormModal from '../marketing/LeadFormModal.tsx';
+// FIX: Changed to named import for LeadFormModal
+import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons.tsx';
 
 // FIX: Update props to receive metaCampaigns for the LeadFormModal.

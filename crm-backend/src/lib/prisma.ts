@@ -1,8 +1,8 @@
 
-// FIX: Changed import style to potentially resolve module resolution issues with Prisma Client.
-import { PrismaClient } from '@prisma/client'; // FIX: Direct import for PrismaClient
+import { PrismaClient } from '@prisma/client';
 
 // Ensure `npx prisma generate` has been run.
+// FIX: Ensure PrismaClient is correctly imported as a named export.
 const prisma = new PrismaClient();
 
 export default prisma;

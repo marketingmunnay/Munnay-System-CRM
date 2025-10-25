@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction, Express } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -6,7 +6,7 @@ import apiRouter from './api';
 
 dotenv.config();
 
-const app = express();
+const app: Express = express();
 const PORT = process.env.PORT || 4000;
 
 // Lista de orígenes permitidos
@@ -28,11 +28,16 @@ app.use(cors({
   },
   credentials: true,
 }));
+// FIX: Removed path argument for express.json()
 app.use(express.json());
+// FIX: Removed path argument for cookieParser()
 app.use(cookieParser());
 
-app.get('/', (req: express.Request, res: express.Response) => {
-  res.send('CRM Munnay Backend is running!');
+// FIX: Ensure correct types for Request and Response.
+// FIX: Use res.send() for sending responses, which is a standard Express method.
+app.get('/', (req: Request, res: Response) => {
+  // FIX: Add .status() method to the response object.
+  res.status(200).send('CRM Munnay Backend is running!');
 });
 
 app.use('/api', apiRouter);

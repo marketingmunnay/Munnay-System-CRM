@@ -3,7 +3,8 @@ import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteE
 import { AtencionStatus, ReceptionStatus } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons.tsx';
-import LeadFormModal from '../marketing/LeadFormModal.tsx';
+// FIX: Changed to named import for LeadFormModal
+import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
 
 // FIX: Update props to receive metaCampaigns for the LeadFormModal.
@@ -110,11 +111,12 @@ const AtencionesTable: React.FC<{ atenciones: Atencion[], onEdit: (lead: Lead) =
                     </thead>
                     <tbody>
                         {atenciones.map(atencion => (
-                            <tr key={atencion.procedure.id} className="bg-white border-b hover:bg-gray-50">
+                            <tr key={`${atencion.lead.id}-${atencion.procedure.id}`} className="bg-white border-b hover:bg-gray-50">
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {atencion.lead.nombres} {atencion.lead.apellidos}
+                                    <p className="text-xs text-gray-500 font-normal">{atencion.lead.nHistoria}</p>
                                 </th>
-                                <td className="px-6 py-4 font-semibold">{atencion.procedure.horaInicio}</td>
+                                <td className="px-6 py-4">{atencion.procedure.horaInicio} - {atencion.procedure.horaFin}</td>
                                 <td className="px-6 py-4">{atencion.procedure.nombreTratamiento} (Sesión {atencion.procedure.sesionNumero})</td>
                                 <td className="px-6 py-4">{atencion.procedure.personal}</td>
                                 <td className="px-6 py-4">
@@ -129,143 +131,182 @@ const AtencionesTable: React.FC<{ atenciones: Atencion[], onEdit: (lead: Lead) =
                                 </td>
                             </tr>
                         ))}
+                         {atenciones.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>No hay atenciones programadas para el rango de fechas seleccionado.</p>
+                            </div>
+                        )}
                     </tbody>
                 </table>
-                 {atenciones.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                        <p>No hay atenciones registradas para el rango de fechas seleccionado.</p>
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
+export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+    const [dateRange, setDateRange] = useState({ from: '', to: '' });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingLead, setEditingLead] = useState<Lead | null>(null);
+    const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
 
-// FIX: Destructure metaCampaigns from props.
-// FIX: Fix function component return type by completing the component.
-const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
-  const [dateRange, setDateRange] = useState({ from: '', to: '' });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+    const filteredAtenciones = useMemo(() => {
+        let allAtenciones: Atencion[] = [];
 
-  const atencionesDelDia = useMemo(() => {
-    const fromDateStr = dateRange.from ? new Date(`${dateRange.from}T00:00:00`).toISOString().split('T')[0] : '';
-    const toDateStr = dateRange.to ? new Date(`${dateRange.to}T23:59:59`).toISOString().split('T')[0] : '';
+        // Filter leads that have accepted treatments and procedures
+        const relevantLeads = leads.filter(lead => 
+            lead.aceptoTratamiento === 'Si' && 
+            lead.tratamientos && 
+            lead.tratamientos.length > 0 &&
+            lead.procedimientos &&
+            lead.procedimientos.length > 0
+        );
 
-    const atenciones: Atencion[] = [];
-    leads.forEach(lead => {
-        if (lead.procedimientos) {
-            lead.procedimientos.forEach(proc => {
-                let include = true;
-                if (fromDateStr && proc.fechaAtencion < fromDateStr) include = false;
-                if (toDateStr && proc.fechaAtencion > toDateStr) include = false;
+        // Flatten procedures into individual 'Atencion' objects
+        relevantLeads.forEach(lead => {
+            lead.procedimientos?.forEach(procedure => {
+                allAtenciones.push({
+                    lead,
+                    procedure,
+                    status: getProcedimientoStatus(lead, procedure)
+                });
+            });
+        });
 
-                if (include) {
-                    atenciones.push({
-                        lead,
-                        procedure: proc,
-                        status: getProcedimientoStatus(lead, proc),
-                    });
-                }
+        // Apply date range filter based on procedure date
+        if (dateRange.from || dateRange.to) {
+            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
+            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+
+            allAtenciones = allAtenciones.filter(atencion => {
+                const procedureDate = new Date(`${atencion.procedure.fechaAtencion}T00:00:00`);
+                if (fromDate && procedureDate < fromDate) return false;
+                if (toDate && procedureDate > toDate) return false;
+                return true;
             });
         }
-    });
+        
+        // Sort by date and time
+        return allAtenciones.sort((a, b) => {
+            const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
+            const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
+            return dateA.getTime() - dateB.getTime();
+        });
 
-    return atenciones.sort((a, b) => a.procedure.horaInicio.localeCompare(b.procedure.horaInicio));
-  }, [leads, dateRange]);
+    }, [leads, dateRange]);
+    
+    const stats = useMemo(() => {
+        const totalAtenciones = filteredAtenciones.length;
+        const atendidas = filteredAtenciones.filter(a => a.status === AtencionStatus.SeguimientoHecho).length;
+        const enSeguimiento = filteredAtenciones.filter(a => a.status === AtencionStatus.EnSeguimiento).length;
+        const porAtender = filteredAtenciones.filter(a => a.status === AtencionStatus.PorAtender).length;
 
-  const stats = useMemo(() => {
-    const totalAtenciones = atencionesDelDia.length;
-    const porAtender = atencionesDelDia.filter(a => a.status === AtencionStatus.PorAtender).length;
-    const enSeguimiento = atencionesDelDia.filter(a => a.status === AtencionStatus.EnSeguimiento).length;
-    const seguimientoHecho = atencionesDelDia.filter(a => a.status === AtencionStatus.SeguimientoHecho).length;
-    return { totalAtenciones, porAtender, enSeguimiento, seguimientoHecho };
-  }, [atencionesDelDia]);
+        return {
+            totalAtenciones,
+            atendidas,
+            enSeguimiento,
+            porAtender
+        };
+    }, [filteredAtenciones]);
 
-  const handleApplyDateFilter = (dates: { from: string, to: string }) => {
-    setDateRange(dates);
-  };
 
-  const handleEditAtencion = (lead: Lead) => {
-    setEditingLead(lead);
-    setIsModalOpen(true);
-  };
+    const handleApplyDateFilter = (dates: { from: string, to: string }) => {
+        setDateRange(dates);
+    };
 
-  const handleSaveAndClose = (lead: Lead) => {
-    onSaveLead(lead);
-    setIsModalOpen(false);
-  };
+    const handleEditAtencion = (lead: Lead) => {
+        setEditingLead(lead);
+        setIsModalOpen(true);
+    };
+    
+    const handleSaveAndClose = (lead: Lead) => {
+        onSaveLead(lead);
+        setIsModalOpen(false);
+    };
 
-  const kanbanColumns = Object.values(AtencionStatus);
+    const kanbanColumns = Object.values(AtencionStatus);
 
-  return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Atenciones Diarias</h1>
-        <div className="flex items-center space-x-3">
-          <DateRangeFilter onApply={handleApplyDateFilter} />
+    return (
+        <div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Atenciones Diarias</h1>
+                <DateRangeFilter onApply={handleApplyDateFilter} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <StatCard 
+                    title="Total Atenciones" 
+                    value={stats.totalAtenciones.toString()} 
+                    icon={<GoogleIcon name="local_hospital" className="text-blue-500"/>}
+                    iconBgClass="bg-blue-100"
+                />
+                 <StatCard 
+                    title="Atenciones Realizadas (Seguimiento Hecho)" 
+                    value={stats.atendidas.toString()}
+                    icon={<GoogleIcon name="task_alt" className="text-green-500"/>}
+                    iconBgClass="bg-green-100"
+                />
+                <StatCard 
+                    title="Atenciones en Seguimiento" 
+                    value={stats.enSeguimiento.toString()}
+                    icon={<GoogleIcon name="hourglass_empty" className="text-yellow-500"/>}
+                    iconBgClass="bg-yellow-100"
+                />
+                <StatCard 
+                    title="Atenciones Por Atender" 
+                    value={stats.porAtender.toString()}
+                    icon={<GoogleIcon name="pending_actions" className="text-orange-500"/>}
+                    iconBgClass="bg-orange-100"
+                />
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow mb-6 flex justify-end">
+            <div className="flex items-center space-x-2">
+                 <button onClick={() => setViewMode('kanban')} className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'kanban' ? 'bg-[#aa632d] text-white' : 'bg-gray-200 text-gray-700'}`}>
+                     Kanban
+                 </button>
+                  <button onClick={() => setViewMode('table')} className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'table' ? 'bg-[#aa632d] text-white' : 'bg-gray-200 text-gray-700'}`}>
+                     Tabla
+                 </button>
+             </div>
         </div>
-      </div>
+        
+         {viewMode === 'kanban' ? (
+            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
+                {kanbanColumns.map(status => {
+                    const atencionesInColumn = filteredAtenciones.filter(atencion => atencion.status === status);
+                    const config = statusConfig[status];
+                    return (
+                        <KanbanColumn 
+                            key={status} 
+                            title={config.title} 
+                            color={config.color} 
+                            textColor={config.textColor}
+                            count={atencionesInColumn.length}
+                        >
+                            {atencionesInColumn.map(atencion => (
+                                <KanbanCard key={`${atencion.lead.id}-${atencion.procedure.id}`} atencion={atencion} onClick={handleEditAtencion} />
+                            ))}
+                        </KanbanColumn>
+                    );
+                })}
+            </div>
+        ) : (
+            <AtencionesTable atenciones={filteredAtenciones} onEdit={handleEditAtencion} />
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <StatCard title="Total Atenciones" value={stats.totalAtenciones.toString()} icon={<GoogleIcon name="medical_services" className="text-blue-500"/>} iconBgClass="bg-blue-100" />
-        <StatCard title="Por Atender" value={stats.porAtender.toString()} icon={<GoogleIcon name="pending_actions" className="text-sky-500"/>} iconBgClass="bg-sky-100" />
-        <StatCard title="En Seguimiento" value={stats.enSeguimiento.toString()} icon={<GoogleIcon name="hourglass_top" className="text-yellow-500"/>} iconBgClass="bg-yellow-100" />
-        <StatCard title="Seguimiento Hecho" value={stats.seguimientoHecho.toString()} icon={<GoogleIcon name="task_alt" className="text-green-500"/>} iconBgClass="bg-green-100" />
-      </div>
-
-      <div className="bg-white p-4 rounded-lg shadow mb-6 flex justify-end">
-        <div className="flex items-center space-x-2">
-            <button onClick={() => setViewMode('kanban')} className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'kanban' ? 'bg-[#aa632d] text-white' : 'bg-gray-200 text-gray-700'}`}>
-                Kanban
-            </button>
-            <button onClick={() => setViewMode('table')} className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'table' ? 'bg-[#aa632d] text-white' : 'bg-gray-200 text-gray-700'}`}>
-                Tabla
-            </button>
+            <LeadFormModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveAndClose}
+                onDelete={onDeleteLead}
+                lead={editingLead}
+                metaCampaigns={metaCampaigns}
+                clientSources={clientSources}
+                services={services}
+                requestConfirmation={requestConfirmation}
+                onSaveComprobante={onSaveComprobante}
+                comprobantes={comprobantes}
+            />
         </div>
-      </div>
-      
-      {viewMode === 'kanban' ? (
-        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
-          {kanbanColumns.map(status => {
-            const atencionesInColumn = atencionesDelDia.filter(a => a.status === status);
-            const config = statusConfig[status];
-            return (
-              <KanbanColumn 
-                key={status} 
-                title={config.title} 
-                color={config.color} 
-                textColor={config.textColor}
-                count={atencionesInColumn.length}
-              >
-                {atencionesInColumn.map(atencion => (
-                  <KanbanCard key={atencion.procedure.id} atencion={atencion} onClick={handleEditAtencion} />
-                ))}
-              </KanbanColumn>
-            );
-          })}
-        </div>
-      ) : (
-        <AtencionesTable atenciones={atencionesDelDia} onEdit={handleEditAtencion} />
-      )}
-
-      <LeadFormModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveAndClose}
-        onDelete={onDeleteLead}
-        lead={editingLead}
-        metaCampaigns={metaCampaigns}
-        clientSources={clientSources}
-        services={services}
-        requestConfirmation={requestConfirmation}
-        onSaveComprobante={onSaveComprobante}
-        comprobantes={comprobantes}
-      />
-    </div>
-  );
+    );
 };
-
-export default AtencionesDiariasPage;
