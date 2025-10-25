@@ -1,7 +1,7 @@
-import * as express from 'express';
+import express from 'express'; // FIX: Use named import for express
 import prisma from '../lib/prisma';
 
-export const getSeguidores = async (req: express.Request, res: express.Response) => {
+export const getSeguidores = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   try {
     const seguidores = await prisma.seguidor.findMany({
         orderBy: {
@@ -14,7 +14,7 @@ export const getSeguidores = async (req: express.Request, res: express.Response)
   }
 };
 
-export const getSeguidorById = async (req: express.Request, res: express.Response) => {
+export const getSeguidorById = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id } = req.params;
   try {
     const seguidor = await prisma.seguidor.findUnique({ where: { id: parseInt(id) } });
@@ -25,7 +25,7 @@ export const getSeguidorById = async (req: express.Request, res: express.Respons
   }
 };
 
-export const createSeguidor = async (req: express.Request, res: express.Response) => {
+export const createSeguidor = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id, fecha, ...data } = req.body;
   try {
     const newSeguidor = await prisma.seguidor.create({
@@ -40,7 +40,7 @@ export const createSeguidor = async (req: express.Request, res: express.Response
   }
 };
 
-export const updateSeguidor = async (req: express.Request, res: express.Response) => {
+export const updateSeguidor = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id } = req.params;
   const { fecha, ...data } = req.body;
   try {
@@ -57,7 +57,7 @@ export const updateSeguidor = async (req: express.Request, res: express.Response
   }
 };
 
-export const deleteSeguidor = async (req: express.Request, res: express.Response) => {
+export const deleteSeguidor = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id } = req.params;
   try {
     await prisma.seguidor.delete({ where: { id: parseInt(id) } });

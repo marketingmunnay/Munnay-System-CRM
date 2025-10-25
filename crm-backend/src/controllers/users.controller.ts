@@ -95,7 +95,14 @@ export const updateUser = async (req: express.Request, res: express.Response) =>
 export const deleteUser = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
-    // Handle related records if necessary, though schema uses Cascade delete
+    // Delete related records first due to cascade delete not automatically handling all relations, 
+    // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
+    // For this simplified example, we'll assume cascade delete is enough for addresses and emergency contacts.
+    // If not, explicit deleteMany should be added here.
+    
+    // For Recognitions, need to disconnect first if not using full cascade on User deletion
+    await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: parseInt(id) }, { recibidoPorId: parseInt(id) }] } });
+
     await prisma.user.delete({ where: { id: parseInt(id) } });
     res.status(204).send();
   } catch (error) {

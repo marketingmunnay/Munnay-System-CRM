@@ -23,7 +23,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
+export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);

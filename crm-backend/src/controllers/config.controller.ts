@@ -149,3 +149,105 @@ export const getJobPositions = jobPositionHandlers.getAll;
 export const createJobPosition = jobPositionHandlers.create;
 export const updateJobPosition = jobPositionHandlers.update;
 export const deleteJobPosition = jobPositionHandlers.delete;
+
+// Comprobantes Electronicos
+export const getComprobantes = async (req: express.Request, res: express.Response) => {
+  try {
+    const comprobantes = await prisma.comprobanteElectronico.findMany({
+      include: {
+        items: true,
+      },
+      orderBy: {
+        fechaEmision: 'desc',
+      },
+    });
+    res.status(200).json(comprobantes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching comprobantes', error: (error as Error).message });
+  }
+};
+
+export const createComprobante = async (req: express.Request, res: express.Response) => {
+  const { id, items, fechaEmision, ...data } = req.body;
+  try {
+    const newComprobante = await prisma.comprobanteElectronico.create({
+      data: {
+        ...data,
+        fechaEmision: new Date(fechaEmision),
+        items: {
+          create: items.map((item: any) => ({
+            descripcion: item.descripcion,
+            cantidad: item.cantidad,
+            valorUnitario: item.valorUnitario,
+            precioUnitario: item.precioUnitario,
+            igv: item.igv,
+            montoTotal: item.montoTotal,
+          })),
+        },
+      },
+      include: {
+        items: true,
+      },
+    });
+    res.status(201).json(newComprobante);
+  } catch (error) {
+    console.error("Error creating comprobante:", error);
+    res.status(500).json({ message: 'Error creating comprobante', error: (error as Error).message });
+  }
+};
+
+export const updateComprobante = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  const { items, fechaEmision, ...data } = req.body;
+  try {
+    // Start a transaction to update both comprobante and its items
+    const updatedComprobante = await prisma.$transaction(async (prisma) => {
+      // First, delete existing items for this comprobante
+      await prisma.comprobanteItem.deleteMany({
+        where: { comprobanteElectronicoId: parseInt(id) },
+      });
+
+      // Then, update the comprobante itself and create new items
+      const comprobante = await prisma.comprobanteElectronico.update({
+        where: { id: parseInt(id) },
+        data: {
+          ...data,
+          fechaEmision: fechaEmision ? new Date(fechaEmision) : undefined,
+          items: {
+            create: items.map((item: any) => ({
+              descripcion: item.descripcion,
+              cantidad: item.cantidad,
+              valorUnitario: item.valorUnitario,
+              precioUnitario: item.precioUnitario,
+              igv: item.igv,
+              montoTotal: item.montoTotal,
+            })),
+          },
+        },
+        include: {
+          items: true,
+        },
+      });
+      return comprobante;
+    });
+
+    res.status(200).json(updatedComprobante);
+  } catch (error) {
+    console.error(`Error updating comprobante ${id}:`, error);
+    res.status(500).json({ message: 'Error updating comprobante', error: (error as Error).message });
+  }
+};
+
+export const deleteComprobante = async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+  try {
+    // Deleting the comprobante should cascade to its items
+    await prisma.comprobanteElectronico.delete({
+      where: { id: parseInt(id) },
+    });
+    res.status(204).send();
+  } catch (error) {
+    console.error(`Error deleting comprobante ${id}:`, error);
+    res.status(500).json({ message: 'Error deleting comprobante', error: (error as Error).message });
+  }
+};

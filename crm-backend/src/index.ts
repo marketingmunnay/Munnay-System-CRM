@@ -1,4 +1,4 @@
-import express from 'express';
+import express from 'express'; // FIX: Removed .default() as express is already the default export
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -6,7 +6,7 @@ import apiRouter from './api';
 
 dotenv.config();
 
-const app = express();
+const app = express(); // FIX: Use express() directly
 const PORT = process.env.PORT || 4000;
 
 app.use(cors({

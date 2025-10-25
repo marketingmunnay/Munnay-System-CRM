@@ -55,5 +55,11 @@ router.post('/job-positions', controller.createJobPosition);
 router.put('/job-positions/:id', controller.updateJobPosition);
 router.delete('/job-positions/:id', controller.deleteJobPosition);
 
+// Comprobantes Electronicos
+router.get('/comprobantes', controller.getComprobantes);
+router.post('/comprobantes', controller.createComprobante);
+router.put('/comprobantes/:id', controller.updateComprobante);
+router.delete('/comprobantes/:id', controller.deleteComprobante);
+
 
 export default router;

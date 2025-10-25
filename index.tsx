@@ -192,8 +192,10 @@ const App: React.FC = () => {
     const handleDeleteServiceCategory = async (id: number) => { await api.deleteServiceCategory(id); await loadData(); };
     const handleSaveProductCategory = async (category: ProductCategory) => { await api.saveProductCategory(category); await loadData(); };
     const handleDeleteProductCategory = async (id: number) => { await api.deleteProductCategory(id); await loadData(); };
+    // FIX: Use `saveEgresoCategory` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveEgresoCategory = async (category: EgresoCategory) => { await api.saveEgresoCategory(category); await loadData(); };
     const handleDeleteEgresoCategory = async (id: number) => { await api.deleteEgresoCategory(id); await loadData(); };
+    // FIX: Use `saveJobPosition` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 

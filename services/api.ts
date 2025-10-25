@@ -251,14 +251,14 @@ export const deleteProductCategory = productCategoryApi.delete;
 
 const egresoCategoryApi = createConfigApi<EgresoCategory>('egreso-categories');
 export const getEgresoCategories = egresoCategoryApi.getAll;
-export const createEgresoCategory = egresoCategoryApi.create;
-export const updateEgresoCategory = egresoCategoryApi.update;
+// FIX: Changed to `saveEgresoCategory` to match the `createConfigApi` return type.
+export const saveEgresoCategory = egresoCategoryApi.save;
 export const deleteEgresoCategory = egresoCategoryApi.delete;
 
 const jobPositionApi = createConfigApi<JobPosition>('job-positions');
 export const getJobPositions = jobPositionApi.getAll;
-export const createJobPosition = jobPositionApi.create;
-export const updateJobPosition = jobPositionApi.update;
+// FIX: Changed to `saveJobPosition` to match the `createConfigApi` return type.
+export const saveJobPosition = jobPositionApi.save;
 export const deleteJobPosition = jobPositionApi.delete;
 
 // Goals

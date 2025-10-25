@@ -1,7 +1,7 @@
-import * as express from 'express';
+import express from 'express'; // FIX: Use named import for express
 import prisma from '../lib/prisma';
 
-export const getPublicaciones = async (req: express.Request, res: express.Response) => {
+export const getPublicaciones = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   try {
     const publicaciones = await prisma.publicacion.findMany({
       orderBy: {
@@ -14,7 +14,7 @@ export const getPublicaciones = async (req: express.Request, res: express.Respon
   }
 };
 
-export const getPublicacionById = async (req: express.Request, res: express.Response) => {
+export const getPublicacionById = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id } = req.params;
   try {
     const publicacion = await prisma.publicacion.findUnique({ where: { id: parseInt(id) } });
@@ -25,7 +25,7 @@ export const getPublicacionById = async (req: express.Request, res: express.Resp
   }
 };
 
-export const createPublicacion = async (req: express.Request, res: express.Response) => {
+export const createPublicacion = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id, fechaPost, ...data } = req.body;
   try {
     const newPublicacion = await prisma.publicacion.create({
@@ -40,7 +40,7 @@ export const createPublicacion = async (req: express.Request, res: express.Respo
   }
 };
 
-export const updatePublicacion = async (req: express.Request, res: express.Response) => {
+export const updatePublicacion = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
   const { id } = req.params;
   const { fechaPost, ...data } = req.body;
   try {
@@ -57,7 +57,7 @@ export const updatePublicacion = async (req: express.Request, res: express.Respo
   }
 };
 
-export const deletePublicacion = async (req: express.Request, res: express.Response) => {
+export const deletePublicacion = async (req: express.Request, res: express.Response) => { // FIX: Explicitly type req and res
     const { id } = req.params;
     try {
         await prisma.publicacion.delete({ where: { id: parseInt(id) } });
