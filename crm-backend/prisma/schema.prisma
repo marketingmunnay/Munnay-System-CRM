@@ -1,1 +1,466 @@
-�
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Puedes cambiar a 'mysql', 'sqlite', 'sqlserver', 'mongodb'
+  url      = env("DATABASE_URL")
+}
+
+// Modelos del Sistema CRM Munnay
+
+model User {
+  id                      Int                 @id @default(autoincrement())
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  nombres                 String              @default("Default")
+  apellidos               String              @default("User")
+  usuario                 String              @unique @default("default_user")
+  password                String?             // Contraseña hasheada
+  rolId                   Int                 @default(1) // Por defecto, Rol 1 (Admin)
+  role                    Role                @relation(fields: [rolId], references: [id])
+  avatarUrl               String              @default("https://picsum.photos/seed/default/40/40")
+  position                String?
+  documentType            String?             @map("document_type")
+  documentNumber          String?             @map("document_number")
+  phone                   String?
+  birthDate               DateTime?           @map("birth_date") @db.Date
+  startDate               DateTime?           @map("start_date") @db.Date
+  salary                  Float?
+  contractType            String?             @map("contract_type")
+  maritalStatus           String?             @map("marital_status")
+  sex                     String?             @db.Char(1)
+  addresses               Address[]
+  emergencyContacts       EmergencyContact[]  @map("emergency_contacts")
+  reconocimientosOtorgados Reconocimiento[]    @relation("ReconocimientoOtorgado") @map("reconocimientos_otorgados")
+  reconocimientosRecibidos Reconocimiento[]    @relation("ReconocimientoRecibido") @map("reconocimientos_recibidos")
+}
+
+model Role {
+  id               Int      @id @default(autoincrement())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  nombre           String   @unique
+  permissions      String[] // JSON array of page IDs
+  dashboardMetrics String[] @map("dashboard_metrics") // JSON array of dashboard metric IDs
+  users            User[]
+}
+
+model BusinessInfo {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  nombre        String
+  ruc           String
+  direccion     String
+  telefono      String
+  email         String
+  logoUrl       String   @map("logo_url")
+  loginImageUrl String?  @map("login_image_url")
+}
+
+model ClientSource {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+}
+
+model ServiceCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+  services  Service[]
+}
+
+model EgresoCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+  egresos   Egreso[]
+}
+
+model ProductCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+  products  Product[]
+}
+
+model JobPosition {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+}
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  nombre        String   @unique
+  categoria     String
+  serviceCategory ServiceCategory @relation(fields: [categoria], references: [nombre], onDelete: Cascade)
+  precio        Float
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  nombre        String   @unique
+  categoria     String
+  productCategory ProductCategory @relation(fields: [categoria], references: [nombre], onDelete: Cascade)
+  precio        Float
+}
+
+model Membership {
+  id               Int      @id @default(autoincrement())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  nombre           String   @unique
+  precio           Float
+  numeroSesiones   Int      @map("numero_sesiones")
+  descripcion      String?
+  leads            Lead[]   @relation("LeadMemberships")
+}
+
+model Lead {
+  id                     Int                @id @default(autoincrement())
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  fechaLead              DateTime           @map("fecha_lead") @db.Date
+  nombres                String
+  apellidos              String
+  numero                 String
+  sexo                   String             @db.Char(1)
+  redSocial              String             @map("red_social")
+  anuncio                String
+  vendedor               String
+  estado                 String
+  montoPagado            Float              @map("monto_pagado")
+  metodoPago             String?            @map("metodo_pago")
+  fechaHoraAgenda        DateTime?          @map("fecha_hora_agenda")
+  servicios              String[]
+  categoria              String
+  fechaVolverLlamar      DateTime?          @map("fecha_volver_llamar") @db.Date
+  horaVolverLlamar      String?            @map("hora_volver_llamar")
+  notas                  String?
+  registrosLlamada       RegistroLlamada[]  @map("registros_llamada")
+  nHistoria              String?            @unique @map("n_historia")
+  aceptoTratamiento      String?            @map("acepto_tratamiento")
+  motivoNoCierre         String?            @map("motivo_no_cierre")
+  tratamientos           Treatment[]
+  estadoRecepcion        String?            @map("estado_recepcion")
+  recursoId              String?            @map("recurso_id")
+  procedimientos         Procedure[]
+  seguimientos           Seguimiento[]
+  birthDate              DateTime?          @map("birth_date") @db.Date
+  alergias               Alergia[]
+  membresiasAdquiridas   Membership[]       @relation("LeadMemberships") @map("membresias_adquiridas")
+  precioCita             Float?             @map("precio_cita")
+  deudaCita              Float?             @map("deuda_cita")
+  metodoPagoDeuda        String?            @map("metodo_pago_deuda")
+  documentType           String?            @map("document_type")
+  documentNumber         String?            @map("document_number")
+  razonSocial            String?            @map("razon_social")
+  direccionFiscal        String?            @map("direccion_fiscal")
+  comprobantes           ComprobanteElectronico[]
+}
+
+model RegistroLlamada {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  leadId         Int
+  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  numeroLlamada  Int      @map("numero_llamada")
+  duracionLlamada String   @map("duracion_llamada")
+  estadoLlamada  String   @map("estado_llamada")
+  observacion    String?
+}
+
+model Treatment {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  leadId          Int
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  nombre          String
+  cantidadSesiones Int      @map("cantidad_sesiones")
+  precio          Float
+  montoPagado     Float    @map("monto_pagado")
+  metodoPago      String?  @map("metodo_pago")
+  deuda           Float
+}
+
+model Procedure {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  leadId          Int
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fechaAtencion   DateTime @map("fecha_atencion") @db.Date
+  personal        String
+  horaInicio      String   @map("hora_inicio")
+  horaFin         String   @map("hora_fin")
+  tratamientoId   Int      @map("tratamiento_id")
+  nombreTratamiento String   @map("nombre_tratamiento")
+  sesionNumero    Int      @map("sesion_numero")
+  asistenciaMedica Boolean  @map("asistencia_medica")
+  medico          String?
+  observacion     String?
+}
+
+model Seguimiento {
+  id                  Int      @id @default(autoincrement())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  leadId              Int
+  lead                Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  procedimientoId     Int      @map("procedimiento_id")
+  nombreProcedimiento String   @map("nombre_procedimiento")
+  fechaSeguimiento    DateTime @map("fecha_seguimiento") @db.Date
+  personal            String
+  inflamacion         Boolean
+  ampollas            Boolean
+  alergias            Boolean
+  malestarGeneral     Boolean  @map("malestar_general")
+  brote               Boolean
+  dolorDeCabeza       Boolean  @map("dolor_de_cabeza")
+  moretones           Boolean
+  observacion         String?
+}
+
+model Alergia {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  nombre    String
+  gravedad  Int
+}
+
+model Campaign {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  nombreAnuncio     String   @unique @map("nombre_anuncio")
+  categoria         String
+  metaCampaign      MetaCampaign @relation(fields: [categoria], references: [nombre], onDelete: Cascade)
+  alcance           Int
+  resultados        Int
+  costoPorResultado Float    @map("costo_por_resultado")
+  importeGastado    Float    @map("importe_gastado")
+  fecha             DateTime @db.Date
+}
+
+model MetaCampaign {
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  nombre      String     @unique
+  fechaInicio DateTime   @map("fecha_inicio") @db.Date
+  fechaFin    DateTime   @map("fecha_fin") @db.Date
+  categoria   String
+  campaigns   Campaign[]
+}
+
+model Publicacion {
+  id                     Int       @id @default(autoincrement())
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  fechaPost              DateTime  @map("fecha_post") @db.Date
+  horaPost               String?   @map("hora_post")
+  temaVideo              String    @map("tema_video")
+  tipoPost               String    @map("tipo_post")
+  redSocial              String    @map("red_social")
+  publicacionUrl         String    @map("publicacion_url")
+  imageUrl               String?   @map("image_url")
+  vistas                 Int
+  comentarios            Int
+  reacciones             Int
+  conversacionesIniciadas Int       @map("conversaciones_iniciadas")
+  convertidos            Int
+}
+
+model Seguidor {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  fecha          DateTime @db.Date
+  cuenta         String
+  redSocial      String   @map("red_social")
+  seguidores     Int
+  dejaronDeSeguir Int      @map("dejaron_de_seguir")
+}
+
+model VentaExtra {
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  codigoVenta     String    @unique @map("codigo_venta")
+  fechaVenta      DateTime  @map("fecha_venta") @db.Date
+  pacienteId      Int       @map("paciente_id")
+  nHistoria       String    @map("n_historia")
+  nombrePaciente  String    @map("nombre_paciente")
+  servicio        String
+  categoria       String
+  precio          Float
+  montoPagado     Float     @map("monto_pagado")
+  metodoPago      String    @map("metodo_pago")
+  deuda           Float
+  fechaPagoDeuda  DateTime? @map("fecha_pago_deuda") @db.Date
+  comprobantes    ComprobanteElectronico[]
+}
+
+model Incidencia {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  fecha             DateTime @db.Date
+  hora              String
+  pacienteId        Int      @map("paciente_id")
+  nHistoria         String   @map("n_historia")
+  nombrePaciente    String   @map("nombre_paciente")
+  tipoIncidencia    String   @map("tipo_incidencia")
+  detalleIncidencia String   @map("detalle_incidencia")
+  descripcion       String
+  solucionado       Boolean
+}
+
+model Egreso {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  fechaRegistro   DateTime @map("fecha_registro") @db.Date
+  fechaPago       DateTime @map("fecha_pago") @db.Date
+  proveedor       String
+  categoria       String
+  egresoCategory  EgresoCategory @relation(fields: [categoria], references: [nombre], onDelete: Cascade)
+  descripcion     String
+  tipoComprobante String   @map("tipo_comprobante")
+  serieComprobante String? @map("serie_comprobante")
+  nComprobante    String?  @map("n_comprobante")
+  montoTotal      Float    @map("monto_total")
+  montoPagado     Float    @map("monto_pagado")
+  deuda           Float
+  modoPago        String?  @map("modo_pago")
+  fotoUrl         String?  @map("foto_url")
+  tipoMoneda      String   @map("tipo_moneda")
+  observaciones   String?
+}
+
+model TipoProveedor {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nombre    String   @unique
+  proveedores Proveedor[]
+}
+
+model Proveedor {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  razonSocial   String   @map("razon_social")
+  ruc           String   @unique
+  tipo          String
+  tipoProveedor TipoProveedor @relation(fields: [tipo], references: [nombre], onDelete: Cascade)
+  numeroContacto String  @map("numero_contacto")
+}
+
+model Goal {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  area      String
+  objective String
+  value     Float
+  unit      String
+  personal  String?
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+}
+
+model Address {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direccion String
+  distrito  String
+  ciudad    String
+  referencia String?
+}
+
+model EmergencyContact {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nombre    String
+  parentesco String
+  numero    String
+}
+
+model Reconocimiento {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  otorgadoPorId Int      @map("otorgado_por_id")
+  otorgadoPor   User     @relation("ReconocimientoOtorgado", fields: [otorgadoPorId], references: [id])
+  recibidoPorId Int      @map("recibido_por_id")
+  recibidoPor   User     @relation("ReconocimientoRecibido", fields: [recibidoPorId], references: [id], onDelete: Cascade)
+  mensaje       String
+  fecha         DateTime @db.Date
+}
+
+model ComprobanteElectronico {
+  id                      Int                 @id @default(autoincrement())
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  tipoDocumento           String              @map("tipo_documento")
+  serie                   String
+  correlativo             Int
+  fechaEmision            DateTime            @map("fecha_emision") @db.Date
+  clienteTipoDocumento    String              @map("cliente_tipo_documento")
+  clienteNumeroDocumento  String              @map("cliente_numero_documento")
+  clienteDenominacion     String              @map("cliente_denominacion")
+  clienteDireccion        String?             @map("cliente_direccion")
+  items                   ComprobanteItem[]
+  opGravadas              Float               @map("op_gravadas")
+  igv                     Float
+  total                   Float
+  sunatStatus             String              @map("sunat_status")
+  ventaId                 Int                 @map("venta_id")
+  ventaType               String              @map("venta_type") // 'lead' or 'venta_extra'
+  lead                    Lead?               @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  ventaExtra              VentaExtra?         @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+
+  @@index([ventaId]) // Add index to ventaId for performance
+}
+
+model ComprobanteItem {
+  id                       Int                    @id @default(autoincrement())
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  comprobanteElectronicoId Int                    @map("comprobante_electronico_id")
+  comprobanteElectronico   ComprobanteElectronico @relation(fields: [comprobanteElectronicoId], references: [id], onDelete: Cascade)
+  descripcion              String
+  cantidad                 Int
+  valorUnitario            Float                  @map("valor_unitario")
+  precioUnitario           Float                  @map("precio_unitario")
+  igv                      Float
+  montoTotal               Float                  @map("monto_total")
+}
