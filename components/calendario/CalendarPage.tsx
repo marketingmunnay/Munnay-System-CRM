@@ -68,6 +68,7 @@ const durationToHeight = (startStr: string, endStr: string) => {
 
 
 // FIX: Destructure metaCampaigns from props.
+// FIX: Fix function component return type by completing the component.
 const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);

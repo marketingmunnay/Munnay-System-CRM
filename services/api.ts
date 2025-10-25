@@ -4,7 +4,7 @@ import type {
     BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
     ProductCategory, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
     TipoProveedor,
-    Goal
+    Goal, ComprobanteElectronico
 } from '../types.ts';
 
 // ===================================================================================
@@ -185,6 +185,17 @@ export const saveUser = (user: User): Promise<User> => {
 };
 export const deleteUser = (userId: number): Promise<void> => apiRequest(`/users/${userId}`, 'DELETE');
 
+// Comprobantes Electronicos
+export const getComprobantes = (): Promise<ComprobanteElectronico[]> => apiRequest<ComprobanteElectronico[]>('/comprobantes', 'GET');
+export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<ComprobanteElectronico> => {
+    if (String(comprobante.id).length > 7) {
+        const { id, ...data } = comprobante;
+        return apiRequest<ComprobanteElectronico>('/comprobantes', 'POST', data);
+    }
+    return apiRequest<ComprobanteElectronico>(`/comprobantes/${comprobante.id}`, 'PUT', comprobante);
+};
+export const deleteComprobante = (comprobanteId: number): Promise<void> => apiRequest(`/comprobantes/${comprobanteId}`, 'DELETE');
+
 
 // Generic Config Handlers
 const createConfigApi = <T extends { id: number, nombre?: string }>(endpoint: string) => ({
@@ -240,12 +251,14 @@ export const deleteProductCategory = productCategoryApi.delete;
 
 const egresoCategoryApi = createConfigApi<EgresoCategory>('egreso-categories');
 export const getEgresoCategories = egresoCategoryApi.getAll;
-export const saveEgresoCategory = egresoCategoryApi.save;
+export const createEgresoCategory = egresoCategoryApi.create;
+export const updateEgresoCategory = egresoCategoryApi.update;
 export const deleteEgresoCategory = egresoCategoryApi.delete;
 
 const jobPositionApi = createConfigApi<JobPosition>('job-positions');
 export const getJobPositions = jobPositionApi.getAll;
-export const saveJobPosition = jobPositionApi.save;
+export const createJobPosition = jobPositionApi.create;
+export const updateJobPosition = jobPositionApi.update;
 export const deleteJobPosition = jobPositionApi.delete;
 
 // Goals
@@ -270,9 +283,10 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-flash-latest',
-            contents: prompt,
+            contents: [{text: prompt}], // Corrected to use parts for prompt
         });
 
+        // Use .text directly as per new guidelines
         return response.text;
     } catch (error) {
         console.error("Error al generar contenido con IA:", error);

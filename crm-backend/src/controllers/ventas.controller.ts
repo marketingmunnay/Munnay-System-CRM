@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getVentas = async (req: Request, res: Response) => {
+export const getVentas = async (req: express.Request, res: express.Response) => {
   try {
     const ventas = await prisma.ventaExtra.findMany({ orderBy: { fechaVenta: 'desc' } });
     res.status(200).json(ventas);
@@ -12,7 +10,7 @@ export const getVentas = async (req: Request, res: Response) => {
   }
 };
 
-export const getVentaById = async (req: Request, res: Response) => {
+export const getVentaById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const venta = await prisma.ventaExtra.findUnique({ where: { id: parseInt(id) } });
@@ -23,7 +21,7 @@ export const getVentaById = async (req: Request, res: Response) => {
   }
 };
 
-export const createVenta = async (req: Request, res: Response) => {
+export const createVenta = async (req: express.Request, res: express.Response) => {
   const { id, fechaVenta, fechaPagoDeuda, ...data } = req.body;
   try {
     const newVenta = await prisma.ventaExtra.create({
@@ -39,7 +37,7 @@ export const createVenta = async (req: Request, res: Response) => {
   }
 };
 
-export const updateVenta = async (req: Request, res: Response) => {
+export const updateVenta = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fechaVenta, fechaPagoDeuda, ...data } = req.body;
   try {
@@ -57,7 +55,7 @@ export const updateVenta = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteVenta = async (req: Request, res: Response) => {
+export const deleteVenta = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.ventaExtra.delete({ where: { id: parseInt(id) } });

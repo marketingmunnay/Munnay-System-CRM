@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getRoles = async (req: Request, res: Response) => {
+export const getRoles = async (req: express.Request, res: express.Response) => {
   try {
     const roles = await prisma.role.findMany();
     res.status(200).json(roles);
@@ -12,7 +10,7 @@ export const getRoles = async (req: Request, res: Response) => {
   }
 };
 
-export const getRoleById = async (req: Request, res: Response) => {
+export const getRoleById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const role = await prisma.role.findUnique({ where: { id: parseInt(id) } });
@@ -25,7 +23,7 @@ export const getRoleById = async (req: Request, res: Response) => {
   }
 };
 
-export const createRole = async (req: Request, res: Response) => {
+export const createRole = async (req: express.Request, res: express.Response) => {
   const { id, ...roleData } = req.body;
   try {
     const newRole = await prisma.role.create({
@@ -37,7 +35,7 @@ export const createRole = async (req: Request, res: Response) => {
   }
 };
 
-export const updateRole = async (req: Request, res: Response) => {
+export const updateRole = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { ...roleData } = req.body;
   try {
@@ -51,7 +49,7 @@ export const updateRole = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteRole = async (req: Request, res: Response) => {
+export const deleteRole = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.role.delete({

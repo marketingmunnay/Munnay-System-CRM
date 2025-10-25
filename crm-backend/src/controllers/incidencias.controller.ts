@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getIncidencias = async (req: Request, res: Response) => {
+export const getIncidencias = async (req: express.Request, res: express.Response) => {
   try {
     const incidencias = await prisma.incidencia.findMany({ orderBy: { fecha: 'desc' } });
     res.status(200).json(incidencias);
@@ -12,7 +10,7 @@ export const getIncidencias = async (req: Request, res: Response) => {
   }
 };
 
-export const getIncidenciaById = async (req: Request, res: Response) => {
+export const getIncidenciaById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const incidencia = await prisma.incidencia.findUnique({ where: { id: parseInt(id) } });
@@ -23,7 +21,7 @@ export const getIncidenciaById = async (req: Request, res: Response) => {
   }
 };
 
-export const createIncidencia = async (req: Request, res: Response) => {
+export const createIncidencia = async (req: express.Request, res: express.Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newIncidencia = await prisma.incidencia.create({
@@ -38,7 +36,7 @@ export const createIncidencia = async (req: Request, res: Response) => {
   }
 };
 
-export const updateIncidencia = async (req: Request, res: Response) => {
+export const updateIncidencia = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fecha, ...data } = req.body;
   try {
@@ -55,7 +53,7 @@ export const updateIncidencia = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteIncidencia = async (req: Request, res: Response) => {
+export const deleteIncidencia = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.incidencia.delete({ where: { id: parseInt(id) } });

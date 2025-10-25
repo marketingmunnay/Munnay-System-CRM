@@ -1,10 +1,8 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
 // Controller functions for Campaign (Anuncios)
-export const getCampaigns = async (req: Request, res: Response) => {
+export const getCampaigns = async (req: express.Request, res: express.Response) => {
   try {
     const campaigns = await prisma.campaign.findMany();
     res.status(200).json(campaigns);
@@ -13,7 +11,7 @@ export const getCampaigns = async (req: Request, res: Response) => {
   }
 };
 
-export const getCampaignById = async (req: Request, res: Response) => {
+export const getCampaignById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const campaign = await prisma.campaign.findUnique({ where: { id: parseInt(id) } });
@@ -24,7 +22,7 @@ export const getCampaignById = async (req: Request, res: Response) => {
   }
 };
 
-export const createCampaign = async (req: Request, res: Response) => {
+export const createCampaign = async (req: express.Request, res: express.Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newCampaign = await prisma.campaign.create({
@@ -39,7 +37,7 @@ export const createCampaign = async (req: Request, res: Response) => {
   }
 };
 
-export const updateCampaign = async (req: Request, res: Response) => {
+export const updateCampaign = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fecha, ...data } = req.body;
   try {
@@ -56,7 +54,7 @@ export const updateCampaign = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteCampaign = async (req: Request, res: Response) => {
+export const deleteCampaign = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.campaign.delete({ where: { id: parseInt(id) } });
@@ -68,7 +66,7 @@ export const deleteCampaign = async (req: Request, res: Response) => {
 
 
 // Controller functions for MetaCampaign
-export const getMetaCampaigns = async (req: Request, res: Response) => {
+export const getMetaCampaigns = async (req: express.Request, res: express.Response) => {
   try {
     const metaCampaigns = await prisma.metaCampaign.findMany();
     res.status(200).json(metaCampaigns);
@@ -77,7 +75,7 @@ export const getMetaCampaigns = async (req: Request, res: Response) => {
   }
 };
 
-export const getMetaCampaignById = async (req: Request, res: Response) => {
+export const getMetaCampaignById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const metaCampaign = await prisma.metaCampaign.findUnique({ where: { id: parseInt(id) } });
@@ -88,7 +86,7 @@ export const getMetaCampaignById = async (req: Request, res: Response) => {
   }
 };
 
-export const createMetaCampaign = async (req: Request, res: Response) => {
+export const createMetaCampaign = async (req: express.Request, res: express.Response) => {
   const { id, fechaInicio, fechaFin, ...data } = req.body;
   try {
     const newMetaCampaign = await prisma.metaCampaign.create({
@@ -104,7 +102,7 @@ export const createMetaCampaign = async (req: Request, res: Response) => {
   }
 };
 
-export const updateMetaCampaign = async (req: Request, res: Response) => {
+export const updateMetaCampaign = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fechaInicio, fechaFin, ...data } = req.body;
   try {
@@ -122,7 +120,7 @@ export const updateMetaCampaign = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteMetaCampaign = async (req: Request, res: Response) => {
+export const deleteMetaCampaign = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.metaCampaign.delete({ where: { id: parseInt(id) } });

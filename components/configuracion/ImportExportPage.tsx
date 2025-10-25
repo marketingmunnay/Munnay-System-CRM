@@ -181,4 +181,16 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes }) => 
                 description="Importa comprobantes electrónicos ya emitidos."
                 templateFilename="plantilla_comprobantes.csv"
                 headers={[
-                    "id", "tipoDocumento", "serie", "correlativo", "fechaEm
+                    "id", "tipoDocumento", "serie", "correlativo", "fechaEmision",
+                    "clienteTipoDocumento", "clienteNumeroDocumento", "clienteDenominacion",
+                    "clienteDireccion", "items", "opGravadas", "igv", "total", "sunatStatus",
+                    "ventaId", "ventaType"
+                ]}
+                // FIX: Add the missing onImport prop.
+                onImport={(file) => handleFileImport(file, 'Comprobantes Electrónicos')}
+            />
+        </div>
+    );
+};
+
+export default ImportExportPage;

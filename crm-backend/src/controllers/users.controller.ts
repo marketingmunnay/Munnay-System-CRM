@@ -1,10 +1,8 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (req: express.Request, res: express.Response) => {
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
@@ -36,7 +34,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
@@ -48,7 +46,7 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: express.Request, res: express.Response) => {
   const { id, password, ...data } = req.body;
   if (!password) {
     return res.status(400).json({ message: 'Password is required' });
@@ -70,7 +68,7 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { password, ...data } = req.body;
   try {
@@ -94,7 +92,7 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     // Handle related records if necessary, though schema uses Cascade delete

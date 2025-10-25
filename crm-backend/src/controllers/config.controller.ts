@@ -1,6 +1,4 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
 // Generic CRUD factory for simple models
@@ -14,7 +12,7 @@ const createCrudHandlers = (modelName: any) => {
     const typedModel = model as any;
 
     return {
-        getAll: async (req: Request, res: Response) => {
+        getAll: async (req: express.Request, res: express.Response) => {
             try {
                 const items = await typedModel.findMany();
                 res.status(200).json(items);
@@ -22,7 +20,7 @@ const createCrudHandlers = (modelName: any) => {
                 res.status(500).json({ message: `Error fetching ${modelName}`, error: (error as Error).message });
             }
         },
-        create: async (req: Request, res: Response) => {
+        create: async (req: express.Request, res: express.Response) => {
             const { id, ...data } = req.body;
             try {
                 const newItem = await typedModel.create({ data });
@@ -31,7 +29,7 @@ const createCrudHandlers = (modelName: any) => {
                 res.status(500).json({ message: `Error creating ${modelName}`, error: (error as Error).message });
             }
         },
-        update: async (req: Request, res: Response) => {
+        update: async (req: express.Request, res: express.Response) => {
             const { id } = req.params;
             try {
                 const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body });
@@ -40,7 +38,7 @@ const createCrudHandlers = (modelName: any) => {
                 res.status(500).json({ message: `Error updating ${modelName}`, error: (error as Error).message });
             }
         },
-        delete: async (req: Request, res: Response) => {
+        delete: async (req: express.Request, res: express.Response) => {
             const { id } = req.params;
             try {
                 await typedModel.delete({ where: { id: parseInt(id) } });
@@ -53,7 +51,7 @@ const createCrudHandlers = (modelName: any) => {
 };
 
 // --- Business Info (special case) ---
-export const getBusinessInfo = async (req: Request, res: Response) => {
+export const getBusinessInfo = async (req: express.Request, res: express.Response) => {
     try {
         // Assuming there's only one record, or we fetch the first one.
         const info = await prisma.businessInfo.findFirst();
@@ -79,7 +77,7 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
     }
 };
 
-export const updateBusinessInfo = async (req: Request, res: Response) => {
+export const updateBusinessInfo = async (req: express.Request, res: express.Response) => {
     try {
         const existingInfo = await prisma.businessInfo.findFirst();
         if (!existingInfo) {

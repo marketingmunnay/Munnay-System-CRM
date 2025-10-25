@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getExpenses = async (req: Request, res: Response) => {
+export const getExpenses = async (req: express.Request, res: express.Response) => {
   try {
     const expenses = await prisma.egreso.findMany();
     res.status(200).json(expenses);
@@ -12,7 +10,7 @@ export const getExpenses = async (req: Request, res: Response) => {
   }
 };
 
-export const getExpenseById = async (req: Request, res: Response) => {
+export const getExpenseById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const expense = await prisma.egreso.findUnique({ where: { id: parseInt(id) } });
@@ -23,7 +21,7 @@ export const getExpenseById = async (req: Request, res: Response) => {
   }
 };
 
-export const createExpense = async (req: Request, res: Response) => {
+export const createExpense = async (req: express.Request, res: express.Response) => {
   const { id, fechaRegistro, fechaPago, ...data } = req.body;
   try {
     const newExpense = await prisma.egreso.create({
@@ -39,7 +37,7 @@ export const createExpense = async (req: Request, res: Response) => {
   }
 };
 
-export const updateExpense = async (req: Request, res: Response) => {
+export const updateExpense = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fechaRegistro, fechaPago, ...data } = req.body;
   try {
@@ -57,7 +55,7 @@ export const updateExpense = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteExpense = async (req: Request, res: Response) => {
+export const deleteExpense = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.egreso.delete({ where: { id: parseInt(id) } });

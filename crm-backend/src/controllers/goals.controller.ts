@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getGoals = async (req: Request, res: Response) => {
+export const getGoals = async (req: express.Request, res: express.Response) => {
   try {
     const goals = await prisma.goal.findMany();
     res.status(200).json(goals);
@@ -12,7 +10,7 @@ export const getGoals = async (req: Request, res: Response) => {
   }
 };
 
-export const getGoalById = async (req: Request, res: Response) => {
+export const getGoalById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const goal = await prisma.goal.findUnique({ where: { id: parseInt(id) } });
@@ -23,7 +21,7 @@ export const getGoalById = async (req: Request, res: Response) => {
   }
 };
 
-export const createGoal = async (req: Request, res: Response) => {
+export const createGoal = async (req: express.Request, res: express.Response) => {
   const { id, startDate, endDate, ...data } = req.body;
   try {
     const newGoal = await prisma.goal.create({
@@ -39,7 +37,7 @@ export const createGoal = async (req: Request, res: Response) => {
   }
 };
 
-export const updateGoal = async (req: Request, res: Response) => {
+export const updateGoal = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { startDate, endDate, ...data } = req.body;
   try {
@@ -57,7 +55,7 @@ export const updateGoal = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteGoal = async (req: Request, res: Response) => {
+export const deleteGoal = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.goal.delete({ where: { id: parseInt(id) } });

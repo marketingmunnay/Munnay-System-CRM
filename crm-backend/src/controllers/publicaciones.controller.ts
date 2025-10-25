@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getPublicaciones = async (req: Request, res: Response) => {
+export const getPublicaciones = async (req: express.Request, res: express.Response) => {
   try {
     const publicaciones = await prisma.publicacion.findMany({
       orderBy: {
@@ -16,7 +14,7 @@ export const getPublicaciones = async (req: Request, res: Response) => {
   }
 };
 
-export const getPublicacionById = async (req: Request, res: Response) => {
+export const getPublicacionById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const publicacion = await prisma.publicacion.findUnique({ where: { id: parseInt(id) } });
@@ -27,7 +25,7 @@ export const getPublicacionById = async (req: Request, res: Response) => {
   }
 };
 
-export const createPublicacion = async (req: Request, res: Response) => {
+export const createPublicacion = async (req: express.Request, res: express.Response) => {
   const { id, fechaPost, ...data } = req.body;
   try {
     const newPublicacion = await prisma.publicacion.create({
@@ -42,7 +40,7 @@ export const createPublicacion = async (req: Request, res: Response) => {
   }
 };
 
-export const updatePublicacion = async (req: Request, res: Response) => {
+export const updatePublicacion = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fechaPost, ...data } = req.body;
   try {
@@ -59,7 +57,7 @@ export const updatePublicacion = async (req: Request, res: Response) => {
   }
 };
 
-export const deletePublicacion = async (req: Request, res: Response) => {
+export const deletePublicacion = async (req: express.Request, res: express.Response) => {
     const { id } = req.params;
     try {
         await prisma.publicacion.delete({ where: { id: parseInt(id) } });

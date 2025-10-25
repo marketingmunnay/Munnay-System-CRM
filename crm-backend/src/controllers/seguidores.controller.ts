@@ -1,9 +1,7 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
-export const getSeguidores = async (req: Request, res: Response) => {
+export const getSeguidores = async (req: express.Request, res: express.Response) => {
   try {
     const seguidores = await prisma.seguidor.findMany({
         orderBy: {
@@ -16,7 +14,7 @@ export const getSeguidores = async (req: Request, res: Response) => {
   }
 };
 
-export const getSeguidorById = async (req: Request, res: Response) => {
+export const getSeguidorById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const seguidor = await prisma.seguidor.findUnique({ where: { id: parseInt(id) } });
@@ -27,7 +25,7 @@ export const getSeguidorById = async (req: Request, res: Response) => {
   }
 };
 
-export const createSeguidor = async (req: Request, res: Response) => {
+export const createSeguidor = async (req: express.Request, res: express.Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newSeguidor = await prisma.seguidor.create({
@@ -42,7 +40,7 @@ export const createSeguidor = async (req: Request, res: Response) => {
   }
 };
 
-export const updateSeguidor = async (req: Request, res: Response) => {
+export const updateSeguidor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   const { fecha, ...data } = req.body;
   try {
@@ -59,7 +57,7 @@ export const updateSeguidor = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteSeguidor = async (req: Request, res: Response) => {
+export const deleteSeguidor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.seguidor.delete({ where: { id: parseInt(id) } });

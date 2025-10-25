@@ -1,10 +1,8 @@
-
-// FIX: Add missing import for Express Request and Response types.
-import { Request, Response } from 'express';
+import * as express from 'express';
 import prisma from '../lib/prisma';
 
 // --- Proveedores ---
-export const getProveedores = async (req: Request, res: Response) => {
+export const getProveedores = async (req: express.Request, res: express.Response) => {
   try {
     const proveedores = await prisma.proveedor.findMany();
     res.status(200).json(proveedores);
@@ -13,7 +11,7 @@ export const getProveedores = async (req: Request, res: Response) => {
   }
 };
 
-export const getProveedorById = async (req: Request, res: Response) => {
+export const getProveedorById = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const proveedor = await prisma.proveedor.findUnique({ where: { id: parseInt(id) } });
@@ -24,7 +22,7 @@ export const getProveedorById = async (req: Request, res: Response) => {
   }
 };
 
-export const createProveedor = async (req: Request, res: Response) => {
+export const createProveedor = async (req: express.Request, res: express.Response) => {
   const { id, ...data } = req.body;
   try {
     const newProveedor = await prisma.proveedor.create({ data });
@@ -34,7 +32,7 @@ export const createProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const updateProveedor = async (req: Request, res: Response) => {
+export const updateProveedor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const updatedProveedor = await prisma.proveedor.update({ where: { id: parseInt(id) }, data: req.body });
@@ -44,7 +42,7 @@ export const updateProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteProveedor = async (req: Request, res: Response) => {
+export const deleteProveedor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.proveedor.delete({ where: { id: parseInt(id) } });
@@ -56,7 +54,7 @@ export const deleteProveedor = async (req: Request, res: Response) => {
 
 
 // --- Tipos de Proveedor ---
-export const getTiposProveedor = async (req: Request, res: Response) => {
+export const getTiposProveedor = async (req: express.Request, res: express.Response) => {
   try {
     const tipos = await prisma.tipoProveedor.findMany();
     res.status(200).json(tipos);
@@ -65,7 +63,7 @@ export const getTiposProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const createTipoProveedor = async (req: Request, res: Response) => {
+export const createTipoProveedor = async (req: express.Request, res: express.Response) => {
   const { id, ...data } = req.body;
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
@@ -75,7 +73,7 @@ export const createTipoProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const updateTipoProveedor = async (req: Request, res: Response) => {
+export const updateTipoProveedor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     const updatedTipo = await prisma.tipoProveedor.update({ where: { id: parseInt(id) }, data: req.body });
@@ -85,7 +83,7 @@ export const updateTipoProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteTipoProveedor = async (req: Request, res: Response) => {
+export const deleteTipoProveedor = async (req: express.Request, res: express.Response) => {
   const { id } = req.params;
   try {
     await prisma.tipoProveedor.delete({ where: { id: parseInt(id) } });
