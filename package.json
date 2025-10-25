@@ -1,41 +1,38 @@
 {
-  "name": "crm-munnay",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@google/genai": "^1.25.0",
-    "pg": "^8.12.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "recharts": "^3.2.1"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.11.6",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.5.2",
-    "vite": "^5.3.1"
-  }
-  {
   "name": "crm-backend",
   "version": "1.0.0",
-  // ... otras propiedades
+  "description": "Backend for CRM Munnay",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "prisma:seed": "ts-node prisma/seed.ts" // Asegúrate de que esta línea exista
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
-  // ... dependencias
-
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.15.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.8",
+    "@types/pg": "^8.11.6",
+    "nodemon": "^3.1.4",
+    "prisma": "^5.15.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
 }
