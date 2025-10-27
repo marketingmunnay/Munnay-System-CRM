@@ -33,7 +33,7 @@ export const getProveedorById = async (req: Request<{ id: string }>, res: Respon
 
 export const createProveedor = async (req: Request, res: Response) => {
   // FIX: Access `req.body` correctly.
-  const data = req.body;
+  const data = req.body as any;
   try {
     const newProveedor = await prisma.proveedor.create({ data });
     // FIX: Use `res.status` directly.
@@ -48,7 +48,7 @@ export const updateProveedor = async (req: Request<{ id: string }>, res: Respons
   // FIX: Access `req.params.id` correctly.
   const id = (req as Request<{ id: string }>).params.id;
   try {
-    const updatedProveedor = await prisma.proveedor.update({ where: { id: parseInt(id) }, data: req.body });
+    const updatedProveedor = await prisma.proveedor.update({ where: { id: parseInt(id) }, data: req.body as any });
     // FIX: Use `res.status` directly.
     (res as Response).status(200).json(updatedProveedor);
   } catch (error) {
@@ -62,7 +62,7 @@ export const deleteProveedor = async (req: Request<{ id: string }>, res: Respons
   const id = (req as Request<{ id: string }>).params.id;
   try {
     await prisma.proveedor.delete({ where: { id: parseInt(id) } });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -85,7 +85,7 @@ export const getTiposProveedor = async (req: Request, res: Response) => {
 
 export const createTipoProveedor = async (req: Request, res: Response) => {
   // FIX: Access `req.body` correctly.
-  const data = req.body;
+  const data = req.body as any;
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
     // FIX: Use `res.status` directly.
@@ -100,7 +100,7 @@ export const updateTipoProveedor = async (req: Request<{ id: string }>, res: Res
   // FIX: Access `req.params.id` correctly.
   const id = (req as Request<{ id: string }>).params.id;
   try {
-    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: parseInt(id) }, data: req.body });
+    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: parseInt(id) }, data: req.body as any });
     // FIX: Use `res.status` directly.
     (res as Response).status(200).json(updatedTipo);
   } catch (error) {

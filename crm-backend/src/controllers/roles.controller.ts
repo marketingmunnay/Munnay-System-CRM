@@ -32,7 +32,7 @@ export const getRoleById = async (req: Request<{ id: string }>, res: Response) =
 
 export const createRole = async (req: Request, res: Response) => {
   // FIX: Access `req.body` correctly.
-  const roleData = req.body;
+  const roleData = req.body as any;
   try {
     const newRole = await prisma.role.create({
       data: roleData,
@@ -49,7 +49,7 @@ export const updateRole = async (req: Request<{ id: string }>, res: Response) =>
   // FIX: Access `req.params.id` correctly.
   const id = (req as Request<{ id: string }>).params.id;
   // FIX: Access `req.body` correctly.
-  const roleData = req.body;
+  const roleData = req.body as any;
   try {
     const updatedRole = await prisma.role.update({
       where: { id: parseInt(id) },

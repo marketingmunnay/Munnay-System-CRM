@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom/client'; // ADDED: Import ReactDOM
+
 import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
@@ -307,12 +309,10 @@ const App: React.FC = () => {
             case 'calendario':
                 return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                // FIX: Corrected the prop name 'onSaveComprobante' to 'handleSaveComprobante'.
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
-                // FIX: Corrected typo 'EgresosDiariasPage' to 'EgresosDiariosPage'.
                 return <EgresosDiariosPage 
                     egresos={egresos} 
                     onSaveEgreso={handleSaveEgreso} 
@@ -434,5 +434,17 @@ const App: React.FC = () => {
         </div>
     );
 };
+
+// ADDED: Root rendering logic
+const rootElement = document.getElementById('root');
+if (rootElement) {
+    ReactDOM.createRoot(rootElement).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
+} else {
+    console.error('Failed to find the root element to mount the React application.');
+}
 
 export default App;

@@ -37,7 +37,7 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
         update: async (req: Request<{ id: string }>, res: Response) => {
             const id = (req as Request<{ id: string }>).params.id;
             try {
-                const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body });
+                const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body as any });
                 // FIX: Use `res.status` directly.
                 (res as Response).status(200).json(updatedItem);
             } catch (error) {
@@ -98,7 +98,7 @@ export const updateBusinessInfo = async (req: Request, res: Response) => {
         }
         const updatedInfo = await prisma.businessInfo.update({
             where: { id: existingInfo.id },
-            data: req.body
+            data: req.body as any
         });
         // FIX: Use `res.status` directly.
         (res as Response).status(200).json(updatedInfo);

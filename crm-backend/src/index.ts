@@ -39,9 +39,9 @@ app.use(cors({
   },
   credentials: true,
 }));
-// FIX: Explicitly cast `app` to `express.Application` to ensure `use` method accepts standard middleware types.
-// This resolves the "No overload matches this call" errors for express.json() and cookieParser().
+// FIX: Explicitly cast `express.json()` to `express.RequestHandler`.
 app.use(express.json() as express.RequestHandler);
+// FIX: Explicitly cast `cookieParser()` to `express.RequestHandler`.
 app.use(cookieParser() as express.RequestHandler);
 
 app.get('/', (req: Request, res: Response) => {
