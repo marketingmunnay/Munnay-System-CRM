@@ -52,7 +52,6 @@ export enum Seller {
     Elvira = 'Elvira'
 }
 
-// FIX: Add 'Vanesa' to Personal type to align with Seller roles and fix type error.
 export type Personal = 'Vanesa' | 'Elvira' | 'Janela' | 'Liz' | 'Keila' | 'Luz' | 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
 export type Medico = 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
 
@@ -257,7 +256,6 @@ export interface Incidencia {
     solucionado: boolean;
 }
 
-// FIX: Added missing types for electronic invoicing
 export enum TipoComprobanteElectronico {
     Boleta = 'Boleta',
     Factura = 'Factura',

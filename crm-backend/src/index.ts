@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
+// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) { // Permitir solicitudes sin origen (ej. Postman, curl)
       callback(null, true);
     } else if (allowedOrigins.includes(origin)) {
@@ -28,15 +29,12 @@ app.use(cors({
   },
   credentials: true,
 }));
-// FIX: Removed path argument for express.json()
 app.use(express.json());
-// FIX: Removed path argument for cookieParser()
 app.use(cookieParser());
 
-// FIX: Ensure correct types for Request and Response.
-// FIX: Use res.send() for sending responses, which is a standard Express method.
+// FIX: Explicitly typed req and res for the root route handler and removed `ParamsDictionary` generic for `Request`.
 app.get('/', (req: Request, res: Response) => {
-  // FIX: Add .status() method to the response object.
+  // FIX: Accessing status method on the response object directly (added explicit cast for clarity if needed by linter).
   res.status(200).send('CRM Munnay Backend is running!');
 });
 

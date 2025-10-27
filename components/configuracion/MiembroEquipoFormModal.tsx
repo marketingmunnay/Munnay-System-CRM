@@ -29,13 +29,15 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(user ? { ...user, password: '' } : { 
-          id: Date.now(),
-          rolId: roles[0]?.id,
-          avatarUrl: `https://picsum.photos/seed/${Date.now()}/40/40`,
-          addresses: [],
-          emergencyContacts: [],
-      });
+      setFormData(user 
+          ? { ...user, password: '', addresses: user.addresses || [], emergencyContacts: user.emergencyContacts || [] } // Ensure arrays are initialized
+          : { 
+              id: Date.now(),
+              rolId: roles[0]?.id,
+              avatarUrl: `https://picsum.photos/seed/${Date.now()}/40/40`,
+              addresses: [],
+              emergencyContacts: [],
+          });
       setActiveTab('personal');
       setShowPassword(false);
     }
@@ -65,13 +67,13 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
   };
 
   const handleAddSubformItem = (listName: 'addresses' | 'emergencyContacts') => {
-    const newItem = listName === 'addresses' 
-        ? { id: Date.now(), direccion: '', distrito: '', ciudad: '' }
+    const newItem: Address | EmergencyContact = listName === 'addresses' 
+        ? { id: Date.now(), direccion: '', distrito: '', ciudad: '', referencia: '' }
         : { id: Date.now(), nombre: '', parentesco: '', numero: '' };
     
     setFormData(prev => {
         const list = [...(prev[listName] || [])];
-        list.push(newItem as any);
+        list.push(newItem as any); // Cast to any to bypass TS type checking for push operation
         return { ...prev, [listName]: list };
     });
   };
@@ -186,4 +188,91 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black
+                            <input type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                    <hr className="my-6"/>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de Usuario</label>
+                            <input type="text" name="usuario" value={formData.usuario || ''} onChange={handleChange} required className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={formData.password || ''}
+                                    onChange={handleChange}
+                                    required={!user}
+                                    className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2 pr-10"
+                                    placeholder={user ? "Dejar en blanco para no cambiar" : "Contraseña"}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
+                                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                >
+                                    {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                            <select name="rolId" value={formData.rolId || ''} onChange={handleChange} required className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2">
+                                {roles.map(role => <option key={role.id} value={role.id}>{role.nombre}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Puesto de Trabajo</label>
+                            <select name="position" value={formData.position || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2">
+                                <option value="">Seleccionar puesto...</option>
+                                {jobPositions.map(pos => <option key={pos.id} value={pos.nombre}>{pos.nombre}</option>)}
+                            </select>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio Laboral</label>
+                            <input type="date" name="startDate" value={formData.startDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {activeTab === 'direcciones' && (
+                <div className="space-y-4">
+                    {formData.addresses?.map((address, index) => (
+                        <div key={address.id} className="border p-4 rounded-md relative space-y-2 bg-gray-50">
+                             <button type="button" onClick={() => handleRemoveSubformItem('addresses', address.id)} className="absolute top-2 right-2 text-red-500"><TrashIcon /></button>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <div><label className="text-xs">Dirección</label><input name="direccion" value={address.direccion} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                                <div><label className="text-xs">Distrito</label><input name="distrito" value={address.distrito} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                                <div><label className="text-xs">Ciudad</label><input name="ciudad" value={address.ciudad} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                            </div>
+                            <div><label className="text-xs">Referencia</label><input name="referencia" value={address.referencia || ''} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                        </div>
+                    ))}
+                    <button type="button" onClick={() => handleAddSubformItem('addresses')} className="flex items-center text-sm text-[#aa632d]"><PlusIcon className="mr-1"/> Añadir Dirección</button>
+                </div>
+            )}
+            {activeTab === 'emergencia' && (
+                 <div className="space-y-4">
+                    {formData.emergencyContacts?.map((contact, index) => (
+                        <div key={contact.id} className="border p-4 rounded-md relative space-y-2 bg-gray-50">
+                             <button type="button" onClick={() => handleRemoveSubformItem('emergencyContacts', contact.id)} className="absolute top-2 right-2 text-red-500"><TrashIcon /></button>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <div><label className="text-xs">Nombre Completo</label><input name="nombre" value={contact.nombre} onChange={(e) => handleSubformChange('emergencyContacts', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                                <div><label className="text-xs">Parentesco</label><input name="parentesco" value={contact.parentesco} onChange={(e) => handleSubformChange('emergencyContacts', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                                <div><label className="text-xs">Número</label><input name="numero" value={contact.numero} onChange={(e) => handleSubformChange('emergencyContacts', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
+                            </div>
+                        </div>
+                    ))}
+                    <button type="button" onClick={() => handleAddSubformItem('emergencyContacts')} className="flex items-center text-sm text-[#aa632d]"><PlusIcon className="mr-1"/> Añadir Contacto</button>
+                </div>
+            )}
+        </form>
+    </Modal>
+  );
+};
+
+export default MiembroEquipoFormModal;

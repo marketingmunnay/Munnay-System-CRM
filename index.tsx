@@ -3,23 +3,22 @@ import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
-// FIX: Changed to named import for LeadFormModal
 import { LeadFormModal } from './components/marketing/LeadFormModal';
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
-import PublicacionesPage from './components/redes-sociales/PublicacionesPage';
+import PublicacionesPage } from './components/redes-sociales/PublicacionesPage';
 import SeguidoresPage from './components/redes-sociales/SeguidoresPage';
 import AgendadosPage from './components/recepcion/AgendadosPage';
 import VentasExtraPage from './components/recepcion/VentasExtraPage';
 import IncidenciasPage from './components/recepcion/IncidenciasPage';
 import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage';
-// FIX: Changed to named import for AtencionesDiariasPage
 import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
-import CalendarPage from './components/calendario/CalendarPage';
+import CalendarPage } from './components/calendario/CalendarPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
-import ConfiguracionPage from './components/configuracion/ConfiguracionPage';
+// FIX: Changed to named export for ConfiguracionPage
+import { ConfiguracionPage } from './components/configuracion/ConfiguracionPage';
 import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
@@ -96,7 +95,6 @@ const App: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            // FIX: Ensure `api.getComprobantes` exists and is called.
             const [
                 leadsData, campaignsData, ventasData, incidenciasData, 
                 egresosData, proveedoresData, usersData, rolesData,
@@ -173,10 +171,8 @@ const App: React.FC = () => {
     const handleDeleteTipoProveedor = async (id: number) => { await api.deleteTipoProveedor(id); await loadData(); };
     const handleSaveUser = async (user: User) => { await api.saveUser(user); await loadData(); };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
-    // FIX: Add handlers for `roles`.
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
-    // FIX: Add handlers for `comprobantes`.
     const handleSaveComprobante = async (comprobante: ComprobanteElectronico) => { await api.saveComprobante(comprobante); await loadData(); };
     const handleDeleteComprobante = async (comprobanteId: number) => { await api.deleteComprobante(comprobanteId); await loadData(); };
     
@@ -196,10 +192,8 @@ const App: React.FC = () => {
     const handleDeleteServiceCategory = async (id: number) => { await api.deleteServiceCategory(id); await loadData(); };
     const handleSaveProductCategory = async (category: ProductCategory) => { await api.saveProductCategory(category); await loadData(); };
     const handleDeleteProductCategory = async (id: number) => { await api.deleteProductCategory(id); await loadData(); };
-    // FIX: Use `saveEgresoCategory` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveEgresoCategory = async (category: EgresoCategory) => { await api.saveEgresoCategory(category); await loadData(); };
     const handleDeleteEgresoCategory = async (id: number) => { await api.deleteEgresoCategory(id); await loadData(); };
-    // FIX: Use `saveJobPosition` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
@@ -282,7 +276,6 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `LeadsPage`.
                 return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
@@ -300,29 +293,25 @@ const App: React.FC = () => {
             case 'redes-sociales-seguidores':
                 return <SeguidoresPage seguidores={seguidores} onSave={handleSaveSeguidor} onDelete={handleDeleteSeguidor} requestConfirmation={requestConfirmation} />;
             case 'recepcion-agendados':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `AgendadosPage`'s `LeadFormModal`.
                 return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `VentasExtraPage`.
                 return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `AtencionesDiariasPage`'s `LeadFormModal`.
                 return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-seguimiento':
                 return <AnalisisSeguimientoPage leads={leads} />;
             case 'pacientes-historia':
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `CalendarPage`'s `LeadFormModal`.
                 return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                // FIX: Pass `onSaveComprobante` and `comprobantes` to `VentasExtraPage`.
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
+                // FIX: Corrected typo 'EgresosDiariasPage' to 'EgresosDiariosPage'.
                 return <EgresosDiariosPage 
                     egresos={egresos} 
                     onSaveEgreso={handleSaveEgreso} 
@@ -334,7 +323,6 @@ const App: React.FC = () => {
             case 'finanzas-facturacion':
                 return <FacturacionPage comprobantes={comprobantes} />;
             case 'configuracion':
-                // FIX: Pass `comprobantes` to `ConfiguracionPage`.
                 return <ConfiguracionPage
                     users={users}
                     roles={roles}

@@ -1,13 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
-import { LeadStatus, Seller } from '../../types.ts';
-import { RESOURCES } from '../../constants.ts';
-// FIX: Changed to named import for LeadFormModal
-import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons.tsx';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import { LeadStatus, Seller } from '../../types';
+import { RESOURCES } from '../../constants';
+import { LeadFormModal } from '../marketing/LeadFormModal';
+import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
 
-// FIX: Update props to receive metaCampaigns for the LeadFormModal.
-// FIX: Add onDeleteLead and requestConfirmation to props
 interface CalendarPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
@@ -68,8 +65,6 @@ const durationToHeight = (startStr: string, endStr: string) => {
 };
 
 
-// FIX: Destructure metaCampaigns from props.
-// FIX: Fix function component return type by completing the component.
 const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -290,8 +285,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
                     )}
                 </div>
             </div>
-             {/* FIX: Pass metaCampaigns to LeadFormModal instead of campaigns. */}
-             {/* FIX: Pass onDelete and requestConfirmation to LeadFormModal */}
              <LeadFormModal 
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

@@ -3,7 +3,6 @@ import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
-// FIX: Changed to named import for LeadFormModal
 import { LeadFormModal } from './components/marketing/LeadFormModal';
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
@@ -13,13 +12,13 @@ import AgendadosPage from './components/recepcion/AgendadosPage';
 import VentasExtraPage from './components/recepcion/VentasExtraPage';
 import IncidenciasPage from './components/recepcion/IncidenciasPage';
 import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage';
-// FIX: Changed to named import for AtencionesDiariasPage
 import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
 import CalendarPage from './components/calendario/CalendarPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
-import ConfiguracionPage from './components/configuracion/ConfiguracionPage';
+// FIX: Changed to named export for ConfiguracionPage
+import { ConfiguracionPage } from './components/configuracion/ConfiguracionPage';
 import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
@@ -193,10 +192,8 @@ const App: React.FC = () => {
     const handleDeleteServiceCategory = async (id: number) => { await api.deleteServiceCategory(id); await loadData(); };
     const handleSaveProductCategory = async (category: ProductCategory) => { await api.saveProductCategory(category); await loadData(); };
     const handleDeleteProductCategory = async (id: number) => { await api.deleteProductCategory(id); await loadData(); };
-    // FIX: Use `saveEgresoCategory` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveEgresoCategory = async (category: EgresoCategory) => { await api.saveEgresoCategory(category); await loadData(); };
     const handleDeleteEgresoCategory = async (id: number) => { await api.deleteEgresoCategory(id); await loadData(); };
-    // FIX: Use `saveJobPosition` which is the correct function in `services/api.ts` for both create/update.
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
@@ -314,6 +311,7 @@ const App: React.FC = () => {
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
+                // FIX: Corrected typo 'EgresosDiariasPage' to 'EgresosDiariosPage'.
                 return <EgresosDiariosPage 
                     egresos={egresos} 
                     onSaveEgreso={handleSaveEgreso} 

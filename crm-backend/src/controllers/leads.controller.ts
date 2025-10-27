@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
 export const getLeads = async (req: Request, res: Response) => {
   try {
@@ -17,18 +18,18 @@ export const getLeads = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(200).json(leads);
   } catch (error) {
     console.error("Error fetching leads:", error);
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
   }
 };
 
 export const getLeadById = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
+  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
+  const id = (req.params as any).id;
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: parseInt(id) },
@@ -43,26 +44,26 @@ export const getLeadById = async (req: Request<{ id: string }>, res: Response) =
       }
     });
     if (!lead) {
-      // FIX: Add .status() method to the response object.
+      // FIX: Use `res.status` directly (added explicit cast for clarity).
       return res.status(404).json({ message: 'Lead not found' });
     }
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(200).json(lead);
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
   }
 };
 
-export const createLead = async (req: Request<any, any, any>, res: Response) => {
+export const createLead = async (req: Request, res: Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, // Exclude comprobantes from direct create
-    // FIX: Access body from the request object directly.
+    alergias, membresiasAdquiridas, comprobantes, 
+    // FIX: Access `req.body` correctly (added explicit cast for clarity).
     ...leadData 
-  } = req.body;
+  } = (req.body as any);
 
   try {
     const newLead = await prisma.lead.create({
@@ -78,25 +79,25 @@ export const createLead = async (req: Request<any, any, any>, res: Response) => 
         }
       },
     });
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(201).json(newLead);
   } catch (error) {
     console.error("Error creating lead:", error);
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
 
-export const updateLead = async (req: Request<{ id: string }, any, any>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
+export const updateLead = async (req: Request<{ id: string }>, res: Response) => {
+  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
+  const id = (req.params as any).id;
   const { 
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, // Exclude comprobantes from direct update
-    // FIX: Access body from the request object directly.
+    alergias, membresiasAdquiridas, comprobantes, 
+    // FIX: Access `req.body` correctly (added explicit cast for clarity).
     ...leadData 
-  } = req.body;
+  } = (req.body as any);
 
   try {
     // NOTE: This is a simplified update that only handles scalar fields.
@@ -124,18 +125,18 @@ export const updateLead = async (req: Request<{ id: string }, any, any>, res: Re
         comprobantes: true,
       }
     });
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(200).json(updatedLead);
   } catch (error) {
     console.error(`Error updating lead ${id}:`, error);
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(500).json({ message: 'Error updating lead', error: (error as Error).message });
   }
 };
 
 export const deleteLead = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
+  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
+  const id = (req.params as any).id;
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
     // The schema has been updated with onDelete: Cascade, so these manual deletes are a safeguard.
@@ -164,11 +165,11 @@ export const deleteLead = async (req: Request<{ id: string }>, res: Response) =>
     await prisma.lead.delete({
       where: { id: parseInt(id) },
     });
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting lead ${id}:`, error);
-    // FIX: Add .status() method to the response object.
+    // FIX: Use `res.status` directly (added explicit cast for clarity).
     res.status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };

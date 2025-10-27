@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
-import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types.ts';
-import Modal from '../shared/Modal.tsx';
-import FacturacionModal from '../finanzas/FacturacionModal.tsx';
-import { RESOURCES } from '../../constants.ts';
-import * as api from '../../services/api.ts';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico } from '../../types';
+import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
+import Modal from '../shared/Modal';
+import FacturacionModal from '../finanzas/FacturacionModal';
+import { RESOURCES } from '../../constants';
+import * as api from '../../services/api';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -20,7 +20,6 @@ interface LeadFormModalProps {
   comprobantes: ComprobanteElectronico[];
 }
 
-// FIX: Add 'Vanesa' to PERSONAL_OPTIONS to be consistent with the updated Personal type.
 const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
@@ -134,7 +133,7 @@ const RecepcionTabContent: React.FC<{
     return (
         <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded-lg p-8 text-center">
             <GoogleIcon name="warning" className="text-5xl text-yellow-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800">Acción Requerida</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Acción Reqerida</h3>
             <p className="text-gray-600 mt-2 max-w-md">Para gestionar la recepción del paciente, primero debe registrar el monto del pago inicial en la pestaña de "Ficha de Paciente".</p>
         </div>
     );

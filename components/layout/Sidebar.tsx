@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Page, BusinessInfo } from '../../types.ts';
+import type { Page, BusinessInfo } from '../../types';
 
 interface SidebarProps {
   currentPage: Page;

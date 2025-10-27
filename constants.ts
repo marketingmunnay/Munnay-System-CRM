@@ -4,7 +4,7 @@ export const RESOURCES = [
     { id: 'Dra. Marilia', name: 'Dra. Marilia', type: 'personal', imageUrl: 'https://picsum.photos/id/1027/100/100' },
     { id: 'Dra. Sofía', name: 'Dra. Sofía', type: 'personal', imageUrl: 'https://picsum.photos/id/1011/100/100' },
     { id: 'Dr. Carlos', name: 'Dr. Carlos', type: 'personal', imageUrl: 'https://picsum.photos/id/1005/100/100' },
-    { id: 'Vanesa', name: 'Vanesa', type: 'personal', imageUrl: 'https://picsum.photos/id/1025/100/100' }, // Added Vanesa
+    { id: 'Vanesa', name: 'Vanesa', type: 'personal', imageUrl: 'https://picsum.photos/id/1025/100/100' },
     { id: 'Consultorio 1', name: 'Consultorio 1', type: 'room' },
     { id: 'Consultorio 2', name: 'Consultorio 2', type: 'room' },
     { id: 'Sala de Procedimientos', name: 'Sala de Procedimientos', type: 'room' },

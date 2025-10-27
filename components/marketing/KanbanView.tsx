@@ -1,7 +1,7 @@
 import React from 'react';
-import type { Lead } from '../../types.ts';
-import { LeadStatus } from '../../types.ts';
-import { ClockIcon, CurrencyDollarIcon, UserIcon } from '../shared/Icons.tsx';
+import type { Lead } from '../../types';
+import { LeadStatus } from '../../types';
+import { ClockIcon, CurrencyDollarIcon, UserIcon } from '../shared/Icons';
 
 interface KanbanViewProps {
   leads: Lead[];
@@ -68,7 +68,6 @@ const KanbanColumn: React.FC<{ title: string; color: string; textColor: string; 
 );
 
 const KanbanView: React.FC<KanbanViewProps> = ({ leads, onCardClick }) => {
-  // FIX: Explicitly type `columns` as `LeadStatus[]` to help TypeScript inference.
   const columns: LeadStatus[] = Object.values(LeadStatus);
 
   return (

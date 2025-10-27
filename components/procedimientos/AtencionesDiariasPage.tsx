@@ -1,14 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
-import { AtencionStatus, ReceptionStatus } from '../../types.ts';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons.tsx';
-// FIX: Changed to named import for LeadFormModal
-import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
-import StatCard from '../dashboard/StatCard.tsx';
+import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import { AtencionStatus, ReceptionStatus } from '../../types';
+import DateRangeFilter from '../shared/DateRangeFilter';
+import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons';
+import { LeadFormModal } from '../marketing/LeadFormModal';
+import StatCard from '../dashboard/StatCard';
 
-// FIX: Update props to receive metaCampaigns for the LeadFormModal.
-// FIX: Add onDeleteLead and requestConfirmation to props
 interface AtencionesDiariasPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];

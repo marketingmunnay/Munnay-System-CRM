@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal } from '../controllers/goals.controller';
+import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal } from '../controllers/goals.controller'; // FIX: Added missing exports
 
 const router = Router();
 

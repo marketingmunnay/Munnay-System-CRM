@@ -1,12 +1,12 @@
 import React, { useState, useMemo, FC, useEffect, useRef } from 'react';
-import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico } from '../../types.ts';
-import { PlusIcon, TrashIcon } from '../shared/Icons.tsx';
-import UsuarioFormModal from './UsuarioFormModal.tsx';
-import RolFormModal from './RolFormModal.tsx';
-import Modal from '../shared/Modal.tsx';
-import ImportExportPage from './ImportExportPage.tsx';
-import ProveedorFormModal from '../finanzas/ProveedorFormModal.tsx';
-import MetasPage from './MetasPage.tsx';
+import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico } from '../../types';
+import { PlusIcon, TrashIcon } from '../shared/Icons';
+import UsuarioFormModal from './UsuarioFormModal';
+import RolFormModal from './RolFormModal';
+import Modal from '../shared/Modal';
+import ImportExportPage from './ImportExportPage';
+import ProveedorFormModal from '../finanzas/ProveedorFormModal';
+import MetasPage from './MetasPage';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -267,139 +267,318 @@ const CatalogFormModal: FC<{
     itemCategories?: { id: number, nombre: string }[];
     categoryField?: string;
 }> = ({ isOpen, onClose, onSave, item, title, fields, itemCategories, categoryField }) => {
-    const [formData, setFormData] = useState(item);
-
-    useEffect(() => {
-        setFormData(item);
-    }, [item]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave(formData);
-    };
-
+    const [formData, setFormData] = useState<any>(item || {});
+    // FIX: Add explicit return for the ReactNode to fix type error.
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={title} footer={
-            <div className="space-x-2">
-                <button onClick={onClose}>Cancelar</button>
-                <button onClick={handleSubmit} className="bg-[#aa632d] text-white px-4 py-2 rounded-lg">Guardar</button>
-            </div>
-        } maxWidthClass="max-w-lg">
-            <form className="p-6 space-y-4">
+        <Modal 
+            isOpen={isOpen}
+            onClose={onClose}
+            title={title}
+            maxWidthClass="max-w-md"
+            footer={
+                <div className="space-x-2">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button onClick={() => onSave(formData)} className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225]">Guardar</button>
+                </div>
+            }
+        >
+            <div className="p-6 space-y-4">
                 {fields.map(field => (
                     <div key={String(field.name)}>
-                        <label className="text-sm font-medium text-black">{field.label}</label>
-                        {field.type === 'select' && field.name === categoryField ? (
-                             <select name={String(field.name)} value={formData?.[field.name] || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black">
+                        <label htmlFor={String(field.name)} className="block text-sm font-medium text-gray-700">
+                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                        </label>
+                        {field.name === categoryField && itemCategories ? (
+                             <select
+                                id={String(field.name)}
+                                name={String(field.name)}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                                required={field.required}
+                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                            >
                                 <option value="">Seleccionar...</option>
-                                {itemCategories?.map(cat => <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>)}
-                             </select>
-                        ) : field.type === 'textarea' ? (
-                            <textarea name={String(field.name)} value={formData?.[field.name] || ''} onChange={handleChange} rows={3} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black" />
+                                {itemCategories.map(cat => (
+                                    <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                                ))}
+                            </select>
                         ) : (
-                            <input type={field.type} name={String(field.name)} value={formData?.[field.name] || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
+                            <input
+                                type={field.type}
+                                id={String(field.name)}
+                                name={String(field.name)}
+                                value={formData[field.name] ?? ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: field.type === 'number' ? Number(e.target.value) : e.target.value }))}
+                                required={field.required}
+                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                            />
                         )}
                     </div>
                 ))}
-            </form>
+            </div>
         </Modal>
-    )
-}
+    );
+};
 
 
-const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
-    const {
-        users, roles, businessInfo, clientSources, services, products, memberships,
-        serviceCategories, productCategories, jobPositions, proveedores, tiposProveedor, egresoCategories,
-        goals, onSaveGoal, onDeleteGoal,
-        onSaveUser, onDeleteUser, onSaveRole, onDeleteRole, onSaveBusinessInfo, onSaveClientSource,
-        onDeleteClientSource, onSaveService, onDeleteService, onSaveProduct, onDeleteProduct,
-        onSaveMembership, onDeleteMembership, onSaveServiceCategory, onDeleteServiceCategory,
-        onSaveProductCategory, onDeleteProductCategory, onSaveJobPosition, onDeleteJobPosition,
-        onSaveProveedor, onDeleteProveedor, onSaveTipoProveedor, onDeleteTipoProveedor, 
-        onSaveEgresoCategory, onDeleteEgresoCategory, requestConfirmation, comprobantes
-    } = props;
-
-    const [activeSection, setActiveSection] = useState('miembros');
-    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-    const [editingRole, setEditingRole] = useState<Role | null>(null);
-    const [businessInfoData, setBusinessInfoData] = useState<BusinessInfo>(businessInfo);
-    const [isProveedorModalOpen, setIsProveedorModalOpen] = useState(false);
-    const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-    
-    const logoInputRef = useRef<HTMLInputElement>(null);
-    const loginImageInputRef = useRef<HTMLInputElement>(null);
+const BusinessInfoSection: FC<{
+    businessInfo: BusinessInfo;
+    onSaveBusinessInfo: (info: BusinessInfo) => void;
+}> = ({ businessInfo, onSaveBusinessInfo }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState<BusinessInfo>(businessInfo);
 
     useEffect(() => {
-        setBusinessInfoData(businessInfo);
+        setFormData(businessInfo);
     }, [businessInfo]);
-    
-    const handleBusinessImageChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'loginImageUrl') => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setBusinessInfoData(prev => ({ ...prev, [field]: result }));
-            };
-            reader.readAsDataURL(file);
-        }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = () => {
+        onSaveBusinessInfo(formData);
+        setIsEditing(false);
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <h2 className="text-xl font-bold text-black mb-4">Datos del Negocio</h2>
+            <div className="space-y-4">
+                {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">RUC</label>
+                            <input type="text" name="ruc" value={formData.ruc} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Dirección</label>
+                            <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+                            <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" name="email" value={formData.email} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">URL del Logo</label>
+                            <input type="text" name="logoUrl" value={formData.logoUrl} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">URL Imagen de Login</label>
+                            <input type="text" name="loginImageUrl" value={formData.loginImageUrl || ''} onChange={handleChange} className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                        </div>
+                        <div className="md:col-span-2 flex justify-end space-x-2 mt-4">
+                            <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                            <button onClick={handleSave} className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225]">Guardar</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        <p className="text-sm"><span className="font-medium text-gray-700">Nombre:</span> <span className="text-gray-900">{businessInfo.nombre}</span></p>
+                        <p className="text-sm"><span className="font-medium text-gray-700">RUC:</span> <span className="text-gray-900">{businessInfo.ruc}</span></p>
+                        <p className="text-sm"><span className="font-medium text-gray-700">Dirección:</span> <span className="text-gray-900">{businessInfo.direccion}</span></p>
+                        <p className="text-sm"><span className="font-medium text-gray-700">Teléfono:</span> <span className="text-gray-900">{businessInfo.telefono}</span></p>
+                        <p className="text-sm"><span className="font-medium text-gray-700">Email:</span> <span className="text-gray-900">{businessInfo.email}</span></p>
+                        {businessInfo.logoUrl && (
+                            <div className="pt-2">
+                                <p className="font-medium text-gray-700 text-sm mb-1">Logo actual:</p>
+                                <img src={businessInfo.logoUrl} alt="Logo del Negocio" className="h-16 object-contain" />
+                            </div>
+                        )}
+                        <div className="flex justify-end mt-4">
+                            <button onClick={() => setIsEditing(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Editar</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+const UsersManager: FC<{
+    users: User[];
+    roles: Role[];
+    jobPositions: JobPosition[];
+    onSaveUser: (user: User) => void;
+    onDeleteUser: (userId: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ users, roles, jobPositions, onSaveUser, onDeleteUser, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+
+    const handleAddUser = () => {
+        setEditingUser(null);
+        setIsModalOpen(true);
     };
 
     const handleEditUser = (user: User) => {
         setEditingUser(user);
-        setIsUserModalOpen(true);
+        setIsModalOpen(true);
     };
 
-    const handleAddUser = () => {
+    const handleCloseModal = () => {
         setEditingUser(null);
-        setIsUserModalOpen(true);
+        setIsModalOpen(false);
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Miembros del equipo</h2>
+                <button onClick={handleAddUser} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir Miembro</button>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+                <table className="w-full text-sm">
+                    <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th className="p-2">Usuario</th>
+                            <th className="p-2">Nombre Completo</th>
+                            <th className="p-2">Rol</th>
+                            <th className="p-2">Puesto</th>
+                            <th className="p-2 w-28">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map(user => {
+                            const userRole = roles.find(role => role.id === user.rolId);
+                            return (
+                                <tr key={user.id} className="border-b">
+                                    <td className="p-2 text-black">{user.usuario}</td>
+                                    <td className="p-2 text-black">{user.nombres} {user.apellidos}</td>
+                                    <td className="p-2 text-gray-600">{userRole?.nombre || 'N/A'}</td>
+                                    <td className="p-2 text-gray-600">{user.position || 'N/A'}</td>
+                                    <td className="p-2">
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => handleEditUser(user)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                                                <GoogleIcon name="edit" className="text-lg" />
+                                            </button>
+                                            <button onClick={() => requestConfirmation(`¿Estás seguro de que quieres eliminar a ${user.nombres} ${user.apellidos}?`, () => onDeleteUser(user.id))} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                                <GoogleIcon name="delete" className="text-lg" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+            <UsuarioFormModal 
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                onSave={onSaveUser}
+                onDelete={onDeleteUser}
+                user={editingUser}
+                roles={roles}
+                jobPositions={jobPositions}
+                requestConfirmation={requestConfirmation}
+            />
+        </div>
+    );
+};
+
+const RolesManager: FC<{
+    roles: Role[];
+    onSaveRole: (role: Role) => void;
+    onDeleteRole: (roleId: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ roles, onSaveRole, onDeleteRole, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingRole, setEditingRole] = useState<Role | null>(null);
+
+    const handleAddRole = () => {
+        setEditingRole(null);
+        setIsModalOpen(true);
     };
 
     const handleEditRole = (role: Role) => {
         setEditingRole(role);
-        setIsRoleModalOpen(true);
+        setIsModalOpen(true);
     };
 
-    const handleAddRole = () => {
+    const handleCloseModal = () => {
         setEditingRole(null);
-        setIsRoleModalOpen(true);
+        setIsModalOpen(false);
     };
     
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Roles y Permisos</h2>
+                <button onClick={handleAddRole} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir Rol</button>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+                <table className="w-full text-sm">
+                    <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th className="p-2">Nombre del Rol</th>
+                            <th className="p-2">Páginas con Acceso</th>
+                            <th className="p-2 w-28">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {roles.map(role => (
+                            <tr key={role.id} className="border-b">
+                                <td className="p-2 text-black font-medium">{role.nombre}</td>
+                                <td className="p-2 text-gray-600">{role.permissions.length} páginas</td>
+                                <td className="p-2">
+                                    <div className="flex items-center space-x-2">
+                                        <button onClick={() => handleEditRole(role)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                                            <GoogleIcon name="edit" className="text-lg" />
+                                        </button>
+                                        <button onClick={() => requestConfirmation(`¿Estás seguro de que quieres eliminar el rol "${role.nombre}"?`, () => onDeleteRole(role.id))} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                            <GoogleIcon name="delete" className="text-lg" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <RolFormModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                onSave={onSaveRole}
+                role={editingRole}
+            />
+        </div>
+    );
+};
+
+const ProveedoresManager: FC<{
+    proveedores: Proveedor[];
+    tiposProveedor: TipoProveedor[];
+    onSaveProveedor: (proveedor: Proveedor) => void;
+    onDeleteProveedor: (proveedorId: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ proveedores, tiposProveedor, onSaveProveedor, onDeleteProveedor, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
+
     const handleAddProveedor = () => {
         setEditingProveedor(null);
-        setIsProveedorModalOpen(true);
+        setIsModalOpen(true);
     };
-    
+
     const handleEditProveedor = (proveedor: Proveedor) => {
         setEditingProveedor(proveedor);
-        setIsProveedorModalOpen(true);
+        setIsModalOpen(true);
     };
 
-    const handleDeleteUserWithConfirmation = (user: User) => {
-        requestConfirmation(
-            `¿Estás seguro de que quieres eliminar al usuario "${user.nombres} ${user.apellidos}"?`,
-            () => onDeleteUser(user.id)
-        );
-    };
-
-    const handleDeleteRoleWithConfirmation = (role: Role) => {
-        const usersWithRole = users.filter(u => u.rolId === role.id).length;
-        if (usersWithRole > 0) {
-            alert(`No se puede eliminar el rol "${role.nombre}" porque está asignado a ${usersWithRole} usuario(s).`);
-            return;
-        }
-        requestConfirmation(
-            `¿Estás seguro de que quieres eliminar el rol "${role.nombre}"?`,
-            () => onDeleteRole(role.id)
-        );
+    const handleCloseModal = () => {
+        setEditingProveedor(null);
+        setIsModalOpen(false);
     };
 
     const handleDeleteProveedorWithConfirmation = (proveedor: Proveedor) => {
@@ -409,215 +588,201 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
         );
     };
 
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Proveedores</h2>
+                <button onClick={handleAddProveedor} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir Proveedor</button>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+                <table className="w-full text-sm">
+                    <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th className="p-2">Razón Social</th>
+                            <th className="p-2">RUC</th>
+                            <th className="p-2">Tipo</th>
+                            <th className="p-2">Contacto</th>
+                            <th className="p-2 w-28">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {proveedores.map(prov => (
+                            <tr key={prov.id} className="border-b">
+                                <td className="p-2 text-black font-medium">{prov.razonSocial}</td>
+                                <td className="p-2 text-gray-600">{prov.ruc}</td>
+                                <td className="p-2 text-gray-600">{prov.tipo}</td>
+                                <td className="p-2 text-gray-600">{prov.numeroContacto}</td>
+                                <td className="p-2">
+                                    <div className="flex items-center space-x-2">
+                                        <button onClick={() => handleEditProveedor(prov)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                                            <GoogleIcon name="edit" className="text-lg" />
+                                        </button>
+                                        <button onClick={() => handleDeleteProveedorWithConfirmation(prov)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                            <GoogleIcon name="delete" className="text-lg" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <ProveedorFormModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                onSave={onSaveProveedor}
+                onDelete={onDeleteProveedor}
+                proveedor={editingProveedor}
+                tiposProveedor={tiposProveedor}
+            />
+        </div>
+    );
+};
+
+
+export const ConfiguracionPage: React.FC<ConfiguracionPageProps> = ({
+    users, roles, businessInfo, goals, clientSources, services, products, memberships,
+    serviceCategories, productCategories, jobPositions, proveedores, tiposProveedor, egresoCategories,
+    onSaveUser, onDeleteUser, onSaveRole, onDeleteRole, onSaveBusinessInfo, onSaveGoal, onDeleteGoal,
+    onSaveClientSource, onDeleteClientSource, onSaveService, onDeleteService, onSaveProduct, onDeleteProduct,
+    onSaveMembership, onDeleteMembership, onSaveServiceCategory, onDeleteServiceCategory,
+    onSaveProductCategory, onDeleteProductCategory, onSaveJobPosition, onDeleteJobPosition,
+    onSaveProveedor, onDeleteProveedor, onSaveTipoProveedor, onDeleteTipoProveedor,
+    onSaveEgresoCategory, onDeleteEgresoCategory, requestConfirmation, comprobantes
+}) => {
+    const [activeSection, setActiveSection] = useState('datos');
 
     const renderContent = () => {
         switch (activeSection) {
-            case 'miembros':
-                return (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-black">Miembros del equipo</h2>
-                            <button onClick={handleAddUser} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir</button>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg shadow">
-                            <table className="w-full text-sm">
-                                <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="p-2">Nombre</th><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead>
-                                <tbody>
-                                    {users.map(user => <tr key={user.id} className="border-b"><td className="p-2 text-black">{user.nombres} {user.apellidos}</td><td className="text-black">{user.usuario}</td><td className="text-black">{roles.find(r=>r.id===user.rolId)?.nombre}</td><td><div className="flex items-center space-x-2"><button onClick={() => handleEditUser(user)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar"><GoogleIcon name="edit" className="text-lg" /></button><button onClick={() => handleDeleteUserWithConfirmation(user)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar"><GoogleIcon name="delete" className="text-lg" /></button></div></td></tr>)}
-                                </tbody>
-                            </table>
-                        </div>
-                        <UsuarioFormModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} onSave={onSaveUser} onDelete={onDeleteUser} user={editingUser} roles={roles} jobPositions={jobPositions} requestConfirmation={requestConfirmation} />
-                    </div>
-                );
-            case 'roles':
-                 return (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-black">Roles y Permisos</h2>
-                            <button onClick={handleAddRole} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir</button>
-                        </div>
-                         <div className="bg-white p-4 rounded-lg shadow">
-                            <table className="w-full text-sm">
-                                <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="p-2">Nombre del Rol</th><th>Acciones</th></tr></thead>
-                                <tbody>
-                                    {roles.map(role => <tr key={role.id} className="border-b"><td className="p-2 text-black">{role.nombre}</td><td><div className="flex items-center space-x-2"><button onClick={() => handleEditRole(role)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar"><GoogleIcon name="edit" className="text-lg" /></button><button onClick={() => handleDeleteRoleWithConfirmation(role)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar"><GoogleIcon name="delete" className="text-lg" /></button></div></td></tr>)}
-                                </tbody>
-                            </table>
-                        </div>
-                        <RolFormModal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} onSave={onSaveRole} role={editingRole} />
-                    </div>
-                );
-            case 'puestos':
-                return <SimpleListManager title="Puestos de Trabajo" items={jobPositions} onSave={onSaveJobPosition} onDelete={onDeleteJobPosition} requestConfirmation={requestConfirmation}/>
             case 'datos':
-                 return (
-                    <div>
-                        <h2 className="text-xl font-bold text-black mb-4">Datos del Negocio</h2>
-                        <div className="bg-white p-6 rounded-lg shadow space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="text-sm font-medium text-black">Nombre del Negocio</label>
-                                    <input value={businessInfoData.nombre} onChange={e => setBusinessInfoData(prev => ({...prev, nombre: e.target.value}))} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-black">RUC</label>
-                                    <input value={businessInfoData.ruc} onChange={e => setBusinessInfoData(prev => ({...prev, ruc: e.target.value}))} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-black">Dirección</label>
-                                    <input value={businessInfoData.direccion} onChange={e => setBusinessInfoData(prev => ({...prev, direccion: e.target.value}))} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-black">Teléfono</label>
-                                    <input value={businessInfoData.telefono} onChange={e => setBusinessInfoData(prev => ({...prev, telefono: e.target.value}))} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
-                                </div>
-                                 <div className="md:col-span-2">
-                                    <label className="text-sm font-medium text-black">Email</label>
-                                    <input value={businessInfoData.email} onChange={e => setBusinessInfoData(prev => ({...prev, email: e.target.value}))} className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"/>
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-black">Logo del Negocio</label>
-                                <div className="flex items-center space-x-4">
-                                    {businessInfoData.logoUrl ? (
-                                        <img src={businessInfoData.logoUrl} alt="Logo Preview" className="h-16 object-contain bg-gray-100 p-1 border rounded-md" />
-                                    ) : (
-                                        <div className="h-16 w-32 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500">Sin logo</div>
-                                    )}
-                                    <input type="file" ref={logoInputRef} onChange={(e) => handleBusinessImageChange(e, 'logoUrl')} accept="image/*" className="hidden" />
-                                    <button type="button" onClick={() => logoInputRef.current?.click()} className="flex items-center bg-gray-100 text-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-200 transition-colors">
-                                        <GoogleIcon name="upload_file" className="mr-2"/> Subir Logo
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-black">Imagen de Fondo del Login</label>
-                                <div className="flex items-center space-x-4">
-                                    {businessInfoData.loginImageUrl ? (
-                                        <img src={businessInfoData.loginImageUrl} alt="Login Image Preview" className="h-16 w-32 object-cover bg-gray-100 p-1 border rounded-md" />
-                                    ) : (
-                                        <div className="h-16 w-32 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500">Sin imagen</div>
-                                    )}
-                                    <input type="file" ref={loginImageInputRef} onChange={(e) => handleBusinessImageChange(e, 'loginImageUrl')} accept="image/*" className="hidden" />
-                                    <button type="button" onClick={() => loginImageInputRef.current?.click()} className="flex items-center bg-gray-100 text-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-200 transition-colors">
-                                        <GoogleIcon name="upload_file" className="mr-2"/> Subir Imagen
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex justify-end pt-4">
-                                <button onClick={() => onSaveBusinessInfo(businessInfoData)} className="bg-[#aa632d] text-white px-6 py-2 rounded-lg shadow hover:bg-[#8e5225] w-full md:w-auto">Guardar Cambios</button>
-                            </div>
-                        </div>
-                    </div>
-                );
+                return <BusinessInfoSection businessInfo={businessInfo} onSaveBusinessInfo={onSaveBusinessInfo} />;
+            case 'miembros':
+                return <UsersManager users={users} roles={roles} jobPositions={jobPositions} onSaveUser={onSaveUser} onDeleteUser={onDeleteUser} requestConfirmation={requestConfirmation} />;
+            case 'roles':
+                return <RolesManager roles={roles} onSaveRole={onSaveRole} onDeleteRole={onDeleteRole} requestConfirmation={requestConfirmation} />;
+            case 'puestos':
+                return <SimpleListManager title="Puestos de Trabajo" items={jobPositions} onSave={onSaveJobPosition} onDelete={onDeleteJobPosition} requestConfirmation={requestConfirmation} />;
             case 'origenes':
-                 return <SimpleListManager title="Origen de Clientes" items={clientSources} onSave={onSaveClientSource} onDelete={onDeleteClientSource} requestConfirmation={requestConfirmation}/>
-            case 'proveedores':
-                return (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-black">Proveedores</h2>
-                            <button onClick={handleAddProveedor} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir</button>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg shadow">
-                            <table className="w-full text-sm">
-                                <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="p-2">Razón Social</th><th>RUC</th><th>Tipo</th><th>Contacto</th><th>Acciones</th></tr></thead>
-                                <tbody>
-                                    {proveedores.map(p => <tr key={p.id} className="border-b"><td className="p-2 text-black">{p.razonSocial}</td><td className="text-black">{p.ruc}</td><td className="text-black">{p.tipo}</td><td className="text-black">{p.numeroContacto}</td><td><div className="flex items-center space-x-2"><button onClick={() => handleEditProveedor(p)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar"><GoogleIcon name="edit" className="text-lg" /></button><button onClick={() => handleDeleteProveedorWithConfirmation(p)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar"><GoogleIcon name="delete" className="text-lg" /></button></div></td></tr>)}
-                                </tbody>
-                            </table>
-                        </div>
-                        <ProveedorFormModal isOpen={isProveedorModalOpen} onClose={() => setIsProveedorModalOpen(false)} onSave={onSaveProveedor} onDelete={onDeleteProveedor} proveedor={editingProveedor} tiposProveedor={tiposProveedor} />
-                    </div>
-                );
-            case 'tipos-proveedor':
-                return <SimpleListManager title="Tipos de Proveedor" items={tiposProveedor} onSave={onSaveTipoProveedor} onDelete={onDeleteTipoProveedor} requestConfirmation={requestConfirmation}/>
+                return <SimpleListManager title="Origen de Clientes" items={clientSources} onSave={onSaveClientSource} onDelete={onDeleteClientSource} requestConfirmation={requestConfirmation} />;
             case 'categorias':
-                 return <SimpleListManager title="Categorías de Servicios" items={serviceCategories} onSave={onSaveServiceCategory} onDelete={onDeleteServiceCategory} requestConfirmation={requestConfirmation}/>
+                return <SimpleListManager title="Categorías de Servicios" items={serviceCategories} onSave={onSaveServiceCategory} onDelete={onDeleteServiceCategory} requestConfirmation={requestConfirmation} />;
             case 'product-categorias':
-                return <SimpleListManager title="Categorías de Productos" items={productCategories} onSave={onSaveProductCategory} onDelete={onDeleteProductCategory} requestConfirmation={requestConfirmation}/>
+                return <SimpleListManager title="Categorías de Productos" items={productCategories} onSave={onSaveProductCategory} onDelete={onDeleteProductCategory} requestConfirmation={requestConfirmation} />;
             case 'categorias-egresos':
-                return <SimpleListManager title="Categorías de Egresos" items={egresoCategories} onSave={onSaveEgresoCategory} onDelete={onDeleteEgresoCategory} requestConfirmation={requestConfirmation}/>
+                return <SimpleListManager title="Categorías de Egresos" items={egresoCategories} onSave={onSaveEgresoCategory} onDelete={onDeleteEgresoCategory} requestConfirmation={requestConfirmation} />;
+            case 'tipos-proveedor':
+                return <SimpleListManager title="Tipos de Proveedor" items={tiposProveedor} onSave={onSaveTipoProveedor} onDelete={onDeleteTipoProveedor} requestConfirmation={requestConfirmation} />;
             case 'servicios':
                 return <CatalogManager 
-                    title="Servicios"
-                    items={services}
-                    onSave={onSaveService}
-                    onDelete={onDeleteService}
+                    title="Servicios" 
+                    items={services} 
+                    onSave={onSaveService} 
+                    onDelete={onDeleteService} 
                     requestConfirmation={requestConfirmation}
                     fields={[
-                        { name: 'nombre', label: 'Nombre del Servicio', type: 'text' },
-                        { name: 'categoria', label: 'Categoría', type: 'select' },
-                        { name: 'precio', label: 'Precio (S/)', type: 'number' },
+                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+                        { name: 'categoria', label: 'Categoría', type: 'select', required: true },
+                        { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={serviceCategories}
                 />;
             case 'productos':
                 return <CatalogManager 
-                    title="Productos"
-                    items={products}
-                    onSave={onSaveProduct}
-                    onDelete={onDeleteProduct}
+                    title="Productos" 
+                    items={products} 
+                    onSave={onSaveProduct} 
+                    onDelete={onDeleteProduct} 
                     requestConfirmation={requestConfirmation}
                     fields={[
-                        { name: 'nombre', label: 'Nombre del Producto', type: 'text' },
-                        { name: 'categoria', label: 'Categoría', type: 'select' },
-                        { name: 'precio', label: 'Precio (S/)', type: 'number' },
+                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+                        { name: 'categoria', label: 'Categoría', type: 'select', required: true },
+                        { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={productCategories}
                 />;
             case 'membresias':
                 return <CatalogManager 
-                    title="Membresías"
-                    items={memberships}
-                    onSave={onSaveMembership}
-                    onDelete={onDeleteMembership}
+                    title="Membresías" 
+                    items={memberships} 
+                    onSave={onSaveMembership} 
+                    onDelete={onDeleteMembership} 
                     requestConfirmation={requestConfirmation}
                     fields={[
-                        { name: 'nombre', label: 'Nombre de la Membresía', type: 'text' },
-                        { name: 'precio', label: 'Precio (S/)', type: 'number' },
-                        { name: 'numeroSesiones', label: 'N° de Sesiones', type: 'number' },
+                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+                        { name: 'precio', label: 'Precio', type: 'number', required: true },
+                        { name: 'numeroSesiones', label: 'N° Sesiones', type: 'number', required: true },
                         { name: 'descripcion', label: 'Descripción', type: 'textarea' },
                     ]}
                 />;
+            case 'proveedores':
+                return <ProveedoresManager proveedores={proveedores} tiposProveedor={tiposProveedor} onSaveProveedor={onSaveProveedor} onDeleteProveedor={onDeleteProveedor} requestConfirmation={requestConfirmation} />;
             case 'metas':
-                return <MetasPage 
-                    goals={goals} 
-                    onSaveGoal={onSaveGoal}
-                    onDeleteGoal={onDeleteGoal}
-                    requestConfirmation={requestConfirmation}
-                />;
+                return <MetasPage goals={goals} onSaveGoal={onSaveGoal} onDeleteGoal={onDeleteGoal} requestConfirmation={requestConfirmation} />;
             case 'importar-exportar':
                 return <ImportExportPage comprobantes={comprobantes} />;
             default:
-                return <div>Selecciona una sección</div>;
+                return <p>Selecciona una sección.</p>;
         }
     };
 
+    const groupedSections = useMemo(() => {
+        const groups: Record<string, typeof SETTINGS_SECTIONS> = {};
+        SETTINGS_SECTIONS.forEach(section => {
+            if (section.parent) {
+                if (!groups[section.parent]) {
+                    groups[section.parent] = [];
+                }
+                groups[section.parent].push(section);
+            }
+        });
+        return groups;
+    }, []);
+
+    const topLevelSections = SETTINGS_SECTIONS.filter(section => !section.parent);
+
     return (
-        <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8">
-            <aside className="md:w-1/4 flex-shrink-0">
-                <nav className="space-y-4">
-                    {SETTINGS_SECTIONS.filter(s => !s.parent).map(section => (
+        <div className="flex h-full bg-white rounded-lg shadow-lg">
+            {/* Sidebar de Configuración */}
+            <aside className="w-64 flex-shrink-0 border-r p-6 bg-gray-50/50">
+                <h1 className="text-2xl font-bold text-black mb-6">Configuración</h1>
+                <nav className="space-y-2">
+                    {topLevelSections.map(section => (
                         <div key={section.id}>
-                            <h3 className="text-xs uppercase text-black font-semibold flex items-center tracking-wider"><GoogleIcon name={section.icon || ''} className="mr-2 text-base"/>{section.label}</h3>
-                            <ul className="mt-2 space-y-1 border-l-2 border-gray-200 ml-2.5 pl-4">
-                                {SETTINGS_SECTIONS.filter(s => s.parent === section.id).map(sub => (
-                                    <li key={sub.id}><button onClick={() => setActiveSection(sub.id)} className={`w-full text-left p-2 rounded-md text-sm ${activeSection === sub.id ? 'bg-orange-100 text-[#aa632d] font-semibold' : 'text-black hover:bg-gray-100'}`}>{sub.label}</button></li>
-                                ))}
-                                {section.id !== 'equipo' && section.id !== 'negocio' && section.id !== 'servicios-productos' && (
-                                    <li><button onClick={() => setActiveSection(section.id)} className={`w-full text-left p-2 rounded-md text-sm ${activeSection === section.id ? 'bg-orange-100 text-[#aa632d] font-semibold' : 'text-black hover:bg-gray-100'}`}>{section.label}</button></li>
-                                )}
-                            </ul>
+                            <button
+                                onClick={() => setActiveSection(section.id)}
+                                className={`w-full flex items-center p-2 rounded-lg text-sm font-medium transition-colors ${
+                                    activeSection === section.id || (groupedSections[section.id] && groupedSections[section.id].some(sub => sub.id === activeSection))
+                                        ? 'bg-orange-100 text-[#aa632d]'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                <GoogleIcon name={section.icon} className="mr-3 text-xl"/>
+                                {section.label}
+                            </button>
+                            {groupedSections[section.id] && (activeSection === section.id || groupedSections[section.id].some(sub => sub.id === activeSection)) && (
+                                <div className="pl-6 mt-1 space-y-1">
+                                    {groupedSections[section.id].map(subSection => (
+                                        <button
+                                            key={subSection.id}
+                                            onClick={() => setActiveSection(subSection.id)}
+                                            className={`w-full text-left p-2 text-sm rounded-lg transition-colors ${
+                                                activeSection === subSection.id ? 'bg-[#aa632d] text-white' : 'text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {subSection.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </nav>
             </aside>
-            <main className="flex-1">
+
+            {/* Contenido Principal */}
+            <main className="flex-1 p-6 overflow-y-auto">
                 {renderContent()}
             </main>
         </div>
     );
 };
-export default ConfiguracionPage;

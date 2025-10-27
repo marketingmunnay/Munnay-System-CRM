@@ -10,6 +10,7 @@ interface RolFormModalProps {
   role: Role | null;
 }
 
+// FIX: Renamed 'RolFormModalModalProps' to 'RolFormModalProps'
 const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, role }) => {
   const [formData, setFormData] = useState<Partial<Role>>({ permissions: [], dashboardMetrics: [] });
   const selectAllRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -29,7 +30,7 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
     // FIX: Explicitly typing the initial value of reduce to correctly type the accumulator.
     // This ensures that TypeScript correctly infers the type of `groupedPages`
     // and resolves errors related to calling array methods on 'unknown' types.
-    return ALL_PAGES_CONFIG.reduce((acc, page) => {
+    return ALL_PAGES_CONFIG.reduce((acc: Record<string, { id: Page; label: string; group: string }[]>, page) => {
         const group = page.group;
         if (!acc[group]) {
             acc[group] = [];

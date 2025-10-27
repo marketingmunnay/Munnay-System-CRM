@@ -11,7 +11,6 @@ interface GoalFormModalProps {
     goal: Goal | null;
 }
 
-// FIX: Add 'Vanesa' to PERSONAL_OPTIONS to be consistent with the updated Personal type and allow assigning goals to her.
 const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (

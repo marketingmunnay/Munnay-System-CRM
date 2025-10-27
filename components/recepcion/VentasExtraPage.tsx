@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
-import { VentaExtraFormModal } from './VentaExtraFormModal.tsx'; // FIX: Changed to named import
+import DateRangeFilter from '../shared/DateRangeFilter';
+import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons';
+import { VentaExtraFormModal } from './VentaExtraFormModal';
 
 interface VentasExtraPageProps {
     title: string;

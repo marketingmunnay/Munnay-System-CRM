@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { Seguidor } from '../../types.ts';
 import { RedSocialPost } from '../../types.ts';
@@ -10,7 +11,6 @@ interface SeguidorFormModalProps {
   onSave: (seg: Seguidor) => void;
   onDelete: (segId: number) => void;
   seguidor: Seguidor | null;
-  // FIX: Add requestConfirmation to props to use the custom confirmation modal.
   requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 

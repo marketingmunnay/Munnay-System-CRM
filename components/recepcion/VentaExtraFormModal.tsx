@@ -257,4 +257,120 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                 placeholder="Ingrese N° historia, nombre o teléfono"
                             />
                             {!pacienteEncontrado ? (
-                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-
+                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>
+                            ) : (
+                                <button type="button" onClick={handleResetSearch} className="px-4 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</button>
+                            )}
+                        </div>
+                    </div>
+                    {pacienteEncontrado && (
+                        <div>
+                             <p className="mb-1 text-sm font-medium text-gray-700">Paciente</p>
+                             <p className="border bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 font-semibold text-gray-900">{pacienteEncontrado.nombres} {pacienteEncontrado.apellidos}</p>
+                        </div>
+                    )}
+                </div>
+            </fieldset>
+
+            <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
+                 <legend className="text-md font-bold px-2 text-black">2. Detalles de la Venta</legend>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <div>
+                        <label htmlFor="codigoVenta" className="mb-1 text-sm font-medium text-gray-700">Código de Venta</label>
+                        <input type="text" id="codigoVenta" name="codigoVenta" value={formData.codigoVenta || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" />
+                    </div>
+                     <div>
+                        <label htmlFor="fechaVenta" className="mb-1 text-sm font-medium text-gray-700">Fecha de Venta</label>
+                        <input type="date" id="fechaVenta" name="fechaVenta" value={formData.fechaVenta || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
+                    </div>
+                     <div>
+                        <label htmlFor="saleType" className="mb-1 text-sm font-medium text-gray-700">Tipo de Venta</label>
+                        <select id="saleType" name="saleType" value={saleType} onChange={handleSaleTypeChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                            <option value="">Seleccionar...</option>
+                            <option value="Servicio">Servicio</option>
+                            <option value="Productos">Producto</option>
+                        </select>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría</label>
+                        <select id="categoria" name="categoria" value={formData.categoria || ''} onChange={handleChange} disabled={!saleType} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black disabled:bg-gray-100">
+                            <option value="">Seleccionar categoría...</option>
+                            {categoryOptions.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                    </div>
+                     <div>
+                        <label htmlFor="servicio" className="mb-1 text-sm font-medium text-gray-700">{saleType || 'Item'}</label>
+                        <select id="servicio" name="servicio" value={formData.servicio || ''} onChange={handleChange} disabled={!formData.categoria} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black disabled:bg-gray-100">
+                             <option value="">Seleccionar {saleType || 'item'}...</option>
+                             {itemOptions.map(item => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 items-end">
+                     <div>
+                        <label htmlFor="precio" className="mb-1 text-sm font-medium text-gray-700">Precio</label>
+                        <input type="number" id="precio" name="precio" value={formData.precio || 0} onChange={handleChange} readOnly className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 bg-gray-100 text-gray-900" />
+                    </div>
+                    <div>
+                        <label htmlFor="montoPagado" className="mb-1 text-sm font-medium text-gray-700">Monto Pagado</label>
+                        <input type="number" id="montoPagado" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" />
+                    </div>
+                     <div>
+                        <label htmlFor="metodoPago" className="mb-1 text-sm font-medium text-gray-700">Método de Pago</label>
+                        <select id="metodoPago" name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                            {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                        </select>
+                    </div>
+                 </div>
+                 <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 rounded-md border">
+                    <p className="text-sm font-semibold text-gray-700">Deuda Pendiente:</p>
+                    <p className={`text-lg font-bold ${formData.deuda && formData.deuda > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        S/ { (formData.deuda || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+                    </p>
+                 </div>
+            </fieldset>
+            
+            {(formData.montoPagado || 0) > 0 && (
+                 <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
+                     <legend className="text-md font-bold px-2 text-black">3. Facturación</legend>
+                     <div className="mt-2 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleOpenFacturacionModal}
+                            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+                        >
+                            <GoogleIcon name="add_to_photos" className="mr-2 text-xl" />
+                            Generar Comprobante
+                        </button>
+                    </div>
+                 </fieldset>
+            )}
+
+        </form>
+      </div>
+    </Modal>
+
+    {isFacturacionModalOpen && pacienteEncontrado && formData.id && (
+        <FacturacionModal
+            isOpen={isFacturacionModalOpen}
+            onClose={handleCloseFacturacionModal}
+            onSave={handleFacturacionSave}
+            paciente={pacienteEncontrado as Lead}
+            venta={{
+                ...formData as VentaExtra,
+                servicio: formData.servicio || 'Venta Extra',
+                categoria: formData.categoria || 'General',
+                pacienteId: pacienteEncontrado.id,
+                nombrePaciente: pacienteEncontrado.nombres + ' ' + pacienteEncontrado.apellidos,
+                nHistoria: pacienteEncontrado.nHistoria || '',
+            }}
+            ventaType="venta_extra"
+        />
+    )}
+    </>
+  );
+};

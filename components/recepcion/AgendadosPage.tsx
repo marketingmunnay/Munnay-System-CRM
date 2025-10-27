@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types.ts';
-import { LeadStatus, ReceptionStatus } from '../../types.ts';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons.tsx';
-// FIX: Changed to named import for LeadFormModal
-import { LeadFormModal } from '../marketing/LeadFormModal.tsx';
-import { RESOURCES } from '../../constants.ts';
-import StatCard from '../dashboard/StatCard.tsx'; // FIX: Add missing import for StatCard
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import { LeadStatus, ReceptionStatus } from '../../types';
+import DateRangeFilter from '../shared/DateRangeFilter';
+import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
+import { LeadFormModal } from '../marketing/LeadFormModal';
+import { RESOURCES } from '../../constants';
+import StatCard from '../dashboard/StatCard';
 
 interface AgendadosPageProps {
   leads: Lead[];

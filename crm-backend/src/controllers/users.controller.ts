@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
+// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
+import { Address, EmergencyContact } from '../../types';
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -28,89 +30,127 @@ export const getUsers = async (req: Request, res: Response) => {
         sex: true,
       },
     });
-    // FIX: Add .status() method to the response object.
     res.status(200).json(users);
   } catch (error) {
-    // FIX: Add .status() method to the response object.
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
 export const getUserById = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
+  const id = (req.params as any).id;
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
     if (!user) {
-      // FIX: Add .status() method to the response object.
       return res.status(404).json({ message: 'User not found' });
     }
     const { password, ...userWithoutPassword } = user;
-    // FIX: Add .status() method to the response object.
     res.status(200).json(userWithoutPassword);
   } catch (error) {
-    // FIX: Add .status() method to the response object.
     res.status(500).json({ message: 'Error fetching user', error: (error as Error).message });
   }
 };
 
-export const createUser = async (req: Request<any, any, any>, res: Response) => {
-  // FIX: Access body from the request object directly.
-  const { id, password, ...data } = req.body;
+export const createUser = async (req: Request, res: Response) => {
+  const { id, password, addresses, emergencyContacts, ...userData } = (req.body as any);
   if (!password) {
-    // FIX: Add .status() method to the response object.
     return res.status(400).json({ message: 'Password is required' });
   }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({
       data: {
-        ...data,
+        ...userData,
         password: hashedPassword,
-        birthDate: data.birthDate ? new Date(data.birthDate) : null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
+        birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
+        startDate: userData.startDate ? new Date(userData.startDate) : null,
+        addresses: {
+          create: (addresses as Address[])?.map(addr => ({
+            direccion: addr.direccion,
+            distrito: addr.distrito,
+            ciudad: addr.ciudad,
+            referencia: addr.referencia,
+          })) || [],
+        },
+        emergencyContacts: {
+          create: (emergencyContacts as EmergencyContact[])?.map(contact => ({
+            nombre: contact.nombre,
+            parentesco: contact.parentesco,
+            numero: contact.numero,
+          })) || [],
+        },
       },
+      include: { // Include to return the created relations
+        addresses: true,
+        emergencyContacts: true,
+        reconocimientosRecibidos: true,
+      }
     });
     const { password: _, ...userWithoutPassword } = newUser;
-    // FIX: Add .status() method to the response object.
     res.status(201).json(userWithoutPassword);
   } catch (error) {
-    // FIX: Add .status() method to the response object.
+    console.error("Error creating user:", error);
     res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
   }
 };
 
-export const updateUser = async (req: Request<{ id: string }, any, any>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
-  // FIX: Access body from the request object directly.
-  const { password, ...data } = req.body;
+export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
+  const id = (req.params as any).id;
+  const { password, addresses, emergencyContacts, ...userData } = (req.body as any);
   try {
     let updateData: any = {
-        ...data,
-        birthDate: data.birthDate ? new Date(data.birthDate) : (data.birthDate === null ? null : undefined),
-        startDate: data.startDate ? new Date(data.startDate) : (data.startDate === null ? null : undefined),
+        ...userData,
+        birthDate: userData.birthDate ? new Date(userData.birthDate) : (userData.birthDate === null ? null : undefined),
+        startDate: userData.startDate ? new Date(userData.startDate) : (userData.startDate === null ? null : undefined),
     };
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
+    // Handle nested updates for addresses and emergency contacts
+    // For simplicity, we'll delete existing and create new ones.
+    // A more robust solution would involve checking for changes and updating/deleting/creating selectively.
+    if (addresses !== undefined) {
+      updateData.addresses = {
+        deleteMany: {}, // Delete all existing addresses for this user
+        create: (addresses as Address[])?.map(addr => ({
+          direccion: addr.direccion,
+          distrito: addr.distrito,
+          ciudad: addr.ciudad,
+          referencia: addr.referencia,
+        })) || [],
+      };
+    }
+
+    if (emergencyContacts !== undefined) {
+      updateData.emergencyContacts = {
+        deleteMany: {}, // Delete all existing emergency contacts for this user
+        create: (emergencyContacts as EmergencyContact[])?.map(contact => ({
+          nombre: contact.nombre,
+          parentesco: contact.parentesco,
+          numero: contact.numero,
+        })) || [],
+      };
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: updateData,
+      include: { // Include to return the updated relations
+        addresses: true,
+        emergencyContacts: true,
+        reconocimientosRecibidos: true,
+      }
     });
     const { password: _, ...userWithoutPassword } = updatedUser;
-    // FIX: Add .status() method to the response object.
     res.status(200).json(userWithoutPassword);
   } catch (error) {
-    // FIX: Add .status() method to the response object.
+    console.error(`Error updating user ${id}:`, error);
     res.status(500).json({ message: 'Error updating user', error: (error as Error).message });
   }
 };
 
 export const deleteUser = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access params from the request object directly.
-  const { id } = req.params;
+  const id = (req.params as any).id;
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
     // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
@@ -121,10 +161,8 @@ export const deleteUser = async (req: Request<{ id: string }>, res: Response) =>
     await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: parseInt(id) }, { recibidoPorId: parseInt(id) }] } });
 
     await prisma.user.delete({ where: { id: parseInt(id) } });
-    // FIX: Add .status() method to the response object.
     res.status(204).send();
   } catch (error) {
-    // FIX: Add .status() method to the response object.
     res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };

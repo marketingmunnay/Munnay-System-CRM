@@ -34,13 +34,15 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(user ? { ...user, password: '' } : { 
-          id: Date.now(),
-          rolId: roles[0]?.id,
-          avatarUrl: `https://picsum.photos/seed/${Date.now()}/40/40`,
-          addresses: [],
-          emergencyContacts: [],
-      });
+      setFormData(user 
+          ? { ...user, password: '', addresses: user.addresses || [], emergencyContacts: user.emergencyContacts || [] } // Ensure arrays are initialized
+          : { 
+              id: Date.now(),
+              rolId: roles[0]?.id,
+              avatarUrl: `https://picsum.photos/seed/${Date.now()}/40/40`,
+              addresses: [],
+              emergencyContacts: [],
+          });
       setActiveTab('personal');
       setShowPassword(false);
     }
@@ -70,13 +72,13 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
   };
 
   const handleAddSubformItem = (listName: 'addresses' | 'emergencyContacts') => {
-    const newItem = listName === 'addresses' 
-        ? { id: Date.now(), direccion: '', distrito: '', ciudad: '' }
+    const newItem: Address | EmergencyContact = listName === 'addresses' 
+        ? { id: Date.now(), direccion: '', distrito: '', ciudad: '', referencia: '' }
         : { id: Date.now(), nombre: '', parentesco: '', numero: '' };
     
     setFormData(prev => {
         const list = [...(prev[listName] || [])];
-        list.push(newItem as any);
+        list.push(newItem as any); // Cast to any to bypass TS type checking for push operation
         return { ...prev, [listName]: list };
     });
   };

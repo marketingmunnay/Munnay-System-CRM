@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { Seguidor } from '../../types.ts';
 import { RedSocialPost } from '../../types.ts';
@@ -14,7 +15,6 @@ interface SeguidoresPageProps {
     seguidores: Seguidor[];
     onSave: (seg: Seguidor) => void;
     onDelete: (segId: number) => void;
-    // FIX: Add requestConfirmation to props to match what is passed from App.tsx
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 

@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
 
@@ -186,7 +187,6 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes }) => 
                     "clienteDireccion", "items", "opGravadas", "igv", "total", "sunatStatus",
                     "ventaId", "ventaType"
                 ]}
-                // FIX: Add the missing onImport prop.
                 onImport={(file) => handleFileImport(file, 'Comprobantes Electrónicos')}
             />
         </div>
