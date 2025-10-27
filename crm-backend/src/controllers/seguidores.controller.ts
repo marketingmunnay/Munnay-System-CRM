@@ -10,10 +10,10 @@ export const getSeguidores = async (req: Request, res: Response) => {
         }
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(seguidores);
+    (res as Response).status(200).json(seguidores);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching seguidores', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching seguidores', error: (error as Error).message });
   }
 };
 
@@ -24,13 +24,13 @@ export const getSeguidorById = async (req: Request<{ id: string }>, res: Respons
     const seguidor = await prisma.seguidor.findUnique({ where: { id: parseInt(id) } });
     if (!seguidor) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Seguidor not found' });
+      return (res as Response).status(404).json({ message: 'Seguidor not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(seguidor);
+    (res as Response).status(200).json(seguidor);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching seguidor', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching seguidor', error: (error as Error).message });
   }
 };
 
@@ -45,10 +45,10 @@ export const createSeguidor = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newSeguidor);
+    (res as Response).status(201).json(newSeguidor);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating seguidor', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating seguidor', error: (error as Error).message });
   }
 };
 
@@ -66,10 +66,10 @@ export const updateSeguidor = async (req: Request<{ id: string }>, res: Response
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedSeguidor);
+    (res as Response).status(200).json(updatedSeguidor);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating seguidor', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating seguidor', error: (error as Error).message });
   }
 };
 
@@ -79,9 +79,9 @@ export const deleteSeguidor = async (req: Request<{ id: string }>, res: Response
   try {
     await prisma.seguidor.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting seguidor', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting seguidor', error: (error as Error).message });
   }
 };

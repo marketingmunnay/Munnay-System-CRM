@@ -7,10 +7,10 @@ export const getCampaigns = async (req: Request, res: Response) => {
   try {
     const campaigns = await prisma.campaign.findMany();
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(campaigns);
+    (res as Response).status(200).json(campaigns);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching campaigns', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching campaigns', error: (error as Error).message });
   }
 };
 
@@ -21,13 +21,13 @@ export const getCampaignById = async (req: Request<{ id: string }>, res: Respons
     const campaign = await prisma.campaign.findUnique({ where: { id: parseInt(id) } });
     if (!campaign) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Campaign not found' });
+      return (res as Response).status(404).json({ message: 'Campaign not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(campaign);
+    (res as Response).status(200).json(campaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching campaign', error: (error as Error).message });
   }
 };
 
@@ -42,10 +42,10 @@ export const createCampaign = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newCampaign);
+    (res as Response).status(201).json(newCampaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating campaign', error: (error as Error).message });
   }
 };
 
@@ -63,10 +63,10 @@ export const updateCampaign = async (req: Request<{ id: string }>, res: Response
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedCampaign);
+    (res as Response).status(200).json(updatedCampaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating campaign', error: (error as Error).message });
   }
 };
 
@@ -76,10 +76,10 @@ export const deleteCampaign = async (req: Request<{ id: string }>, res: Response
   try {
     await prisma.campaign.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting campaign', error: (error as Error).message });
   }
 };
 
@@ -88,10 +88,10 @@ export const getMetaCampaigns = async (req: Request, res: Response) => {
   try {
     const metaCampaigns = await prisma.metaCampaign.findMany();
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(metaCampaigns);
+    (res as Response).status(200).json(metaCampaigns);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching meta campaigns', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching meta campaigns', error: (error as Error).message });
   }
 };
 
@@ -102,13 +102,13 @@ export const getMetaCampaignById = async (req: Request<{ id: string }>, res: Res
     const metaCampaign = await prisma.metaCampaign.findUnique({ where: { id: parseInt(id) } });
     if (!metaCampaign) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Meta Campaign not found' });
+      return (res as Response).status(404).json({ message: 'Meta Campaign not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(metaCampaign);
+    (res as Response).status(200).json(metaCampaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching meta campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching meta campaign', error: (error as Error).message });
   }
 };
 
@@ -124,10 +124,10 @@ export const createMetaCampaign = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newMetaCampaign);
+    (res as Response).status(201).json(newMetaCampaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating meta campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating meta campaign', error: (error as Error).message });
   }
 };
 
@@ -146,10 +146,10 @@ export const updateMetaCampaign = async (req: Request<{ id: string }>, res: Resp
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedMetaCampaign);
+    (res as Response).status(200).json(updatedMetaCampaign);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating meta campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating meta campaign', error: (error as Error).message });
   }
 };
 
@@ -159,9 +159,9 @@ export const deleteMetaCampaign = async (req: Request<{ id: string }>, res: Resp
   try {
     await prisma.metaCampaign.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting meta campaign', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting meta campaign', error: (error as Error).message });
   }
 };

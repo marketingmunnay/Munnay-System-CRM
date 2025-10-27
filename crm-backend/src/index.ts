@@ -35,7 +35,7 @@ app.use(cookieParser());
 // FIX: Explicitly typed req and res for the root route handler and removed `ParamsDictionary` generic for `Request`.
 app.get('/', (req: Request, res: Response) => {
   // FIX: Accessing status method on the response object directly (added explicit cast for clarity if needed by linter).
-  res.status(200).send('CRM Munnay Backend is running!');
+  (res as Response).status(200).send('CRM Munnay Backend is running!');
 });
 
 app.use('/api', apiRouter);

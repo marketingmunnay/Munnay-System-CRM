@@ -6,10 +6,10 @@ export const getRoles = async (req: Request, res: Response) => {
   try {
     const roles = await prisma.role.findMany();
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(roles);
+    (res as Response).status(200).json(roles);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching roles', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching roles', error: (error as Error).message });
   }
 };
 
@@ -20,13 +20,13 @@ export const getRoleById = async (req: Request<{ id: string }>, res: Response) =
     const role = await prisma.role.findUnique({ where: { id: parseInt(id) } });
     if (!role) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Role not found' });
+      return (res as Response).status(404).json({ message: 'Role not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(role);
+    (res as Response).status(200).json(role);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching role', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching role', error: (error as Error).message });
   }
 };
 
@@ -38,10 +38,10 @@ export const createRole = async (req: Request, res: Response) => {
       data: roleData,
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newRole);
+    (res as Response).status(201).json(newRole);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating role', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating role', error: (error as Error).message });
   }
 };
 
@@ -57,10 +57,10 @@ export const updateRole = async (req: Request<{ id: string }>, res: Response) =>
       data: roleData,
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedRole);
+    (res as Response).status(200).json(updatedRole);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating role', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating role', error: (error as Error).message });
   }
 };
 
@@ -72,9 +72,9 @@ export const deleteRole = async (req: Request<{ id: string }>, res: Response) =>
       where: { id: parseInt(id) },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting role', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting role', error: (error as Error).message });
   }
 };

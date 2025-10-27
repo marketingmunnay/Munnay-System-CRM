@@ -6,10 +6,10 @@ export const getGoals = async (req: Request, res: Response) => {
   try {
     const goals = await prisma.goal.findMany();
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(goals);
+    (res as Response).status(200).json(goals);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching goals', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching goals', error: (error as Error).message });
   }
 };
 
@@ -20,13 +20,13 @@ export const getGoalById = async (req: Request<{ id: string }>, res: Response) =
     const goal = await prisma.goal.findUnique({ where: { id: parseInt(id) } });
     if (!goal) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Goal not found' });
+      return (res as Response).status(404).json({ message: 'Goal not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(goal);
+    (res as Response).status(200).json(goal);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching goal', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching goal', error: (error as Error).message });
   }
 };
 
@@ -41,9 +41,9 @@ export const createGoal = async (req: Request, res: Response) => {
         endDate: new Date(endDate),
       },
     });
-    res.status(201).json(newGoal);
+    (res as Response).status(201).json(newGoal);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating goal', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating goal', error: (error as Error).message });
   }
 };
 
@@ -60,9 +60,9 @@ export const updateGoal = async (req: Request<{ id: string }>, res: Response) =>
         endDate: endDate ? new Date(endDate) : undefined,
       },
     });
-    res.status(200).json(updatedGoal);
+    (res as Response).status(200).json(updatedGoal);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating goal', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating goal', error: (error as Error).message });
   }
 };
 
@@ -71,8 +71,8 @@ export const deleteGoal = async (req: Request<{ id: string }>, res: Response) =>
   const id = (req.params as any).id;
   try {
     await prisma.goal.delete({ where: { id: parseInt(id) } });
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting goal', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting goal', error: (error as Error).message });
   }
 };

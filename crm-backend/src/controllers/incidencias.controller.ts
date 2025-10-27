@@ -6,10 +6,10 @@ export const getIncidencias = async (req: Request, res: Response) => {
   try {
     const incidencias = await prisma.incidencia.findMany({ orderBy: { fecha: 'desc' } });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(incidencias);
+    (res as Response).status(200).json(incidencias);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching incidencias', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching incidencias', error: (error as Error).message });
   }
 };
 
@@ -20,13 +20,13 @@ export const getIncidenciaById = async (req: Request<{ id: string }>, res: Respo
     const incidencia = await prisma.incidencia.findUnique({ where: { id: parseInt(id) } });
     if (!incidencia) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Incidencia not found' });
+      return (res as Response).status(404).json({ message: 'Incidencia not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(incidencia);
+    (res as Response).status(200).json(incidencia);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching incidencia', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching incidencia', error: (error as Error).message });
   }
 };
 
@@ -41,10 +41,10 @@ export const createIncidencia = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newIncidencia);
+    (res as Response).status(201).json(newIncidencia);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating incidencia', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating incidencia', error: (error as Error).message });
   }
 };
 
@@ -62,10 +62,10 @@ export const updateIncidencia = async (req: Request<{ id: string }>, res: Respon
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedIncidencia);
+    (res as Response).status(200).json(updatedIncidencia);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating incidencia', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating incidencia', error: (error as Error).message });
   }
 };
 
@@ -75,9 +75,9 @@ export const deleteIncidencia = async (req: Request<{ id: string }>, res: Respon
   try {
     await prisma.incidencia.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting incidencia', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting incidencia', error: (error as Error).message });
   }
 };

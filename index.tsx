@@ -6,7 +6,7 @@ import PlaceholderPage from './components/shared/PlaceholderPage';
 import { LeadFormModal } from './components/marketing/LeadFormModal';
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
-import PublicacionesPage } from './components/redes-sociales/PublicacionesPage';
+import PublicacionesPage from './components/redes-sociales/PublicacionesPage';
 import SeguidoresPage from './components/redes-sociales/SeguidoresPage';
 import AgendadosPage from './components/recepcion/AgendadosPage';
 import VentasExtraPage from './components/recepcion/VentasExtraPage';
@@ -14,7 +14,7 @@ import IncidenciasPage from './components/recepcion/IncidenciasPage';
 import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage';
 import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
-import CalendarPage } from './components/calendario/CalendarPage';
+import CalendarPage from './components/calendario/CalendarPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
 // FIX: Changed to named export for ConfiguracionPage
@@ -307,6 +307,7 @@ const App: React.FC = () => {
             case 'calendario':
                 return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
+                // FIX: Corrected the prop name 'onSaveComprobante' to 'handleSaveComprobante'.
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;

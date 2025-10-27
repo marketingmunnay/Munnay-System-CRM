@@ -19,11 +19,11 @@ export const getLeads = async (req: Request, res: Response) => {
       }
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(leads);
+    (res as Response).status(200).json(leads);
   } catch (error) {
     console.error("Error fetching leads:", error);
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
   }
 };
 
@@ -45,14 +45,14 @@ export const getLeadById = async (req: Request<{ id: string }>, res: Response) =
     });
     if (!lead) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Lead not found' });
+      return (res as Response).status(404).json({ message: 'Lead not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(lead);
+    (res as Response).status(200).json(lead);
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
   }
 };
 
@@ -80,11 +80,11 @@ export const createLead = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newLead);
+    (res as Response).status(201).json(newLead);
   } catch (error) {
     console.error("Error creating lead:", error);
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
 
@@ -126,11 +126,11 @@ export const updateLead = async (req: Request<{ id: string }>, res: Response) =>
       }
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedLead);
+    (res as Response).status(200).json(updatedLead);
   } catch (error) {
     console.error(`Error updating lead ${id}:`, error);
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating lead', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating lead', error: (error as Error).message });
   }
 };
 
@@ -166,10 +166,10 @@ export const deleteLead = async (req: Request<{ id: string }>, res: Response) =>
       where: { id: parseInt(id) },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
     console.error(`Error deleting lead ${id}:`, error);
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };

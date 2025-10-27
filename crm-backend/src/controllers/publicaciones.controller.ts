@@ -10,10 +10,10 @@ export const getPublicaciones = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(publicaciones);
+    (res as Response).status(200).json(publicaciones);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching publicaciones', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching publicaciones', error: (error as Error).message });
   }
 };
 
@@ -24,13 +24,13 @@ export const getPublicacionById = async (req: Request<{ id: string }>, res: Resp
     const publicacion = await prisma.publicacion.findUnique({ where: { id: parseInt(id) } });
     if (!publicacion) {
       // FIX: Use `res.status` directly (added explicit cast for clarity).
-      return res.status(404).json({ message: 'Publicacion not found' });
+      return (res as Response).status(404).json({ message: 'Publicacion not found' });
     }
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(publicacion);
+    (res as Response).status(200).json(publicacion);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error fetching publicacion', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching publicacion', error: (error as Error).message });
   }
 };
 
@@ -45,10 +45,10 @@ export const createPublicacion = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(201).json(newPublicacion);
+    (res as Response).status(201).json(newPublicacion);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error creating publicacion', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating publicacion', error: (error as Error).message });
   }
 };
 
@@ -66,10 +66,10 @@ export const updatePublicacion = async (req: Request<{ id: string }>, res: Respo
       },
     });
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(200).json(updatedPublicacion);
+    (res as Response).status(200).json(updatedPublicacion);
   } catch (error) {
     // FIX: Use `res.status` directly (added explicit cast for clarity).
-    res.status(500).json({ message: 'Error updating publicacion', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating publicacion', error: (error as Error).message });
   }
 };
 
@@ -79,9 +79,9 @@ export const deletePublicacion = async (req: Request<{ id: string }>, res: Respo
     try {
         await prisma.publicacion.delete({ where: { id: parseInt(id) } });
         // FIX: Use `res.status` directly (added explicit cast for clarity).
-        res.status(204).send();
+        (res as Response).status(204).send();
     } catch (error) {
         // FIX: Use `res.status` directly (added explicit cast for clarity).
-        res.status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
+        (res as Response).status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
     }
 };

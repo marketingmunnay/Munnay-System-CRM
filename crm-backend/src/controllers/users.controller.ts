@@ -30,9 +30,9 @@ export const getUsers = async (req: Request, res: Response) => {
         sex: true,
       },
     });
-    res.status(200).json(users);
+    (res as Response).status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
@@ -41,19 +41,19 @@ export const getUserById = async (req: Request<{ id: string }>, res: Response) =
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return (res as Response).status(404).json({ message: 'User not found' });
     }
     const { password, ...userWithoutPassword } = user;
-    res.status(200).json(userWithoutPassword);
+    (res as Response).status(200).json(userWithoutPassword);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error fetching user', error: (error as Error).message });
   }
 };
 
 export const createUser = async (req: Request, res: Response) => {
   const { id, password, addresses, emergencyContacts, ...userData } = (req.body as any);
   if (!password) {
-    return res.status(400).json({ message: 'Password is required' });
+    return (res as Response).status(400).json({ message: 'Password is required' });
   }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -86,10 +86,10 @@ export const createUser = async (req: Request, res: Response) => {
       }
     });
     const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
+    (res as Response).status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error creating user', error: (error as Error).message });
   }
 };
 
@@ -142,10 +142,10 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
       }
     });
     const { password: _, ...userWithoutPassword } = updatedUser;
-    res.status(200).json(userWithoutPassword);
+    (res as Response).status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
-    res.status(500).json({ message: 'Error updating user', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error updating user', error: (error as Error).message });
   }
 };
 
@@ -161,8 +161,8 @@ export const deleteUser = async (req: Request<{ id: string }>, res: Response) =>
     await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: parseInt(id) }, { recibidoPorId: parseInt(id) }] } });
 
     await prisma.user.delete({ where: { id: parseInt(id) } });
-    res.status(204).send();
+    (res as Response).status(204).send();
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
+    (res as Response).status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };
