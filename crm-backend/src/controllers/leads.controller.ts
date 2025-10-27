@@ -18,18 +18,18 @@ export const getLeads = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(leads);
   } catch (error) {
     console.error("Error fetching leads:", error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
   }
 };
 
 export const getLeadById = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: parseInt(id) },
@@ -44,14 +44,14 @@ export const getLeadById = async (req: Request<{ id: string }>, res: Response) =
       }
     });
     if (!lead) {
-      // FIX: Use `res.status` directly (added explicit cast for clarity).
+      // FIX: Use `res.status` directly.
       return (res as Response).status(404).json({ message: 'Lead not found' });
     }
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(lead);
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
   }
 };
@@ -61,9 +61,9 @@ export const createLead = async (req: Request, res: Response) => {
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    // FIX: Access `req.body` correctly (added explicit cast for clarity).
+    // FIX: Access `req.body` correctly.
     ...leadData 
-  } = (req.body as any);
+  } = req.body as any;
 
   try {
     const newLead = await prisma.lead.create({
@@ -79,25 +79,25 @@ export const createLead = async (req: Request, res: Response) => {
         }
       },
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(201).json(newLead);
   } catch (error) {
     console.error("Error creating lead:", error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
 
 export const updateLead = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   const { 
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    // FIX: Access `req.body` correctly (added explicit cast for clarity).
+    // FIX: Access `req.body` correctly.
     ...leadData 
-  } = (req.body as any);
+  } = req.body as any;
 
   try {
     // NOTE: This is a simplified update that only handles scalar fields.
@@ -125,18 +125,18 @@ export const updateLead = async (req: Request<{ id: string }>, res: Response) =>
         comprobantes: true,
       }
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(updatedLead);
   } catch (error) {
     console.error(`Error updating lead ${id}:`, error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error updating lead', error: (error as Error).message });
   }
 };
 
 export const deleteLead = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
     // The schema has been updated with onDelete: Cascade, so these manual deletes are a safeguard.
@@ -165,11 +165,11 @@ export const deleteLead = async (req: Request<{ id: string }>, res: Response) =>
     await prisma.lead.delete({
       where: { id: parseInt(id) },
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(204).send();
   } catch (error) {
     console.error(`Error deleting lead ${id}:`, error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };

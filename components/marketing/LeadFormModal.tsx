@@ -75,7 +75,7 @@ const RecepcionTabContent: React.FC<{
   
   // States for editing main appointment payment
   const [isEditingCitaPayment, setIsEditingCitaPayment] = useState(false);
-  const [editedMontoPagado, setEditedMontoPagado] = useState(formData.montoPagado || 0);
+  const [editedMontoPagado, setEditedMontoPagado, ] = useState(formData.montoPagado || 0);
   const [editedMetodoPago, setEditedMetodoPago] = useState<MetodoPago | undefined>(formData.metodoPago);
 
   const isCitaPagada = !formData.deudaCita || formData.deudaCita <= 0;

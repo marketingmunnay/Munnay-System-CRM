@@ -1,9 +1,8 @@
-import express, { Request, Response, NextFunction, Express } from 'express';
+import express, { Router, Request, Response, Express } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
-// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
 dotenv.config();
 
@@ -14,28 +13,40 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   'http://localhost:5173',  // Vite default dev port for frontend
   'http://127.0.0.1:5173',  // Alternative local dev
-  'https://mcc.munnaymedicinaestetica.com' // Tu subdominio de producción
+  'https://mcc.munnaymedicinaestetica.com', // Tu subdominio de producción
+  'https://munnay-system-crm.vercel.app', // Frontend desplegado en Vercel (dominio principal)
 ];
+
+// Regex para permitir cualquier subdominio de Vercel para proyectos de marketingmunnays
+// Ejemplo: https://munnay-system-crm-git-main-marketingmunnays-projects.vercel.app
+// Ejemplo: https://sistema-munnay-73uk0p0jf-marketingmunnays-projects.vercel.app
+const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
+
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) { // Permitir solicitudes sin origen (ej. Postman, curl)
+    // Permitir solicitudes sin origen (ej. Postman, curl)
+    if (!origin) { 
       callback(null, true);
     } else if (allowedOrigins.includes(origin)) {
       callback(null, true);
+    } else if (vercelPreviewRegex.test(origin)) {
+      callback(null, true);
     } else {
+      console.error(`CORS: Origen no permitido: ${origin}`);
       callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
   credentials: true,
 }));
-app.use(express.json());
-app.use(cookieParser());
+// FIX: Explicitly cast `app` to `express.Application` to ensure `use` method accepts standard middleware types.
+// This resolves the "No overload matches this call" errors for express.json() and cookieParser().
+app.use(express.json() as express.RequestHandler);
+app.use(cookieParser() as express.RequestHandler);
 
-// FIX: Explicitly typed req and res for the root route handler and removed `ParamsDictionary` generic for `Request`.
 app.get('/', (req: Request, res: Response) => {
-  // FIX: Accessing status method on the response object directly (added explicit cast for clarity if needed by linter).
-  (res as Response).status(200).send('CRM Munnay Backend is running!');
+  // FIX: Ensure `res` is correctly typed as `express.Response` and `status` property is accessible.
+  (res as express.Response).status(200).send('CRM Munnay Backend is running!');
 });
 
 app.use('/api', apiRouter);

@@ -16,43 +16,43 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
         getAll: async (req: Request, res: Response) => {
             try {
                 const items = await typedModel.findMany();
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(200).json(items);
             } catch (error) {
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(500).json({ message: `Error fetching ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
         create: async (req: Request, res: Response) => {
-            const { id, ...data } = (req.body as any);
+            const { id, ...data } = req.body as any;
             try {
                 const newItem = await typedModel.create({ data });
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(201).json(newItem);
             } catch (error) {
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(500).json({ message: `Error creating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
         update: async (req: Request<{ id: string }>, res: Response) => {
-            const id = (req.params as any).id;
+            const id = (req as Request<{ id: string }>).params.id;
             try {
-                const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: (req.body as any) });
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body });
+                // FIX: Use `res.status` directly.
                 (res as Response).status(200).json(updatedItem);
             } catch (error) {
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
         delete: async (req: Request<{ id: string }>, res: Response) => {
-            const id = (req.params as any).id;
+            const id = (req as Request<{ id: string }>).params.id;
             try {
                 await typedModel.delete({ where: { id: parseInt(id) } });
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(204).send();
             } catch (error) {
-                // FIX: Use `res.status` directly (added explicit cast for clarity).
+                // FIX: Use `res.status` directly.
                 (res as Response).status(500).json({ message: `Error deleting ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         }
@@ -78,13 +78,13 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
                     loginImageUrl: ''
                 }
             });
-            // FIX: Use `res.status` directly (added explicit cast for clarity).
+            // FIX: Use `res.status` directly.
             return (res as Response).status(200).json(defaultInfo);
         }
-        // FIX: Use `res.status` directly (added explicit cast for clarity).
+        // FIX: Use `res.status` directly.
         (res as Response).status(200).json(info);
     } catch (error) {
-        // FIX: Use `res.status` directly (added explicit cast for clarity).
+        // FIX: Use `res.status` directly.
         (res as Response).status(500).json({ message: 'Error fetching business info', error: (error as Error).message });
     }
 };
@@ -93,17 +93,17 @@ export const updateBusinessInfo = async (req: Request, res: Response) => {
     try {
         const existingInfo = await prisma.businessInfo.findFirst();
         if (!existingInfo) {
-            // FIX: Use `res.status` directly (added explicit cast for clarity).
+            // FIX: Use `res.status` directly.
             return (res as Response).status(404).json({ message: 'Business info not found to update.' });
         }
         const updatedInfo = await prisma.businessInfo.update({
             where: { id: existingInfo.id },
-            data: (req.body as any)
+            data: req.body
         });
-        // FIX: Use `res.status` directly (added explicit cast for clarity).
+        // FIX: Use `res.status` directly.
         (res as Response).status(200).json(updatedInfo);
     } catch (error) {
-        // FIX: Use `res.status` directly (added explicit cast for clarity).
+        // FIX: Use `res.status` directly.
         (res as Response).status(500).json({ message: 'Error updating business info', error: (error as Error).message });
     }
 };
@@ -176,16 +176,16 @@ export const getComprobantes = async (req: Request, res: Response) => {
         fechaEmision: 'desc',
       },
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(comprobantes);
   } catch (error) {
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error fetching comprobantes', error: (error as Error).message });
   }
 };
 
 export const createComprobante = async (req: Request, res: Response) => {
-  const { id, items, fechaEmision, ...data } = (req.body as any);
+  const { id, items, fechaEmision, ...data } = req.body as any;
   try {
     const newComprobante = await prisma.comprobanteElectronico.create({
       data: {
@@ -206,19 +206,19 @@ export const createComprobante = async (req: Request, res: Response) => {
         items: true,
       },
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(201).json(newComprobante);
   } catch (error) {
     console.error("Error creating comprobante:", error);
-    // FIX: Use `res.status` directamente (added explicit cast for clarity).
+    // FIX: Use `res.status` directamente.
     (res as Response).status(500).json({ message: 'Error creating comprobante', error: (error as Error).message });
   }
 };
 
 export const updateComprobante = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
-  const id = (req.params as any).id;
-  const { items, fechaEmision, ...data } = (req.body as any);
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
+  const { items, fechaEmision, ...data } = req.body as any;
   try {
     // Start a transaction to update both comprobante and its items
     const updatedComprobante = await prisma.$transaction(async (tx_prisma: typeof prisma) => {
@@ -251,28 +251,28 @@ export const updateComprobante = async (req: Request<{ id: string }>, res: Respo
       return comprobante;
     });
 
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(updatedComprobante);
   } catch (error) {
     console.error(`Error updating comprobante ${id}:`, error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directamente.
     (res as Response).status(500).json({ message: 'Error updating comprobante', error: (error as Error).message });
   }
 };
 
 export const deleteComprobante = async (req: Request<{ id: string }>, res: Response) => {
-  // FIX: Access `req.params.id` correctly (added explicit cast for clarity).
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   try {
     // Deleting the comprobante should cascade to its items
     await prisma.comprobanteElectronico.delete({
       where: { id: parseInt(id) },
     });
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directly.
     (res as Response).status(204).send();
   } catch (error) {
     console.error(`Error deleting comprobante ${id}:`, error);
-    // FIX: Use `res.status` directly (added explicit cast for clarity).
+    // FIX: Use `res.status` directamente.
     (res as Response).status(500).json({ message: 'Error deleting comprobante', error: (error as Error).message });
   }
 };

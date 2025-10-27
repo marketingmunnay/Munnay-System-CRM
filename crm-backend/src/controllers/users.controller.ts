@@ -30,29 +30,37 @@ export const getUsers = async (req: Request, res: Response) => {
         sex: true,
       },
     });
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(users);
   } catch (error) {
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
 export const getUserById = async (req: Request<{ id: string }>, res: Response) => {
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
     if (!user) {
+      // FIX: Use `res.status` directly.
       return (res as Response).status(404).json({ message: 'User not found' });
     }
     const { password, ...userWithoutPassword } = user;
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(userWithoutPassword);
   } catch (error) {
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error fetching user', error: (error as Error).message });
   }
 };
 
 export const createUser = async (req: Request, res: Response) => {
-  const { id, password, addresses, emergencyContacts, ...userData } = (req.body as any);
+  // FIX: Access `req.body` correctly.
+  const { id, password, addresses, emergencyContacts, ...userData } = req.body as any;
   if (!password) {
+    // FIX: Use `res.status` directly.
     return (res as Response).status(400).json({ message: 'Password is required' });
   }
   try {
@@ -86,16 +94,20 @@ export const createUser = async (req: Request, res: Response) => {
       }
     });
     const { password: _, ...userWithoutPassword } = newUser;
+    // FIX: Use `res.status` directly.
     (res as Response).status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error creating user', error: (error as Error).message });
   }
 };
 
 export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
-  const id = (req.params as any).id;
-  const { password, addresses, emergencyContacts, ...userData } = (req.body as any);
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
+  // FIX: Access `req.body` correctly.
+  const { password, addresses, emergencyContacts, ...userData } = req.body as any;
   try {
     let updateData: any = {
         ...userData,
@@ -142,15 +154,18 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
       }
     });
     const { password: _, ...userWithoutPassword } = updatedUser;
+    // FIX: Use `res.status` directly.
     (res as Response).status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error updating user', error: (error as Error).message });
   }
 };
 
 export const deleteUser = async (req: Request<{ id: string }>, res: Response) => {
-  const id = (req.params as any).id;
+  // FIX: Access `req.params.id` correctly.
+  const id = (req as Request<{ id: string }>).params.id;
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
     // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
@@ -161,8 +176,10 @@ export const deleteUser = async (req: Request<{ id: string }>, res: Response) =>
     await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: parseInt(id) }, { recibidoPorId: parseInt(id) }] } });
 
     await prisma.user.delete({ where: { id: parseInt(id) } });
+    // FIX: Use `res.status` directly.
     (res as Response).status(204).send();
   } catch (error) {
+    // FIX: Use `res.status` directly.
     (res as Response).status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };
