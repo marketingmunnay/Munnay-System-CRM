@@ -10,15 +10,15 @@ import type {
 // ===================================================================================
 // ¡IMPORTANTE PARA LA PUESTA EN PRODUCCIÓN (HOSTING)!
 // ===================================================================================
-// Cuando despliegues el backend en un servicio de hosting (como Vercel, Railway, etc.),
-// obtendrás una URL pública (ej: https://mi-crm-backend.vercel.app).
+// Cuando despliegues el backend en un servicio de hosting (como Google Cloud Run),
+// obtendrás una URL pública (ej: https://crm-munnay-backend-xyz.a.run.app).
 //
 // **DEBES REEMPLAZAR 'http://localhost:4000' POR ESA URL PÚBLICA.**
 //
-// const API_URL = 'https://mi-crm-backend.vercel.app/api'; // <--- ASÍ DEBERÍA QUEDAR
+// Ejemplo: const API_URL = 'https://crm-munnay-backend-xyz.a.run.app/api'; // <--- ASÍ DEBERÍA QUEDAR
 //
 // Mientras tanto, se mantiene 'localhost' para que las pruebas locales sigan funcionando.
-const API_URL = 'https://mcc.munnaymedicinaestetica.com/api'; // <--- ¡ACTUALIZADO A TU SUBDOMINIO!
+const API_URL = 'http://localhost:4000/api'; // Placeholder for actual API URL
 
 
 const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {
@@ -239,15 +239,15 @@ export const getMemberships = membershipApi.getAll;
 export const saveMembership = membershipApi.save;
 export const deleteMembership = membershipApi.delete;
 
-const serviceCategoryApi = createConfigApi<ServiceCategory>('service-categories');
-export const getServiceCategories = serviceCategoryApi.getAll;
-export const saveServiceCategory = serviceCategoryApi.save;
-export const deleteServiceCategory = serviceCategoryApi.delete;
+const serviceCategoryHandlers = createConfigApi<ServiceCategory>('service-categories');
+export const getServiceCategories = serviceCategoryHandlers.getAll;
+export const saveServiceCategory = serviceCategoryHandlers.save;
+export const deleteServiceCategory = serviceCategoryHandlers.delete;
 
-const productCategoryApi = createConfigApi<ProductCategory>('product-categories');
-export const getProductCategories = productCategoryApi.getAll;
-export const saveProductCategory = productCategoryApi.save;
-export const deleteProductCategory = productCategoryApi.delete;
+const productCategoryHandlers = createConfigApi<ProductCategory>('product-categories');
+export const getProductCategories = productCategoryHandlers.getAll;
+export const saveProductCategory = productCategoryHandlers.save;
+export const deleteProductCategory = productCategoryHandlers.delete;
 
 const egresoCategoryApi = createConfigApi<EgresoCategory>('egreso-categories');
 export const getEgresoCategories = egresoCategoryApi.getAll;
@@ -282,8 +282,8 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
         }
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: [{text: prompt}], // Corrected to use parts for prompt
+            model: 'gemini-2.5-flash', // Corrected model name as per guidelines
+            contents: [{ parts: [{text: prompt}] }], // Corrected structure as per guidelines
         });
 
         // Use .text directly as per new guidelines

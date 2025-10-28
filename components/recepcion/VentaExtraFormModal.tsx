@@ -95,13 +95,11 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
   const handlePatientSearch = () => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) {
-        alert("Por favor, ingrese un término de búsqueda (nombre, teléfono o N° de historia).");
+        alert("Por favor, ingrese un N° de historia.");
         return;
     }
     const foundPatient = pacientes.find(p => 
-        (p.nHistoria && p.nHistoria.toLowerCase() === term) ||
-        (`${p.nombres} ${p.apellidos}`.toLowerCase().includes(term)) ||
-        (p.numero && p.numero.includes(term))
+        (p.nHistoria && p.nHistoria.toLowerCase() === term)
     );
     if (foundPatient) {
         setPacienteEncontrado(foundPatient);
@@ -112,7 +110,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             nombrePaciente: `${foundPatient.nombres} ${foundPatient.apellidos}`
         }));
     } else {
-        alert("Paciente no encontrado. Verifique los datos ingresados.");
+        alert("Paciente no encontrado. Verifique el N° de historia.");
         setPacienteEncontrado(null);
     }
   };
@@ -245,7 +243,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                 <legend className="text-md font-bold px-2 text-black">1. Buscar Paciente</legend>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
                     <div className="md:col-span-2">
-                        <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia, Nombre o Telf.)</label>
+                        <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia)</label>
                         <div className="flex items-center space-x-2">
                             <input
                                 type="text"
@@ -254,7 +252,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="flex-grow border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
                                 disabled={!!pacienteEncontrado}
-                                placeholder="Ingrese N° historia, nombre o teléfono"
+                                placeholder="Ingrese N° historia"
                             />
                             {!pacienteEncontrado ? (
                                 <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>

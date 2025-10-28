@@ -1,4 +1,4 @@
-import express, { Router, Request, Response, Express } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -6,7 +6,7 @@ import apiRouter from './api';
 
 dotenv.config();
 
-const app: Express = express();
+const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
 
 // Lista de orígenes permitidos
@@ -39,14 +39,15 @@ app.use(cors({
   },
   credentials: true,
 }));
-// FIX: Explicitly cast `express.json()` to `express.RequestHandler`.
-app.use(express.json() as express.RequestHandler);
-// FIX: Explicitly cast `cookieParser()` to `express.RequestHandler`.
-app.use(cookieParser() as express.RequestHandler);
+// FIX: Removed explicit cast `as express.RequestHandler`. `express.json()` returns a RequestHandler.
+app.use(express.json() as RequestHandler);
+// FIX: Removed explicit cast `as express.RequestHandler`. `cookieParser()` returns a RequestHandler.
+app.use(cookieParser() as RequestHandler);
 
+// FIX: Corrected Request and Response types to use express.Request and express.Response.
 app.get('/', (req: Request, res: Response) => {
-  // FIX: Ensure `res` is correctly typed as `express.Response` and `status` property is accessible.
-  (res as express.Response).status(200).send('CRM Munnay Backend is running!');
+  // FIX: Removed redundant cast `(res as express.Response)`. `res` is already typed as `Response`.
+  res.status(200).send('CRM Munnay Backend is running!');
 });
 
 app.use('/api', apiRouter);

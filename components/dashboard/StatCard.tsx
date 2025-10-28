@@ -4,7 +4,16 @@ import React from 'react';
 import type { StatCardData } from '../../types.ts';
 import { ArrowUpIcon, ArrowDownIcon } from '../shared/Icons.tsx';
 
-const StatCard: React.FC<StatCardData> = ({ title, value, change, changeType, icon, iconBgClass }) => {
+const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
+    <span className={`material-symbols-outlined ${className}`}>{name}</span>
+);
+
+interface CustomStatCardData extends Omit<StatCardData, 'icon'> {
+  icon: string | React.ReactNode; // Allow string for GoogleIcon name or ReactNode for custom icons
+  iconColorClass?: string; // New prop for icon color
+}
+
+const StatCard: React.FC<CustomStatCardData> = ({ title, value, change, changeType, icon, iconBgClass, iconColorClass }) => {
   const isIncrease = changeType === 'increase';
   const changeColor = isIncrease ? 'text-green-600' : 'text-red-600';
 
@@ -24,7 +33,7 @@ const StatCard: React.FC<StatCardData> = ({ title, value, change, changeType, ic
         )}
       </div>
       <div className={`p-3 rounded-full ${iconBgClass || 'bg-gray-100'}`}>
-        {icon}
+        {typeof icon === 'string' ? <GoogleIcon name={icon} className={iconColorClass} /> : icon}
       </div>
     </div>
   );

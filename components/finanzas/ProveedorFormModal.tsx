@@ -8,12 +8,13 @@ interface ProveedorFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (proveedor: Proveedor) => void;
-  onDelete?: (proveedorId: number) => void;
+  onDelete?: (proveedorId: number) => void; // Optional for new items
   proveedor: Proveedor | null;
   tiposProveedor: TipoProveedor[];
+  requestConfirmation: (message: string, onConfirm: () => void) => void; // Added requestConfirmation
 }
 
-const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose, onSave, onDelete, proveedor, tiposProveedor }) => {
+const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose, onSave, onDelete, proveedor, tiposProveedor, requestConfirmation }) => {
   const [formData, setFormData] = useState<Partial<Proveedor>>({});
 
   useEffect(() => {
@@ -38,10 +39,13 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
 
   const handleDelete = () => {
     if (proveedor && onDelete) {
-        if(window.confirm(`¿Estás seguro de que quieres eliminar al proveedor "${proveedor.razonSocial}"?`)) {
-            onDelete(proveedor.id);
-            onClose();
-        }
+        requestConfirmation(
+            `¿Estás seguro de que quieres eliminar al proveedor "${proveedor.razonSocial}"? Esta acción no se puede deshacer.`,
+            () => {
+                onDelete(proveedor.id);
+                onClose();
+            }
+        );
     }
   };
 
@@ -55,6 +59,7 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
         <div className="w-full flex justify-between items-center">
           {proveedor && onDelete ? (
              <button
+                type="button"
                 onClick={handleDelete}
                 className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                 >

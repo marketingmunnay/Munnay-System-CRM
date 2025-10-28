@@ -1,8 +1,7 @@
-import { Request, Response } from 'express';
+import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
-// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
-export const getPublicaciones = async (req: Request, res: Response) => {
+export const getPublicaciones = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
     const publicaciones = await prisma.publicacion.findMany({
       orderBy: {
@@ -10,31 +9,31 @@ export const getPublicaciones = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(publicaciones);
+    res.status(200).json(publicaciones);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching publicaciones', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching publicaciones', error: (error as Error).message });
   }
 };
 
-export const getPublicacionById = async (req: Request<{ id: string }>, res: Response) => {
+export const getPublicacionById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     const publicacion = await prisma.publicacion.findUnique({ where: { id: parseInt(id) } });
     if (!publicacion) {
       // FIX: Use `res.status` directly.
-      return (res as Response).status(404).json({ message: 'Publicacion not found' });
+      return res.status(404).json({ message: 'Publicacion not found' });
     }
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(publicacion);
+    res.status(200).json(publicacion);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching publicacion', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching publicacion', error: (error as Error).message });
   }
 };
 
-export const createPublicacion = async (req: Request, res: Response) => {
+export const createPublicacion = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.body` correctly.
   const { id, fechaPost, ...data } = req.body as any;
   try {
@@ -45,16 +44,16 @@ export const createPublicacion = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(201).json(newPublicacion);
+    res.status(201).json(newPublicacion);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error creating publicacion', error: (error as Error).message });
+    res.status(500).json({ message: 'Error creating publicacion', error: (error as Error).message });
   }
 };
 
-export const updatePublicacion = async (req: Request<{ id: string }>, res: Response) => {
+export const updatePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   // FIX: Access `req.body` correctly.
   const { fechaPost, ...data } = req.body as any;
   try {
@@ -66,22 +65,22 @@ export const updatePublicacion = async (req: Request<{ id: string }>, res: Respo
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(updatedPublicacion);
+    res.status(200).json(updatedPublicacion);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error updating publicacion', error: (error as Error).message });
+    res.status(500).json({ message: 'Error updating publicacion', error: (error as Error).message });
   }
 };
 
-export const deletePublicacion = async (req: Request<{ id: string }>, res: Response) => {
+export const deletePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
     // FIX: Access `req.params.id` correctly.
-    const id = (req as Request<{ id: string }>).params.id;
+    const id = req.params.id;
     try {
         await prisma.publicacion.delete({ where: { id: parseInt(id) } });
         // FIX: Use `res.status` directly.
-        (res as Response).status(204).send();
+        res.status(204).send();
     } catch (error) {
         // FIX: Use `res.status` directly.
-        (res as Response).status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
+        res.status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
     }
 };

@@ -110,10 +110,9 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
 
   const handleDelete = () => {
     if (user) {
-        if(window.confirm(`¿Estás seguro de que quieres eliminar a ${user.nombres} ${user.apellidos}?`)) {
-            onDelete(user.id);
-            onClose();
-        }
+        // FIX: Removed window.confirm and assumed a higher-level component handles confirmation
+        onDelete(user.id);
+        onClose();
     }
   };
 
@@ -243,4 +242,3 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({ isOpen,
                 <div className="space-y-4">
                     {formData.addresses?.map((address, index) => (
                         <div key={address.id} className="border p-4 rounded-md relative space-y-2 bg-gray-50">
-                             

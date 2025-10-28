@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { GenerateContentResponse } from "@google/genai";
 
 export type Page = 
     'dashboard' | 

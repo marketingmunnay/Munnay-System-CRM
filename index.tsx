@@ -5,7 +5,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
-import { LeadFormModal } from './components/marketing/LeadFormModal';
+import LeadFormModal from './components/marketing/LeadFormModal';
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
 import PublicacionesPage from './components/redes-sociales/PublicacionesPage';
@@ -309,7 +309,7 @@ const App: React.FC = () => {
             case 'calendario':
                 return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={onSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
@@ -381,7 +381,7 @@ const App: React.FC = () => {
                 return <InformesPage
                     leads={leads}
                     campaigns={campaigns}
-                    ventasExtra={ventasExtra}
+                    ventasExtra={ventrasExtra}
                     goals={goals}
                     publicaciones={publicaciones}
                     seguidores={seguidores}
@@ -446,5 +446,3 @@ if (rootElement) {
 } else {
     console.error('Failed to find the root element to mount the React application.');
 }
-
-export default App;

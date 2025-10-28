@@ -1,6 +1,5 @@
-import { Request, Response } from 'express';
+import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
-// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
 // Generic CRUD factory for simple models
 const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explicitly typed modelName
@@ -13,54 +12,54 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
     const typedModel = model as any; // Still need 'any' here due to dynamic access patterns
 
     return {
-        getAll: async (req: Request, res: Response) => {
+        getAll: async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
             try {
                 const items = await typedModel.findMany();
                 // FIX: Use `res.status` directly.
-                (res as Response).status(200).json(items);
+                res.status(200).json(items);
             } catch (error) {
                 // FIX: Use `res.status` directly.
-                (res as Response).status(500).json({ message: `Error fetching ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
+                res.status(500).json({ message: `Error fetching ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
-        create: async (req: Request, res: Response) => {
+        create: async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
             const { id, ...data } = req.body as any;
             try {
                 const newItem = await typedModel.create({ data });
                 // FIX: Use `res.status` directly.
-                (res as Response).status(201).json(newItem);
+                res.status(201).json(newItem);
             } catch (error) {
-                // FIX: Use `res.status` directly.
-                (res as Response).status(500).json({ message: `Error creating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
+                // FIX: Use `res.status` directamente.
+                res.status(500).json({ message: `Error creating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
-        update: async (req: Request<{ id: string }>, res: Response) => {
-            const id = (req as Request<{ id: string }>).params.id;
+        update: async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+            const id = req.params.id;
             try {
                 const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body as any });
-                // FIX: Use `res.status` directly.
-                (res as Response).status(200).json(updatedItem);
+                // FIX: Use `res.status` directamente.
+                res.status(200).json(updatedItem);
             } catch (error) {
-                // FIX: Use `res.status` directly.
-                (res as Response).status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
+                // FIX: Use `res.status` directamente.
+                res.status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         },
-        delete: async (req: Request<{ id: string }>, res: Response) => {
-            const id = (req as Request<{ id: string }>).params.id;
+        delete: async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+            const id = req.params.id;
             try {
                 await typedModel.delete({ where: { id: parseInt(id) } });
-                // FIX: Use `res.status` directly.
-                (res as Response).status(204).send();
+                // FIX: Use `res.status` directamente.
+                res.status(204).send();
             } catch (error) {
-                // FIX: Use `res.status` directly.
-                (res as Response).status(500).json({ message: `Error deleting ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
+                // FIX: Use `res.status` directamente.
+                res.status(500).json({ message: `Error deleting ${String(modelName)}`, error: (error as Error).message }); // FIX: Explicitly convert to string
             }
         }
     };
 };
 
 // --- Business Info (special case) ---
-export const getBusinessInfo = async (req: Request, res: Response) => {
+export const getBusinessInfo = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
     try {
         // Assuming there's only one record, or we fetch the first one.
         const info = await prisma.businessInfo.findFirst();
@@ -79,32 +78,32 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
                 }
             });
             // FIX: Use `res.status` directly.
-            return (res as Response).status(200).json(defaultInfo);
+            return res.status(200).json(defaultInfo);
         }
         // FIX: Use `res.status` directly.
-        (res as Response).status(200).json(info);
+        res.status(200).json(info);
     } catch (error) {
         // FIX: Use `res.status` directly.
-        (res as Response).status(500).json({ message: 'Error fetching business info', error: (error as Error).message });
+        res.status(500).json({ message: 'Error fetching business info', error: (error as Error).message });
     }
 };
 
-export const updateBusinessInfo = async (req: Request, res: Response) => {
+export const updateBusinessInfo = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
     try {
         const existingInfo = await prisma.businessInfo.findFirst();
         if (!existingInfo) {
             // FIX: Use `res.status` directly.
-            return (res as Response).status(404).json({ message: 'Business info not found to update.' });
+            return res.status(404).json({ message: 'Business info not found to update.' });
         }
         const updatedInfo = await prisma.businessInfo.update({
             where: { id: existingInfo.id },
             data: req.body as any
         });
         // FIX: Use `res.status` directly.
-        (res as Response).status(200).json(updatedInfo);
+        res.status(200).json(updatedInfo);
     } catch (error) {
-        // FIX: Use `res.status` directly.
-        (res as Response).status(500).json({ message: 'Error updating business info', error: (error as Error).message });
+        // FIX: Use `res.status` directamente.
+        res.status(500).json({ message: 'Error updating business info', error: (error as Error).message });
     }
 };
 
@@ -166,7 +165,7 @@ export const updateJobPosition = jobPositionHandlers.update;
 export const deleteJobPosition = jobPositionHandlers.delete;
 
 // Comprobantes Electronicos
-export const getComprobantes = async (req: Request, res: Response) => {
+export const getComprobantes = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
     const comprobantes = await prisma.comprobanteElectronico.findMany({
       include: {
@@ -176,15 +175,15 @@ export const getComprobantes = async (req: Request, res: Response) => {
         fechaEmision: 'desc',
       },
     });
-    // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(comprobantes);
+    // FIX: Use `res.status` directamente.
+    res.status(200).json(comprobantes);
   } catch (error) {
-    // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching comprobantes', error: (error as Error).message });
+    // FIX: Use `res.status` directamente.
+    res.status(500).json({ message: 'Error fetching comprobantes', error: (error as Error).message });
   }
 };
 
-export const createComprobante = async (req: Request, res: Response) => {
+export const createComprobante = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, items, fechaEmision, ...data } = req.body as any;
   try {
     const newComprobante = await prisma.comprobanteElectronico.create({
@@ -206,18 +205,18 @@ export const createComprobante = async (req: Request, res: Response) => {
         items: true,
       },
     });
-    // FIX: Use `res.status` directly.
-    (res as Response).status(201).json(newComprobante);
+    // FIX: Use `res.status` directamente.
+    res.status(201).json(newComprobante);
   } catch (error) {
     console.error("Error creating comprobante:", error);
     // FIX: Use `res.status` directamente.
-    (res as Response).status(500).json({ message: 'Error creating comprobante', error: (error as Error).message });
+    res.status(500).json({ message: 'Error creating comprobante', error: (error as Error).message });
   }
 };
 
-export const updateComprobante = async (req: Request<{ id: string }>, res: Response) => {
+export const updateComprobante = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   const { items, fechaEmision, ...data } = req.body as any;
   try {
     // Start a transaction to update both comprobante and its items
@@ -251,28 +250,28 @@ export const updateComprobante = async (req: Request<{ id: string }>, res: Respo
       return comprobante;
     });
 
-    // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(updatedComprobante);
+    // FIX: Use `res.status` directamente.
+    res.status(200).json(updatedComprobante);
   } catch (error) {
     console.error(`Error updating comprobante ${id}:`, error);
     // FIX: Use `res.status` directamente.
-    (res as Response).status(500).json({ message: 'Error updating comprobante', error: (error as Error).message });
+    res.status(500).json({ message: 'Error updating comprobante', error: (error as Error).message });
   }
 };
 
-export const deleteComprobante = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteComprobante = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     // Deleting the comprobante should cascade to its items
     await prisma.comprobanteElectronico.delete({
       where: { id: parseInt(id) },
     });
-    // FIX: Use `res.status` directly.
-    (res as Response).status(204).send();
+    // FIX: Use `res.status` directamente.
+    res.status(204).send();
   } catch (error) {
     console.error(`Error deleting comprobante ${id}:`, error);
     // FIX: Use `res.status` directamente.
-    (res as Response).status(500).json({ message: 'Error deleting comprobante', error: (error as Error).message });
+    res.status(500).json({ message: 'Error deleting comprobante', error: (error as Error).message });
   }
 };

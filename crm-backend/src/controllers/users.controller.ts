@@ -1,10 +1,9 @@
-import { Request, Response } from 'express';
+import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
-// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 import { Address, EmergencyContact } from '../../types';
 
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
@@ -31,37 +30,37 @@ export const getUsers = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(users);
+    res.status(200).json(users);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching users', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
-export const getUserById = async (req: Request<{ id: string }>, res: Response) => {
+export const getUserById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
     if (!user) {
       // FIX: Use `res.status` directly.
-      return (res as Response).status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     const { password, ...userWithoutPassword } = user;
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(userWithoutPassword);
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching user', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching user', error: (error as Error).message });
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.body` correctly.
   const { id, password, addresses, emergencyContacts, ...userData } = req.body as any;
   if (!password) {
     // FIX: Use `res.status` directly.
-    return (res as Response).status(400).json({ message: 'Password is required' });
+    return res.status(400).json({ message: 'Password is required' });
   }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -95,17 +94,17 @@ export const createUser = async (req: Request, res: Response) => {
     });
     const { password: _, ...userWithoutPassword } = newUser;
     // FIX: Use `res.status` directly.
-    (res as Response).status(201).json(userWithoutPassword);
+    res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error creating user', error: (error as Error).message });
+    res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
   }
 };
 
-export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
+export const updateUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   // FIX: Access `req.body` correctly.
   const { password, addresses, emergencyContacts, ...userData } = req.body as any;
   try {
@@ -155,17 +154,17 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
     });
     const { password: _, ...userWithoutPassword } = updatedUser;
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(userWithoutPassword);
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
-    // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error updating user', error: (error as Error).message });
+    // FIX: Use `res.status` directamente.
+    res.status(500).json({ message: 'Error updating user', error: (error as Error).message });
   }
 };
 
-export const deleteUser = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
     // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
@@ -177,9 +176,9 @@ export const deleteUser = async (req: Request<{ id: string }>, res: Response) =>
 
     await prisma.user.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly.
-    (res as Response).status(204).send();
+    res.status(204).send();
   } catch (error) {
-    // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error deleting user', error: (error as Error).message });
+    // FIX: Use `res.status` directamente.
+    res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };

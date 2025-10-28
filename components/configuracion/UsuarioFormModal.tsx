@@ -253,7 +253,7 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                 <div className="space-y-4">
                     {formData.addresses?.map((address, index) => (
                         <div key={address.id} className="border p-4 rounded-md relative space-y-2 bg-gray-50">
-                             <button type="button" onClick={() => handleRemoveSubformItem('addresses', address.id)} className="absolute top-2 right-2 text-red-500"><TrashIcon /></button>
+                             <button type="button" onClick={() => handleRemoveSubformItem('addresses', address.id)} className="absolute top-2 right-2 text-red-500"><GoogleIcon name="delete" className="text-lg" /></button>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 <div><label className="text-xs">Dirección</label><input name="direccion" value={address.direccion} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
                                 <div><label className="text-xs">Distrito</label><input name="distrito" value={address.distrito} onChange={(e) => handleSubformChange('addresses', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
@@ -269,7 +269,7 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                  <div className="space-y-4">
                     {formData.emergencyContacts?.map((contact, index) => (
                         <div key={contact.id} className="border p-4 rounded-md relative space-y-2 bg-gray-50">
-                             <button type="button" onClick={() => handleRemoveSubformItem('emergencyContacts', contact.id)} className="absolute top-2 right-2 text-red-500"><TrashIcon /></button>
+                             <button type="button" onClick={() => handleRemoveSubformItem('emergencyContacts', contact.id)} className="absolute top-2 right-2 text-red-500"><GoogleIcon name="delete" className="text-lg" /></button>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 <div><label className="text-xs">Nombre Completo</label><input name="nombre" value={contact.nombre} onChange={(e) => handleSubformChange('emergencyContacts', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>
                                 <div><label className="text-xs">Parentesco</label><input name="parentesco" value={contact.parentesco} onChange={(e) => handleSubformChange('emergencyContacts', index, e)} className="w-full p-1 border-black bg-[#f9f9fa] text-black rounded"/></div>

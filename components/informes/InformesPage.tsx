@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
+// FIX: Changed to named export for InformeComercial
+import { InformeComercial } from './InformeComercial.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import InformeComercial from './InformeComercial.tsx';
 
 interface InformesPageProps {
     leads: Lead[];

@@ -30,7 +30,8 @@ const simpleMarkdownToHtml = (text: string) => {
     return html;
 };
 
-const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campaigns, ventasExtra, dateRange, goals, publicaciones, seguidores }) => {
+// FIX: Exports InformeComercial as a named export.
+export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campaigns, ventasExtra, dateRange, goals, publicaciones, seguidores }) => {
     const [aiAnalysis, setAiAnalysis] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -283,99 +284,4 @@ const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campaigns, v
                      <button 
                         onClick={handleGenerateAnalysis} 
                         disabled={isGenerating}
-                        className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors"
-                    >
-                         <GoogleIcon name="auto_awesome" className="mr-2"/>
-                         {isGenerating ? 'Analizando...' : 'Análisis con IA'}
-                    </button>
-                    <button onClick={handlePrint} className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors">
-                        <GoogleIcon name="print" className="mr-2"/>
-                        Imprimir / PDF
-                    </button>
-                </div>
-            </div>
-
-            {/* AI Analysis Section */}
-            {aiAnalysis && (
-                <div className="bg-blue-50/50 border border-blue-200 p-6 rounded-lg">
-                    <h3 className="text-xl font-bold text-black flex items-center mb-4">
-                        <GoogleIcon name="spark" className="mr-2 text-blue-500" />
-                        Análisis con IA
-                    </h3>
-                    <div
-                        className="text-sm leading-relaxed max-w-none text-black"
-                        dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(aiAnalysis) }}
-                    />
-                </div>
-            )}
-
-            {/* General Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <StatCard title="Inversión Total" value={formatCurrency(stats.totalInversion)} icon={<GoogleIcon name="paid" />} />
-                <StatCard title="Ingresos Totales" value={formatCurrency(stats.ingresosTotales)} icon={<GoogleIcon name="trending_up" />} />
-                <StatCard title="ROI" value={`${stats.roi.toFixed(1)}%`} icon={<GoogleIcon name="percent" />} />
-                <StatCard title="Leads Totales" value={stats.totalLeads.toString()} icon={<GoogleIcon name="groups" />} />
-                <StatCard title="Costo por Lead" value={formatCurrency(stats.costoPorLead)} icon={<GoogleIcon name="monetization_on" />} />
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3 bg-gray-50 p-6 rounded-lg">
-                    <h3 className="text-lg font-semibold text-black mb-4">Rendimiento por Origen de Lead</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={leadSourceData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tickFormatter={(value) => `${value.toFixed(0)}%`} />
-                            <Tooltip formatter={(value, name) => name === 'Tasa de Conversión' ? `${(value as number).toFixed(1)}%` : value} />
-                            <Legend />
-                            <Bar yAxisId="left" dataKey="Leads" fill="#8884d8">
-                                <LabelList dataKey="Leads" position="top" />
-                            </Bar>
-                            <Bar yAxisId="right" dataKey="Tasa de Conversión" fill="#82ca9d">
-                                <LabelList dataKey="Tasa de Conversión" position="top" formatter={(value: number) => `${value.toFixed(1)}%`} />
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <div className="lg:col-span-2 bg-gray-50 p-6 rounded-lg">
-                    <h3 className="text-lg font-semibold text-black mb-4">Embudo de Ventas</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <FunnelChart>
-                            <Tooltip />
-                            <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                                <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
-                                <LabelList position="center" fill="#fff" stroke="none" dataKey="value" formatter={(value: number) => value.toLocaleString()} />
-                                {funnelData.map((entry, index) => <Cell key={`cell-${index}`} fill={['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d'][index % 4]}/>)}
-                            </Funnel>
-                        </FunnelChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-            
-            <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-black mb-4">Rendimiento por Vendedor</h3>
-                 <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={sellerPerformanceData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Leads', angle: -90, position: 'insideLeft' }} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Ventas (S/)', angle: 90, position: 'insideRight' }} tickFormatter={(value) => `S/${Number(value)/1000}k`}/>
-                        <Tooltip formatter={(value, name) => name === 'Leads' ? value : formatCurrency(Number(value))}/>
-                        <Legend />
-                        <Bar yAxisId="left" dataKey="Leads" fill="#8884d8">
-                            <LabelList dataKey="Leads" position="top" />
-                        </Bar>
-                        <Bar yAxisId="right" dataKey="Ventas" fill="#82ca9d">
-                            <LabelList dataKey="Ventas" position="top" formatter={(value: number) => `S/${(value/1000).toFixed(1)}k`} />
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-
-        </div>
-    );
-};
-
-export default InformeComercial;
+                        className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors">

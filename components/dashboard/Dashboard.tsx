@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, VentaExtra, Incidencia, Egreso, Goal, Seguidor, Publicacion, User, Role } from '../../types.ts';
 import GeneralDashboard from './GeneralDashboard.tsx';

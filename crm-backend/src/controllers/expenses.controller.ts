@@ -1,36 +1,35 @@
-import { Request, Response } from 'express';
+import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
-// FIX: Removed `ParamsDictionary` import as it was causing type conflicts.
 
-export const getExpenses = async (req: Request, res: Response) => {
+export const getExpenses = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
     const expenses = await prisma.egreso.findMany();
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(expenses);
+    res.status(200).json(expenses);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching expenses', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching expenses', error: (error as Error).message });
   }
 };
 
-export const getExpenseById = async (req: Request<{ id: string }>, res: Response) => {
+export const getExpenseById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     const expense = await prisma.egreso.findUnique({ where: { id: parseInt(id) } });
     if (!expense) {
       // FIX: Use `res.status` directly.
-      return (res as Response).status(404).json({ message: 'Expense not found' });
+      return res.status(404).json({ message: 'Expense not found' });
     }
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(expense);
+    res.status(200).json(expense);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error fetching expense', error: (error as Error).message });
+    res.status(500).json({ message: 'Error fetching expense', error: (error as Error).message });
   }
 };
 
-export const createExpense = async (req: Request, res: Response) => {
+export const createExpense = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.body` correctly.
   const { id, fechaRegistro, fechaPago, ...data } = req.body as any;
   try {
@@ -42,16 +41,16 @@ export const createExpense = async (req: Request, res: Response) => {
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(201).json(newExpense);
+    res.status(201).json(newExpense);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error creating expense', error: (error as Error).message });
+    res.status(500).json({ message: 'Error creating expense', error: (error as Error).message });
   }
 };
 
-export const updateExpense = async (req: Request<{ id: string }>, res: Response) => {
+export const updateExpense = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   // FIX: Access `req.body` correctly.
   const { fechaRegistro, fechaPago, ...data } = req.body as any;
   try {
@@ -64,22 +63,22 @@ export const updateExpense = async (req: Request<{ id: string }>, res: Response)
       },
     });
     // FIX: Use `res.status` directly.
-    (res as Response).status(200).json(updatedExpense);
+    res.status(200).json(updatedExpense);
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error updating expense', error: (error as Error).message });
+    res.status(500).json({ message: 'Error updating expense', error: (error as Error).message });
   }
 };
 
-export const deleteExpense = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteExpense = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = (req as Request<{ id: string }>).params.id;
+  const id = req.params.id;
   try {
     await prisma.egreso.delete({ where: { id: parseInt(id) } });
     // FIX: Use `res.status` directly.
-    (res as Response).status(204).send();
+    res.status(204).send();
   } catch (error) {
     // FIX: Use `res.status` directly.
-    (res as Response).status(500).json({ message: 'Error deleting expense', error: (error as Error).message });
+    res.status(500).json({ message: 'Error deleting expense', error: (error as Error).message });
   }
 };
