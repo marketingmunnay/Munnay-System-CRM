@@ -1,8 +1,9 @@
-import express, { Request, Response, NextFunction, Router, RequestHandler } from 'express'; // FIX: Added RequestHandler import
+import express, { Request, Response, NextFunction, Router, RequestHandler } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
+import path from 'path';
 
 dotenv.config();
 
@@ -18,15 +19,13 @@ const allowedOrigins = [
 ];
 
 // Regex para permitir cualquier subdominio de Vercel para proyectos de marketingmunnays
-// Ejemplo: https://munnay-system-crm-git-main-marketingmunnays-projects.vercel.app
-// Ejemplo: https://sistema-munnay-73uk0p0jf-marketingmunnays-projects.vercel.app
 const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
 
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Permitir solicitudes sin origen (ej. Postman, curl)
-    if (!origin) { 
+    if (!origin) {
       callback(null, true);
     } else if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -39,18 +38,26 @@ app.use(cors({
   },
   credentials: true,
 }));
-// FIX: Removed explicit cast `as express.RequestHandler`. `express.json()` returns a RequestHandler.
+
 app.use(express.json());
-// FIX: Removed explicit cast `as express.RequestHandler`. `cookieParser()` returns a RequestHandler.
 app.use(cookieParser());
 
-// FIX: Corrected Request and Response types to use express.Request and express.Response.
-app.get('/', (req: express.Request, res: express.Response) => {
-  // FIX: Removed redundant cast `(res as express.Response)`. `res` is already typed as `Response`.
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Health check endpoint
+app.get('/health', (req: express.Request, res: express.Response) => {
   res.status(200).send('CRM Munnay Backend is running!');
 });
 
+// API routes are prefixed with /api
 app.use('/api', apiRouter);
+
+// For any other request that doesn't match an API route or a static file,
+// serve the frontend's index.html file. This is crucial for client-side routing.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

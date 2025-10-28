@@ -63,6 +63,9 @@ export const saveLead = (lead: Lead): Promise<Lead> => {
 
 export const deleteLead = (leadId: number): Promise<void> => apiRequest(`/leads/${leadId}`, 'DELETE');
 
+// FIX: Added getNextHistoryNumber function
+export const getNextHistoryNumber = (): Promise<string> => apiRequest<string>('/leads/next-history-number', 'GET');
+
 
 // Campaigns
 export const getCampaigns = (): Promise<Campaign[]> => apiRequest<Campaign[]>('/campaigns', 'GET');

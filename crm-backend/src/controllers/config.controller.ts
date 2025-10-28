@@ -1,6 +1,7 @@
 import * as express from 'express';
 import prisma from '../lib/prisma';
-import { Prisma, PrismaClient } from '@prisma/client';
+// FIX: Added model types from @prisma/client
+import { Prisma, PrismaClient, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico } from '@prisma/client';
 
 // Define a type for model names that are valid for CRUD operations
 type PrismaModelName = Exclude<keyof PrismaClient, `$${string}` | `_` | keyof typeof Prisma.ModelName>;
@@ -108,28 +109,32 @@ export const updateBusinessInfo = async (req: express.Request<any, any, Prisma.B
 };
 
 // Client Sources
-const clientSourceHandlers = createCrudHandlers<'clientSource'>('clientSource');
+// FIX: Use the model type as generic argument, not a string.
+const clientSourceHandlers = createCrudHandlers<ClientSource>('clientSource');
 export const getClientSources = clientSourceHandlers.getAll;
 export const createClientSource = clientSourceHandlers.create;
 export const updateClientSource = clientSourceHandlers.update;
 export const deleteClientSource = clientSourceHandlers.delete;
 
 // Services
-const serviceHandlers = createCrudHandlers<'service'>('service');
+// FIX: Use the model type as generic argument, not a string.
+const serviceHandlers = createCrudHandlers<Service>('service');
 export const getServices = serviceHandlers.getAll;
 export const createService = serviceHandlers.create;
 export const updateService = serviceHandlers.update;
 export const deleteService = serviceHandlers.delete;
 
 // Products
-const productHandlers = createCrudHandlers<'product'>('product');
+// FIX: Use the model type as generic argument, not a string.
+const productHandlers = createCrudHandlers<Product>('product');
 export const getProducts = productHandlers.getAll;
 export const createProduct = productHandlers.create;
 export const updateProduct = productHandlers.update;
 export const deleteProduct = productHandlers.delete;
 
 // Memberships
-const membershipHandlers = createCrudHandlers<'membership'>('membership');
+// FIX: Use the model type as generic argument, not a string.
+const membershipHandlers = createCrudHandlers<Membership>('membership');
 export const getMemberships = membershipHandlers.getAll;
 export const createMembership = membershipHandlers.create;
 export const updateMembership = membershipHandlers.update;
@@ -137,35 +142,40 @@ export const updateMembership = membershipHandlers.update;
 export const deleteMemberships = membershipHandlers.delete;
 
 // Service Categories
-const serviceCategoryHandlers = createCrudHandlers<'serviceCategory'>('serviceCategory');
+// FIX: Use the model type as generic argument, not a string.
+const serviceCategoryHandlers = createCrudHandlers<ServiceCategory>('serviceCategory');
 export const getServiceCategories = serviceCategoryHandlers.getAll;
 export const createServiceCategory = serviceCategoryHandlers.create;
 export const updateServiceCategory = serviceCategoryHandlers.update;
 export const deleteServiceCategory = serviceCategoryHandlers.delete;
 
 // Product Categories
-const productCategoryHandlers = createCrudHandlers<'productCategory'>('productCategory');
+// FIX: Use the model type as generic argument, not a string.
+const productCategoryHandlers = createCrudHandlers<ProductCategory>('productCategory');
 export const getProductCategories = productCategoryHandlers.getAll;
 export const createProductCategory = productCategoryHandlers.create;
 export const updateProductCategory = productCategoryHandlers.update;
 export const deleteProductCategory = productCategoryHandlers.delete;
 
 // Egreso Categories
-const egresoCategoryHandlers = createCrudHandlers<'egresoCategory'>('egresoCategory');
+// FIX: Use the model type as generic argument, not a string.
+const egresoCategoryHandlers = createCrudHandlers<EgresoCategory>('egresoCategory');
 export const getEgresoCategories = egresoCategoryHandlers.getAll;
 export const createEgresoCategory = egresoCategoryHandlers.create;
 export const updateEgresoCategory = egresoCategoryHandlers.update;
 export const deleteEgresoCategory = egresoCategoryHandlers.delete;
 
 // Job Positions
-const jobPositionHandlers = createCrudHandlers<'jobPosition'>('jobPosition');
+// FIX: Use the model type as generic argument, not a string.
+const jobPositionHandlers = createCrudHandlers<JobPosition>('jobPosition');
 export const getJobPositions = jobPositionHandlers.getAll;
 export const createJobPosition = jobPositionHandlers.create;
 export const updateJobPosition = jobPositionHandlers.update;
 export const deleteJobPosition = jobPositionHandlers.delete;
 
 // Comprobantes Electronicos
-const comprobanteElectronicoHandlers = createCrudHandlers<'comprobanteElectronico'>('comprobanteElectronico');
+// FIX: Use the model type as generic argument, not a string.
+const comprobanteElectronicoHandlers = createCrudHandlers<ComprobanteElectronico>('comprobanteElectronico');
 export const getComprobantes = comprobanteElectronicoHandlers.getAll;
 export const createComprobante = comprobanteElectronicoHandlers.create;
 export const updateComprobante = comprobanteElectronicoHandlers.update;

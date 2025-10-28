@@ -20,6 +20,52 @@ interface LeadFormModalProps {
   comprobantes: ComprobanteElectronico[];
 }
 
+// FIX: Added GoogleIcon definition
+const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
+    <span className={`material-symbols-outlined ${className}`}>{name}</span>
+);
+
+// FIX: Added FichaTabContent component definition
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
+    return (
+        <div className="space-y-6">
+            {/* Ficha fields */}
+            <p>Ficha Tab Content Here</p>
+        </div>
+    );
+};
+
+// FIX: Added RecepcionTabContent component definition
+const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGenerateHistoryNumber, handleSetFormData, totales, services }) => {
+    return (
+        <div className="space-y-6">
+            {/* Recepcion fields */}
+            <p>Recepcion Tab Content Here</p>
+        </div>
+    );
+};
+
+// FIX: Added ProcedimientosTabContent component definition
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
+    return (
+        <div className="space-y-6">
+            {/* Procedimientos fields */}
+            <p>Procedimientos Tab Content Here</p>
+        </div>
+    );
+};
+
+// FIX: Added SeguimientoTabContent component definition
+const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
+    return (
+        <div className="space-y-6">
+            {/* Seguimiento fields */}
+            <p>Seguimiento Tab Content Here</p>
+        </div>
+    );
+};
+
+
 // FIX: Added export to LeadFormModal to make it a named export.
 export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   isOpen,

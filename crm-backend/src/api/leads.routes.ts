@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { getLeads, createLead, getLeadById, updateLead, deleteLead } from '../controllers/leads.controller';
+// FIX: Added getNextHistoryNumber to imports
+import { getLeads, createLead, getLeadById, updateLead, deleteLead, getNextHistoryNumber } from '../controllers/leads.controller';
 
 const router = Router();
 
+// FIX: Added route for getNextHistoryNumber
+router.get('/next-history-number', getNextHistoryNumber);
 router.get('/', getLeads);
 router.post('/', createLead);
 router.get('/:id', getLeadById);

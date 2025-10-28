@@ -160,3 +160,36 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
     res.status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };
+
+// FIX: Added getNextHistoryNumber controller function
+export const getNextHistoryNumber = async (req: express.Request, res: express.Response) => {
+  try {
+    const lastLeadWithHistory = await prisma.lead.findFirst({
+      where: {
+        nHistoria: {
+          startsWith: 'H-',
+        },
+      },
+      orderBy: {
+        nHistoria: 'desc',
+      },
+      select: {
+        nHistoria: true,
+      },
+    });
+
+    let nextNumber = 1;
+    if (lastLeadWithHistory && lastLeadWithHistory.nHistoria) {
+      const lastNumber = parseInt(lastLeadWithHistory.nHistoria.split('-')[1]);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
+    const nextHistoryNumber = `H-${String(nextNumber).padStart(5, '0')}`;
+    res.status(200).json(nextHistoryNumber);
+  } catch (error) {
+    console.error("Error generating next history number:", error);
+    res.status(500).json({ message: 'Error generating next history number', error: (error as Error).message });
+  }
+};
