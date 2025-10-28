@@ -53,7 +53,7 @@ const App: React.FC = () => {
     const [egresos, setEgresos] = useState<Egreso[]>([]);
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     const [tiposProveedor, setTiposProveedor] = useState<TipoProveedor[]>([]);
-    const [users, setUsers] = useState<User[]>(([]));
+    const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
     const [goals, setGoals] = useState<Goal[]>([]);
@@ -312,7 +312,6 @@ const App: React.FC = () => {
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
-                // FIX: Corrected typo 'EgresosDiariasPage' to 'EgresosDiariosPage'.
                 return <EgresosDiariosPage 
                     egresos={egresos} 
                     onSaveEgreso={handleSaveEgreso} 
