@@ -12,7 +12,7 @@ export const getPublicaciones = async (req: express.Request, res: express.Respon
     // FIX: Use `res.status` directly.
     res.status(200).json(publicaciones);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching publicaciones', error: (error as Error).message });
   }
 };

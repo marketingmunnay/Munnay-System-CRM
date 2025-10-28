@@ -283,5 +283,120 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
                 <div className="flex items-center space-x-2 no-print">
                      <button 
                         onClick={handleGenerateAnalysis} 
-                        disabled={isGenerating}
+                        disabled={isGenerating || !aiAnalysis}
                         className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors">
+                        {isGenerating ? (
+                            <>
+                                <GoogleIcon name="cached" className="mr-2 animate-spin" />
+                                Generando...
+                            </>
+                        ) : (
+                            <>
+                                <GoogleIcon name="auto_awesome" className="mr-2" />
+                                Generar Análisis IA
+                            </>
+                        )}
+                    </button>
+                     <button 
+                        onClick={handlePrint}
+                        className="flex items-center bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow hover:bg-gray-300 transition-colors"
+                    >
+                        <GoogleIcon name="print" className="mr-2" />
+                        Imprimir
+                    </button>
+                </div>
+            </div>
+
+            {/* AI Analysis Section */}
+            {(aiAnalysis || isGenerating) && (
+                <div className="bg-gray-50 p-6 rounded-lg shadow-inner border border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center mb-4">
+                        <GoogleIcon name="psychology" className="mr-2 text-blue-500" />
+                        Resumen Ejecutivo (Generado por IA)
+                    </h3>
+                    {isGenerating ? (
+                        <div className="flex items-center justify-center py-8 text-gray-600">
+                            <GoogleIcon name="hourglass_empty" className="mr-3 animate-pulse text-3xl" />
+                            <p>La inteligencia artificial está analizando los datos...</p>
+                        </div>
+                    ) : (
+                        <div className="prose max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(aiAnalysis) }} />
+                    )}
+                </div>
+            )}
+
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Inversión en Marketing" value={formatCurrency(stats.totalInversion)} icon="monetization_on" iconBgClass="bg-red-100" iconColorClass="text-red-500"/>
+                <StatCard title="Total Leads Generados" value={stats.totalLeads.toLocaleString('es-PE')} icon="groups" iconBgClass="bg-blue-100" iconColorClass="text-blue-500"/>
+                <StatCard title="Ingresos Totales (Comercial)" value={formatCurrency(stats.ingresosTotales)} icon="payments" iconBgClass="bg-green-100" iconColorClass="text-green-500"/>
+                <StatCard title="ROI (Retorno de Inversión)" value={`${stats.roi.toFixed(1)}%`} icon="show_chart" iconBgClass="bg-purple-100" iconColorClass="text-purple-500"/>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Lead Source Performance */}
+                <div className="bg-white p-6 rounded-lg shadow h-[400px]">
+                    <h3 className="text-xl font-bold text-black mb-4">Rendimiento por Origen de Lead</h3>
+                    <ResponsiveContainer width="100%" height="85%">
+                        <BarChart data={leadSourceData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" angle={-15} textAnchor="end" height={50} />
+                            <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Leads', angle: -90, position: 'insideLeft' }} />
+                            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Tasa de Conversión (%)', angle: 90, position: 'insideRight' }} />
+                            <Tooltip formatter={(value: number, name: string) => {
+                                if (name === 'Tasa de Conversión') return [`${value.toFixed(1)}%`, name];
+                                return [value.toLocaleString('es-PE'), name];
+                            }}/>
+                            <Legend />
+                            <Bar yAxisId="left" dataKey="Leads" fill="#8884d8" name="Leads" />
+                            <Bar yAxisId="right" dataKey="Tasa de Conversión" fill="#82ca9d" name="Tasa de Conversión" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Sales Funnel */}
+                <div className="bg-white p-6 rounded-lg shadow h-[400px] flex flex-col items-center justify-center">
+                    <h3 className="text-xl font-bold text-black mb-4">Embudo de Ventas</h3>
+                    <ResponsiveContainer width="100%" height="85%">
+                        <FunnelChart>
+                            <Tooltip formatter={(value: number, name: string) => [`${value.toLocaleString('es-PE')}`, name]}/>
+                            <Funnel
+                                dataKey="value"
+                                data={funnelData}
+                                isAnimationActive
+                                // Removed nameProperty as it's not a valid prop for Funnel
+                                label
+                                fill="#8884d8"
+                            >
+                                {funnelData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
+                                ))}
+                                <LabelList dataKey="name" position="right" fill="#000" stroke="none" />
+                            </Funnel>
+                        </FunnelChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* Seller Performance */}
+            <div className="bg-white p-6 rounded-lg shadow h-[400px]">
+                <h3 className="text-xl font-bold text-black mb-4">Rendimiento por Vendedor</h3>
+                <ResponsiveContainer width="100%" height="85%">
+                    <BarChart data={sellerPerformanceData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Leads', angle: -90, position: 'insideLeft' }} />
+                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Ventas (S/)', angle: 90, position: 'insideRight' }} />
+                        <Tooltip formatter={(value: number, name: string) => {
+                            if (name === 'Ventas') return [formatCurrency(value), name];
+                            return [value.toLocaleString('es-PE'), name];
+                        }}/>
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="Leads" fill="#8884d8" name="Leads Generados" />
+                        <Bar yAxisId="right" dataKey="Ventas" fill="#82ca9d" name="Ventas Generadas" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};

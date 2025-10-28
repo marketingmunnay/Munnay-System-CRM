@@ -28,7 +28,7 @@ export const getLeads = async (req: express.Request, res: express.Response) => {
 };
 
 export const getLeadById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: id },
@@ -81,13 +81,13 @@ export const createLead = async (req: express.Request<any, any, Lead>, res: expr
     res.status(201).json(newLead);
   } catch (error) {
     console.error("Error creating lead:", error);
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
 
 export const updateLead = async (req: express.Request<{ id: string }, any, Lead>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
   const { 
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
@@ -125,13 +125,13 @@ export const updateLead = async (req: express.Request<{ id: string }, any, Lead>
     res.status(200).json(updatedLead);
   } catch (error) {
     console.error(`Error updating lead ${id}:`, error);
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating lead', error: (error as Error).message });
   }
 };
 
 export const deleteLead = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
     // The schema has been updated with onDelete: Cascade, so these manual deletes are a safeguard.
@@ -160,11 +160,11 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
     await prisma.lead.delete({
       where: { id: id },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting lead ${id}:`, error);
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };

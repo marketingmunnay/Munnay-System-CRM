@@ -8,7 +8,7 @@ export const getExpenses = async (req: express.Request, res: express.Response) =
     // FIX: Use `res.status` directly.
     res.status(200).json(expenses);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching expenses', error: (error as Error).message });
   }
 };
@@ -21,7 +21,7 @@ export const getExpenseById = async (req: express.Request<{ id: string }>, res: 
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Expense not found' });
     }
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(expense);
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -42,7 +42,7 @@ export const createExpense = async (req: express.Request<any, any, Egreso>, res:
     // FIX: Use `res.status` directly.
     res.status(201).json(newExpense);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error creating expense', error: (error as Error).message });
   }
 };
@@ -59,10 +59,10 @@ export const updateExpense = async (req: express.Request<{ id: string }, any, Eg
         fechaPago: fechaPago ? new Date(fechaPago) : undefined,
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(updatedExpense);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating expense', error: (error as Error).message });
   }
 };
@@ -71,10 +71,10 @@ export const deleteExpense = async (req: express.Request<{ id: string }>, res: e
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     await prisma.egreso.delete({ where: { id: id } });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting expense', error: (error as Error).message });
   }
 };

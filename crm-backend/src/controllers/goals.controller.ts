@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Goal } from '@prisma/client';
 
 export const getGoals = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -14,9 +15,9 @@ export const getGoals = async (req: express.Request, res: express.Response) => {
 
 export const getGoalById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id);
   try {
-    const goal = await prisma.goal.findUnique({ where: { id: parseInt(id) } });
+    const goal = await prisma.goal.findUnique({ where: { id: id } });
     if (!goal) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Goal not found' });
@@ -30,5 +31,57 @@ export const getGoalById = async (req: express.Request<{ id: string }>, res: exp
 };
 
 // FIX: Added createGoal implementation
-export const createGoal = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const { id, startDate, endDate, ...data
+export const createGoal = async (req: express.Request<any, any, Goal>, res: express.Response) => { // FIX: Use express.Request and express.Response
+  const { startDate, endDate, ...data } = req.body; // FIX: Destructure id from body if present, but allow Prisma to auto-increment
+  try {
+    const newGoal = await prisma.goal.create({
+      data: {
+        ...data,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      },
+    });
+    // FIX: Use `res.status` directly.
+    res.status(201).json(newGoal);
+  } catch (error) {
+    console.error("Error creating goal:", error);
+    // FIX: Use `res.status` directly.
+    res.status(500).json({ message: 'Error creating goal', error: (error as Error).message });
+  }
+};
+
+// FIX: Added updateGoal implementation
+export const updateGoal = async (req: express.Request<{ id: string }, any, Goal>, res: express.Response) => { // FIX: Use express.Request and express.Response
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { startDate, endDate, ...data } = req.body; // FIX: Destructure id from body if present
+  try {
+    const updatedGoal = await prisma.goal.update({
+      where: { id: id },
+      data: {
+        ...data,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      },
+    });
+    // FIX: Use `res.status` directly.
+    res.status(200).json(updatedGoal);
+  } catch (error) {
+    console.error(`Error updating goal ${id}:`, error);
+    // FIX: Use `res.status` directly.
+    res.status(500).json({ message: 'Error updating goal', error: (error as Error).message });
+  }
+};
+
+// FIX: Added deleteGoal implementation
+export const deleteGoal = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  try {
+    await prisma.goal.delete({ where: { id: id } });
+    // FIX: Use `res.status` directly.
+    res.status(204).send();
+  } catch (error) {
+    console.error(`Error deleting goal ${id}:`, error);
+    // FIX: Use `res.status` directamente.
+    res.status(500).json({ message: 'Error deleting goal', error: (error as Error).message });
+  }
+};
