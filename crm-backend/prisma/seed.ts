@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 // FIX: Changed import path to be relative to the backend root.
-import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../src/types/frontend-types'; // Import frontend types
+import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../../types'; // Import frontend types
 
 const prisma = new PrismaClient();
 

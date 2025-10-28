@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { VentaExtra } from '@prisma/client';
+// import { VentaExtra } from '@prisma/client';
 
 export const getVentas = async (req: Request, res: Response) => {
   try {
@@ -12,7 +12,7 @@ export const getVentas = async (req: Request, res: Response) => {
   }
 };
 
-export const getVentaById = async (req: Request<{ id: string }>, res: Response) => {
+export const getVentaById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const venta = await prisma.ventaExtra.findUnique({ where: { id: id } });
@@ -26,7 +26,7 @@ export const getVentaById = async (req: Request<{ id: string }>, res: Response) 
   }
 };
 
-export const createVenta = async (req: Request<any, any, VentaExtra>, res: Response) => {
+export const createVenta = async (req: Request, res: Response) => {
   const { id, fechaVenta, ...data } = req.body;
   try {
     const newVenta = await prisma.ventaExtra.create({
@@ -42,7 +42,7 @@ export const createVenta = async (req: Request<any, any, VentaExtra>, res: Respo
   }
 };
 
-export const updateVenta = async (req: Request<{ id: string }, any, VentaExtra>, res: Response) => {
+export const updateVenta = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { fechaVenta, ...data } = req.body;
   try {
@@ -60,7 +60,7 @@ export const updateVenta = async (req: Request<{ id: string }, any, VentaExtra>,
   }
 };
 
-export const deleteVenta = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteVenta = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Delete related comprobantes where ventaExtraId matches

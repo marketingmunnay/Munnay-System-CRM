@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Proveedor, TipoProveedor } from '@prisma/client';
+// import { Proveedor, TipoProveedor } from '@prisma/client';
 
 // --- Proveedores ---
 export const getProveedores = async (req: Request, res: Response) => {
@@ -12,7 +12,7 @@ export const getProveedores = async (req: Request, res: Response) => {
   }
 };
 
-export const getProveedorById = async (req: Request<{ id: string }>, res: Response) => {
+export const getProveedorById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const proveedor = await prisma.proveedor.findUnique({ where: { id: id } });
@@ -25,8 +25,8 @@ export const getProveedorById = async (req: Request<{ id: string }>, res: Respon
   }
 };
 
-export const createProveedor = async (req: Request<any, any, Proveedor>, res: Response) => {
-  const data: Proveedor = req.body;
+export const createProveedor = async (req: Request, res: Response) => {
+  const data = req.body;
   try {
     const newProveedor = await prisma.proveedor.create({ data });
     res.status(201).json(newProveedor);
@@ -35,7 +35,7 @@ export const createProveedor = async (req: Request<any, any, Proveedor>, res: Re
   }
 };
 
-export const updateProveedor = async (req: Request<{ id: string }, any, Proveedor>, res: Response) => {
+export const updateProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
@@ -45,7 +45,7 @@ export const updateProveedor = async (req: Request<{ id: string }, any, Proveedo
   }
 };
 
-export const deleteProveedor = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.proveedor.delete({ where: { id: id } });
@@ -66,8 +66,8 @@ export const getTiposProveedor = async (req: Request, res: Response) => {
   }
 };
 
-export const createTipoProveedor = async (req: Request<any, any, TipoProveedor>, res: Response) => {
-  const data: TipoProveedor = req.body;
+export const createTipoProveedor = async (req: Request, res: Response) => {
+  const data = req.body;
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
     res.status(201).json(newTipo);
@@ -76,7 +76,7 @@ export const createTipoProveedor = async (req: Request<any, any, TipoProveedor>,
   }
 };
 
-export const updateTipoProveedor = async (req: Request<{ id: string }, any, TipoProveedor>, res: Response) => {
+export const updateTipoProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });
@@ -86,7 +86,7 @@ export const updateTipoProveedor = async (req: Request<{ id: string }, any, Tipo
   }
 };
 
-export const deleteTipoProveedor = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteTipoProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.tipoProveedor.delete({ where: { id: id } });

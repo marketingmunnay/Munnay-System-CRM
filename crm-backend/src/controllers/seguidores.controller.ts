@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Seguidor } from '@prisma/client';
+// import { Seguidor } from '@prisma/client';
 
 export const getSeguidores = async (req: Request, res: Response) => {
   try {
@@ -15,7 +15,7 @@ export const getSeguidores = async (req: Request, res: Response) => {
   }
 };
 
-export const getSeguidorById = async (req: Request<{ id: string }>, res: Response) => {
+export const getSeguidorById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const seguidor = await prisma.seguidor.findUnique({ where: { id: id } });
@@ -28,7 +28,7 @@ export const getSeguidorById = async (req: Request<{ id: string }>, res: Respons
   }
 };
 
-export const createSeguidor = async (req: Request<any, any, Seguidor>, res: Response) => {
+export const createSeguidor = async (req: Request, res: Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newSeguidor = await prisma.seguidor.create({
@@ -43,7 +43,7 @@ export const createSeguidor = async (req: Request<any, any, Seguidor>, res: Resp
   }
 };
 
-export const updateSeguidor = async (req: Request<{ id: string }, any, Seguidor>, res: Response) => {
+export const updateSeguidor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { fecha, ...data } = req.body;
   try {
@@ -60,7 +60,7 @@ export const updateSeguidor = async (req: Request<{ id: string }, any, Seguidor>
   }
 };
 
-export const deleteSeguidor = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteSeguidor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.seguidor.delete({ where: { id: id } });

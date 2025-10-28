@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
+// FIX: Removed unused model imports that were causing errors.
+// import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
 export const getLeads = async (req: Request, res: Response) => {
   try {
@@ -25,7 +26,7 @@ export const getLeads = async (req: Request, res: Response) => {
   }
 };
 
-export const getLeadById = async (req: Request<{ id: string }>, res: Response) => {
+export const getLeadById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const lead = await prisma.lead.findUnique({
@@ -50,7 +51,7 @@ export const getLeadById = async (req: Request<{ id: string }>, res: Response) =
   }
 };
 
-export const createLead = async (req: Request<any, any, Lead>, res: Response) => {
+export const createLead = async (req: Request, res: Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
@@ -79,7 +80,7 @@ export const createLead = async (req: Request<any, any, Lead>, res: Response) =>
   }
 };
 
-export const updateLead = async (req: Request<{ id: string }, any, Lead>, res: Response) => {
+export const updateLead = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { 
     createdAt, updatedAt, 
@@ -121,7 +122,7 @@ export const updateLead = async (req: Request<{ id: string }, any, Lead>, res: R
   }
 };
 
-export const deleteLead = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteLead = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.

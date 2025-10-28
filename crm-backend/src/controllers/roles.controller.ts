@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Role } from '@prisma/client';
+// import { Role } from '@prisma/client';
 
 export const getRoles = async (req: Request, res: Response) => {
   try {
@@ -11,7 +11,7 @@ export const getRoles = async (req: Request, res: Response) => {
   }
 };
 
-export const getRoleById = async (req: Request<{ id: string }>, res: Response) => {
+export const getRoleById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const role = await prisma.role.findUnique({ where: { id: id } });
@@ -24,8 +24,8 @@ export const getRoleById = async (req: Request<{ id: string }>, res: Response) =
   }
 };
 
-export const createRole = async (req: Request<any, any, Role>, res: Response) => {
-  const roleData: Role = req.body;
+export const createRole = async (req: Request, res: Response) => {
+  const roleData = req.body;
   try {
     const newRole = await prisma.role.create({
       data: roleData,
@@ -36,9 +36,9 @@ export const createRole = async (req: Request<any, any, Role>, res: Response) =>
   }
 };
 
-export const updateRole = async (req: Request<{ id: string }, any, Role>, res: Response) => {
+export const updateRole = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const roleData: Role = req.body;
+  const roleData = req.body;
   try {
     const updatedRole = await prisma.role.update({
       where: { id: id },
@@ -50,7 +50,7 @@ export const updateRole = async (req: Request<{ id: string }, any, Role>, res: R
   }
 };
 
-export const deleteRole = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteRole = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     try {
         await prisma.role.delete({ where: { id: id } });

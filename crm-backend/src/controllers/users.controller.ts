@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Address, EmergencyContact, User } from '@prisma/client';
+// import { Address, EmergencyContact, User } from '@prisma/client';
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -35,7 +35,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getUserById = async (req: Request<{ id: string }>, res: Response) => {
+export const getUserById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const user = await prisma.user.findUnique({ where: { id: id } });
@@ -49,7 +49,7 @@ export const getUserById = async (req: Request<{ id: string }>, res: Response) =
   }
 };
 
-export const createUser = async (req: Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: Response) => {
+export const createUser = async (req: Request, res: Response) => {
   const { id, password, addresses, emergencyContacts, ...userData } = req.body;
   if (!password) {
     return res.status(400).json({ message: 'Password is required' });
@@ -63,7 +63,7 @@ export const createUser = async (req: Request<any, any, User & { addresses?: Omi
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
         addresses: {
-          create: (addresses as Omit<Address, 'id'>[])?.map(addr => ({
+          create: (addresses as any[])?.map(addr => ({
             direccion: addr.direccion,
             distrito: addr.distrito,
             ciudad: addr.ciudad,
@@ -71,7 +71,7 @@ export const createUser = async (req: Request<any, any, User & { addresses?: Omi
           })) || [],
         },
         emergencyContacts: {
-          create: (emergencyContacts as Omit<EmergencyContact, 'id'>[])?.map(contact => ({
+          create: (emergencyContacts as any[])?.map(contact => ({
             nombre: contact.nombre,
             parentesco: contact.parentesco,
             numero: contact.numero,
@@ -92,7 +92,7 @@ export const createUser = async (req: Request<any, any, User & { addresses?: Omi
   }
 };
 
-export const updateUser = async (req: Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: Response) => {
+export const updateUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { password, addresses, emergencyContacts, ...userData } = req.body;
   try {
@@ -111,7 +111,7 @@ export const updateUser = async (req: Request<{ id: string }, any, User & { addr
     if (addresses !== undefined) {
       updateData.addresses = {
         deleteMany: {}, // Delete all existing addresses for this user
-        create: (addresses as Omit<Address, 'id'>[])?.map(addr => ({
+        create: (addresses as any[])?.map(addr => ({
           direccion: addr.direccion,
           distrito: addr.distrito,
           ciudad: addr.ciudad,
@@ -123,7 +123,7 @@ export const updateUser = async (req: Request<{ id: string }, any, User & { addr
     if (emergencyContacts !== undefined) {
       updateData.emergencyContacts = {
         deleteMany: {}, // Delete all existing emergency contacts for this user
-        create: (emergencyContacts as Omit<EmergencyContact, 'id'>[])?.map(contact => ({
+        create: (emergencyContacts as any[])?.map(contact => ({
           nombre: contact.nombre,
           parentesco: contact.parentesco,
           numero: contact.numero,
@@ -148,7 +148,7 @@ export const updateUser = async (req: Request<{ id: string }, any, User & { addr
   }
 };
 
-export const deleteUser = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 

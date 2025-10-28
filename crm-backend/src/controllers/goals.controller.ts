@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Goal } from '@prisma/client';
+// import { Goal } from '@prisma/client';
 
 export const getGoals = async (req: Request, res: Response) => {
   try {
@@ -11,7 +11,7 @@ export const getGoals = async (req: Request, res: Response) => {
   }
 };
 
-export const getGoalById = async (req: Request<{ id: string }>, res: Response) => {
+export const getGoalById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const goal = await prisma.goal.findUnique({ where: { id: id } });
@@ -24,7 +24,7 @@ export const getGoalById = async (req: Request<{ id: string }>, res: Response) =
   }
 };
 
-export const createGoal = async (req: Request<any, any, Goal>, res: Response) => {
+export const createGoal = async (req: Request, res: Response) => {
   const { id, startDate, endDate, ...data } = req.body;
   try {
     const newGoal = await prisma.goal.create({
@@ -41,7 +41,7 @@ export const createGoal = async (req: Request<any, any, Goal>, res: Response) =>
   }
 };
 
-export const updateGoal = async (req: Request<{ id: string }, any, Goal>, res: Response) => {
+export const updateGoal = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { startDate, endDate, ...data } = req.body;
   try {
@@ -60,7 +60,7 @@ export const updateGoal = async (req: Request<{ id: string }, any, Goal>, res: R
   }
 };
 
-export const deleteGoal = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteGoal = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.goal.delete({ where: { id: id } });

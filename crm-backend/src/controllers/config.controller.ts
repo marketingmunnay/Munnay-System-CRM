@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 // FIX: Added model types from @prisma/client
-import { Prisma, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico, BusinessInfo } from '@prisma/client';
+// import { Prisma, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico, BusinessInfo } from '@prisma/client';
 
 
 // Generic CRUD factory for simple models
 // FIX: Changed modelName to string and used `(prisma as any)` to work around type resolution issues.
-const createCrudHandlers = <T extends { id: number; }>(modelName: string) => {
+const createCrudHandlers = (modelName: string) => {
     const model = (prisma as any)[modelName];
 
     if (!model || typeof model !== 'object' || !('findMany' in model)) {
@@ -24,7 +24,7 @@ const createCrudHandlers = <T extends { id: number; }>(modelName: string) => {
                 res.status(500).json({ message: `Error fetching ${String(modelName)}`, error: (error as Error).message });
             }
         },
-        create: async (req: Request<any, any, T>, res: Response) => {
+        create: async (req: Request, res: Response) => {
             const { id, ...data } = req.body;
             try {
                 const newItem = await typedModel.create({ data });
@@ -33,7 +33,7 @@ const createCrudHandlers = <T extends { id: number; }>(modelName: string) => {
                 res.status(500).json({ message: `Error creating ${String(modelName)}`, error: (error as Error).message });
             }
         },
-        update: async (req: Request<{ id: string }, any, T>, res: Response) => {
+        update: async (req: Request, res: Response) => {
             const id = parseInt(req.params.id);
             try {
                 const updatedItem = await typedModel.update({ where: { id: id }, data: req.body });
@@ -42,7 +42,7 @@ const createCrudHandlers = <T extends { id: number; }>(modelName: string) => {
                 res.status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message });
             }
         },
-        delete: async (req: Request<{ id: string }>, res: Response) => {
+        delete: async (req: Request, res: Response) => {
             const id = parseInt(req.params.id);
             try {
                 await typedModel.delete({ where: { id: id } });
@@ -80,7 +80,7 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
     }
 };
 
-export const updateBusinessInfo = async (req: Request<any, any, BusinessInfo>, res: Response) => {
+export const updateBusinessInfo = async (req: Request, res: Response) => {
     try {
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
@@ -105,28 +105,28 @@ export const updateBusinessInfo = async (req: Request<any, any, BusinessInfo>, r
 };
 
 // Client Sources
-const clientSourceHandlers = createCrudHandlers<ClientSource>('clientSource');
+const clientSourceHandlers = createCrudHandlers('clientSource');
 export const getClientSources = clientSourceHandlers.getAll;
 export const createClientSource = clientSourceHandlers.create;
 export const updateClientSource = clientSourceHandlers.update;
 export const deleteClientSource = clientSourceHandlers.delete;
 
 // Services
-const serviceHandlers = createCrudHandlers<Service>('service');
+const serviceHandlers = createCrudHandlers('service');
 export const getServices = serviceHandlers.getAll;
 export const createService = serviceHandlers.create;
 export const updateService = serviceHandlers.update;
 export const deleteService = serviceHandlers.delete;
 
 // Products
-const productHandlers = createCrudHandlers<Product>('product');
+const productHandlers = createCrudHandlers('product');
 export const getProducts = productHandlers.getAll;
 export const createProduct = productHandlers.create;
 export const updateProduct = productHandlers.update;
 export const deleteProduct = productHandlers.delete;
 
 // Memberships
-const membershipHandlers = createCrudHandlers<Membership>('membership');
+const membershipHandlers = createCrudHandlers('membership');
 export const getMemberships = membershipHandlers.getAll;
 export const createMembership = membershipHandlers.create;
 export const updateMembership = membershipHandlers.update;
@@ -134,35 +134,35 @@ export const updateMembership = membershipHandlers.update;
 export const deleteMembership = membershipHandlers.delete;
 
 // Service Categories
-const serviceCategoryHandlers = createCrudHandlers<ServiceCategory>('serviceCategory');
+const serviceCategoryHandlers = createCrudHandlers('serviceCategory');
 export const getServiceCategories = serviceCategoryHandlers.getAll;
 export const createServiceCategory = serviceCategoryHandlers.create;
 export const updateServiceCategory = serviceCategoryHandlers.update;
 export const deleteServiceCategory = serviceCategoryHandlers.delete;
 
 // Product Categories
-const productCategoryHandlers = createCrudHandlers<ProductCategory>('productCategory');
+const productCategoryHandlers = createCrudHandlers('productCategory');
 export const getProductCategories = productCategoryHandlers.getAll;
 export const createProductCategory = productCategoryHandlers.create;
 export const updateProductCategory = productCategoryHandlers.update;
 export const deleteProductCategory = productCategoryHandlers.delete;
 
 // Egreso Categories
-const egresoCategoryHandlers = createCrudHandlers<EgresoCategory>('egresoCategory');
+const egresoCategoryHandlers = createCrudHandlers('egresoCategory');
 export const getEgresoCategories = egresoCategoryHandlers.getAll;
 export const createEgresoCategory = egresoCategoryHandlers.create;
 export const updateEgresoCategory = egresoCategoryHandlers.update;
 export const deleteEgresoCategory = egresoCategoryHandlers.delete;
 
 // Job Positions
-const jobPositionHandlers = createCrudHandlers<JobPosition>('jobPosition');
+const jobPositionHandlers = createCrudHandlers('jobPosition');
 export const getJobPositions = jobPositionHandlers.getAll;
 export const createJobPosition = jobPositionHandlers.create;
 export const updateJobPosition = jobPositionHandlers.update;
 export const deleteJobPosition = jobPositionHandlers.delete;
 
 // Comprobantes Electronicos
-const comprobanteElectronicoHandlers = createCrudHandlers<ComprobanteElectronico>('comprobanteElectronico');
+const comprobanteElectronicoHandlers = createCrudHandlers('comprobanteElectronico');
 export const getComprobantes = comprobanteElectronicoHandlers.getAll;
 export const createComprobante = comprobanteElectronicoHandlers.create;
 export const updateComprobante = comprobanteElectronicoHandlers.update;

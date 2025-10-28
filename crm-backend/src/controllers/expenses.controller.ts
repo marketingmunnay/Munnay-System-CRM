@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Egreso } from '@prisma/client';
+// import { Egreso } from '@prisma/client';
 
 export const getExpenses = async (req: Request, res: Response) => {
   try {
@@ -11,7 +11,7 @@ export const getExpenses = async (req: Request, res: Response) => {
   }
 };
 
-export const getExpenseById = async (req: Request<{ id: string }>, res: Response) => {
+export const getExpenseById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const expense = await prisma.egreso.findUnique({ where: { id: id } });
@@ -24,7 +24,7 @@ export const getExpenseById = async (req: Request<{ id: string }>, res: Response
   }
 };
 
-export const createExpense = async (req: Request<any, any, Egreso>, res: Response) => {
+export const createExpense = async (req: Request, res: Response) => {
   const { id, fechaRegistro, fechaPago, ...data } = req.body;
   try {
     const newExpense = await prisma.egreso.create({
@@ -40,7 +40,7 @@ export const createExpense = async (req: Request<any, any, Egreso>, res: Respons
   }
 };
 
-export const updateExpense = async (req: Request<{ id: string }, any, Egreso>, res: Response) => {
+export const updateExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { fechaRegistro, fechaPago, ...data } = req.body;
   try {
@@ -58,7 +58,7 @@ export const updateExpense = async (req: Request<{ id: string }, any, Egreso>, r
   }
 };
 
-export const deleteExpense = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.egreso.delete({ where: { id: id } });

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { Campaign, MetaCampaign } from '@prisma/client';
+// import { Campaign, MetaCampaign } from '@prisma/client';
 
 // Controller functions for Campaign (Anuncios)
 export const getCampaigns = async (req: Request, res: Response) => {
@@ -12,7 +12,7 @@ export const getCampaigns = async (req: Request, res: Response) => {
   }
 };
 
-export const getCampaignById = async (req: Request<{ id: string }>, res: Response) => {
+export const getCampaignById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const campaign = await prisma.campaign.findUnique({ where: { id: id } });
@@ -25,7 +25,7 @@ export const getCampaignById = async (req: Request<{ id: string }>, res: Respons
   }
 };
 
-export const createCampaign = async (req: Request<any, any, Campaign>, res: Response) => {
+export const createCampaign = async (req: Request, res: Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newCampaign = await prisma.campaign.create({
@@ -40,7 +40,7 @@ export const createCampaign = async (req: Request<any, any, Campaign>, res: Resp
   }
 };
 
-export const updateCampaign = async (req: Request<{ id: string }, any, Campaign>, res: Response) => {
+export const updateCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { fecha, ...data } = req.body;
   try {
@@ -57,7 +57,7 @@ export const updateCampaign = async (req: Request<{ id: string }, any, Campaign>
   }
 };
 
-export const deleteCampaign = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.campaign.delete({ where: { id: id } });
@@ -77,7 +77,7 @@ export const getMetaCampaigns = async (req: Request, res: Response) => {
   }
 };
 
-export const getMetaCampaignById = async (req: Request<{ id: string }>, res: Response) => {
+export const getMetaCampaignById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const metaCampaign = await prisma.metaCampaign.findUnique({ where: { id: id } });
@@ -90,7 +90,7 @@ export const getMetaCampaignById = async (req: Request<{ id: string }>, res: Res
   }
 };
 
-export const createMetaCampaign = async (req: Request<any, any, MetaCampaign>, res: Response) => {
+export const createMetaCampaign = async (req: Request, res: Response) => {
   const { id, fechaInicio, fechaFin, ...data } = req.body;
   try {
     const newMetaCampaign = await prisma.metaCampaign.create({
@@ -106,7 +106,7 @@ export const createMetaCampaign = async (req: Request<any, any, MetaCampaign>, r
   }
 };
 
-export const updateMetaCampaign = async (req: Request<{ id: string }, any, MetaCampaign>, res: Response) => {
+export const updateMetaCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { fechaInicio, fechaFin, ...data } = req.body;
   try {
@@ -124,7 +124,7 @@ export const updateMetaCampaign = async (req: Request<{ id: string }, any, MetaC
   }
 };
 
-export const deleteMetaCampaign = async (req: Request<{ id: string }>, res: Response) => {
+export const deleteMetaCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.metaCampaign.delete({ where: { id: id } });
