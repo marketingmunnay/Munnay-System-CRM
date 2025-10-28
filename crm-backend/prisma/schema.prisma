@@ -1,1 +1,717 @@
-�
+# Navega a la carpeta de tu backend si no estás ya en ella
+cd crm-backend
+
+# Borra el archivo schema.prisma existente si está vacío o es incorrecto
+rm prisma/schema.prisma
+
+# Crea el nuevo archivo schema.prisma con el contenido correcto
+mkdir -p prisma
+cat > prisma/schema.prisma << 'EOF'
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos de autenticación y roles
+model User {
+  id                      Int                 @id @default(autoincrement())
+  nombres                 String
+  apellidos               String
+  usuario                 String              @unique
+  password                String?
+  rolId                   Int
+  rol                     Role                @relation(fields: [rolId], references: [id])
+  avatarUrl               String?
+  position                String?
+  documentType            DocumentType?
+  documentNumber          String?
+  phone                   String?
+  birthDate               DateTime?           @map("birth_date") @db.Date
+  startDate               DateTime?           @map("start_date") @db.Date
+  salary                  Float?
+  contractType            ContractType?       @map("contract_type")
+  maritalStatus           MaritalStatus?      @map("marital_status")
+  sex                     Sex?
+
+  addresses               Address[]
+  emergencyContacts       EmergencyContact[]
+  reconocimientosOtorgados Reconocimiento[] @relation("OtorgadoPor")
+  reconocimientosRecibidos Reconocimiento[] @relation("RecibidoPor")
+
+  createdAt               DateTime            @default(now()) @map("created_at")
+  updatedAt               DateTime            @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Role {
+  id               Int    @id @default(autoincrement())
+  nombre           String @unique
+  permissions      String[]
+  dashboardMetrics String[] @map("dashboard_metrics")
+
+  users            User[]
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+// Modelos para Leads y Gestión de Pacientes
+model Lead {
+  id                    Int                     @id @default(autoincrement())
+  fechaLead             DateTime                @map("fecha_lead") @db.Date
+  nombres               String
+  apellidos             String
+  numero                String?
+  sexo                  Sex
+  redSocial             String                  @map("red_social")
+  anuncio               String
+  vendedor              String // Asumiendo que es el nombre del vendedor (enum Seller)
+  estado                LeadStatus
+  montoPagado           Float                   @map("monto_pagado")
+  metodoPago            MetodoPago?             @map("metodo_pago")
+  fechaHoraAgenda       DateTime?               @map("fecha_hora_agenda") @db.Timestamp(3)
+  servicios             String[]
+  categoria             String // Corresponde a ServiceCategory.nombre
+  fechaVolverLlamar     DateTime?               @map("fecha_volver_llamar") @db.Date
+  horaVolverLlamar      String?                 @map("hora_volver_llamar")
+  notas                 String?
+
+  nHistoria             String?                 @unique @map("n_historia")
+  aceptoTratamiento     AceptoTratamiento?      @map("acepto_tratamiento")
+  motivoNoCierre        String?                 @map("motivo_no_cierre")
+  estadoRecepcion       ReceptionStatus?        @map("estado_recepcion")
+  recursoId             String?                 @map("recurso_id") // ID del recurso (personal o consultorio)
+
+  // Para facturación
+  documentType          DocumentType?           @map("document_type")
+  documentNumber        String?                 @map("document_number")
+  razonSocial           String?                 @map("razon_social")
+  direccionFiscal       String?                 @map("direccion_fiscal")
+
+  // Relaciones
+  registrosLlamada      RegistroLlamada[]
+  tratamientos          Treatment[]
+  procedimientos        Procedure[]
+  seguimientos          Seguimiento[]
+  alergias              Alergia[]
+  membresiasAdquiridas  Membership[]            @relation("LeadToMembership")
+  comprobantes          ComprobanteElectronico[]
+
+  // Nuevos campos para Split Payment de cita
+  precioCita            Float?                  @map("precio_cita")
+  deudaCita             Float?                  @map("deuda_cita")
+  metodoPagoDeuda       MetodoPago?             @map("metodo_pago_deuda")
+
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+
+  @@map("leads")
+}
+
+model RegistroLlamada {
+  id                Int       @id @default(autoincrement())
+  leadId            Int
+  lead              Lead      @relation(fields: [leadId], references: [id])
+  numeroLlamada     Int       @map("numero_llamada")
+  duracionLlamada   String    @map("duracion_llamada")
+  estadoLlamada     EstadoLlamada @map("estado_llamada")
+  observacion       String?
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("registros_llamada")
+}
+
+model Treatment {
+  id                Int         @id @default(autoincrement())
+  leadId            Int
+  lead              Lead        @relation(fields: [leadId], references: [id])
+  nombre            String
+  cantidadSesiones  Int         @map("cantidad_sesiones")
+  precio            Float
+  montoPagado       Float       @map("monto_pagado")
+  metodoPago        MetodoPago? @map("metodo_pago")
+  deuda             Float
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("tratamientos")
+}
+
+model Procedure {
+  id                Int         @id @default(autoincrement())
+  leadId            Int
+  lead              Lead        @relation(fields: [leadId], references: [id])
+  fechaAtencion     DateTime    @map("fecha_atencion") @db.Date
+  personal          String // Nombre del personal que atiende (enum Personal)
+  horaInicio        String      @map("hora_inicio")
+  horaFin           String      @map("hora_fin")
+  tratamientoId     Int         @map("tratamiento_id")
+  nombreTratamiento String      @map("nombre_tratamiento")
+  sesionNumero      Int         @map("sesion_numero")
+  asistenciaMedica  Boolean     @map("asistencia_medica")
+  medico            String? // Nombre del médico (enum Medico)
+  observacion       String?
+
+  seguimientos      Seguimiento[]
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("procedimientos")
+}
+
+model Seguimiento {
+  id                Int       @id @default(autoincrement())
+  leadId            Int
+  lead              Lead      @relation(fields: [leadId], references: [id])
+  procedimientoId   Int       @map("procedimiento_id")
+  procedimiento     Procedure @relation(fields: [procedimientoId], references: [id])
+  nombreProcedimiento String    @map("nombre_procedimiento")
+  fechaSeguimiento  DateTime  @map("fecha_seguimiento") @db.Date
+  personal          String // Nombre del personal (enum Personal)
+  inflamacion       Boolean
+  ampollas          Boolean
+  alergias          Boolean
+  malestarGeneral   Boolean   @map("malestar_general")
+  brote             Boolean
+  dolorDeCabeza     Boolean   @map("dolor_de_cabeza")
+  moretones         Boolean
+  observacion       String?
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("seguimientos")
+}
+
+model Alergia {
+  id        Int     @id @default(autoincrement())
+  leadId    Int
+  lead      Lead    @relation(fields: [leadId], references: [id])
+  nombre    String
+  gravedad  Int // 1 | 2 | 3 | 4 | 5
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("alergias")
+}
+
+// Modelos para Campañas de Marketing
+model Campaign {
+  id                Int       @id @default(autoincrement())
+  nombreAnuncio     String    @map("nombre_anuncio")
+  categoria         String // Nombre de la MetaCampaign
+  alcance           Int
+  resultados        Int
+  costoPorResultado Float     @map("costo_por_resultado")
+  importeGastado    Float     @map("importe_gastado")
+  fecha             DateTime  @db.Date
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("campaigns")
+}
+
+model MetaCampaign {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  fechaInicio DateTime @map("fecha_inicio") @db.Date
+  fechaFin    DateTime @map("fecha_fin") @db.Date
+  categoria   String
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("meta_campaigns")
+}
+
+// Modelos para Redes Sociales
+model Publicacion {
+  id                  Int          @id @default(autoincrement())
+  fechaPost           DateTime     @map("fecha_post") @db.Date
+  horaPost            String?      @map("hora_post")
+  temaVideo           String       @map("tema_video")
+  tipoPost            TipoPost     @map("tipo_post")
+  redSocial           RedSocialPost @map("red_social")
+  publicacionUrl      String       @map("publicacion_url")
+  imageUrl            String?      @map("image_url")
+  vistas              Int
+  comentarios         Int
+  reacciones          Int
+  conversacionesIniciadas Int          @map("conversaciones_iniciadas")
+  convertidos         Int
+
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@map("publicaciones")
+}
+
+model Seguidor {
+  id               Int           @id @default(autoincrement())
+  fecha            DateTime      @db.Date
+  cuenta           String
+  redSocial        RedSocialPost @map("red_social")
+  seguidores       Int
+  dejaronDeSeguir  Int           @map("dejaron_de_seguir")
+
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  @@map("seguidores")
+}
+
+// Modelos para Ventas Extra
+model VentaExtra {
+  id              Int       @id @default(autoincrement())
+  codigoVenta     String    @unique @map("codigo_venta")
+  fechaVenta      DateTime  @map("fecha_venta") @db.Date
+  pacienteId      Int       @map("paciente_id")
+  nHistoria       String    @map("n_historia")
+  nombrePaciente  String    @map("nombre_paciente")
+  servicio        String
+  categoria       String
+  precio          Float
+  montoPagado     Float     @map("monto_pagado")
+  metodoPago      MetodoPago @map("metodo_pago")
+  deuda           Float
+  fechaPagoDeuda  DateTime? @map("fecha_pago_deuda") @db.Date
+
+  comprobantes    ComprobanteElectronico[]
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("ventas_extra")
+}
+
+// Modelos para Incidencias
+model Incidencia {
+  id              Int       @id @default(autoincrement())
+  fecha           DateTime  @db.Date
+  hora            String
+  pacienteId      Int       @map("paciente_id")
+  nHistoria       String    @map("n_historia")
+  nombrePaciente  String    @map("nombre_paciente")
+  tipoIncidencia  String    @map("tipo_incidencia")
+  detalleIncidencia String    @map("detalle_incidencia")
+  descripcion     String?
+  solucionado     Boolean
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("incidencias")
+}
+
+// Modelos para Egresos
+model Egreso {
+  id                Int         @id @default(autoincrement())
+  fechaRegistro     DateTime    @map("fecha_registro") @db.Date
+  fechaPago         DateTime    @map("fecha_pago") @db.Date
+  proveedor         String // Nombre del proveedor
+  categoria         String // Nombre de EgresoCategory
+  descripcion       String
+  tipoComprobante   TipoComprobante @map("tipo_comprobante")
+  serieComprobante  String?     @map("serie_comprobante")
+  nComprobante      String?     @map("n_comprobante")
+  montoTotal        Float       @map("monto_total")
+  montoPagado       Float       @map("monto_pagado")
+  deuda             Float
+  modoPago          ModoPagoEgreso? @map("modo_pago")
+  fotoUrl           String?     @map("foto_url")
+  tipoMoneda        TipoMoneda  @map("tipo_moneda")
+  observaciones     String?
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("egresos")
+}
+
+// Modelos para Proveedores
+model Proveedor {
+  id             Int      @id @default(autoincrement())
+  razonSocial    String   @map("razon_social")
+  ruc            String   @unique
+  tipo           String // Nombre de TipoProveedor
+  numeroContacto String   @map("numero_contacto")
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("proveedores")
+}
+
+model TipoProveedor {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tipos_proveedor")
+}
+
+// Modelos para Configuración General
+model BusinessInfo {
+  id            Int      @id @default(1) // Asumimos un único registro con ID 1
+  nombre        String
+  ruc           String
+  direccion     String
+  telefono      String
+  email         String
+  logoUrl       String   @map("logo_url")
+  loginImageUrl String?  @map("login_image_url")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("business_info")
+}
+
+model ClientSource {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("client_sources")
+}
+
+model ServiceCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("service_categories")
+}
+
+model ProductCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("product_categories")
+}
+
+model EgresoCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("egreso_categories")
+}
+
+model JobPosition {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("job_positions")
+}
+
+model Service {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  categoria String // Nombre de ServiceCategory
+  precio    Float
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("services")
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  categoria String // Nombre de ProductCategory
+  precio    Float
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model Membership {
+  id            Int      @id @default(autoincrement())
+  nombre        String   @unique
+  precio        Float
+  numeroSesiones Int     @map("numero_sesiones")
+  descripcion   String?
+
+  leads         Lead[] @relation("LeadToMembership")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("memberships")
+}
+
+// Modelos para Metas y Objetivos
+model Goal {
+  id          Int         @id @default(autoincrement())
+  name        String
+  area        GoalArea
+  objective   GoalObjective
+  value       Float
+  unit        GoalUnit
+  personal    String? // Nombre del personal (enum Personal), opcional
+  startDate   DateTime    @map("start_date") @db.Date
+  endDate     DateTime    @map("end_date") @db.Date
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("goals")
+}
+
+// Modelos para Reconocimientos (RRHH)
+model Reconocimiento {
+  id                Int       @id @default(autoincrement())
+  otorgadoPorId     Int       @map("otorgado_por_id")
+  otorgadoPor       User      @relation("OtorgadoPor", fields: [otorgadoPorId], references: [id])
+  recibidoPorId     Int       @map("recibido_por_id")
+  recibidoPor       User      @relation("RecibidoPor", fields: [recibidoPorId], references: [id])
+  mensaje           String
+  fecha             DateTime  @db.Date
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("reconocimientos")
+}
+
+// Modelos para Comprobantes Electrónicos
+model ComprobanteElectronico {
+  id                     Int                        @id @default(autoincrement())
+  tipoDocumento          TipoComprobanteElectronico @map("tipo_documento")
+  serie                  String
+  correlativo            Int
+  fechaEmision           DateTime                   @map("fecha_emision") @db.Date
+
+  clienteTipoDocumento   DocumentType               @map("cliente_tipo_documento")
+  clienteNumeroDocumento String                     @map("cliente_numero_documento")
+  clienteDenominacion    String                     @map("cliente_denominacion")
+  clienteDireccion       String?                    @map("cliente_direccion")
+
+  items                  ComprobanteItem[]
+
+  opGravadas             Float                      @map("op_gravadas")
+  igv                    Float
+  total                  Float
+  sunatStatus            SunatStatus                @map("sunat_status")
+
+  ventaId                Int                        @map("venta_id")
+  ventaType              VentaTypeEnum              @map("venta_type") // 'lead' o 'venta_extra'
+
+  lead                   Lead?                      @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  ventaExtra             VentaExtra?                @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
+
+  @@unique([serie, correlativo, tipoDocumento]) // Comprobantes deben ser únicos por serie/correlativo/tipo
+  @@map("comprobantes_electronicos")
+}
+
+model ComprobanteItem {
+  id                         Int                      @id @default(autoincrement())
+  comprobanteElectronicoId   Int                      @map("comprobante_electronico_id")
+  comprobanteElectronico     ComprobanteElectronico   @relation(fields: [comprobanteElectronicoId], references: [id], onDelete: Cascade)
+  descripcion                String
+  cantidad                   Int
+  valorUnitario              Float                    @map("valor_unitario")
+  precioUnitario             Float                    @map("precio_unitario")
+  igv                        Float
+  montoTotal                 Float                    @map("monto_total")
+
+  createdAt                  DateTime                 @default(now()) @map("created_at")
+  updatedAt                  DateTime                 @updatedAt @map("updated_at")
+
+  @@map("comprobante_items")
+}
+
+
+// Enums
+enum Sex {
+  M
+  F
+}
+
+enum LeadStatus {
+  Nuevo
+  Seguimiento
+  PorPagar
+  Agendado
+  Perdido
+}
+
+enum MetodoPago {
+  Efectivo
+  Tarjeta
+  Transferencia
+  Yape
+  Plin
+}
+
+enum EstadoLlamada {
+  Contesto
+  NoContesto
+  NumeroEquivocado
+  Ocupado
+}
+
+enum AceptoTratamiento {
+  Si
+  No
+}
+
+enum ReceptionStatus {
+  Agendado
+  PorAtender
+  Atendido
+  Reprogramado
+  Cancelado
+  NoAsistio
+}
+
+enum TipoPost {
+  Reel
+  Historia
+  Carrusel
+  Post
+}
+
+enum RedSocialPost {
+  Facebook
+  Instagram
+  Tiktok
+  YouTube
+}
+
+enum TipoComprobante {
+  Factura
+  Boleta
+  ReciboHonorarios
+  SinComprobante
+}
+
+enum ModoPagoEgreso {
+  Efectivo
+  TransferenciaBancaria @map("Transferencia Bancaria")
+  TarjetaCreditoDebito @map("Tarjeta de Crédito/Débito")
+  YapePlin @map("Yape/Plin")
+}
+
+enum TipoMoneda {
+  Soles
+  Dólares
+}
+
+enum DocumentType {
+  DNI
+  RUC
+  Pasaporte
+  CarnetExtranjeria @map("Carnet de Extranjería")
+}
+
+enum ContractType {
+  PlazoFijo @map("Plazo Fijo")
+  Indefinido
+}
+
+enum MaritalStatus {
+  Soltero @map("Soltero(a)")
+  Casado @map("Casado(a)")
+  Divorciado @map("Divorciado(a)")
+  Viudo @map("Viudo(a)")
+}
+
+enum GoalArea {
+  Comercial
+  Administracion
+  Recepcion
+  Procedimientos
+}
+
+enum GoalObjective {
+  Leads
+  Agendados
+  Asistidos
+  CostoPorResultado @map("Costo por Resultado")
+  VentasServicios @map("Ventas de Servicios")
+  VentasProductos @map("Ventas de Productos")
+  Recuperados
+  ConversionLeads @map("Conversión de Leads")
+  ROI
+  Seguidores
+  Visualizaciones
+  Alcance
+  Engagement
+  CierreEvaluaciones @map("Cierre de Evaluaciones")
+  AceptacionTratamientos @map("Aceptación de Tratamientos")
+  EfectividadTratamientos @map("Efectividad de Tratamientos")
+  SeguimientosCompletados @map("Seguimientos Completados")
+  RotacionPersonal @map("Rotación de Personal")
+  NivelStock @map("Nivel de Stock")
+}
+
+enum GoalUnit {
+  cantidad
+  porcentaje
+}
+
+enum TipoComprobanteElectronico {
+  Boleta
+  Factura
+}
+
+enum SunatStatus {
+  Aceptado
+  Pendiente
+  Rechazado
+  ConObservaciones @map("Con Observaciones")
+  Anulado
+}
+
+enum VentaTypeEnum {
+  lead
+  venta_extra
+}
+EOF
+
+# Ejecuta las migraciones de Prisma para aplicar el esquema a tu base de datos
+npx prisma migrate dev --name init
+
+# Genera el cliente de Prisma para que tu código TypeScript pueda usar los nuevos modelos
+npx prisma generate
+
+# Si todo sale bien, compila el backend
+npm run build
+
+# Luego puedes iniciar el servidor
+npm start
