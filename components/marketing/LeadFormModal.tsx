@@ -553,7 +553,7 @@ const ProcedimientosTabContent: React.FC<{
                 <GoogleIcon name="warning" className="text-5xl text-yellow-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-800">Sin Tratamientos Activos</h3>
                 <p className="text-gray-600 mt-2 max-w-md">El paciente debe aceptar al menos un tratamiento en la pestaña de "Recepción" para poder registrar procedimientos.</p>
-            </div>
+        </div>
         );
     }
     

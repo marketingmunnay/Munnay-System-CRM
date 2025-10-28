@@ -150,9 +150,9 @@ const SimpleListManager: FC<{
                 </table>
             </div>
             {isModalOpen && editingItem && (
-                 <Modal 
-                    isOpen={isModalOpen} 
-                    onClose={handleCloseModal} 
+                 <Modal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
                     title={items.some(i => i.id === editingItem.id) ? `Editar ${title.slice(0,-1)}` : `Añadir ${title.slice(0,-1)}`}
                     maxWidthClass="max-w-md"
                     footer={
@@ -243,8 +243,8 @@ const CatalogManager: FC<{
                 </table>
             </div>
             {isModalOpen && (
-                <CatalogFormModal 
-                    isOpen={isModalOpen} 
+                <CatalogFormModal
+                    isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSave}
                     item={editingItem}
@@ -328,7 +328,7 @@ const BusinessInfoSection: FC<{
                             <div><span className="font-medium text-gray-500">Teléfono:</span> {businessInfo.telefono}</div>
                             <div><span className="font-medium text-gray-500">Email:</span> {businessInfo.email}</div>
                             <div className="flex items-center">
-                                <span className="font-medium text-gray-500 mr-2">Logo:</span> 
+                                <span className="font-medium text-gray-500 mr-2">Logo:</span>
                                 {businessInfo.logoUrl ? <img src={businessInfo.logoUrl} alt="Logo" className="h-8 object-contain"/> : 'N/A'}
                             </div>
                             <div className="md:col-span-2"><span className="font-medium text-gray-500">Imagen Login:</span> {businessInfo.loginImageUrl ? <img src={businessInfo.loginImageUrl} alt="Login" className="h-24 w-auto object-contain mt-2"/> : 'N/A'}</div>
@@ -365,20 +365,20 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     ]}
                 />;
             case 'roles':
-                return <SimpleListManager 
-                    title="Roles" 
-                    items={props.roles} 
-                    onSave={props.onSaveRole} 
-                    onDelete={props.onDeleteRole} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Roles"
+                    items={props.roles}
+                    onSave={props.onSaveRole}
+                    onDelete={props.onDeleteRole}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'puestos':
-                return <SimpleListManager 
-                    title="Puestos de Trabajo" 
-                    items={props.jobPositions} 
-                    onSave={props.onSaveJobPosition} 
-                    onDelete={props.onDeleteJobPosition} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Puestos de Trabajo"
+                    items={props.jobPositions}
+                    onSave={props.onSaveJobPosition}
+                    onDelete={props.onDeleteJobPosition}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'proveedores':
                  return <CatalogManager
@@ -397,44 +397,44 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     categoryField='tipo'
                 />;
             case 'tipos-proveedor':
-                return <SimpleListManager 
-                    title="Tipos de Proveedor" 
-                    items={props.tiposProveedor} 
-                    onSave={props.onSaveTipoProveedor} 
-                    onDelete={props.onDeleteTipoProveedor} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Tipos de Proveedor"
+                    items={props.tiposProveedor}
+                    onSave={props.onSaveTipoProveedor}
+                    onDelete={props.onDeleteTipoProveedor}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'origenes':
-                return <SimpleListManager 
-                    title="Origen de Clientes" 
-                    items={props.clientSources} 
-                    onSave={props.onSaveClientSource} 
-                    onDelete={props.onDeleteClientSource} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Origen de Clientes"
+                    items={props.clientSources}
+                    onSave={props.onSaveClientSource}
+                    onDelete={props.onDeleteClientSource}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'categorias-egresos':
-                return <SimpleListManager 
-                    title="Categorías de Egresos" 
-                    items={props.egresoCategories} 
-                    onSave={props.onSaveEgresoCategory} 
-                    onDelete={props.onDeleteEgresoCategory} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Categorías de Egresos"
+                    items={props.egresoCategories}
+                    onSave={props.onSaveEgresoCategory}
+                    onDelete={props.onDeleteEgresoCategory}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'categorias':
-                return <SimpleListManager 
-                    title="Categorías de Servicios" 
-                    items={props.serviceCategories} 
-                    onSave={props.onSaveServiceCategory} 
-                    onDelete={props.onDeleteServiceCategory} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Categorías de Servicios"
+                    items={props.serviceCategories}
+                    onSave={props.onSaveServiceCategory}
+                    onDelete={props.onDeleteServiceCategory}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'product-categorias':
-                return <SimpleListManager 
-                    title="Categorías de Productos" 
-                    items={props.productCategories} 
-                    onSave={props.onSaveProductCategory} 
-                    onDelete={props.onDeleteProductCategory} 
-                    requestConfirmation={props.requestConfirmation} 
+                return <SimpleListManager
+                    title="Categorías de Productos"
+                    items={props.productCategories}
+                    onSave={props.onSaveProductCategory}
+                    onDelete={props.onDeleteProductCategory}
+                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'servicios':
                 return <CatalogManager

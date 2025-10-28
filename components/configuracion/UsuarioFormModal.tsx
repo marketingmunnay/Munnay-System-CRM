@@ -34,9 +34,9 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(user 
+      setFormData(user
           ? { ...user, password: '', addresses: user.addresses || [], emergencyContacts: user.emergencyContacts || [] } // Ensure arrays are initialized
-          : { 
+          : {
               id: Date.now(),
               rolId: roles[0]?.id,
               avatarUrl: `https://picsum.photos/seed/${Date.now()}/40/40`,
@@ -72,7 +72,7 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
   };
 
   const handleAddSubformItem = (listName: 'addresses' | 'emergencyContacts') => {
-    const newItem: Address | EmergencyContact = listName === 'addresses' 
+    const newItem: Address | EmergencyContact = listName === 'addresses'
         ? { id: Date.now(), direccion: '', distrito: '', ciudad: '', referencia: '' }
         : { id: Date.now(), nombre: '', parentesco: '', numero: '' };
     

@@ -17,7 +17,7 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(role ? { ...role } : { 
+      setFormData(role ? { ...role } : {
           id: Date.now(),
           nombre: '',
           permissions: ['dashboard'], // Dashboard is mandatory

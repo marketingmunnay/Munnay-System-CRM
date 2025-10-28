@@ -3,7 +3,7 @@ import KanbanView from './KanbanView.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
-import LeadFormModal from './LeadFormModal.tsx';
+import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
@@ -154,17 +154,14 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         porcentajeAgendadosPorLlamada
     } = useMemo(() => {
         const totalLeads = filteredLeads.length;
-        const agendados = filteredLeads.filter(l => l.estado === 'Agendado').length;
+        const agendados = filteredLeads.filter(l => l.estado === LeadStatus.Agendado).length;
         const totalPagos = filteredLeads.reduce((sum, l) => sum + l.montoPagado, 0);
         const porcentajeAgendados = totalLeads > 0 ? ((agendados / totalLeads) * 100).toFixed(1) : "0";
 
         const totalLlamadasRealizadas = filteredLeads.reduce((sum, lead) => sum + (lead.registrosLlamada?.length || 0), 0);
-        const totalLlamadasContestadas = filteredLeads.reduce((sum, lead) => {
-            const contestadas = lead.registrosLlamada?.filter(r => r.estadoLlamada === 'Contesto').length || 0;
-            return sum + contestadas;
-        }, 0);
-        const porcentajeAgendadosPorLlamada = totalLlamadasRealizadas > 0 ? ((agendados / totalLlamadasRealizadas) * 100).toFixed(1) : "0";
-
+        const totalLlamadasContestadas = filteredLeads.reduce((sum, lead) => sum + (lead.registrosLlamada?.filter(reg => reg.estadoLlamada === 'Contesto').length || 0), 0);
+        const porcentajeAgendadosPorLlamada = totalLlamadasContestadas > 0 ? ((agendados / totalLlamadasContestadas) * 100).toFixed(1) : "0";
+        
         return {
             totalLeads,
             agendados,
@@ -176,7 +173,6 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         };
     }, [filteredLeads]);
 
-
   return (
     <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -187,36 +183,31 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
                     onClick={handleAddLead}
                     className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors"
                 >
-                    <PlusIcon className="mr-2 h-5 w-5" /> Añadir Lead
+                    <PlusIcon className="mr-2 h-5 w-5" /> Registrar Lead
                 </button>
             </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-             <StatCard title="Total Leads (Rango)" value={totalLeads.toString()} icon={<GoogleIcon name="groups" className="text-blue-500" />} iconBgClass="bg-blue-100" />
-             <StatCard title="Total Agendados" value={agendados.toString()} icon={<GoogleIcon name="event_available" className="text-green-500" />} iconBgClass="bg-green-100" />
-             <StatCard title="Total Pagos" value={`S/ ${totalPagos.toLocaleString()}`} icon={<GoogleIcon name="payments" className="text-yellow-500" />} iconBgClass="bg-yellow-100" />
-             <StatCard title="% Agendados" value={`${porcentajeAgendados}%`} icon={<GoogleIcon name="show_chart" className="text-indigo-500" />} iconBgClass="bg-indigo-100" />
-             <StatCard title="Total Llamadas Realizadas" value={totalLlamadasRealizadas.toString()} icon={<GoogleIcon name="call" className="text-cyan-500" />} iconBgClass="bg-cyan-100" />
-             <StatCard title="Total Llamadas Contestadas" value={totalLlamadasContestadas.toString()} icon={<GoogleIcon name="ring_volume" className="text-teal-500" />} iconBgClass="bg-teal-100" />
-             <StatCard title="% Agendados / Llamadas" value={`${porcentajeAgendadosPorLlamada}%`} icon={<GoogleIcon name="percent" className="text-rose-500" />} iconBgClass="bg-rose-100" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+             <StatCard title="Total Leads" value={totalLeads.toString()} icon={<GoogleIcon name="groups" className="text-blue-500" />} iconBgClass="bg-blue-100" />
+             <StatCard title="Leads Agendados" value={agendados.toString()} icon={<GoogleIcon name="event_available" className="text-green-500" />} iconBgClass="bg-green-100" />
+             <StatCard title="Total Pagos (Leads)" value={`S/ ${totalPagos.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<GoogleIcon name="paid" className="text-yellow-500" />} iconBgClass="bg-yellow-100" />
+             <StatCard title="Tasa de Agendados" value={`${porcentajeAgendados}%`} icon={<GoogleIcon name="percent" className="text-purple-500" />} iconBgClass="bg-purple-100" />
         </div>
 
-        {/* View controls */}
-        <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-center">
-             <div className="relative w-full md:w-auto">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="bg-white p-4 rounded-lg shadow mb-6 flex justify-between items-center">
+            <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                     type="text"
-                    placeholder="Buscar por nombre, telf, campaña..."
+                    placeholder="Buscar por paciente, teléfono, campaña..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    disabled={viewMode !== 'table'}
-                    className="w-full md:w-64 bg-[#f9f9fa] border border-black text-black rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d] disabled:bg-gray-200"
+                    className="w-full md:w-80 bg-[#f9f9fa] border border-black text-black rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                 />
             </div>
-             <div className="flex items-center space-x-2 mt-4 md:mt-0">
+            <div className="flex items-center space-x-2">
                  <button onClick={() => setViewMode('kanban')} className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'kanban' ? 'bg-[#aa632d] text-white' : 'bg-gray-200 text-gray-700'}`}>
                      Kanban
                  </button>
@@ -225,14 +216,14 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
                  </button>
              </div>
         </div>
-
+        
         {viewMode === 'kanban' ? (
             <KanbanView leads={filteredLeads} onCardClick={handleEditLead} />
         ) : (
             <LeadsTable leads={filteredLeads} onEdit={handleEditLead} />
         )}
 
-        <LeadFormModal 
+        <LeadFormModal
             isOpen={isModalOpen}
             onClose={handleCloseModal}
             onSave={handleSaveLead}

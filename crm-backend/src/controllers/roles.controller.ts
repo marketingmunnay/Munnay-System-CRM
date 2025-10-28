@@ -43,33 +43,4 @@ export const createRole = async (req: express.Request<any, any, Role>, res: expr
   }
 };
 
-export const updateRole = async (req: express.Request<{ id: string }, any, Role>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
-  const roleData: Role = req.body; // FIX: Access `req.body` correctly.
-  try {
-    const updatedRole = await prisma.role.update({
-      where: { id: id },
-      // FIX: Ensure `roleData` is passed directly to `data` property.
-      data: roleData,
-    });
-    // FIX: Use `res.status` directly.
-    res.status(200).json(updatedRole);
-  } catch (error) {
-    // FIX: Use `res.status` directly.
-    res.status(500).json({ message: 'Error updating role', error: (error as Error).message });
-  }
-};
-
-export const deleteRole = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
-  try {
-    await prisma.role.delete({
-      where: { id: id },
-    });
-    // FIX: Use `res.status` directly.
-    res.status(204).send();
-  } catch (error) {
-    // FIX: Use `res.status` directly.
-    res.status(500).json({ message: 'Error deleting role', error: (error as Error).message });
-  }
-};
+export const updateRole = async (req: express.Request<{ id: string }, any, Role>, res: express

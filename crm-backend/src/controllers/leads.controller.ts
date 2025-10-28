@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { PrismaClient, Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client'; // Import Prisma models
 
 export const getLeads = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -54,7 +55,7 @@ export const getLeadById = async (req: express.Request<{ id: string }>, res: exp
   }
 };
 
-export const createLead = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createLead = async (req: express.Request<any, any, Lead>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
@@ -85,7 +86,7 @@ export const createLead = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const updateLead = async (req: express.Request<{ id: string }, any, any>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateLead = async (req: express.Request<{ id: string }, any, Lead>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { 
     createdAt, updatedAt, 

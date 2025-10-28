@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
-import LeadFormModal from '../marketing/LeadFormModal'; // FIX: Changed to named import
+import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
 
 interface CalendarPageProps {
@@ -139,8 +139,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
 
     const { appointments, blocked } = useMemo(() => {
         const selectedDateStr = currentDate.toISOString().split('T')[0];
-        const appointments = leads.filter(lead => 
-            lead.estado === LeadStatus.Agendado && 
+        const appointments = leads.filter(lead =>
+            lead.estado === LeadStatus.Agendado &&
             lead.fechaHoraAgenda &&
             lead.fechaHoraAgenda.startsWith(selectedDateStr)
         );
@@ -171,14 +171,14 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
         const startTime = appointment.fechaHoraAgenda.split('T')[1].substring(0, 5);
         const appDate = new Date(appointment.fechaHoraAgenda);
         // Assuming 1 hour duration for all appointments as there is no end time in the model
-        appDate.setHours(appDate.getHours() + 1); 
+        appDate.setHours(appDate.getHours() + 1);
         const endTime = `${appDate.getHours().toString().padStart(2, '0')}:${appDate.getMinutes().toString().padStart(2, '0')}`;
         
         const top = timeToPosition(startTime);
         const height = durationToHeight(startTime, endTime);
     
         return (
-            <div 
+            <div
                 onClick={() => handleEditAppointment(appointment)}
                 className={`absolute w-full p-2 rounded-lg text-xs overflow-hidden ${getServiceColor(appointment.servicios[0])} cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-offset-1 hover:ring-purple-400`}
                 style={{ top: `${top}px`, height: `${Math.max(height, 40)}px`, left: '2px', width: 'calc(100% - 4px)'}}
@@ -257,8 +257,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
 
                 <div className="flex-1 grid relative" style={{ gridTemplateColumns: `repeat(${RESOURCES.length}, minmax(150px, 1fr))` }}>
                     {RESOURCES.map((resource) => (
-                        <div 
-                            key={resource.id} 
+                        <div
+                            key={resource.id}
                             className="relative border-l border-gray-100 group"
                             onClick={(e) => handleSlotClick(resource.id, e)}
                         >
@@ -285,7 +285,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
                     )}
                 </div>
             </div>
-             <LeadFormModal 
+             <LeadFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveAndClose}

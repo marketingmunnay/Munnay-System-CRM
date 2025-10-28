@@ -280,6 +280,7 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
             console.error("API key for Google GenAI is not set.");
             return "Error: La clave de API no está configurada.";
         }
+        // FIX: Corrected API call to use ai.models.generateContent with contents.parts structure and correct model.
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash', // Corrected model name as per guidelines

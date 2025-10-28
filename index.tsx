@@ -6,7 +6,7 @@ import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
 // FIX: Changed to named import
-import LeadFormModal from './components/marketing/LeadFormModal'; 
+import { LeadFormModal } from './components/marketing/LeadFormModal'; 
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
 import PublicacionesPage from './components/redes-sociales/PublicacionesPage';

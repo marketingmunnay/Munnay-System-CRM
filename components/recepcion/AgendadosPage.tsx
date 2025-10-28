@@ -3,7 +3,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
-import LeadFormModal from '../marketing/LeadFormModal'; // FIX: Changed to named import
+import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { RESOURCES } from '../../constants';
 import StatCard from '../dashboard/StatCard';
 
@@ -39,7 +39,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
     const resourceName = getResourceName(lead.recursoId);
 
     return (
-        <div 
+        <div
             onClick={onClick}
             className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 cursor-pointer hover:shadow-md hover:border-purple-400 transition-all"
         >
@@ -238,7 +238,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
             <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Gestión de Agendados</h1>
             <div className="flex items-center space-x-3">
                 <DateRangeFilter onApply={handleApplyDateFilter} />
-                <button 
+                <button
                     onClick={handleAddCita}
                     className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors"
                 >
@@ -248,20 +248,20 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <StatCard 
-                title="Total Pacientes Agendados" 
-                value={stats.totalAgendados.toString()} 
+            <StatCard
+                title="Total Pacientes Agendados"
+                value={stats.totalAgendados.toString()}
                 icon={<GoogleIcon name="event_available" className="text-green-500"/>}
                 iconBgClass="bg-green-100"
             />
-             <StatCard 
-                title="Ventas Adicionales (Tratamientos)" 
+             <StatCard
+                title="Ventas Adicionales (Tratamientos)"
                 value={`S/ ${stats.ventasExtra.toLocaleString('es-PE')}`}
                 icon={<GoogleIcon name="paid" className="text-blue-500"/>}
                 iconBgClass="bg-blue-100"
             />
-            <StatCard 
-                title="% Aceptación de Tratamiento" 
+            <StatCard
+                title="% Aceptación de Tratamiento"
                 value={`${stats.porcentajeAceptaron}%`}
                 icon={<GoogleIcon name="thumb_up" className="text-indigo-500"/>}
                 iconBgClass="bg-indigo-100"
@@ -285,10 +285,10 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
                     const leadsInColumn = filteredLeads.filter(lead => (lead.estadoRecepcion || ReceptionStatus.Agendado) === status);
                     const config = statusConfig[status];
                     return (
-                        <KanbanColumn 
-                            key={status} 
-                            title={config.title} 
-                            color={config.color} 
+                        <KanbanColumn
+                            key={status}
+                            title={config.title}
+                            color={config.color}
                             textColor={config.textColor}
                             count={leadsInColumn.length}
                         >
@@ -304,7 +304,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
         )}
 
 
-        <LeadFormModal 
+        <LeadFormModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onSave={handleSaveAndClose}
