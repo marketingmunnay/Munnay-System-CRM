@@ -1,8 +1,8 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { PrismaClient, Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
+import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
-export const getLeads = async (req: express.Request, res: express.Response) => {
+export const getLeads = async (req: Request, res: Response) => {
   try {
     const leads = await prisma.lead.findMany({
       orderBy: {
@@ -25,8 +25,7 @@ export const getLeads = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const getLeadById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getLeadById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const lead = await prisma.lead.findUnique({
@@ -51,7 +50,7 @@ export const getLeadById = async (req: express.Request<{ id: string }>, res: exp
   }
 };
 
-export const createLead = async (req: express.Request<any, any, Lead>, res: express.Response) => {
+export const createLead = async (req: Request<any, any, Lead>, res: Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
@@ -80,8 +79,7 @@ export const createLead = async (req: express.Request<any, any, Lead>, res: expr
   }
 };
 
-export const updateLead = async (req: express.Request<{ id: string }, any, Lead>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateLead = async (req: Request<{ id: string }, any, Lead>, res: Response) => {
   const id = parseInt(req.params.id);
   const { 
     createdAt, updatedAt, 
@@ -123,8 +121,7 @@ export const updateLead = async (req: express.Request<{ id: string }, any, Lead>
   }
 };
 
-export const deleteLead = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteLead = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
@@ -162,7 +159,7 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
 };
 
 // FIX: Added getNextHistoryNumber controller function
-export const getNextHistoryNumber = async (req: express.Request, res: express.Response) => {
+export const getNextHistoryNumber = async (req: Request, res: Response) => {
   try {
     const lastLeadWithHistory = await prisma.lead.findFirst({
       where: {

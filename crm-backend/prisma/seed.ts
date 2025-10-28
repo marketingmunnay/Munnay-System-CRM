@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../../types'; // Import frontend types
+// FIX: Changed import path to be relative to the backend root.
+import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../src/types/frontend-types'; // Import frontend types
 
-// FIX: Added PrismaClient import
 const prisma = new PrismaClient();
 
 async function main() {
@@ -198,3 +198,103 @@ async function main() {
       documentNumber: '34343434',
       phone: '999333444',
       birthDate: new Date('1980-03-15'),
+      startDate: new Date('2019-06-01'),
+      maritalStatus: 'Casado(a)',
+      sex: 'F',
+      salary: 7000,
+      contractType: 'Indefinido',
+    },
+    {
+      id: 5,
+      nombres: 'Janela',
+      apellidos: 'Torres',
+      usuario: 'janela',
+      password: hashedPassword,
+      rolId: rrhhRole.id,
+      avatarUrl: 'https://randomuser.me/api/portraits/women/4.jpg',
+      position: 'Jefa de RRHH',
+      documentType: DocumentType.DNI,
+      documentNumber: '45454545',
+      phone: '987654321',
+      birthDate: new Date('1992-02-28'),
+      startDate: new Date('2022-01-20'),
+      maritalStatus: 'Soltero(a)',
+      sex: 'F',
+      salary: 3500,
+      contractType: 'Indefinido',
+    }
+  ];
+
+  for (const userData of usersData) {
+    await prisma.user.upsert({
+      where: { id: userData.id },
+      update: {},
+      create: userData,
+    });
+  }
+  
+  // FIX: Add more seed data to ensure the application is well-populated for testing.
+
+  // --- 5. Catalogs ---
+  console.log('Seeding Catalogs...');
+  const catalogs = [
+    { model: prisma.clientSource, data: [{ id: 1, nombre: 'Facebook' }, { id: 2, nombre: 'Instagram' }, { id: 3, nombre: 'Recomendación' }] },
+    { model: prisma.serviceCategory, data: [{ id: 1, nombre: 'Faciales' }, { id: 2, nombre: 'Corporales' }, { id: 3, nombre: 'Depilación' }] },
+    { model: prisma.productCategory, data: [{ id: 1, nombre: 'Cuidado Facial' }, { id: 2, nombre: 'Cuidado Corporal' }] },
+    { model: prisma.egresoCategory, data: [{ id: 1, nombre: 'Marketing' }, { id: 2, nombre: 'Insumos Médicos' }, { id: 3, nombre: 'Alquiler' }, { id: 4, nombre: 'Planilla' }] },
+    { model: prisma.tipoProveedor, data: [{ id: 1, nombre: 'Insumos' }, { id: 2, nombre: 'Servicios' }, { id: 3, nombre: 'Marketing Digital' }] },
+  ];
+
+  for (const catalog of catalogs) {
+    for (const item of catalog.data) {
+      await (catalog.model as any).upsert({
+        where: { id: item.id },
+        update: {},
+        create: item,
+      });
+    }
+  }
+
+  const servicesData = [
+    { id: 1, nombre: 'Limpieza Facial Profunda', categoria: 'Faciales', precio: 150 },
+    { id: 2, nombre: 'Hydrafacial', categoria: 'Faciales', precio: 300 },
+    { id: 3, nombre: 'Masaje Reductor', categoria: 'Corporales', precio: 120 },
+    { id: 4, nombre: 'Depilación Láser Piernas', categoria: 'Depilación', precio: 400 },
+  ];
+  for (const service of servicesData) {
+    await prisma.service.upsert({ where: { id: service.id }, update: {}, create: service });
+  }
+  
+  const productsData = [
+    { id: 1, nombre: 'Bloqueador Solar SPF 50', categoria: 'Cuidado Facial', precio: 80 },
+    { id: 2, nombre: 'Crema Hidratante', categoria: 'Cuidado Facial', precio: 120 },
+  ];
+  for (const product of productsData) {
+    await prisma.product.upsert({ where: { id: product.id }, update: {}, create: product });
+  }
+
+  // --- 6. MetaCampaigns ---
+  console.log('Seeding MetaCampaigns...');
+  await prisma.metaCampaign.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      nombre: 'Campaña Verano 2023',
+      fechaInicio: new Date('2023-01-01'),
+      fechaFin: new Date('2023-03-31'),
+      categoria: 'Corporales'
+    }
+  });
+  
+  console.log('Seeding finished.');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

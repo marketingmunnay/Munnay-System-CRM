@@ -1,8 +1,8 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Role } from '@prisma/client';
 
-export const getRoles = async (req: express.Request, res: express.Response) => {
+export const getRoles = async (req: Request, res: Response) => {
   try {
     const roles = await prisma.role.findMany();
     res.status(200).json(roles);
@@ -11,8 +11,7 @@ export const getRoles = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const getRoleById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getRoleById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const role = await prisma.role.findUnique({ where: { id: id } });
@@ -25,7 +24,7 @@ export const getRoleById = async (req: express.Request<{ id: string }>, res: exp
   }
 };
 
-export const createRole = async (req: express.Request<any, any, Role>, res: express.Response) => {
+export const createRole = async (req: Request<any, any, Role>, res: Response) => {
   const roleData: Role = req.body;
   try {
     const newRole = await prisma.role.create({
@@ -37,8 +36,7 @@ export const createRole = async (req: express.Request<any, any, Role>, res: expr
   }
 };
 
-export const updateRole = async (req: express.Request<{ id: string }, any, Role>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateRole = async (req: Request<{ id: string }, any, Role>, res: Response) => {
   const id = parseInt(req.params.id);
   const roleData: Role = req.body;
   try {
@@ -52,8 +50,7 @@ export const updateRole = async (req: express.Request<{ id: string }, any, Role>
   }
 };
 
-export const deleteRole = async (req: express.Request<{ id: string }>, res: express.Response) => {
-    // FIX: Access `req.params.id` correctly.
+export const deleteRole = async (req: Request<{ id: string }>, res: Response) => {
     const id = parseInt(req.params.id);
     try {
         await prisma.role.delete({ where: { id: id } });

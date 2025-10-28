@@ -1,8 +1,8 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Incidencia } from '@prisma/client';
 
-export const getIncidencias = async (req: express.Request, res: express.Response) => {
+export const getIncidencias = async (req: Request, res: Response) => {
   try {
     const incidencias = await prisma.incidencia.findMany({ orderBy: { fecha: 'desc' } });
     res.status(200).json(incidencias);
@@ -11,8 +11,7 @@ export const getIncidencias = async (req: express.Request, res: express.Response
   }
 };
 
-export const getIncidenciaById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getIncidenciaById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const incidencia = await prisma.incidencia.findUnique({ where: { id: id } });
@@ -25,7 +24,7 @@ export const getIncidenciaById = async (req: express.Request<{ id: string }>, re
   }
 };
 
-export const createIncidencia = async (req: express.Request<any, any, Incidencia>, res: express.Response) => {
+export const createIncidencia = async (req: Request<any, any, Incidencia>, res: Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newIncidencia = await prisma.incidencia.create({
@@ -40,8 +39,7 @@ export const createIncidencia = async (req: express.Request<any, any, Incidencia
   }
 };
 
-export const updateIncidencia = async (req: express.Request<{ id: string }, any, Incidencia>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateIncidencia = async (req: Request<{ id: string }, any, Incidencia>, res: Response) => {
   const id = parseInt(req.params.id);
   const { fecha, ...data } = req.body;
   try {
@@ -58,8 +56,7 @@ export const updateIncidencia = async (req: express.Request<{ id: string }, any,
   }
 };
 
-export const deleteIncidencia = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteIncidencia = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.incidencia.delete({ where: { id: id } });

@@ -46,7 +46,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Health check endpoint
-app.get('/health', (req: express.Request, res: express.Response) => {
+// FIX: Use named Request and Response types to fix typing errors.
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).send('CRM Munnay Backend is running!');
 });
 
@@ -55,7 +56,8 @@ app.use('/api', apiRouter);
 
 // For any other request that doesn't match an API route or a static file,
 // serve the frontend's index.html file. This is crucial for client-side routing.
-app.get('*', (req, res) => {
+// FIX: Use named Request and Response types to fix typing errors.
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 

@@ -1,8 +1,8 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Publicacion } from '@prisma/client';
 
-export const getPublicaciones = async (req: express.Request, res: express.Response) => {
+export const getPublicaciones = async (req: Request, res: Response) => {
   try {
     const publicaciones = await prisma.publicacion.findMany({
       orderBy: {
@@ -15,8 +15,7 @@ export const getPublicaciones = async (req: express.Request, res: express.Respon
   }
 };
 
-export const getPublicacionById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getPublicacionById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const publicacion = await prisma.publicacion.findUnique({ where: { id: id } });
@@ -29,7 +28,7 @@ export const getPublicacionById = async (req: express.Request<{ id: string }>, r
   }
 };
 
-export const createPublicacion = async (req: express.Request<any, any, Publicacion>, res: express.Response) => {
+export const createPublicacion = async (req: Request<any, any, Publicacion>, res: Response) => {
   const { id, fechaPost, ...data } = req.body;
   try {
     const newPublicacion = await prisma.publicacion.create({
@@ -44,8 +43,7 @@ export const createPublicacion = async (req: express.Request<any, any, Publicaci
   }
 };
 
-export const updatePublicacion = async (req: express.Request<{ id: string }, any, Publicacion>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updatePublicacion = async (req: Request<{ id: string }, any, Publicacion>, res: Response) => {
   const id = parseInt(req.params.id);
   const { fechaPost, ...data } = req.body;
   try {
@@ -62,8 +60,7 @@ export const updatePublicacion = async (req: express.Request<{ id: string }, any
   }
 };
 
-export const deletePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => {
-    // FIX: Access `req.params.id` correctly.
+export const deletePublicacion = async (req: Request<{ id: string }>, res: Response) => {
     const id = parseInt(req.params.id);
     try {
         await prisma.publicacion.delete({ where: { id: id } });

@@ -11,6 +11,7 @@ import proveedoresRouter from './proveedores.routes';
 import usersRouter from './users.routes';
 import configRouter from './config.routes';
 import goalsRouter from './goals.routes';
+import comprobantesRouter from './comprobantes.routes'; // Assumed name for consistency
 
 const router = Router();
 
@@ -26,5 +27,8 @@ router.use('/proveedores', proveedoresRouter);
 router.use('/users', usersRouter);
 router.use('/config', configRouter);
 router.use('/goals', goalsRouter);
+// FIX: Add comprobantes router to be handled by the API.
+router.use('/comprobantes', comprobantesRouter);
+
 
 export default router;

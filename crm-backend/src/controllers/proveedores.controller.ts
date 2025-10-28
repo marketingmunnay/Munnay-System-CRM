@@ -1,9 +1,9 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Proveedor, TipoProveedor } from '@prisma/client';
 
 // --- Proveedores ---
-export const getProveedores = async (req: express.Request, res: express.Response) => {
+export const getProveedores = async (req: Request, res: Response) => {
   try {
     const proveedores = await prisma.proveedor.findMany();
     res.status(200).json(proveedores);
@@ -12,8 +12,7 @@ export const getProveedores = async (req: express.Request, res: express.Response
   }
 };
 
-export const getProveedorById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getProveedorById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const proveedor = await prisma.proveedor.findUnique({ where: { id: id } });
@@ -26,7 +25,7 @@ export const getProveedorById = async (req: express.Request<{ id: string }>, res
   }
 };
 
-export const createProveedor = async (req: express.Request<any, any, Proveedor>, res: express.Response) => {
+export const createProveedor = async (req: Request<any, any, Proveedor>, res: Response) => {
   const data: Proveedor = req.body;
   try {
     const newProveedor = await prisma.proveedor.create({ data });
@@ -36,8 +35,7 @@ export const createProveedor = async (req: express.Request<any, any, Proveedor>,
   }
 };
 
-export const updateProveedor = async (req: express.Request<{ id: string }, any, Proveedor>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateProveedor = async (req: Request<{ id: string }, any, Proveedor>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
@@ -47,8 +45,7 @@ export const updateProveedor = async (req: express.Request<{ id: string }, any, 
   }
 };
 
-export const deleteProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteProveedor = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.proveedor.delete({ where: { id: id } });
@@ -60,7 +57,7 @@ export const deleteProveedor = async (req: express.Request<{ id: string }>, res:
 
 
 // --- Tipos de Proveedor ---
-export const getTiposProveedor = async (req: express.Request, res: express.Response) => {
+export const getTiposProveedor = async (req: Request, res: Response) => {
   try {
     const tipos = await prisma.tipoProveedor.findMany();
     res.status(200).json(tipos);
@@ -69,7 +66,7 @@ export const getTiposProveedor = async (req: express.Request, res: express.Respo
   }
 };
 
-export const createTipoProveedor = async (req: express.Request<any, any, TipoProveedor>, res: express.Response) => {
+export const createTipoProveedor = async (req: Request<any, any, TipoProveedor>, res: Response) => {
   const data: TipoProveedor = req.body;
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
@@ -79,8 +76,7 @@ export const createTipoProveedor = async (req: express.Request<any, any, TipoPro
   }
 };
 
-export const updateTipoProveedor = async (req: express.Request<{ id: string }, any, TipoProveedor>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateTipoProveedor = async (req: Request<{ id: string }, any, TipoProveedor>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });
@@ -90,8 +86,7 @@ export const updateTipoProveedor = async (req: express.Request<{ id: string }, a
   }
 };
 
-export const deleteTipoProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteTipoProveedor = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.tipoProveedor.delete({ where: { id: id } });

@@ -1,8 +1,8 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Seguidor } from '@prisma/client';
 
-export const getSeguidores = async (req: express.Request, res: express.Response) => {
+export const getSeguidores = async (req: Request, res: Response) => {
   try {
     const seguidores = await prisma.seguidor.findMany({
         orderBy: {
@@ -15,8 +15,7 @@ export const getSeguidores = async (req: express.Request, res: express.Response)
   }
 };
 
-export const getSeguidorById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getSeguidorById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const seguidor = await prisma.seguidor.findUnique({ where: { id: id } });
@@ -29,7 +28,7 @@ export const getSeguidorById = async (req: express.Request<{ id: string }>, res:
   }
 };
 
-export const createSeguidor = async (req: express.Request<any, any, Seguidor>, res: express.Response) => {
+export const createSeguidor = async (req: Request<any, any, Seguidor>, res: Response) => {
   const { id, fecha, ...data } = req.body;
   try {
     const newSeguidor = await prisma.seguidor.create({
@@ -44,8 +43,7 @@ export const createSeguidor = async (req: express.Request<any, any, Seguidor>, r
   }
 };
 
-export const updateSeguidor = async (req: express.Request<{ id: string }, any, Seguidor>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateSeguidor = async (req: Request<{ id: string }, any, Seguidor>, res: Response) => {
   const id = parseInt(req.params.id);
   const { fecha, ...data } = req.body;
   try {
@@ -62,8 +60,7 @@ export const updateSeguidor = async (req: express.Request<{ id: string }, any, S
   }
 };
 
-export const deleteSeguidor = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteSeguidor = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.seguidor.delete({ where: { id: id } });

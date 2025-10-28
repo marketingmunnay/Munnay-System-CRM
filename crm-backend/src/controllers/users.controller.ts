@@ -1,9 +1,9 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { Address, EmergencyContact, User } from '@prisma/client';
 
-export const getUsers = async (req: express.Request, res: express.Response) => {
+export const getUsers = async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
@@ -35,8 +35,7 @@ export const getUsers = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const getUserById = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const getUserById = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const user = await prisma.user.findUnique({ where: { id: id } });
@@ -50,7 +49,7 @@ export const getUserById = async (req: express.Request<{ id: string }>, res: exp
   }
 };
 
-export const createUser = async (req: express.Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => {
+export const createUser = async (req: Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: Response) => {
   const { id, password, addresses, emergencyContacts, ...userData } = req.body;
   if (!password) {
     return res.status(400).json({ message: 'Password is required' });
@@ -60,6 +59,7 @@ export const createUser = async (req: express.Request<any, any, User & { address
     const newUser = await prisma.user.create({
       data: {
         ...userData,
+        password: hashedPassword, // Store hashed password
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
         addresses: {
@@ -92,8 +92,7 @@ export const createUser = async (req: express.Request<any, any, User & { address
   }
 };
 
-export const updateUser = async (req: express.Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const updateUser = async (req: Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: Response) => {
   const id = parseInt(req.params.id);
   const { password, addresses, emergencyContacts, ...userData } = req.body;
   try {
@@ -149,8 +148,7 @@ export const updateUser = async (req: express.Request<{ id: string }, any, User 
   }
 };
 
-export const deleteUser = async (req: express.Request<{ id: string }>, res: express.Response) => {
-  // FIX: Access `req.params.id` correctly.
+export const deleteUser = async (req: Request<{ id: string }>, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
