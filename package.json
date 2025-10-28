@@ -3,10 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  // package.json (raíz del proyecto)
+
 "scripts": {
   "dev": "vite",
-  // Modifica esta línea
+
   "build": "npx prisma migrate deploy --schema=./crm-backend/prisma/schema.prisma && vite build",
   "preview": "vite preview"
 },
