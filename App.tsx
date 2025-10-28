@@ -3,7 +3,8 @@ import { Sidebar } from './components/layout/Sidebar';
 import TopBar from './components/layout/TopBar';
 import Dashboard from './components/dashboard/Dashboard';
 import PlaceholderPage from './components/shared/PlaceholderPage';
-import LeadFormModal from './components/marketing/LeadFormModal';
+// FIX: Changed to named import
+import { LeadFormModal } from './components/marketing/LeadFormModal'; 
 import LeadsPage from './components/marketing/LeadsPage';
 import CampaignsPage from './components/marketing/CampaignsPage';
 import PublicacionesPage from './components/redes-sociales/PublicacionesPage';
@@ -52,7 +53,7 @@ const App: React.FC = () => {
     const [egresos, setEgresos] = useState<Egreso[]>([]);
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     const [tiposProveedor, setTiposProveedor] = useState<TipoProveedor[]>([]);
-    const [users, setUsers] = useState<User[]>(([]);
+    const [users, setUsers] = useState<User[]>(([]));
     const [roles, setRoles] = useState<Role[]>([]);
     const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
     const [goals, setGoals] = useState<Goal[]>([]);

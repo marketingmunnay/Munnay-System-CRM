@@ -38,10 +38,9 @@ export const getUsers = async (req: express.Request, res: express.Response) => {
 };
 
 export const getUserById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+    const user = await prisma.user.findUnique({ where: { id: id } });
     if (!user) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'User not found' });
@@ -56,8 +55,7 @@ export const getUserById = async (req: express.Request<{ id: string }>, res: exp
 };
 
 export const createUser = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const { id, password, addresses, emergencyContacts, ...userData } = req.body as any;
+  const { id, password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
   if (!password) {
     // FIX: Use `res.status` directly.
     return res.status(400).json({ message: 'Password is required' });
@@ -103,10 +101,8 @@ export const createUser = async (req: express.Request, res: express.Response) =>
 };
 
 export const updateUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const { password, addresses, emergencyContacts, ...userData } = req.body as any;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
   try {
     let updateData: any = {
         ...userData,
@@ -144,7 +140,7 @@ export const updateUser = async (req: express.Request<{ id: string }>, res: expr
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: updateData,
       include: { // Include to return the updated relations
         addresses: true,
@@ -163,8 +159,7 @@ export const updateUser = async (req: express.Request<{ id: string }>, res: expr
 };
 
 export const deleteUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
     // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
@@ -172,9 +167,9 @@ export const deleteUser = async (req: express.Request<{ id: string }>, res: expr
     // If not, explicit deleteMany should be added here.
     
     // For Recognitions, need to disconnect first if not using full cascade on User deletion
-    await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: parseInt(id) }, { recibidoPorId: parseInt(id) }] } });
+    await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: id }, { recibidoPorId: id }] } });
 
-    await prisma.user.delete({ where: { id: parseInt(id) } });
+    await prisma.user.delete({ where: { id: id } });
     // FIX: Use `res.status` directly.
     res.status(204).send();
   } catch (error) {

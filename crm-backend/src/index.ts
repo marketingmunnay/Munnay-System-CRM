@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction, Router } from 'express';
+import express, { Request, Response, NextFunction, Router, RequestHandler } from 'express'; // FIX: Added RequestHandler import
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -40,12 +40,12 @@ app.use(cors({
   credentials: true,
 }));
 // FIX: Removed explicit cast `as express.RequestHandler`. `express.json()` returns a RequestHandler.
-app.use(express.json() as RequestHandler);
+app.use(express.json());
 // FIX: Removed explicit cast `as express.RequestHandler`. `cookieParser()` returns a RequestHandler.
-app.use(cookieParser() as RequestHandler);
+app.use(cookieParser());
 
 // FIX: Corrected Request and Response types to use express.Request and express.Response.
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   // FIX: Removed redundant cast `(res as express.Response)`. `res` is already typed as `Response`.
   res.status(200).send('CRM Munnay Backend is running!');
 });

@@ -3,7 +3,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
-import LeadFormModal from '../marketing/LeadFormModal';
+import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { RESOURCES } from '../../constants';
 import StatCard from '../dashboard/StatCard';
 

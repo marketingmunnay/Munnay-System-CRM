@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
-import LeadFormModal from '../marketing/LeadFormModal';
+import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
 
 interface CalendarPageProps {

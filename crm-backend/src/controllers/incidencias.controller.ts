@@ -13,10 +13,9 @@ export const getIncidencias = async (req: express.Request, res: express.Response
 };
 
 export const getIncidenciaById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const incidencia = await prisma.incidencia.findUnique({ where: { id: parseInt(id) } });
+    const incidencia = await prisma.incidencia.findUnique({ where: { id: id } });
     if (!incidencia) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Incidencia not found' });
@@ -24,14 +23,13 @@ export const getIncidenciaById = async (req: express.Request<{ id: string }>, re
     // FIX: Use `res.status` directly.
     res.status(200).json(incidencia);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching incidencia', error: (error as Error).message });
   }
 };
 
 export const createIncidencia = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const { id, fecha, ...data } = req.body as any;
+  const { id, fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newIncidencia = await prisma.incidencia.create({
       data: {
@@ -39,7 +37,7 @@ export const createIncidencia = async (req: express.Request, res: express.Respon
         fecha: new Date(fecha),
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(201).json(newIncidencia);
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -48,13 +46,11 @@ export const createIncidencia = async (req: express.Request, res: express.Respon
 };
 
 export const updateIncidencia = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const { fecha, ...data } = req.body as any;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const updatedIncidencia = await prisma.incidencia.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         ...data,
         fecha: fecha ? new Date(fecha) : undefined,
@@ -69,10 +65,9 @@ export const updateIncidencia = async (req: express.Request<{ id: string }>, res
 };
 
 export const deleteIncidencia = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    await prisma.incidencia.delete({ where: { id: parseInt(id) } });
+    await prisma.incidencia.delete({ where: { id: id } });
     // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {

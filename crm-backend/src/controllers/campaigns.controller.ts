@@ -14,10 +14,9 @@ export const getCampaigns = async (req: express.Request, res: express.Response) 
 };
 
 export const getCampaignById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const campaign = await prisma.campaign.findUnique({ where: { id: parseInt(id) } });
+    const campaign = await prisma.campaign.findUnique({ where: { id: id } });
     if (!campaign) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Campaign not found' });
@@ -25,14 +24,13 @@ export const getCampaignById = async (req: express.Request<{ id: string }>, res:
     // FIX: Use `res.status` directly.
     res.status(200).json(campaign);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching campaign', error: (error as Error).message });
   }
 };
 
 export const createCampaign = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const { id, fecha, ...data } = req.body as any;
+  const { id, fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newCampaign = await prisma.campaign.create({
       data: {
@@ -40,44 +38,41 @@ export const createCampaign = async (req: express.Request, res: express.Response
         fecha: new Date(fecha),
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(201).json(newCampaign);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error creating campaign', error: (error as Error).message });
   }
 };
 
 export const updateCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const { fecha, ...data } = req.body as any;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const updatedCampaign = await prisma.campaign.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         ...data,
         fecha: fecha ? new Date(fecha) : undefined,
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(updatedCampaign);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating campaign', error: (error as Error).message });
   }
 };
 
 export const deleteCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    await prisma.campaign.delete({ where: { id: parseInt(id) } });
-    // FIX: Use `res.status` directly.
+    await prisma.campaign.delete({ where: { id: id } });
+    // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting campaign', error: (error as Error).message });
   }
 };
@@ -86,21 +81,20 @@ export const deleteCampaign = async (req: express.Request<{ id: string }>, res: 
 export const getMetaCampaigns = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
     const metaCampaigns = await prisma.metaCampaign.findMany();
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(metaCampaigns);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching meta campaigns', error: (error as Error).message });
   }
 };
 
 export const getMetaCampaignById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const metaCampaign = await prisma.metaCampaign.findUnique({ where: { id: parseInt(id) } });
+    const metaCampaign = await prisma.metaCampaign.findUnique({ where: { id: id } });
     if (!metaCampaign) {
-      // FIX: Use `res.status` directly.
+      // FIX: Use `res.status` directamente.
       return res.status(404).json({ message: 'Meta Campaign not found' });
     }
     // FIX: Use `res.status` directamente.
@@ -112,8 +106,7 @@ export const getMetaCampaignById = async (req: express.Request<{ id: string }>, 
 };
 
 export const createMetaCampaign = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const { id, fechaInicio, fechaFin, ...data } = req.body as any;
+  const { id, fechaInicio, fechaFin, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newMetaCampaign = await prisma.metaCampaign.create({
       data: {
@@ -131,13 +124,11 @@ export const createMetaCampaign = async (req: express.Request, res: express.Resp
 };
 
 export const updateMetaCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const { fechaInicio, fechaFin, ...data } = req.body as any;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { fechaInicio, fechaFin, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const updatedMetaCampaign = await prisma.metaCampaign.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         ...data,
         fechaInicio: fechaInicio ? new Date(fechaInicio) : undefined,
@@ -153,10 +144,9 @@ export const updateMetaCampaign = async (req: express.Request<{ id: string }>, r
 };
 
 export const deleteMetaCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    await prisma.metaCampaign.delete({ where: { id: parseInt(id) } });
+    await prisma.metaCampaign.delete({ where: { id: id } });
     // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {

@@ -2,7 +2,7 @@ import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
 
 // Generic CRUD factory for simple models
-const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explicitly typed modelName
+const createCrudHandlers = <T extends { id: number; }>(modelName: keyof Omit<typeof prisma, "$runtime" | "$extends" | "$on" | "$transaction" | "$use" | "disconnect" | "connect" | "runCommandRaw" | "queryRaw" | "executeRaw" | "lead" | "role" | "campaign" | "metaCampaign" | "egreso" | "publicacion" | "seguidor" | "ventaExtra" | "incidencia" | "proveedor" | "tipoProveedor" | "user" | "goal" | "comprobanteElectronico" | "comprobanteItem" | "treatment" | "procedure" | "registroLlamada" | "seguimiento" | "alergia" | "address" | "emergencyContact" | "reconocimiento" >) => { // FIX: Explicitly typed modelName and excluded internal Prisma properties
     const model = prisma[modelName]; // FIX: Remove type assertion as modelName is now typed
 
     if (!model || typeof model !== 'object' || !('findMany' in model)) {
@@ -23,7 +23,7 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
             }
         },
         create: async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-            const { id, ...data } = req.body as any;
+            const { id, ...data } = req.body;
             try {
                 const newItem = await typedModel.create({ data });
                 // FIX: Use `res.status` directly.
@@ -34,9 +34,9 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
             }
         },
         update: async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-            const id = req.params.id;
+            const id = parseInt(req.params.id);
             try {
-                const updatedItem = await typedModel.update({ where: { id: parseInt(id) }, data: req.body as any });
+                const updatedItem = await typedModel.update({ where: { id: id }, data: req.body });
                 // FIX: Use `res.status` directamente.
                 res.status(200).json(updatedItem);
             } catch (error) {
@@ -45,9 +45,9 @@ const createCrudHandlers = (modelName: keyof typeof prisma) => { // FIX: Explici
             }
         },
         delete: async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-            const id = req.params.id;
+            const id = parseInt(req.params.id);
             try {
-                await typedModel.delete({ where: { id: parseInt(id) } });
+                await typedModel.delete({ where: { id: id } });
                 // FIX: Use `res.status` directamente.
                 res.status(204).send();
             } catch (error) {
@@ -97,7 +97,7 @@ export const updateBusinessInfo = async (req: express.Request, res: express.Resp
         }
         const updatedInfo = await prisma.businessInfo.update({
             where: { id: existingInfo.id },
-            data: req.body as any
+            data: req.body
         });
         // FIX: Use `res.status` directly.
         res.status(200).json(updatedInfo);
@@ -184,12 +184,26 @@ export const getComprobantes = async (req: express.Request, res: express.Respons
 };
 
 export const createComprobante = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const { id, items, fechaEmision, ...data } = req.body as any;
+  const { id, items, fechaEmision, originalVentaId, originalVentaType, ...data } = req.body; // Destructure originalVentaId, originalVentaType
+  
+  let leadId: number | null = null;
+  let ventaExtraId: number | null = null;
+
+  if (originalVentaType === 'lead') {
+    leadId = originalVentaId;
+  } else if (originalVentaType === 'venta_extra') {
+    ventaExtraId = originalVentaId;
+  }
+
   try {
     const newComprobante = await prisma.comprobanteElectronico.create({
       data: {
         ...data,
         fechaEmision: new Date(fechaEmision),
+        originalVentaId: originalVentaId, // Set originalVentaId
+        originalVentaType: originalVentaType, // Set originalVentaType
+        leadId: leadId, // Set leadId
+        ventaExtraId: ventaExtraId, // Set ventaExtraId
         items: {
           create: items.map((item: any) => ({
             descripcion: item.descripcion,
@@ -215,33 +229,36 @@ export const createComprobante = async (req: express.Request, res: express.Respo
 };
 
 export const updateComprobante = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  const { items, fechaEmision, ...data } = req.body as any;
+  const id = parseInt(req.params.id);
+  const { items, fechaEmision, originalVentaId, originalVentaType, ...data } = req.body; // Destructure originalVentaId, originalVentaType
+
+  let leadId: number | null = null;
+  let ventaExtraId: number | null = null;
+
+  if (originalVentaType === 'lead') {
+    leadId = originalVentaId;
+  } else if (originalVentaType === 'venta_extra') {
+    ventaExtraId = originalVentaId;
+  }
+
   try {
     // Start a transaction to update both comprobante and its items
     const updatedComprobante = await prisma.$transaction(async (tx_prisma: typeof prisma) => {
       // First, delete existing items for this comprobante
       await tx_prisma.comprobanteItem.deleteMany({
-        where: { comprobanteElectronicoId: parseInt(id) },
+        where: { comprobanteElectronicoId: id },
       });
 
       // Then, update the comprobante itself and create new items
       const comprobante = await tx_prisma.comprobanteElectronico.update({
-        where: { id: parseInt(id) },
+        where: { id: id },
         data: {
           ...data,
           fechaEmision: fechaEmision ? new Date(fechaEmision) : undefined,
-          items: {
-            create: items.map((item: any) => ({
-              descripcion: item.descripcion,
-              cantidad: item.cantidad,
-              valorUnitario: item.valorUnitario,
-              precioUnitario: item.precioUnitario,
-              igv: item.igv,
-              montoTotal: item.montoTotal,
-            })),
-          },
+          originalVentaId: originalVentaId, // Set originalVentaId
+          originalVentaType: originalVentaType, // Set originalVentaType
+          leadId: leadId, // Set leadId
+          ventaExtraId: ventaExtraId, // Set venta
         },
         include: {
           items: true,
@@ -249,8 +266,7 @@ export const updateComprobante = async (req: express.Request<{ id: string }>, re
       });
       return comprobante;
     });
-
-    // FIX: Use `res.status` directamente.
+    // FIX: Use `res.status` directly.
     res.status(200).json(updatedComprobante);
   } catch (error) {
     console.error(`Error updating comprobante ${id}:`, error);
@@ -259,19 +275,18 @@ export const updateComprobante = async (req: express.Request<{ id: string }>, re
   }
 };
 
-export const deleteComprobante = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+export const deleteComprobante = async (req: express.Request<{ id: string }>, res: express.Response) => {
+  const id = parseInt(req.params.id);
   try {
-    // Deleting the comprobante should cascade to its items
-    await prisma.comprobanteElectronico.delete({
-      where: { id: parseInt(id) },
+    await prisma.comprobanteItem.deleteMany({
+      where: { comprobanteElectronicoId: id },
     });
-    // FIX: Use `res.status` directamente.
+    await prisma.comprobanteElectronico.delete({
+      where: { id: id },
+    });
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting comprobante ${id}:`, error);
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting comprobante', error: (error as Error).message });
   }
 };

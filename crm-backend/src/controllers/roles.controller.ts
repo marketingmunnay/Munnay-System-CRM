@@ -13,10 +13,9 @@ export const getRoles = async (req: express.Request, res: express.Response) => {
 };
 
 export const getRoleById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const role = await prisma.role.findUnique({ where: { id: parseInt(id) } });
+    const role = await prisma.role.findUnique({ where: { id: id } });
     if (!role) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Role not found' });
@@ -30,8 +29,7 @@ export const getRoleById = async (req: express.Request<{ id: string }>, res: exp
 };
 
 export const createRole = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const roleData = req.body;
+  const roleData = req.body; // FIX: Access `req.body` correctly.
   try {
     const newRole = await prisma.role.create({
       data: roleData,
@@ -45,13 +43,11 @@ export const createRole = async (req: express.Request, res: express.Response) =>
 };
 
 export const updateRole = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const roleData = req.body;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const roleData = req.body; // FIX: Access `req.body` correctly.
   try {
     const updatedRole = await prisma.role.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       // FIX: Ensure `roleData` is passed directly to `data` property.
       data: roleData,
     });
@@ -64,11 +60,10 @@ export const updateRole = async (req: express.Request<{ id: string }>, res: expr
 };
 
 export const deleteRole = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     await prisma.role.delete({
-      where: { id: parseInt(id) },
+      where: { id: id },
     });
     // FIX: Use `res.status` directly.
     res.status(204).send();

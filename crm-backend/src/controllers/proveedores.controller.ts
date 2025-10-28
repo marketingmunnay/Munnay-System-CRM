@@ -14,10 +14,9 @@ export const getProveedores = async (req: express.Request, res: express.Response
 };
 
 export const getProveedorById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const proveedor = await prisma.proveedor.findUnique({ where: { id: parseInt(id) } });
+    const proveedor = await prisma.proveedor.findUnique({ where: { id: id } });
     if (!proveedor) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Proveedor not found' });
@@ -31,8 +30,7 @@ export const getProveedorById = async (req: express.Request<{ id: string }>, res
 };
 
 export const createProveedor = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const data = req.body;
+  const data = req.body; // FIX: Access `req.body` correctly.
   try {
     const newProveedor = await prisma.proveedor.create({ data });
     // FIX: Use `res.status` directly.
@@ -44,10 +42,9 @@ export const createProveedor = async (req: express.Request, res: express.Respons
 };
 
 export const updateProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const updatedProveedor = await prisma.proveedor.update({ where: { id: parseInt(id) }, data: req.body });
+    const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
     // FIX: Use `res.status` directly.
     res.status(200).json(updatedProveedor);
   } catch (error) {
@@ -57,10 +54,9 @@ export const updateProveedor = async (req: express.Request<{ id: string }>, res:
 };
 
 export const deleteProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    await prisma.proveedor.delete({ where: { id: parseInt(id) } });
+    await prisma.proveedor.delete({ where: { id: id } });
     // FIX: Use `res.status` directly.
     res.status(204).send();
   } catch (error) {
@@ -83,11 +79,10 @@ export const getTiposProveedor = async (req: express.Request, res: express.Respo
 };
 
 export const createTipoProveedor = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const data = req.body;
+  const data = req.body; // FIX: Access `req.body` correctly.
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
-    // FIX: Use `res.status` directamente.
+    // FIX: Use `res.status` directly.
     res.status(201).json(newTipo);
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -96,11 +91,10 @@ export const createTipoProveedor = async (req: express.Request, res: express.Res
 };
 
 export const updateTipoProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: parseInt(id) }, data: req.body });
-    // FIX: Use `res.status` directamente.
+    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });
+    // FIX: Use `res.status` directly.
     res.status(200).json(updatedTipo);
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -109,10 +103,9 @@ export const updateTipoProveedor = async (req: express.Request<{ id: string }>, 
 };
 
 export const deleteTipoProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    await prisma.tipoProveedor.delete({ where: { id: parseInt(id) } });
+    await prisma.tipoProveedor.delete({ where: { id: id } });
     // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {

@@ -27,11 +27,10 @@ export const getLeads = async (req: express.Request, res: express.Response) => {
 };
 
 export const getLeadById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     const lead = await prisma.lead.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: id },
       include: {
         tratamientos: true,
         procedimientos: true,
@@ -60,9 +59,8 @@ export const createLead = async (req: express.Request, res: express.Response) =>
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    // FIX: Access `req.body` correctly.
-    ...leadData 
-  } = req.body as any;
+    ...leadData // FIX: Access `req.body` correctly.
+  } = req.body;
 
   try {
     const newLead = await prisma.lead.create({
@@ -88,22 +86,20 @@ export const createLead = async (req: express.Request, res: express.Response) =>
 };
 
 export const updateLead = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { 
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    // FIX: Access `req.body` correctly.
-    ...leadData 
-  } = req.body as any;
+    ...leadData // FIX: Access `req.body` correctly.
+  } = req.body;
 
   try {
     // NOTE: This is a simplified update that only handles scalar fields.
     // A real-world scenario requires complex logic to handle updates, creations,
     // and deletions of related records (treatments, procedures, etc.) within a transaction.
     const updatedLead = await prisma.lead.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         ...leadData,
         fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead) : undefined,
@@ -134,8 +130,7 @@ export const updateLead = async (req: express.Request<{ id: string }>, res: expr
 };
 
 export const deleteLead = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
     // The schema has been updated with onDelete: Cascade, so these manual deletes are a safeguard.
@@ -143,7 +138,7 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
 
     // Disconnect memberships first if it's a Many-to-Many with onDelete: SetNull or not Cascade
     await prisma.lead.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         membresiasAdquiridas: {
           set: [], // Disconnect all related memberships
@@ -152,17 +147,17 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
     });
 
     // These should cascade due to onDelete: Cascade in schema.prisma, but keeping them as a fallback if not configured correctly
-    await prisma.registroLlamada.deleteMany({ where: { leadId: parseInt(id) } });
-    await prisma.treatment.deleteMany({ where: { leadId: parseInt(id) } });
-    await prisma.procedure.deleteMany({ where: { leadId: parseInt(id) } });
-    await prisma.seguimiento.deleteMany({ where: { leadId: parseInt(id) } });
-    await prisma.alergia.deleteMany({ where: { leadId: parseInt(id) } });
+    await prisma.registroLlamada.deleteMany({ where: { leadId: id } });
+    await prisma.treatment.deleteMany({ where: { leadId: id } });
+    await prisma.procedure.deleteMany({ where: { leadId: id } });
+    await prisma.seguimiento.deleteMany({ where: { leadId: id } });
+    await prisma.alergia.deleteMany({ where: { leadId: id } });
     
-    // Delete related comprobantes first if not set up with cascading deletes
-    await prisma.comprobanteElectronico.deleteMany({ where: { ventaId: parseInt(id), ventaType: 'lead' } });
+    // Delete related comprobantes where leadId matches
+    await prisma.comprobanteElectronico.deleteMany({ where: { leadId: id } });
 
     await prisma.lead.delete({
-      where: { id: parseInt(id) },
+      where: { id: id },
     });
     // FIX: Use `res.status` directly.
     res.status(204).send();

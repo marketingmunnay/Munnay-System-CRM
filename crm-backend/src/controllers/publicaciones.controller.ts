@@ -17,10 +17,9 @@ export const getPublicaciones = async (req: express.Request, res: express.Respon
 };
 
 export const getPublicacionById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
-    const publicacion = await prisma.publicacion.findUnique({ where: { id: parseInt(id) } });
+    const publicacion = await prisma.publicacion.findUnique({ where: { id: id } });
     if (!publicacion) {
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Publicacion not found' });
@@ -28,14 +27,13 @@ export const getPublicacionById = async (req: express.Request<{ id: string }>, r
     // FIX: Use `res.status` directly.
     res.status(200).json(publicacion);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching publicacion', error: (error as Error).message });
   }
 };
 
 export const createPublicacion = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.body` correctly.
-  const { id, fechaPost, ...data } = req.body as any;
+  const { id, fechaPost, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newPublicacion = await prisma.publicacion.create({
       data: {
@@ -43,44 +41,41 @@ export const createPublicacion = async (req: express.Request, res: express.Respo
         fechaPost: new Date(fechaPost),
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(201).json(newPublicacion);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error creating publicacion', error: (error as Error).message });
   }
 };
 
 export const updatePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  // FIX: Access `req.params.id` correctly.
-  const id = req.params.id;
-  // FIX: Access `req.body` correctly.
-  const { fechaPost, ...data } = req.body as any;
+  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+  const { fechaPost, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const updatedPublicacion = await prisma.publicacion.update({
-      where: { id: parseInt(id) },
+      where: { id: id },
       data: {
         ...data,
         fechaPost: fechaPost ? new Date(fechaPost) : undefined,
       },
     });
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(updatedPublicacion);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating publicacion', error: (error as Error).message });
   }
 };
 
 export const deletePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-    // FIX: Access `req.params.id` correctly.
-    const id = req.params.id;
+    const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
     try {
-        await prisma.publicacion.delete({ where: { id: parseInt(id) } });
-        // FIX: Use `res.status` directly.
+        await prisma.publicacion.delete({ where: { id: id } });
+        // FIX: Use `res.status` directamente.
         res.status(204).send();
     } catch (error) {
-        // FIX: Use `res.status` directly.
+        // FIX: Use `res.status` directamente.
         res.status(500).json({ message: 'Error deleting publicacion', error: (error as Error).message });
     }
 };

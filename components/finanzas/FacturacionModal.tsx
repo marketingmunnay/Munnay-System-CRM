@@ -81,8 +81,8 @@ const FacturacionModal: React.FC<FacturacionModalProps> = ({ isOpen, onClose, on
             igv,
             total,
             sunatStatus: SunatStatus.Pendiente,
-            ventaId: venta.id,
-            ventaType,
+            originalVentaId: venta.id, // FIX: Changed 'ventaId' to 'originalVentaId'
+            originalVentaType: ventaType,
         };
         
         await onSave(nuevoComprobante);

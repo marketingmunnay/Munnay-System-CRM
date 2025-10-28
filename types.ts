@@ -293,8 +293,10 @@ export interface ComprobanteElectronico {
     igv: number;
     total: number;
     sunatStatus: SunatStatus;
-    ventaId: number;
-    ventaType: 'lead' | 'venta_extra';
+    originalVentaId: number; // The ID of the Lead or VentaExtra this comprobante is for
+    originalVentaType: 'lead' | 'venta_extra'; // The type of original venta
+    leadId?: number; // Optional FK to Lead
+    ventaExtraId?: number; // Optional FK to VentaExtra
 }
 
 
