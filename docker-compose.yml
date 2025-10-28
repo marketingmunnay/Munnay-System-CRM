@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: munnay_db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  api:
+    build: .
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/munnay_db?schema=public"
+      PORT: 4000
+      JWT_ACCESS_SECRET: change_this_access_secret
+      JWT_REFRESH_SECRET: change_this_refresh_secret
+    depends_on:
+      - db
+    ports:
+      - "4000:4000"
+volumes:
+  db-data:
