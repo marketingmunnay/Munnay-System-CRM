@@ -1,8 +1,8 @@
-import * as express from 'express'; // FIX: Import express as a namespace
+import * as express from 'express';
 import prisma from '../lib/prisma';
-import { PrismaClient, Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client'; // Import Prisma models
+import { PrismaClient, Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
-export const getLeads = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const getLeads = async (req: express.Request, res: express.Response) => {
   try {
     const leads = await prisma.lead.findMany({
       orderBy: {
@@ -18,17 +18,16 @@ export const getLeads = async (req: express.Request, res: express.Response) => {
         comprobantes: true,
       }
     });
-    // FIX: Use `res.status` directly.
     res.status(200).json(leads);
   } catch (error) {
     console.error("Error fetching leads:", error);
-    // FIX: Use `res.status` directly.
     res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
   }
 };
 
-export const getLeadById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
+export const getLeadById = async (req: express.Request<{ id: string }>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: id },
@@ -43,24 +42,21 @@ export const getLeadById = async (req: express.Request<{ id: string }>, res: exp
       }
     });
     if (!lead) {
-      // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Lead not found' });
     }
-    // FIX: Use `res.status` directly.
     res.status(200).json(lead);
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
-    // FIX: Use `res.status` directly.
     res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
   }
 };
 
-export const createLead = async (req: express.Request<any, any, Lead>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createLead = async (req: express.Request<any, any, Lead>, res: express.Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    ...leadData // FIX: Access `req.body` correctly.
+    ...leadData
   } = req.body;
 
   try {
@@ -77,22 +73,21 @@ export const createLead = async (req: express.Request<any, any, Lead>, res: expr
         }
       },
     });
-    // FIX: Use `res.status` directly.
     res.status(201).json(newLead);
   } catch (error) {
     console.error("Error creating lead:", error);
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
 
-export const updateLead = async (req: express.Request<{ id: string }, any, Lead>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
+export const updateLead = async (req: express.Request<{ id: string }, any, Lead>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
   const { 
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
-    ...leadData // FIX: Access `req.body` correctly.
+    ...leadData
   } = req.body;
 
   try {
@@ -121,17 +116,16 @@ export const updateLead = async (req: express.Request<{ id: string }, any, Lead>
         comprobantes: true,
       }
     });
-    // FIX: Use `res.status` directly.
     res.status(200).json(updatedLead);
   } catch (error) {
     console.error(`Error updating lead ${id}:`, error);
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating lead', error: (error as Error).message });
   }
 };
 
-export const deleteLead = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id.id); // FIX: Access `req.params.id` correctly.
+export const deleteLead = async (req: express.Request<{ id: string }>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
   try {
     // Prisma requires deleting related records first if not using cascading deletes in the schema.
     // The schema has been updated with onDelete: Cascade, so these manual deletes are a safeguard.
@@ -160,11 +154,9 @@ export const deleteLead = async (req: express.Request<{ id: string }>, res: expr
     await prisma.lead.delete({
       where: { id: id },
     });
-    // FIX: Use `res.status` directamente.
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting lead ${id}:`, error);
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting lead', error: (error as Error).message });
   }
 };

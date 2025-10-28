@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
@@ -400,3 +401,4 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         </div>
     );
 };
+    

@@ -1,9 +1,9 @@
-import * as express from 'express'; // FIX: Import express as a namespace
+import * as express from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Address, EmergencyContact, User } from '@prisma/client'; // Import Address, EmergencyContact, User types from Prisma client
+import { Address, EmergencyContact, User } from '@prisma/client';
 
-export const getUsers = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const getUsers = async (req: express.Request, res: express.Response) => {
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
@@ -29,35 +29,30 @@ export const getUsers = async (req: express.Request, res: express.Response) => {
         sex: true,
       },
     });
-    // FIX: Use `res.status` directly.
     res.status(200).json(users);
   } catch (error) {
-    // FIX: Use `res.status` directly.
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
-export const getUserById = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+export const getUserById = async (req: express.Request<{ id: string }>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
   try {
     const user = await prisma.user.findUnique({ where: { id: id } });
     if (!user) {
-      // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'User not found' });
     }
     const { password, ...userWithoutPassword } = user;
-    // FIX: Use `res.status` directly.
     res.status(200).json(userWithoutPassword);
   } catch (error) {
-    // FIX: Use `res.status` directly.
     res.status(500).json({ message: 'Error fetching user', error: (error as Error).message });
   }
 };
 
-export const createUser = async (req: express.Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const { id, password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
+export const createUser = async (req: express.Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => {
+  const { id, password, addresses, emergencyContacts, ...userData } = req.body;
   if (!password) {
-    // FIX: Use `res.status` directly.
     return res.status(400).json({ message: 'Password is required' });
   }
   try {
@@ -65,7 +60,6 @@ export const createUser = async (req: express.Request<any, any, User & { address
     const newUser = await prisma.user.create({
       data: {
         ...userData,
-        password: hashedPassword,
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
         addresses: {
@@ -91,18 +85,17 @@ export const createUser = async (req: express.Request<any, any, User & { address
       }
     });
     const { password: _, ...userWithoutPassword } = newUser;
-    // FIX: Use `res.status` directly.
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
-    // FIX: Use `res.status` directly.
     res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
   }
 };
 
-export const updateUser = async (req: express.Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
-  const { password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
+export const updateUser = async (req: express.Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
+  const { password, addresses, emergencyContacts, ...userData } = req.body;
   try {
     let updateData: any = {
         ...userData,
@@ -149,17 +142,16 @@ export const updateUser = async (req: express.Request<{ id: string }, any, User 
       }
     });
     const { password: _, ...userWithoutPassword } = updatedUser;
-    // FIX: Use `res.status` directly.
     res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error updating user', error: (error as Error).message });
   }
 };
 
-export const deleteUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
+export const deleteUser = async (req: express.Request<{ id: string }>, res: express.Response) => {
+  // FIX: Access `req.params.id` correctly.
+  const id = parseInt(req.params.id);
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
     // or if specific logic is needed (e.g., if a user has given/received recognitions and these should not be deleted).
@@ -170,10 +162,8 @@ export const deleteUser = async (req: express.Request<{ id: string }>, res: expr
     await prisma.reconocimiento.deleteMany({ where: { OR: [{ otorgadoPorId: id }, { recibidoPorId: id }] } });
 
     await prisma.user.delete({ where: { id: id } });
-    // FIX: Use `res.status` directly.
     res.status(204).send();
   } catch (error) {
-    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };
