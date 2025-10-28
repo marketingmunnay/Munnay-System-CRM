@@ -3,7 +3,7 @@ import KanbanView from './KanbanView.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
-import { LeadFormModal } from './LeadFormModal.tsx';
+import LeadFormModal from './LeadFormModal.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';

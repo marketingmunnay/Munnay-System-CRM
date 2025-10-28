@@ -85,7 +85,7 @@ export const createLead = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const updateLead = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateLead = async (req: express.Request<{ id: string }, any, any>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { 
     createdAt, updatedAt, 

@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Publicacion } from '@prisma/client'; // Import Publicacion type from Prisma client
 
 export const getPublicaciones = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -24,7 +25,7 @@ export const getPublicacionById = async (req: express.Request<{ id: string }>, r
       // FIX: Use `res.status` directly.
       return res.status(404).json({ message: 'Publicacion not found' });
     }
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(200).json(publicacion);
   } catch (error) {
     // FIX: Use `res.status` directamente.
@@ -32,7 +33,7 @@ export const getPublicacionById = async (req: express.Request<{ id: string }>, r
   }
 };
 
-export const createPublicacion = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createPublicacion = async (req: express.Request<any, any, Publicacion>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fechaPost, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newPublicacion = await prisma.publicacion.create({
@@ -49,7 +50,7 @@ export const createPublicacion = async (req: express.Request, res: express.Respo
   }
 };
 
-export const updatePublicacion = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updatePublicacion = async (req: express.Request<{ id: string }, any, Publicacion>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fechaPost, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {

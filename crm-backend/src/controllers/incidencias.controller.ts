@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Incidencia } from '@prisma/client'; // Import Incidencia type from Prisma client
 
 export const getIncidencias = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -28,7 +29,7 @@ export const getIncidenciaById = async (req: express.Request<{ id: string }>, re
   }
 };
 
-export const createIncidencia = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createIncidencia = async (req: express.Request<any, any, Incidencia>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newIncidencia = await prisma.incidencia.create({
@@ -45,7 +46,7 @@ export const createIncidencia = async (req: express.Request, res: express.Respon
   }
 };
 
-export const updateIncidencia = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateIncidencia = async (req: express.Request<{ id: string }, any, Incidencia>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {

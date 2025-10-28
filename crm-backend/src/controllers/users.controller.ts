@@ -1,7 +1,7 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Address, EmergencyContact } from '../../types';
+import { Address, EmergencyContact, User } from '@prisma/client'; // Import Address, EmergencyContact, User types from Prisma client
 
 export const getUsers = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -54,7 +54,7 @@ export const getUserById = async (req: express.Request<{ id: string }>, res: exp
   }
 };
 
-export const createUser = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createUser = async (req: express.Request<any, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
   if (!password) {
     // FIX: Use `res.status` directly.
@@ -69,7 +69,7 @@ export const createUser = async (req: express.Request, res: express.Response) =>
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
         addresses: {
-          create: (addresses as Address[])?.map(addr => ({
+          create: (addresses as Omit<Address, 'id'>[])?.map(addr => ({
             direccion: addr.direccion,
             distrito: addr.distrito,
             ciudad: addr.ciudad,
@@ -77,7 +77,7 @@ export const createUser = async (req: express.Request, res: express.Response) =>
           })) || [],
         },
         emergencyContacts: {
-          create: (emergencyContacts as EmergencyContact[])?.map(contact => ({
+          create: (emergencyContacts as Omit<EmergencyContact, 'id'>[])?.map(contact => ({
             nombre: contact.nombre,
             parentesco: contact.parentesco,
             numero: contact.numero,
@@ -100,7 +100,7 @@ export const createUser = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const updateUser = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateUser = async (req: express.Request<{ id: string }, any, User & { addresses?: Omit<Address, 'id'>[], emergencyContacts?: Omit<EmergencyContact, 'id'>[] }>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { password, addresses, emergencyContacts, ...userData } = req.body; // FIX: Access `req.body` correctly.
   try {
@@ -119,7 +119,7 @@ export const updateUser = async (req: express.Request<{ id: string }>, res: expr
     if (addresses !== undefined) {
       updateData.addresses = {
         deleteMany: {}, // Delete all existing addresses for this user
-        create: (addresses as Address[])?.map(addr => ({
+        create: (addresses as Omit<Address, 'id'>[])?.map(addr => ({
           direccion: addr.direccion,
           distrito: addr.distrito,
           ciudad: addr.ciudad,
@@ -131,7 +131,7 @@ export const updateUser = async (req: express.Request<{ id: string }>, res: expr
     if (emergencyContacts !== undefined) {
       updateData.emergencyContacts = {
         deleteMany: {}, // Delete all existing emergency contacts for this user
-        create: (emergencyContacts as EmergencyContact[])?.map(contact => ({
+        create: (emergencyContacts as Omit<EmergencyContact, 'id'>[])?.map(contact => ({
           nombre: contact.nombre,
           parentesco: contact.parentesco,
           numero: contact.numero,

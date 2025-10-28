@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Proveedor, TipoProveedor } from '@prisma/client'; // Import types from Prisma client
 
 // --- Proveedores ---
 export const getProveedores = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
@@ -29,8 +30,8 @@ export const getProveedorById = async (req: express.Request<{ id: string }>, res
   }
 };
 
-export const createProveedor = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const data = req.body; // FIX: Access `req.body` correctly.
+export const createProveedor = async (req: express.Request<any, any, Proveedor>, res: express.Response) => { // FIX: Use express.Request and express.Response
+  const data: Proveedor = req.body; // FIX: Access `req.body` correctly.
   try {
     const newProveedor = await prisma.proveedor.create({ data });
     // FIX: Use `res.status` directly.
@@ -41,7 +42,7 @@ export const createProveedor = async (req: express.Request, res: express.Respons
   }
 };
 
-export const updateProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateProveedor = async (req: express.Request<{ id: string }, any, Proveedor>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
@@ -78,8 +79,8 @@ export const getTiposProveedor = async (req: express.Request, res: express.Respo
   }
 };
 
-export const createTipoProveedor = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
-  const data = req.body; // FIX: Access `req.body` correctly.
+export const createTipoProveedor = async (req: express.Request<any, any, TipoProveedor>, res: express.Response) => { // FIX: Use express.Request and express.Response
+  const data: TipoProveedor = req.body; // FIX: Access `req.body` correctly.
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
     // FIX: Use `res.status` directly.
@@ -90,7 +91,7 @@ export const createTipoProveedor = async (req: express.Request, res: express.Res
   }
 };
 
-export const updateTipoProveedor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateTipoProveedor = async (req: express.Request<{ id: string }, any, TipoProveedor>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   try {
     const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });

@@ -3,7 +3,7 @@ import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteE
 import { AtencionStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons';
-import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
+import LeadFormModal from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import StatCard from '../dashboard/StatCard';
 
 interface AtencionesDiariasPageProps {

@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Campaign, MetaCampaign } from '@prisma/client'; // Import types from Prisma client
 
 // Controller functions for Campaign (Anuncios)
 export const getCampaigns = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
@@ -29,7 +30,7 @@ export const getCampaignById = async (req: express.Request<{ id: string }>, res:
   }
 };
 
-export const createCampaign = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createCampaign = async (req: express.Request<any, any, Campaign>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newCampaign = await prisma.campaign.create({
@@ -46,7 +47,7 @@ export const createCampaign = async (req: express.Request, res: express.Response
   }
 };
 
-export const updateCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateCampaign = async (req: express.Request<{ id: string }, any, Campaign>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
@@ -105,7 +106,7 @@ export const getMetaCampaignById = async (req: express.Request<{ id: string }>, 
   }
 };
 
-export const createMetaCampaign = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createMetaCampaign = async (req: express.Request<any, any, MetaCampaign>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fechaInicio, fechaFin, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newMetaCampaign = await prisma.metaCampaign.create({
@@ -123,7 +124,7 @@ export const createMetaCampaign = async (req: express.Request, res: express.Resp
   }
 };
 
-export const updateMetaCampaign = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateMetaCampaign = async (req: express.Request<{ id: string }, any, MetaCampaign>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fechaInicio, fechaFin, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {

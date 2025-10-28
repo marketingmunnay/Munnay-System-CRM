@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Egreso } from '@prisma/client'; // Import Egreso type from Prisma client
 
 export const getExpenses = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -23,12 +24,12 @@ export const getExpenseById = async (req: express.Request<{ id: string }>, res: 
     // FIX: Use `res.status` directly.
     res.status(200).json(expense);
   } catch (error) {
-    // FIX: Use `res.status` directly.
+    // FIX: Use `res.status` directamente.
     res.status(500).json({ message: 'Error fetching expense', error: (error as Error).message });
   }
 };
 
-export const createExpense = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createExpense = async (req: express.Request<any, any, Egreso>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fechaRegistro, fechaPago, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newExpense = await prisma.egreso.create({
@@ -46,7 +47,7 @@ export const createExpense = async (req: express.Request, res: express.Response)
   }
 };
 
-export const updateExpense = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateExpense = async (req: express.Request<{ id: string }, any, Egreso>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fechaRegistro, fechaPago, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {

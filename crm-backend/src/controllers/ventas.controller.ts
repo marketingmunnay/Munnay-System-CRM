@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { VentaExtra } from '@prisma/client'; // Import VentaExtra type from Prisma client
 
 export const getVentas = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -30,7 +31,7 @@ export const getVentaById = async (req: express.Request<{ id: string }>, res: ex
   }
 };
 
-export const createVenta = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createVenta = async (req: express.Request<any, any, VentaExtra>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fechaVenta, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newVenta = await prisma.ventaExtra.create({
@@ -48,7 +49,7 @@ export const createVenta = async (req: express.Request, res: express.Response) =
   }
 };
 
-export const updateVenta = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateVenta = async (req: express.Request<{ id: string }, any, VentaExtra>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fechaVenta, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {

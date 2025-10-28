@@ -1,5 +1,6 @@
 import * as express from 'express'; // FIX: Import express as a namespace
 import prisma from '../lib/prisma';
+import { Seguidor } from '@prisma/client'; // Import Seguidor type from Prisma client
 
 export const getSeguidores = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
   try {
@@ -32,7 +33,7 @@ export const getSeguidorById = async (req: express.Request<{ id: string }>, res:
   }
 };
 
-export const createSeguidor = async (req: express.Request, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const createSeguidor = async (req: express.Request<any, any, Seguidor>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const { id, fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
     const newSeguidor = await prisma.seguidor.create({
@@ -49,7 +50,7 @@ export const createSeguidor = async (req: express.Request, res: express.Response
   }
 };
 
-export const updateSeguidor = async (req: express.Request<{ id: string }>, res: express.Response) => { // FIX: Use express.Request and express.Response
+export const updateSeguidor = async (req: express.Request<{ id: string }, any, Seguidor>, res: express.Response) => { // FIX: Use express.Request and express.Response
   const id = parseInt(req.params.id); // FIX: Access `req.params.id` correctly.
   const { fecha, ...data } = req.body; // FIX: Access `req.body` correctly.
   try {
