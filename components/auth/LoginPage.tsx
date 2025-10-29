@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon } from '../shared/Icons.tsx';
 
 interface LoginPageProps {
-  onLogin: (username: string, password?: string) => void;
+  onLogin: (usuario: string, password?: string) => void;
   error: string;
   logoUrl?: string;
   loginImageUrl?: string;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
-  const [username, setUsername] = useState('');
+  const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +21,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    onLogin(username, password);
+    onLogin(usuario, password);
     // No need to setIsSubmitting(false) as the component will unmount on successful login.
   };
 
@@ -52,14 +52,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
                                 </label>
                                 <div className="mt-1">
                                     <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    autoComplete="username"
-                                    required
-                                    placeholder="Ingresa tu usuario"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                   id="usuario"
+                                        name="usuario"
+                                        type="text"
+                                        autoComplete="username"
+                                        required
+                                        placeholder="Ingresa tu usuario"
+                                        value={usuario}
+                                        onChange={(e) => setUsuario(e.target.value)}
                                     className="appearance-none block w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg shadow-sm placeholder-black text-black focus:outline-none focus:ring-[#aa632d] focus:border-[#aa632d] sm:text-sm"
                                     />
                                 </div>
