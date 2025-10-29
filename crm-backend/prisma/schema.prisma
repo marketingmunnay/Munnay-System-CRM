@@ -7,229 +7,531 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== MODELOS DE USUARIOS Y ROLES ====================
-model User {
-  id                        Int               @id @default(autoincrement())
-  nombres                   String
-  apellidos                 String
-  usuario                   String            @unique
-  password                  String?
-  rolId                     Int
-  rol                       Role              @relation(fields: [rolId], references: [id])
-  avatarUrl                 String?
-  position                  String?
-  documentType              DocumentType?
-  documentNumber            String?
-  phone                     String?
-  birthDate                 DateTime?         @map("birth_date") @db.Date
-  startDate                 DateTime?         @map("start_date") @db.Date
-  salary                    Float?
-  contractType              ContractType?     @map("contract_type")
-  maritalStatus             MaritalStatus?    @map("marital_status")
-  sex                       Sex?
+// ENUMS
 
-  addresses                 Address[]
-  emergencyContacts         EmergencyContact[]
-  reconocimientosOtorgados  Reconocimiento[]  @relation("OtorgadoPor")
-  reconocimientosRecibidos  Reconocimiento[]  @relation("RecibidoPor")
-
-  createdAt                 DateTime          @default(now()) @map("created_at")
-  updatedAt                 DateTime          @updatedAt @map("updated_at")
-
-  @@map("users")
+enum LeadStatus {
+  Nuevo
+  Seguimiento
+  PorPagar
+  Agendado
+  Perdido
 }
 
-model Role {
-  id               Int      @id @default(autoincrement())
-  nombre           String   @unique
-  permissions      String[]
-  dashboardMetrics String[] @map("dashboard_metrics")
-
-  users            User[]
-
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  @@map("roles")
+enum ReceptionStatus {
+  Agendado
+  PorAtender
+  Atendido
+  Reprogramado
+  Cancelado
+  NoAsistio
 }
 
-model Address {
-  id        Int    @id @default(autoincrement())
-  userId    Int
-  user      User   @relation(fields: [userId], references: [id])
-  street    String
-  city      String
-  country   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("addresses")
+enum AtencionStatus {
+  PorAtender
+  EnSeguimiento
+  SeguimientoHecho
 }
 
-model EmergencyContact {
-  id        Int    @id @default(autoincrement())
-  userId    Int
-  user      User   @relation(fields: [userId], references: [id])
-  name      String
-  phone     String
-  relation  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("emergency_contacts")
+enum Seller {
+  Vanesa
+  Liz
+  Elvira
 }
 
-// ==================== MODELOS DE LEADS Y PACIENTES ====================
+enum MetodoPago {
+  Efectivo
+  Tarjeta
+  Transferencia
+  Yape
+  Plin
+}
+
+enum EstadoLlamada {
+  Contesto
+  NoContesto
+  NumeroEquivocado
+  Ocupado
+}
+
+enum TipoPost {
+  Reel
+  Historia
+  Carrusel
+  Post
+}
+
+enum RedSocialPost {
+  Facebook
+  Instagram
+  Tiktok
+  YouTube
+}
+
+enum TipoComprobanteElectronico {
+  Boleta
+  Factura
+}
+
+enum SunatStatus {
+  Aceptado
+  Pendiente
+  Rechazado
+  ConObservaciones
+  Anulado
+}
+
+enum TipoComprobante {
+  Factura
+  Boleta
+  ReciboHonorarios
+  SinComprobante
+}
+
+enum ModoPagoEgreso {
+  Efectivo
+  Transferencia
+  Tarjeta
+  Yape
+}
+
+enum DocumentType {
+  DNI
+  RUC
+  Pasaporte
+  CarnetExtranjeria
+}
+
+enum NotificationType {
+  complicacion_paciente
+  pago_por_vencer
+  nuevo_lead
+  cita_proxima
+}
+
+enum GoalUnit {
+  Cantidad
+  Porcentaje
+}
+
+enum GoalArea {
+  Comercial
+  Administracion
+  Recepcion
+  Procedimientos
+}
+
+enum GoalObjective {
+  Leads
+  Agendados
+  Asistidos
+  CostoPorResultado
+  VentasServicios
+  VentasProductos
+  Recuperados
+  ConversionLeads
+  ROI
+  Seguidores
+  Visualizaciones
+  Alcance
+  Engagement
+  CierreEvaluaciones
+  AceptacionTratamientos
+  EfectividadTratamientos
+  SeguimientosCompletados
+  RotacionPersonal
+  NivelStock
+}
+
+// MODELS
+
 model Lead {
-  id                    Int                     @id @default(autoincrement())
-  fechaLead             DateTime                @map("fecha_lead") @db.Date
-  nombres               String
-  apellidos             String
-  numero                String?
-  sexo                  Sex
-  redSocial             String                  @map("red_social")
-  anuncio               String
-  vendedor              String
-  estado                LeadStatus
-  montoPagado           Float                   @map("monto_pagado")
-  metodoPago            MetodoPago?             @map("metodo_pago")
-  fechaHoraAgenda       DateTime?               @map("fecha_hora_agenda") @db.Timestamp(3)
-  servicios             String[]
-  categoria             String
-  fechaVolverLlamar     DateTime?               @map("fecha_volver_llamar") @db.Date
-  horaVolverLlamar      String?                 @map("hora_volver_llamar")
-  notas                 String?
+  id                 Int      @id @default(autoincrement())
+  fechaLead          DateTime
+  nombres            String
+  apellidos          String
+  numero             String
+  sexo               String
+  redSocial          String
+  anuncio            String
+  vendedor           Seller
+  estado             LeadStatus
+  montoPagado        Float    @default(0)
+  metodoPago         MetodoPago?
+  fechaHoraAgenda    DateTime?
+  servicios          String[]
+  categoria          String
+  fechaVolverLlamar  DateTime?
+  horaVolverLlamar   String?
+  notas              String?  @db.Text
+  nHistoria          String?  @unique
+  aceptoTratamiento  String?
+  motivoNoCierre     String?
+  estadoRecepcion    ReceptionStatus?
+  recursoId          String?
+  birthDate          DateTime?
+  precioCita         Float?
+  deudaCita          Float?
+  metodoPagoDeuda    MetodoPago?
+  documentType       DocumentType?
+  documentNumber     String?
+  razonSocial        String?
+  direccionFiscal    String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  nHistoria             String?                 @unique @map("n_historia")
-  aceptoTratamiento     AceptoTratamiento?      @map("acepto_tratamiento")
-  motivoNoCierre        String?                 @map("motivo_no_cierre")
-  estadoRecepcion       ReceptionStatus?        @map("estado_recepcion")
-  recursoId             String?                 @map("recurso_id")
-
-  documentType          DocumentType?           @map("document_type")
-  documentNumber        String?                 @map("document_number")
-  razonSocial           String?                 @map("razon_social")
-  direccionFiscal       String?                 @map("direccion_fiscal")
-
-  registrosLlamada      RegistroLlamada[]
-  tratamientos          Treatment[]
-  procedimientos        Procedure[]
-  seguimientos          Seguimiento[]
-  alergias              Alergia[]
-  membresiasAdquiridas  Membership[]            @relation("LeadToMembership")
-  comprobantes          ComprobanteElectronico[]
-
-  precioCita            Float?                  @map("precio_cita")
-  deudaCita             Float?                  @map("deuda_cita")
-  metodoPagoDeuda       MetodoPago?             @map("metodo_pago_deuda")
-
-  createdAt             DateTime                @default(now()) @map("created_at")
-  updatedAt             DateTime                @updatedAt @map("updated_at")
-
-  @@map("leads")
+  registrosLlamada     RegistroLlamada[]
+  tratamientos         Treatment[]
+  procedimientos       Procedure[]
+  seguimientos         Seguimiento[]
+  alergias             Alergia[]
+  membresiasAdquiridas Membership[]
+  comprobantes         ComprobanteElectronico[]
+  ventasExtra          VentaExtra[]
+  incidencias          Incidencia[]
 }
 
 model RegistroLlamada {
-  id                Int       @id @default(autoincrement())
-  leadId            Int
-  lead              Lead      @relation(fields: [leadId], references: [id])
-  numeroLlamada     Int       @map("numero_llamada")
-  duracionLlamada   String    @map("duracion_llamada")
-  estadoLlamada     EstadoLlamada @map("estado_llamada")
-  observacion       String?
-
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  @@map("registros_llamada")
+  id              Int          @id @default(autoincrement())
+  numeroLlamada   Int
+  duracionLlamada String
+  estadoLlamada   EstadoLlamada
+  observacion     String?      @db.Text
+  leadId          Int
+  lead            Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
 model Treatment {
-  id                Int         @id @default(autoincrement())
-  leadId            Int
-  lead              Lead        @relation(fields: [leadId], references: [id])
-  nombre            String
-  cantidadSesiones  Int         @map("cantidad_sesiones")
-  precio            Float
-  montoPagado       Float       @map("monto_pagado")
-  metodoPago        MetodoPago? @map("metodo_pago")
-  deuda             Float
-
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
-
-  @@map("tratamientos")
+  id               Int        @id @default(autoincrement())
+  nombre           String
+  cantidadSesiones Int
+  precio           Float
+  montoPagado      Float
+  metodoPago       MetodoPago?
+  deuda            Float
+  leadId           Int
+  lead             Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
 model Procedure {
-  id                Int         @id @default(autoincrement())
-  leadId            Int
-  lead              Lead        @relation(fields: [leadId], references: [id])
-  fechaAtencion     DateTime    @map("fecha_atencion") @db.Date
+  id                Int      @id @default(autoincrement())
+  fechaAtencion     DateTime
   personal          String
-  horaInicio        String      @map("hora_inicio")
-  horaFin           String      @map("hora_fin")
-  tratamientoId     Int         @map("tratamiento_id")
-  nombreTratamiento String      @map("nombre_tratamiento")
-  sesionNumero      Int         @map("sesion_numero")
-  asistenciaMedica  Boolean     @map("asistencia_medica")
+  horaInicio        String
+  horaFin           String
+  tratamientoId     Int
+  nombreTratamiento String
+  sesionNumero      Int
+  asistenciaMedica  Boolean
   medico            String?
-  observacion       String?
-
-  seguimientos      Seguimiento[]
-
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
-
-  @@map("procedimientos")
+  observacion       String?  @db.Text
+  leadId            Int
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
 model Seguimiento {
-  id                Int       @id @default(autoincrement())
-  leadId            Int
-  lead              Lead      @relation(fields: [leadId], references: [id])
-  procedimientoId   Int       @map("procedimiento_id")
-  procedimiento     Procedure @relation(fields: [procedimientoId], references: [id])
-  nombreProcedimiento String  @map("nombre_procedimiento")
-  fechaSeguimiento  DateTime  @map("fecha_seguimiento") @db.Date
-  personal          String
-  inflamacion       Boolean
-  ampollas          Boolean
-  alergias          Boolean
-  malestarGeneral   Boolean   @map("malestar_general")
-  brote             Boolean
-  dolorDeCabeza     Boolean   @map("dolor_de_cabeza")
-  moretones         Boolean
-  observacion       String?
-
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  @@map("seguimientos")
+  id                  Int      @id @default(autoincrement())
+  procedimientoId     Int
+  nombreProcedimiento String
+  fechaSeguimiento    DateTime
+  personal            String
+  inflamacion         Boolean
+  ampollas            Boolean
+  alergias            Boolean
+  malestarGeneral     Boolean
+  brote               Boolean
+  dolorDeCabeza       Boolean
+  moretones           Boolean
+  observacion         String?  @db.Text
+  leadId              Int
+  lead                Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
 model Alergia {
-  id        Int     @id @default(autoincrement())
-  leadId    Int
-  lead      Lead    @relation(fields: [leadId], references: [id])
+  id        Int    @id @default(autoincrement())
   nombre    String
   gravedad  Int
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("alergias")
+  leadId    Int
+  lead      Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
 
-// ==================== MARKETING Y REDES SOCIALES ====================
 model Campaign {
-  id                Int       @id @default(autoincrement())
-  nombreAnuncio     String    @map("nombre_anuncio")
+  id                Int      @id @default(autoincrement())
+  nombreAnuncio     String
   categoria         String
   alcance           Int
   resultados        Int
-  costoPorResultado Float     @map("costo_por_resultado")
-  importeGastado    Float     @map("importe_gastado")
-  fecha             DateTime  @db.Date
+  costoPorResultado Float
+  importeGastado    Float
+  fecha             DateTime
+}
 
-  createdAt         DateTime  @default(now()) @map("created
+model MetaCampaign {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  fechaInicio DateTime
+  fechaFin    DateTime
+  categoria   String
+}
+
+model Publicacion {
+  id                      Int           @id @default(autoincrement())
+  fechaPost               DateTime
+  horaPost                String?
+  temaVideo               String
+  tipoPost                TipoPost
+  redSocial               RedSocialPost
+  publicacionUrl          String
+  imageUrl                String?
+  vistas                  Int
+  comentarios             Int
+  reacciones              Int
+  conversacionesIniciadas Int
+  convertidos             Int
+}
+
+model Seguidor {
+  id               Int           @id @default(autoincrement())
+  fecha            DateTime
+  cuenta           String
+  redSocial        RedSocialPost
+  seguidores       Int
+  dejaronDeSeguir  Int
+}
+
+model VentaExtra {
+  id              Int        @id @default(autoincrement())
+  codigoVenta     String     @unique
+  fechaVenta      DateTime
+  pacienteId      Int
+  nHistoria       String
+  nombrePaciente  String
+  servicio        String
+  categoria       String
+  precio          Float
+  montoPagado     Float
+  metodoPago      MetodoPago
+  deuda           Float
+  fechaPagoDeuda  DateTime?
+  paciente        Lead       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  comprobante     ComprobanteElectronico?
+}
+
+model Incidencia {
+  id                Int      @id @default(autoincrement())
+  fecha             DateTime
+  hora              String
+  pacienteId        Int
+  nHistoria         String
+  nombrePaciente    String
+  tipoIncidencia    String
+  detalleIncidencia String
+  descripcion       String   @db.Text
+  solucionado       Boolean
+  paciente          Lead     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+}
+
+model ComprobanteElectronico {
+  id                     Int                        @id @default(autoincrement())
+  tipoDocumento          TipoComprobanteElectronico
+  serie                  String
+  correlativo            Int
+  fechaEmision           DateTime
+  clienteTipoDocumento   DocumentType
+  clienteNumeroDocumento String
+  clienteDenominacion    String
+  clienteDireccion       String?
+  opGravadas             Float
+  igv                    Float
+  total                  Float
+  sunatStatus            SunatStatus
+  originalVentaId        Int
+  originalVentaType      String
+
+  items        ComprobanteItem[]
+  lead         Lead?                 @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  leadId       Int?
+  ventaExtra   VentaExtra?           @relation(fields: [ventaExtraId], references: [id], onDelete: SetNull)
+  ventaExtraId Int?                  @unique
+}
+
+model ComprobanteItem {
+  id            Int                    @id @default(autoincrement())
+  descripcion   String
+  cantidad      Int
+  valorUnitario Float
+  precioUnitario Float
+  igv           Float
+  montoTotal    Float
+  comprobanteId Int
+  comprobante   ComprobanteElectronico @relation(fields: [comprobanteId], references: [id], onDelete: Cascade)
+}
+
+model Egreso {
+  id               Int       @id @default(autoincrement())
+  fechaRegistro    DateTime
+  fechaPago        DateTime
+  proveedor        String
+  categoria        String
+  descripcion      String
+  tipoComprobante  TipoComprobante
+  serieComprobante String?
+  nComprobante     String?
+  montoTotal       Float
+  montoPagado      Float
+  deuda            Float
+  modoPago         ModoPagoEgreso?
+  fotoUrl          String?
+  tipoMoneda       String
+  observaciones    String?   @db.Text
+}
+
+model Proveedor {
+  id             Int    @id @default(autoincrement())
+  razonSocial    String @unique
+  ruc            String @unique
+  tipo           String
+  numeroContacto String
+}
+
+model TipoProveedor {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  nombres             String
+  apellidos           String
+  usuario             String    @unique
+  password            String
+  rolId               Int
+  avatarUrl           String
+  position            String?
+  documentType        DocumentType?
+  documentNumber      String?
+  phone               String?
+  birthDate           DateTime?
+  startDate           DateTime?
+  salary              Float?
+  contractType        String?
+  maritalStatus       String?
+  sex                 String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  rol                        Role                 @relation(fields: [rolId], references: [id])
+  addresses                  Address[]
+  emergencyContacts          EmergencyContact[]
+  reconocimientosOtorgados   Reconocimiento[]     @relation("OtorgadoPor")
+  reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
+}
+
+model Address {
+  id         Int    @id @default(autoincrement())
+  direccion  String
+  distrito   String
+  ciudad     String
+  referencia String?
+  userId     Int
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyContact {
+  id         Int    @id @default(autoincrement())
+  nombre     String
+  parentesco String
+  numero     String
+  userId     Int
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reconocimiento {
+  id            Int      @id @default(autoincrement())
+  mensaje       String
+  fecha         DateTime
+  otorgadoPorId Int
+  otorgadoPor   User     @relation("OtorgadoPor", fields: [otorgadoPorId], references: [id])
+  recibidoPorId Int
+  recibidoPor   User     @relation("RecibidoPor", fields: [recibidoPorId], references: [id])
+}
+
+model Role {
+  id               Int     @id @default(autoincrement())
+  nombre           String  @unique
+  permissions      String[]
+  dashboardMetrics String[]
+  users            User[]
+}
+
+model BusinessInfo {
+  id            Int    @id @default(1)
+  nombre        String
+  ruc           String
+  direccion     String
+  telefono      String
+  email         String
+  logoUrl       String
+  loginImageUrl String?
+}
+
+model Goal {
+  id        Int          @id @default(autoincrement())
+  name      String
+  area      GoalArea
+  objective GoalObjective
+  value     Float
+  unit      GoalUnit
+  personal  String?
+  startDate DateTime
+  endDate   DateTime
+}
+
+// Catálogos
+
+model ClientSource {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model ServiceCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model EgresoCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model ProductCategory {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model JobPosition {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+}
+
+model Service {
+  id        Int    @id @default(autoincrement())
+  nombre    String @unique
+  categoria String
+  precio    Float
+}
+
+model Product {
+  id        Int    @id @default(autoincrement())
+  nombre    String @unique
+  categoria String
+  precio    Float
+}
+
+model Membership {
+  id             Int    @id @default(autoincrement())
+  nombre         String @unique
+  precio         Float
+  numeroSesiones Int
+  descripcion    String
+  leads          Lead[]
+}

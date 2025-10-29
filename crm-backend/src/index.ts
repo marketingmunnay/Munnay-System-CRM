@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
 import path from 'path';
+import { PrismaClient } from '@prisma/client'
 
 dotenv.config();
 
@@ -62,3 +63,33 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // Crear un usuario de prueba
+  const user = await prisma.user.create({
+    data: {
+      nombres: "Juan",
+      apellidos: "Pérez",
+      usuario: "admin",
+      password: "123456",
+      rol: {
+        create: {
+          nombre: "ADMIN",
+          permissions: ["*"],
+          dashboardMetrics: []
+        }
+      }
+    }
+  })
+  console.log("Usuario creado:", user)
+}
+
+main()
+  .then(() => prisma.$disconnect())
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })
