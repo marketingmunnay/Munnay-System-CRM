@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+// FIX: Import 'process' to resolve typing issues with 'process.exit'.
+import { process } from 'node:process';
 // FIX: Changed import path to be relative to the backend root.
 import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../../types'; // Import frontend types
 
