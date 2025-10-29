@@ -1,1 +1,235 @@
-�
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== MODELOS DE USUARIOS Y ROLES ====================
+model User {
+  id                        Int               @id @default(autoincrement())
+  nombres                   String
+  apellidos                 String
+  usuario                   String            @unique
+  password                  String?
+  rolId                     Int
+  rol                       Role              @relation(fields: [rolId], references: [id])
+  avatarUrl                 String?
+  position                  String?
+  documentType              DocumentType?
+  documentNumber            String?
+  phone                     String?
+  birthDate                 DateTime?         @map("birth_date") @db.Date
+  startDate                 DateTime?         @map("start_date") @db.Date
+  salary                    Float?
+  contractType              ContractType?     @map("contract_type")
+  maritalStatus             MaritalStatus?    @map("marital_status")
+  sex                       Sex?
+
+  addresses                 Address[]
+  emergencyContacts         EmergencyContact[]
+  reconocimientosOtorgados  Reconocimiento[]  @relation("OtorgadoPor")
+  reconocimientosRecibidos  Reconocimiento[]  @relation("RecibidoPor")
+
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Role {
+  id               Int      @id @default(autoincrement())
+  nombre           String   @unique
+  permissions      String[]
+  dashboardMetrics String[] @map("dashboard_metrics")
+
+  users            User[]
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+  street    String
+  city      String
+  country   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("addresses")
+}
+
+model EmergencyContact {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+  name      String
+  phone     String
+  relation  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("emergency_contacts")
+}
+
+// ==================== MODELOS DE LEADS Y PACIENTES ====================
+model Lead {
+  id                    Int                     @id @default(autoincrement())
+  fechaLead             DateTime                @map("fecha_lead") @db.Date
+  nombres               String
+  apellidos             String
+  numero                String?
+  sexo                  Sex
+  redSocial             String                  @map("red_social")
+  anuncio               String
+  vendedor              String
+  estado                LeadStatus
+  montoPagado           Float                   @map("monto_pagado")
+  metodoPago            MetodoPago?             @map("metodo_pago")
+  fechaHoraAgenda       DateTime?               @map("fecha_hora_agenda") @db.Timestamp(3)
+  servicios             String[]
+  categoria             String
+  fechaVolverLlamar     DateTime?               @map("fecha_volver_llamar") @db.Date
+  horaVolverLlamar      String?                 @map("hora_volver_llamar")
+  notas                 String?
+
+  nHistoria             String?                 @unique @map("n_historia")
+  aceptoTratamiento     AceptoTratamiento?      @map("acepto_tratamiento")
+  motivoNoCierre        String?                 @map("motivo_no_cierre")
+  estadoRecepcion       ReceptionStatus?        @map("estado_recepcion")
+  recursoId             String?                 @map("recurso_id")
+
+  documentType          DocumentType?           @map("document_type")
+  documentNumber        String?                 @map("document_number")
+  razonSocial           String?                 @map("razon_social")
+  direccionFiscal       String?                 @map("direccion_fiscal")
+
+  registrosLlamada      RegistroLlamada[]
+  tratamientos          Treatment[]
+  procedimientos        Procedure[]
+  seguimientos          Seguimiento[]
+  alergias              Alergia[]
+  membresiasAdquiridas  Membership[]            @relation("LeadToMembership")
+  comprobantes          ComprobanteElectronico[]
+
+  precioCita            Float?                  @map("precio_cita")
+  deudaCita             Float?                  @map("deuda_cita")
+  metodoPagoDeuda       MetodoPago?             @map("metodo_pago_deuda")
+
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+
+  @@map("leads")
+}
+
+model RegistroLlamada {
+  id                Int       @id @default(autoincrement())
+  leadId            Int
+  lead              Lead      @relation(fields: [leadId], references: [id])
+  numeroLlamada     Int       @map("numero_llamada")
+  duracionLlamada   String    @map("duracion_llamada")
+  estadoLlamada     EstadoLlamada @map("estado_llamada")
+  observacion       String?
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("registros_llamada")
+}
+
+model Treatment {
+  id                Int         @id @default(autoincrement())
+  leadId            Int
+  lead              Lead        @relation(fields: [leadId], references: [id])
+  nombre            String
+  cantidadSesiones  Int         @map("cantidad_sesiones")
+  precio            Float
+  montoPagado       Float       @map("monto_pagado")
+  metodoPago        MetodoPago? @map("metodo_pago")
+  deuda             Float
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("tratamientos")
+}
+
+model Procedure {
+  id                Int         @id @default(autoincrement())
+  leadId            Int
+  lead              Lead        @relation(fields: [leadId], references: [id])
+  fechaAtencion     DateTime    @map("fecha_atencion") @db.Date
+  personal          String
+  horaInicio        String      @map("hora_inicio")
+  horaFin           String      @map("hora_fin")
+  tratamientoId     Int         @map("tratamiento_id")
+  nombreTratamiento String      @map("nombre_tratamiento")
+  sesionNumero      Int         @map("sesion_numero")
+  asistenciaMedica  Boolean     @map("asistencia_medica")
+  medico            String?
+  observacion       String?
+
+  seguimientos      Seguimiento[]
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("procedimientos")
+}
+
+model Seguimiento {
+  id                Int       @id @default(autoincrement())
+  leadId            Int
+  lead              Lead      @relation(fields: [leadId], references: [id])
+  procedimientoId   Int       @map("procedimiento_id")
+  procedimiento     Procedure @relation(fields: [procedimientoId], references: [id])
+  nombreProcedimiento String  @map("nombre_procedimiento")
+  fechaSeguimiento  DateTime  @map("fecha_seguimiento") @db.Date
+  personal          String
+  inflamacion       Boolean
+  ampollas          Boolean
+  alergias          Boolean
+  malestarGeneral   Boolean   @map("malestar_general")
+  brote             Boolean
+  dolorDeCabeza     Boolean   @map("dolor_de_cabeza")
+  moretones         Boolean
+  observacion       String?
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("seguimientos")
+}
+
+model Alergia {
+  id        Int     @id @default(autoincrement())
+  leadId    Int
+  lead      Lead    @relation(fields: [leadId], references: [id])
+  nombre    String
+  gravedad  Int
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("alergias")
+}
+
+// ==================== MARKETING Y REDES SOCIALES ====================
+model Campaign {
+  id                Int       @id @default(autoincrement())
+  nombreAnuncio     String    @map("nombre_anuncio")
+  categoria         String
+  alcance           Int
+  resultados        Int
+  costoPorResultado Float     @map("costo_por_resultado")
+  importeGastado    Float     @map("importe_gastado")
+  fecha             DateTime  @db.Date
+
+  createdAt         DateTime  @default(now()) @map("created
