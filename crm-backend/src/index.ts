@@ -1,14 +1,9 @@
-import express, { Request, Response, NextFunction, Router, RequestHandler } from 'express';
+import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-// FIX: Define __dirname for ES module scope.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -51,8 +46,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Health check endpoint
-// FIX: Use named Request and Response types to fix typing errors.
-// FIX: Removed explicit Request and Response types to fix typing errors.
 app.get('/health', (req, res) => {
   res.status(200).send('CRM Munnay Backend is running!');
 });
@@ -62,8 +55,6 @@ app.use('/api', apiRouter);
 
 // For any other request that doesn't match an API route or a static file,
 // serve the frontend's index.html file. This is crucial for client-side routing.
-// FIX: Use named Request and Response types to fix typing errors.
-// FIX: Removed explicit Request and Response types to fix typing errors.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
