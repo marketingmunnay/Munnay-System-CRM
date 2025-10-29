@@ -60,7 +60,7 @@ async function main() {
   }
 
   // --- 4. Users ---
-  const hashedPassword = await bcrypt.hash('123456m', 10)
+  const hashedPassword = await bcrypt.hash('123456', 10)
 
   await prisma.user.upsert({
     where: { id: 1 },
@@ -69,7 +69,7 @@ async function main() {
       id: 1,
       nombres: 'Admin',
       apellidos: 'Munnay',
-      usuario: 'admin',
+      username: 'admin',
       password: hashedPassword,
       rolId: adminRole.id,
       avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
@@ -93,7 +93,7 @@ async function main() {
       id: 2,
       nombres: 'Vanesa',
       apellidos: 'Lopez',
-      usuario: 'vanesa',
+      username: 'vanesa',
       password: hashedPassword,
       rolId: marketingRole.id,
       avatarUrl: 'https://randomuser.me/api/portraits/women/1.jpg',
