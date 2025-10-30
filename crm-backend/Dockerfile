@@ -7,10 +7,9 @@ COPY package*.json ./
 RUN npm install --include=dev
 
 COPY . .
-# Usa npm run build en lugar de ./node_modules/.bin/tsc
-RUN npm run build
+RUN chmod +x ./node_modules/.bin/tsc && npm run build
 
-# Etapa final (solo producción)
+# Etapa final
 FROM node:18
 
 WORKDIR /usr/src/app
