@@ -8,6 +8,9 @@ interface LoginPageProps {
   loginImageUrl?: string;
 }
 
+// URL del backend: en producción se toma de Vercel (VITE_API_URL), en local usa localhost
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
@@ -17,11 +20,34 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
   const defaultImage = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070';
   const finalLoginImageUrl = loginImageUrl || defaultImage;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    onLogin(usuario, password);
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Credenciales inválidas");
+      }
+
+      const data = await response.json();
+      console.log("Login exitoso:", data);
+
+      // Aquí puedes guardar el token en localStorage o context si lo devuelve el backend
+      // localStorage.setItem("token", data.token);
+
+      onLogin(usuario, password);
+    } catch (err) {
+      console.error("Error en login:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

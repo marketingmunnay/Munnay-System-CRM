@@ -72,7 +72,7 @@ async function main() {
       usuario: 'admin',
       password: hashedPassword,
       rolId: adminRole.id,
-      avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      avatarUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png", // 👈 agregado
       position: 'Gerente General',
       documentType: DocumentType.DNI,
       documentNumber: '12345678',
@@ -96,7 +96,7 @@ async function main() {
       usuario: 'vanesa',
       password: hashedPassword,
       rolId: marketingRole.id,
-      avatarUrl: 'https://randomuser.me/api/portraits/women/1.jpg',
+      avatarUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png", // 👈 agregado
       position: 'Vendedor',
       documentType: DocumentType.DNI,
       documentNumber: '87654321',
