@@ -8,7 +8,7 @@ RUN npm install --include=dev
 
 
 COPY . .
-RUN npx tsc   # ejecuta el compilador desde node_modules/.bin
+RUN npm run build  # ejecuta el compilador desde node_modules/.bin
 
 # Etapa final (solo producción)
 FROM node:18
