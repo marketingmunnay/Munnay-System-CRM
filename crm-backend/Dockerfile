@@ -6,9 +6,9 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install --include=dev
 
-
 COPY . .
-RUN npm run build  # ejecuta el compilador desde node_modules/.bin
+# Ejecuta el compilador desde node_modules
+RUN ./node_modules/.bin/tsc
 
 # Etapa final (solo producción)
 FROM node:18
