@@ -7,8 +7,8 @@ COPY package*.json ./
 RUN npm install --include=dev
 
 COPY . .
-# Ejecuta el compilador desde node_modules
-RUN ./node_modules/.bin/tsc
+# Usa npm run build en lugar de ./node_modules/.bin/tsc
+RUN npm run build
 
 # Etapa final (solo producción)
 FROM node:18
