@@ -1,39 +1,46 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/router'; // 👈 si usas Next.js
-import LoginPage from '../components/auth/LoginPage';
+import React, { useState } from "react";
+import { useRouter } from "next/router";
+import LoginPage from "../components/auth/LoginPage";
 
 const LoginContainer: React.FC = () => {
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const onLogin = async (usuario: string, password?: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://munnay-system.vercel.app'}/api/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      // 👇 Usa la variable de entorno NEXT_PUBLIC_API_URL
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://munnay-system-crm-156279657697.europe-west1.run.app";
+
+      const res = await fetch(`${apiUrl}/api/v1/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario, password }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Usuario o contraseña incorrectos');
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Usuario o contraseña incorrectos");
         return;
       }
 
       const data = await res.json();
-      console.log('Login exitoso:', data);
+      console.log("Login exitoso:", data);
 
       // ✅ Guardar token o datos en localStorage
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem("token", data.token);
       }
-      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
 
       // ✅ Redirigir al dashboard
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (err) {
-      console.error(err);
-      setError('Error de conexión con el servidor');
+      console.error("Error en login:", err);
+      setError("Error de conexión con el servidor");
     }
   };
 
