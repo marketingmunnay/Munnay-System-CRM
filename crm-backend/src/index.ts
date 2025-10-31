@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import apiRouter from './api';
 import path from 'path';
 
+
 dotenv.config();
 
 const app: express.Application = express();
@@ -21,6 +22,11 @@ const allowedOrigins = [
 
 // Regex para permitir previews de Vercel
 const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://munnay-system.vercel.app",
+];
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
