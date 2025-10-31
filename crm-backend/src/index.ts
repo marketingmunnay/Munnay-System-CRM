@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 4000;
 // Lista de orígenes permitidos
 const allowedOrigins = [
   'http://localhost:5173',  // Vite dev
+  "http://localhost:3000",
   'http://127.0.0.1:5173',
   'https://mcc.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
@@ -22,11 +23,6 @@ const allowedOrigins = [
 
 // Regex para permitir previews de Vercel
 const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
-
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://munnay-system.vercel.app",
-];
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
