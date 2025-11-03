@@ -9,15 +9,13 @@ const LoginContainer: React.FC = () => {
   const onLogin = async (usuario: string, password?: string) => {
     try {
       // 👇 Usa la variable de entorno NEXT_PUBLIC_API_URL
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "https://munnay-system-crm-156279657697.europe-west1.run.app";
-
-      const res = await fetch(`${apiUrl}/api/v1/users/login`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${API_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario, password }),
       });
+
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
