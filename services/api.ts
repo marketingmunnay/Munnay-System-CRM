@@ -18,7 +18,7 @@ import type {
 // Ejemplo: const API_URL = 'https://crm-munnay-backend-xyz.a.run.app/api'; // <--- ASÍ DEBERÍA QUEDAR
 //
 // Mientras tanto, se mantiene 'localhost' para que las pruebas locales sigan funcionando.
-const API_URL = 'http://localhost:4000/api'; // Placeholder for actual API URL
+const API_URL =  process.env.NEXT_PUBLIC_API_URL ||  "https://munnay-system-crm-156279657697.europe-west1.run.app/api";
 
 
 const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {
