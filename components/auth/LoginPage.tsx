@@ -11,6 +11,7 @@ interface LoginPageProps {
 
 // URL del backend: en producción se toma de Vercel (VITE_API_URL), en local usa localhost
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // en Next.js
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
   const [usuario, setUsuario] = useState("");

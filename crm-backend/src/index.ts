@@ -51,12 +51,6 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api', apiRouter);
 
-// Static files (opcional si sirves frontend desde aquí)
-app.use(express.static(path.join(__dirname, '..', 'public')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
