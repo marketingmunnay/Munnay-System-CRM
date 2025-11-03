@@ -3,34 +3,25 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
-import path from 'path';
-
 
 dotenv.config();
 
 const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
 
-// Lista de orígenes permitidos
+// ✅ Lista de orígenes permitidos en producción
 const allowedOrigins = [
-  'http://localhost:5173',  // Vite dev
-  "http://localhost:3000",
-  'http://127.0.0.1:5173',
   'https://mcc.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
   'https://munnay-system.vercel.app',
 ];
 
-// Regex para permitir previews de Vercel
+// ✅ Regex para permitir previews de Vercel
 const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) {
-      callback(null, true);
-    } else if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (vercelPreviewRegex.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || vercelPreviewRegex.test(origin)) {
       callback(null, true);
     } else {
       console.error(`CORS: Origen no permitido: ${origin}`);
@@ -43,14 +34,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Health check
-app.get('/health', (req, res) => {
+// ✅ Health check
+app.get('/health', (_req, res) => {
   res.status(200).send('CRM Munnay Backend is running!');
 });
 
-// API routes
+// ✅ API routes
 app.use('/api', apiRouter);
 
+// ✅ Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
