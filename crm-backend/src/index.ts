@@ -68,7 +68,8 @@ app.get('/health/db', async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Database health check failed:', error);
+    // Log only error message to avoid exposing sensitive connection details
+    console.error('Database health check failed:', error instanceof Error ? error.message : 'Unknown error');
     res.status(503).json({
       status: 'error',
       message: 'Database connection failed',

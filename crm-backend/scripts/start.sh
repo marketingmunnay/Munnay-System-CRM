@@ -19,4 +19,5 @@ echo "✅ Migrations completed"
 
 # Start the application
 echo "🎯 Starting Node.js application..."
-node dist/index.js
+# Use configurable entry point, default to dist/index.js
+node "${START_SCRIPT:-dist/index.js}"
