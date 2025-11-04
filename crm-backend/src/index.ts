@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
+import prisma from './lib/prisma';
 
 dotenv.config();
 
@@ -60,7 +61,6 @@ app.get('/health', (_req, res) => {
 // ✅ Health check con verificación de base de datos
 app.get('/health/db', async (_req, res) => {
   try {
-    const prisma = (await import('./lib/prisma')).default;
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({
       status: 'ok',
