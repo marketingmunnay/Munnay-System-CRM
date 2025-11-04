@@ -125,7 +125,28 @@ curl https://tu-servicio.onrender.com/health/db
 
 ### Conectar Frontend (Vercel)
 
-Si necesitas que el frontend se conecte al backend:
+El frontend ya está desplegado en Vercel:
+- **Producción**: https://munnay-system.vercel.app/
+- **Dev branch**: https://munnay-system-git-dev-marketingmunnays-projects.vercel.app/
+
+El backend ya está configurado para aceptar requests de estas URLs.
+
+Si necesitas agregar más URLs de frontend:
+
+1. Agregar la URL en `crm-backend/src/index.ts`:
+   ```typescript
+   const allowedOrigins = [
+     'https://mcc.munnaymedicinaestetica.com',
+     'https://munnay-system-crm.vercel.app',
+     'https://munnay-system.vercel.app',
+     'https://munnay-system-git-dev-marketingmunnays-projects.vercel.app',
+     'https://tu-nueva-url.vercel.app', // ← Agregar aquí
+   ];
+   ```
+2. Commit y push los cambios
+3. Render redesplegará automáticamente
+
+Para conectar el frontend al backend:
 
 1. Ir a proyecto en Vercel
 2. Settings → Environment Variables
@@ -134,21 +155,6 @@ Si necesitas que el frontend se conecte al backend:
    VITE_API_URL=https://tu-servicio.onrender.com
    ```
 4. Redeploy
-
-### Actualizar CORS
-
-Agregar la URL de tu frontend en `crm-backend/src/index.ts`:
-
-```typescript
-const allowedOrigins = [
-  'https://mcc.munnaymedicinaestetica.com',
-  'https://munnay-system-crm.vercel.app',
-  'https://munnay-system.vercel.app',
-  'https://tu-frontend-url.vercel.app', // ← Agregar aquí
-];
-```
-
-Commit y push los cambios. Render redesplegará automáticamente.
 
 ## 🐛 Troubleshooting Rápido
 

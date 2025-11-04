@@ -16,6 +16,7 @@ const allowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
   'https://munnay-system.vercel.app',
+  'https://munnay-system-git-dev-marketingmunnays-projects.vercel.app',
 ];
 
 // ✅ En desarrollo, permitir localhost

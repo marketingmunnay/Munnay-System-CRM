@@ -98,12 +98,20 @@ Munnay-System-CRM/
 5. **Configurar en Render**:
    - Agregar `DATABASE_URL` en variables de entorno
 
-### Frontend en Vercel (Actual)
+### Frontend en Vercel
 
-El frontend ya está desplegado en Vercel. Para actualizarlo:
+El frontend está desplegado en Vercel con las siguientes URLs:
 
-1. Push a la rama principal
+- **Producción**: https://munnay-system.vercel.app/
+- **Dev branch**: https://munnay-system-git-dev-marketingmunnays-projects.vercel.app/
+
+**Nota**: El backend ya está configurado para aceptar requests de estas URLs vía CORS.
+
+Para actualizar el frontend:
+
+1. Push a la rama correspondiente (main o dev)
 2. Vercel despliega automáticamente
+3. El backend acepta automáticamente las nuevas previews de Vercel
 
 ## 📝 Guías Detalladas
 
