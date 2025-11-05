@@ -6,7 +6,7 @@ const LoginContainer: React.FC = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const onLogin = async (username: string, password?: string) => {
+  const onLogin = async (usuario: string, password?: string) => {
     try {
       // Use Vite environment variable
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
@@ -14,7 +14,7 @@ const LoginContainer: React.FC = () => {
       const res = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ usuario, password }),
       });
 
 

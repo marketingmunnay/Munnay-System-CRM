@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "../shared/Icons.tsx";
 
 interface LoginPageProps {
-  onLogin: (username: string, password?: string) => void;
+  onLogin: (usuario: string, password?: string) => void;
   error: string;
   logoUrl?: string;
   loginImageUrl?: string;
@@ -12,7 +12,7 @@ interface LoginPageProps {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
-  const [username, setUsername] = useState("");
+  const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +33,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
       const res = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ usuario, password }),
       });
 
       if (!res.ok) {
@@ -52,7 +52,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
         localStorage.setItem("user", JSON.stringify(data.user));
       }
 
-      onLogin(username, password);
+      onLogin(usuario, password);
     } catch (err) {
       console.error("Error en login:", err);
       setLocalError("Error de conexión con el servidor");
@@ -77,14 +77,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="usuario" className="block text-sm font-medium text-gray-700 mb-1">
               Usuario
             </label>
             <input
-              id="username"
+              id="usuario"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={usuario}
+              onChange={(e) => setUsuario(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ingrese su usuario"

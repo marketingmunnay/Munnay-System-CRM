@@ -198,11 +198,11 @@ const App: React.FC = () => {
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
-    const handleLogin = (username: string, password?: string) => {
+    const handleLogin = (usuario: string, password?: string) => {
         setLoginError('');
         // Authentication is handled by LoginPage component via API call
         // Find the user in local data to set context
-        const userFound = users.find(u => u.usuario.toLowerCase() === username.toLowerCase());
+        const userFound = users.find(u => u.usuario.toLowerCase() === usuario.toLowerCase());
         if (userFound) {
             setCurrentUser(userFound);
             setIsAuthenticated(true);
