@@ -8,9 +8,10 @@ const LoginContainer: React.FC = () => {
 
   const onLogin = async (usuario: string, password?: string) => {
     try {
-      // 👇 Usa la variable de entorno NEXT_PUBLIC_API_URL
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${API_URL}/users/login`, {
+      // Use Vite environment variable
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      // Send plain text password - backend handles bcrypt hashing
+      const res = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario, password }),

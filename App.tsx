@@ -198,20 +198,20 @@ const App: React.FC = () => {
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
-    const handleLogin = (username: string, password?: string) => {
+    const handleLogin = (usuario: string, password?: string) => {
         setLoginError('');
-        const userFound = users.find(u => u.usuario.toLowerCase() === username.toLowerCase());
+        // Authentication is handled by LoginPage component via API call
+        // Find the user in local data to set context
+        const userFound = users.find(u => u.usuario.toLowerCase() === usuario.toLowerCase());
         if (userFound) {
-            // Check password if it exists on the user object
-            if (userFound.password && userFound.password !== password) {
-                 setLoginError('Usuario o contraseña incorrectos.');
-                 return;
-            }
             setCurrentUser(userFound);
             setIsAuthenticated(true);
             setCurrentPage('dashboard');
         } else {
-            setLoginError('Usuario o contraseña incorrectos.');
+            // If user not found locally but API authenticated, still allow login
+            // This can happen if local data hasn't loaded yet
+            setIsAuthenticated(true);
+            setCurrentPage('dashboard');
         }
     };
 
