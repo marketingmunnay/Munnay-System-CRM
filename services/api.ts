@@ -113,8 +113,8 @@ export const saveRole = (role: Role): Promise<Role> =>
 export const deleteRole = (id: number): Promise<void> => apiRequest<void>(`/roles/${id}`, 'DELETE');
 
 // Business Info
-export const getBusinessInfo = (): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business', 'GET');
-export const saveBusinessInfo = (info: BusinessInfo): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business', 'PUT', info);
+export const getBusinessInfo = (): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'GET');
+export const saveBusinessInfo = (info: BusinessInfo): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'PUT', info);
 
 // Goals
 export const getGoals = (): Promise<Goal[]> => apiRequest<Goal[]>('/goals', 'GET');
