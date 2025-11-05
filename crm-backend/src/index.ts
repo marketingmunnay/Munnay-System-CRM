@@ -12,16 +12,12 @@ const PORT = process.env.PORT || 4000;
 // ✅ Lista de orígenes permitidos en producción
 const allowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
-  'https://munnay-system-crm.vercel.app',
-  'https://munnay-system.vercel.app',
+  'http://localhost:5173', // Para desarrollo local con Vite
 ];
-
-// ✅ Regex para permitir previews de Vercel
-const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin || allowedOrigins.includes(origin) || vercelPreviewRegex.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.error(`CORS: Origen no permitido: ${origin}`);
