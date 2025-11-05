@@ -211,3 +211,26 @@ export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<Co
     ? apiRequest<ComprobanteElectronico>('/comprobantes', 'POST', { ...comprobante, id: undefined })
     : apiRequest<ComprobanteElectronico>(`/comprobantes/${comprobante.id}`, 'PUT', comprobante);
 export const deleteComprobante = (id: number): Promise<void> => apiRequest<void>(`/comprobantes/${id}`, 'DELETE');
+
+// Additional utility functions
+export const getNextHistoryNumber = (): Promise<string> => apiRequest<string>('/leads/next-history-number', 'GET');
+
+// AI Content Generation
+export const generateAiContent = async (prompt: string): Promise<string> => {
+  try {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('VITE_GEMINI_API_KEY no está configurada');
+    }
+    
+    const genAI = new GoogleGenAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error('Error generando contenido con IA:', error);
+    throw new Error('Error al generar contenido con IA');
+  }
+};
