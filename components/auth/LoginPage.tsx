@@ -9,11 +9,11 @@ interface LoginPageProps {
   loginImageUrl?: string;
 }
 
-// ✅ Solo Next.js: usa NEXT_PUBLIC_API_URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Use Vite environment variable
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
-  const [usuario, setUsuario] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -30,10 +30,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${API_URL}/users/login`, {
+      // Send plain text password - backend handles bcrypt hashing
+      const res = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
@@ -47,7 +48,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
         localStorage.setItem("token", data.token);
       }
 
-      onLogin(usuario, password);
+      onLogin(username, password);
       navigate("/dashboard");
     } catch (err) {
       console.error("Error en login:", err);

@@ -168,10 +168,12 @@ export const deleteUser = async (req: Request, res: Response) => {
 };
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { usuario, password } = req.body;
+  // Accept both "username" and "usuario" for backwards compatibility
+  const { username, usuario, password } = req.body;
+  const usernameToUse = username || usuario;
 
   try {
-    const user = await prisma.user.findUnique({ where: { usuario } });
+    const user = await prisma.user.findUnique({ where: { usuario: usernameToUse } });
     if (!user) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
