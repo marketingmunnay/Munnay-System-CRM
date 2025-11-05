@@ -10,6 +10,8 @@ import type {
 export const API_URL = "https://munnay-system-crm-156279657697.europe-west1.run.app/api";
 
 // Longitud mínima de IDs generados temporalmente en el cliente
+// Los IDs temporales tienen más de 7 caracteres (e.g., timestamps o UUIDs)
+// mientras que los IDs de la base de datos son números más cortos
 const GENERATED_ID_MIN_LENGTH = 7;
 
 // Helper genérico para requests
