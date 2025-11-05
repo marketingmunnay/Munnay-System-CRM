@@ -6,8 +6,8 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// URL fija de tu backend en Cloud Run
-export const API_URL = "https://munnay-system-crm-156279657697.europe-west1.run.app/api";
+// URL del backend en Render
+export const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 // Longitud mínima de IDs generados temporalmente en el cliente
 // Los IDs temporales tienen más de 7 caracteres (e.g., timestamps o UUIDs)
