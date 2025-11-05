@@ -234,3 +234,12 @@ export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<Co
     : apiRequest<ComprobanteElectronico>(`/comprobantes/${comprobante.id}`, 'PUT', comprobante);
 export const deleteComprobante = (comprobanteId: number): Promise<void> => 
   apiRequest<void>(`/comprobantes/${comprobanteId}`, 'DELETE');
+
+// ========== UTILITY FUNCTIONS ==========
+export const getNextHistoryNumber = (): Promise<number> => 
+  apiRequest<number>('/leads/next-history-number', 'GET');
+
+export const generateAiContent = async (prompt: string): Promise<string> => {
+  const response = await apiRequest<{ content: string }>('/ai/generate', 'POST', { prompt });
+  return response.content;
+};
