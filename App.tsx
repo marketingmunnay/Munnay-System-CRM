@@ -198,20 +198,39 @@ const App: React.FC = () => {
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
-    const handleLogin = (username: string, password?: string) => {
+    const handleLogin = async (username: string, password?: string) => {
         setLoginError('');
-        const userFound = users.find(u => u.usuario.toLowerCase() === username.toLowerCase());
-        if (userFound) {
-            // Check password if it exists on the user object
-            if (userFound.password && userFound.password !== password) {
-                 setLoginError('Usuario o contraseña incorrectos.');
-                 return;
+        try {
+            const response = await fetch('https://munnay-system-crm-156279657697.europe-west1.run.app/api/users/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: username, password }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Error en la autenticación' }));
+                setLoginError(errorData.error || 'Usuario o contraseña incorrectos.');
+                return;
             }
-            setCurrentUser(userFound);
-            setIsAuthenticated(true);
-            setCurrentPage('dashboard');
-        } else {
-            setLoginError('Usuario o contraseña incorrectos.');
+
+            const data = await response.json();
+            
+            // Save token if provided
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+
+            // Set user from response
+            if (data.user) {
+                setCurrentUser(data.user);
+                setIsAuthenticated(true);
+                setCurrentPage('dashboard');
+            } else {
+                setLoginError('Error al obtener datos del usuario.');
+            }
+        } catch (error) {
+            console.error('Error en login:', error);
+            setLoginError('Error de conexión con el servidor.');
         }
     };
 
