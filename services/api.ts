@@ -56,13 +56,13 @@ export const deleteCampaign = (campaignId: number): Promise<void> =>
   apiRequest<void>(`/campaigns/${campaignId}`, 'DELETE');
 
 // ========== META CAMPAIGNS ==========
-export const getMetaCampaigns = (): Promise<MetaCampaign[]> => apiRequest<MetaCampaign[]>('/meta-campaigns', 'GET');
+export const getMetaCampaigns = (): Promise<MetaCampaign[]> => apiRequest<MetaCampaign[]>('/campaigns/meta', 'GET');
 export const saveMetaCampaign = (campaign: MetaCampaign): Promise<MetaCampaign> =>
   String(campaign.id).length > GENERATED_ID_MIN_LENGTH
-    ? apiRequest<MetaCampaign>('/meta-campaigns', 'POST', { ...campaign, id: undefined })
-    : apiRequest<MetaCampaign>(`/meta-campaigns/${campaign.id}`, 'PUT', campaign);
+    ? apiRequest<MetaCampaign>('/campaigns/meta', 'POST', { ...campaign, id: undefined })
+    : apiRequest<MetaCampaign>(`/campaigns/meta/${campaign.id}`, 'PUT', campaign);
 export const deleteMetaCampaign = (campaignId: number): Promise<void> => 
-  apiRequest<void>(`/meta-campaigns/${campaignId}`, 'DELETE');
+  apiRequest<void>(`/campaigns/meta/${campaignId}`, 'DELETE');
 
 // ========== PUBLICACIONES ==========
 export const getPublicaciones = (): Promise<Publicacion[]> => apiRequest<Publicacion[]>('/publicaciones', 'GET');
