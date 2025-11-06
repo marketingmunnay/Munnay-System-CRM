@@ -8,15 +8,11 @@ interface LoginPageProps {
   loginImageUrl?: string;
 }
 
-// Use Vite environment variable
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [localError, setLocalError] = useState("");
 
   const defaultImage =
     "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070";
@@ -26,36 +22,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    setLocalError("");
 
     try {
-      // Send plain text password - backend handles bcrypt hashing
-      const res = await fetch(`${API_URL}/api/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario, password }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: "Credenciales inválidas" }));
-        setLocalError(errorData.error || "Credenciales inválidas");
-        return;
-      }
-
-      const data = await res.json();
-      console.log("Login exitoso:", data);
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-
-      onLogin(usuario, password);
-    } catch (err) {
-      console.error("Error en login:", err);
-      setLocalError("Error de conexión con el servidor");
+      await onLogin(usuario, password);
     } finally {
       setIsSubmitting(false);
     }
@@ -86,6 +55,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}
               required
+              autoComplete="username"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ingrese su usuario"
             />
@@ -101,6 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Ingrese su contraseña"
               />
@@ -113,9 +84,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
               </button>
             </div>
           </div>
-          {(error || localError) && (
+          {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-              {error || localError}
+              {error}
             </div>
           )}
           <button
