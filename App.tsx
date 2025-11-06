@@ -68,7 +68,7 @@ const App: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [comprobantes, setComprobantes] = useState<ComprobanteElectronico[]>([]);
     
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [loginError, setLoginError] = useState('');
 
     const [confirmationState, setConfirmationState] = useState<{
@@ -145,9 +145,30 @@ const App: React.FC = () => {
         }
     };
 
+    // Check for existing session on mount
     useEffect(() => {
-        loadData();
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (token && storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                setCurrentUser(user);
+                setIsAuthenticated(true);
+            } catch (error) {
+                console.error('Error parsing stored user:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+        }
     }, []);
+
+    useEffect(() => {
+        // Only load data if authenticated
+        if (isAuthenticated) {
+            loadData();
+        }
+    }, [isAuthenticated]);
 
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
@@ -198,26 +219,50 @@ const App: React.FC = () => {
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
-    const handleLogin = (usuario: string, password?: string) => {
+    const handleLogin = async (usuario: string, password?: string) => {
         setLoginError('');
-        // Authentication is handled by LoginPage component via API call
-        // Find the user in local data to set context
-        const userFound = users.find(u => u.usuario.toLowerCase() === usuario.toLowerCase());
-        if (userFound) {
-            setCurrentUser(userFound);
+        // Make API call directly here since LoginPage no longer does it
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+            const res = await fetch(`${API_URL}/api/users/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario, password }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                setLoginError(data.error || "Usuario o contraseña incorrectos");
+                throw new Error(data.error || "Usuario o contraseña incorrectos");
+            }
+
+            const data = await res.json();
+            console.log("Login exitoso:", data);
+
+            // Save token and user data
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
+            if (data.user) {
+                localStorage.setItem("user", JSON.stringify(data.user));
+                setCurrentUser(data.user);
+            }
+
             setIsAuthenticated(true);
             setCurrentPage('dashboard');
-        } else {
-            // If user not found locally but API authenticated, still allow login
-            // This can happen if local data hasn't loaded yet
-            setIsAuthenticated(true);
-            setCurrentPage('dashboard');
+        } catch (err) {
+            console.error("Error en login:", err);
+            setLoginError(err instanceof Error ? err.message : "Error de conexión con el servidor");
+            throw err;
         }
     };
 
     const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setIsAuthenticated(false);
         setCurrentUser(null);
+        setCurrentPage('dashboard');
     };
 
     const currentUserPermissions = useMemo(() => {
