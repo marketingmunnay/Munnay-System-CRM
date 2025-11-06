@@ -18,27 +18,7 @@ export const INCIDENCIA_TYPES: Record<string, string[]> = {
 };
 
 
-export const CHART_DATA_MONTHLY_LEADS = [
-  { name: 'Ene', leads: 40 },
-  { name: 'Feb', leads: 30 },
-  { name: 'Mar', leads: 50 },
-  { name: 'Abr', leads: 45 },
-  { name: 'May', leads: 60 },
-  { name: 'Jun', leads: 55 },
-  { name: 'Jul', leads: 70 },
-  { name: 'Ago', leads: 80 },
-  { name: 'Sep', leads: 75 },
-  { name: 'Oct', leads: 90 },
-  { name: 'Nov', leads: 85 },
-  { name: 'Dic', leads: 100 },
-];
 
-export const CHART_DATA_LEAD_SOURCE = [
-  { name: 'Facebook', value: 400 },
-  { name: 'Instagram', value: 300 },
-  { name: 'Google', value: 300 },
-  { name: 'WhatsApp', value: 200 },
-];
 
 export const ALL_PAGES_CONFIG: { id: Page; label: string; group: string }[] = [
     { id: 'dashboard', label: 'Dashboard', group: 'General' },
