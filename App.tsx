@@ -233,7 +233,7 @@ const App: React.FC = () => {
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 setLoginError(data.error || "Usuario o contraseña incorrectos");
-                throw new Error(data.error || "Usuario o contraseña incorrectos");
+                return; // Don't throw, just return early
             }
 
             const data = await res.json();
@@ -252,8 +252,8 @@ const App: React.FC = () => {
             setCurrentPage('dashboard');
         } catch (err) {
             console.error("Error en login:", err);
-            setLoginError(err instanceof Error ? err.message : "Error de conexión con el servidor");
-            throw err;
+            setLoginError("Error de conexión con el servidor");
+            // Don't re-throw, just set the error message
         }
     };
 
