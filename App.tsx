@@ -38,8 +38,8 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Auth states - Authentication disabled, default user with full permissions
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // Data states
@@ -104,13 +104,13 @@ const App: React.FC = () => {
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
-                api.getLeads(), api.getCampaigns(), api.getVentasExtra(),
-                api.getIncidencias(), api.getEgresos(), api.getProveedores(),
-                api.getUsers(), api.getRoles(), api.getBusinessInfo(),
-                api.getClientSources(), api.getServices(), api.getProducts(), api.getMemberships(),
-                api.getServiceCategories(), api.getProductCategories(), api.getJobPositions(),
-                api.getPublicaciones(), api.getSeguidores(), api.getMetaCampaigns(), api.getEgresoCategories(),
-                api.getTiposProveedor(), api.getGoals(), api.getComprobantes()
+                api.getLeads(), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
+                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
+                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
+                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
+                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
@@ -120,7 +120,7 @@ const App: React.FC = () => {
             setProveedores(proveedoresData);
             setUsers(usersData);
             setRoles(rolesData);
-            setBusinessInfo(businessInfoData);
+            setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
             setClientSources(clientSourcesData);
             setServices(servicesData);
             setProducts(productsData);
@@ -140,7 +140,34 @@ const App: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to load data", error);
+            // Set minimal business info on error
+            if (!businessInfo) {
+                setBusinessInfo({ nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            }
         } finally {
+            // Always set up a default admin user with full permissions (authentication disabled)
+            if (!currentUser) {
+                const allPermissions: Page[] = [
+                    'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                    'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
+                    'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
+                    'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
+                    'finanzas-facturacion', 'rrhh-perfiles', 'informes', 'configuracion'
+                ];
+                
+                const defaultUser: User = {
+                    id: 0,
+                    nombre: 'Usuario',
+                    apellido: 'Administrador',
+                    usuario: 'admin',
+                    rolId: 1,
+                    activo: true,
+                    permissions: allPermissions,
+                };
+                
+                setCurrentUser(defaultUser);
+            }
             setLoading(false);
         }
     };
@@ -221,15 +248,30 @@ const App: React.FC = () => {
     };
 
     const currentUserPermissions = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.permissions : [];
+        if (!currentUser) return [];
+        // If user has permissions directly (our default user), use those
+        if (currentUser.permissions && currentUser.permissions.length > 0) {
+            return currentUser.permissions;
+        }
+        // Otherwise try to find from roles
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.permissions : [];
+        }
+        return [];
     }, [currentUser, roles]);
 
     const currentUserDashboardMetrics = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.dashboardMetrics || [] : [];
+        if (!currentUser) return [];
+        // Return all metrics by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+        }
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.dashboardMetrics || [] : [];
+        }
+        return [];
     }, [currentUser, roles]);
     
     const handleSetCurrentPage = (page: Page) => {
@@ -394,9 +436,10 @@ const App: React.FC = () => {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
 
-    if (!isAuthenticated) {
-        return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
-    }
+    // Authentication disabled - go directly to dashboard
+    // if (!isAuthenticated) {
+    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
+    // }
 
     return (
         <div className="flex h-screen bg-gray-100">
