@@ -6,8 +6,8 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// URL fija de tu backend en Cloud Run
-const API_URL = "https://munnay-system-crm-156279657697.europe-west1.run.app/api";
+// URL del backend en Render
+const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 // Helper genérico para requests
 const apiRequest = async <T>(
