@@ -35,9 +35,9 @@ const apiRequest = async <T>(
 // ====== LEADS ======
 export const getLeads = (): Promise<Lead[]> => apiRequest<Lead[]>('/leads', 'GET');
 export const saveLead = (lead: Lead): Promise<Lead> =>
-  String(lead.id).length > 7
-    ? apiRequest<Lead>('/leads', 'POST', { ...lead, id: undefined })
-    : apiRequest<Lead>(`/leads/${lead.id}`, 'PUT', lead);
+  lead.id && lead.id > 0
+    ? apiRequest<Lead>(`/leads/${lead.id}`, 'PUT', lead)
+    : apiRequest<Lead>('/leads', 'POST', { ...lead, id: undefined });
 export const deleteLead = (id: number): Promise<void> => 
   apiRequest<void>(`/leads/${id}`, 'DELETE');
 export const getNextHistoryNumber = (): Promise<{ nextNumber: number }> =>
