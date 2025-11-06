@@ -1,25 +1,48 @@
-FROM node:18 AS builder
+FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
 
+# Install dependencies
 COPY package*.json ./
-RUN npm install --include=dev
+RUN npm ci --only=production && \
+    npm install --save-dev typescript @types/node
 
+# Copy source and build
 COPY . .
-RUN node node_modules/typescript/bin/tsc
+RUN npm run build
 
 # -------------------------
-FROM node:18
+# Production stage
+FROM node:18-alpine
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-RUN npm install --omit=dev
+# Set production environment
+ENV NODE_ENV=production
 
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy built files from builder
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-# Generamos Prisma aquí, cuando schema.prisma ya existe
+# Generate Prisma Client
 RUN npx prisma generate
 
-EXPOSE 8080
-CMD ["npm", "start"]
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /usr/src/app
 
+USER nodejs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 4000) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+EXPOSE 4000
+
+CMD ["npm", "start"]

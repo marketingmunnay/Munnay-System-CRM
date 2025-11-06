@@ -170,6 +170,14 @@ export const deleteUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   const { usuario, password } = req.body;
 
+  // Validar que se recibieron los campos requeridos
+  if (!usuario || !password) {
+    return res.status(400).json({ 
+      message: 'Error fetching user', 
+      error: 'Los campos usuario y password son requeridos' 
+    });
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { usuario } });
     if (!user) {
@@ -197,6 +205,9 @@ export const loginUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error en login:', error);
-    return res.status(500).json({ error: 'Error en el servidor' });
+    return res.status(500).json({ 
+      message: 'Error fetching user', 
+      error: (error as Error).message 
+    });
   }
 };

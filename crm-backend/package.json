@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "node node_modules/typescript/bin/tsc",
-    "start": "node dist/index.js",
+    "start": "npx prisma migrate deploy && node dist/index.js",
+    "start:dev": "node dist/index.js",
     "prisma:seed": "node --max-old-space-size=8192 node_modules/ts-node/dist/bin.js prisma/seed.ts",
     "prisma:migrate-dev": "npx prisma migrate dev",
-    "prisma:deploy": "npx prisma migrate deploy"
+    "prisma:deploy": "npx prisma migrate deploy",
+    "prisma:generate": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
