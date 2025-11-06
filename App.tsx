@@ -104,7 +104,7 @@ const App: React.FC = () => {
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
-                api.getLeads(), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
+                api.getLeads?.() || Promise.resolve([]), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
                 api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
                 api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
                 api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
