@@ -83,6 +83,7 @@ export const createLead = async (req: Request, res: Response) => {
 export const updateLead = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { 
+    id: _, // Exclude id from update data
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 

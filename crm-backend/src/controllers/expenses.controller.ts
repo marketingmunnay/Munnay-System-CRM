@@ -42,7 +42,7 @@ export const createExpense = async (req: Request, res: Response) => {
 
 export const updateExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fechaRegistro, fechaPago, ...data } = req.body;
+  const { id: _, fechaRegistro, fechaPago, ...data } = req.body; // Exclude id from update data
   try {
     const updatedExpense = await prisma.egreso.update({
       where: { id: id },

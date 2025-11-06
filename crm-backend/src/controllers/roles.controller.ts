@@ -38,7 +38,7 @@ export const createRole = async (req: Request, res: Response) => {
 
 export const updateRole = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const roleData = req.body;
+  const { id: _, ...roleData } = req.body; // Exclude id from update data
   try {
     const updatedRole = await prisma.role.update({
       where: { id: id },

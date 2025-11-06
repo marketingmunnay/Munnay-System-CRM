@@ -42,7 +42,7 @@ export const createCampaign = async (req: Request, res: Response) => {
 
 export const updateCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fecha, ...data } = req.body;
+  const { id: _, fecha, ...data } = req.body; // Exclude id from update data
   try {
     const updatedCampaign = await prisma.campaign.update({
       where: { id: id },
@@ -108,7 +108,7 @@ export const createMetaCampaign = async (req: Request, res: Response) => {
 
 export const updateMetaCampaign = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fechaInicio, fechaFin, ...data } = req.body;
+  const { id: _, fechaInicio, fechaFin, ...data } = req.body; // Exclude id from update data
   try {
     const updatedMetaCampaign = await prisma.metaCampaign.update({
       where: { id: id },

@@ -95,7 +95,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { password, addresses, emergencyContacts, ...userData } = req.body;
+  const { id: _, password, addresses, emergencyContacts, ...userData } = req.body; // Exclude id from update data
   try {
     let updateData: any = {
         ...userData,
