@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 4000;
 // ✅ Lista de orígenes permitidos en producción
 const allowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
+  'https://munnay-system.vercel.app',
   'http://localhost:5173', // Para desarrollo local con Vite
 ];
 
