@@ -141,25 +141,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
     };
 
     return (
-        <aside className={`flex flex-col bg-white border-r transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-            <div className="h-16 flex items-center justify-center border-b flex-shrink-0">
+        <aside className={`flex flex-col bg-white border-r border-munnay-200 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+            <div className="h-16 flex items-center justify-center border-b border-munnay-200 flex-shrink-0 bg-munnay-50">
                 {isCollapsed ? (
                     businessInfo?.logoUrl && <img src={businessInfo.logoUrl} alt="Logo" className="h-10 w-10 object-contain" />
                 ) : (
                     businessInfo?.logoUrl && <img src={businessInfo.logoUrl} alt="Logo" className="h-10" />
                 )}
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-white to-munnay-50">
                 {filteredNavItems.map(item => (
                     <React.Fragment key={item.id}>
-                        {item.id === 'informes' && <hr className="!my-4 border-gray-200" />}
+                        {item.id === 'informes' && <hr className="!my-4 border-munnay-200" />}
                         <div>
                             {item.subItems ? (
                                 <>
                                     <button
                                         onClick={() => toggleMenu(item.id)}
-                                        className={`w-full flex items-center justify-between p-2 rounded-lg text-sm font-medium transition-colors ${
-                                            isSubItemActive(item) ? 'bg-orange-100 text-[#aa632d]' : 'text-gray-600 hover:bg-gray-100'
+                                        className={`w-full flex items-center justify-between p-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                                            isSubItemActive(item) ? 'bg-munnay-100 text-munnay-700' : 'text-gray-600 hover:bg-munnay-50'
                                         }`}
                                     >
                                         <div className="flex items-center">
@@ -176,10 +176,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                                         <>
                                                             <button
                                                                 onClick={() => toggleMenu(subItem.id)}
-                                                                className={`w-full flex items-center justify-between p-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                                                                className={`w-full flex items-center justify-between p-2 rounded-xl text-sm font-medium transition-all duration-300 text-left ${
                                                                      isSubItemActive(subItem)
-                                                                        ? 'text-[#aa632d] font-semibold'
-                                                                        : 'text-gray-500 hover:text-[#aa632d]'
+                                                                        ? 'text-munnay-700 font-semibold'
+                                                                        : 'text-gray-500 hover:text-munnay-700'
                                                                 }`}
                                                             >
                                                                 {subItem.label}
@@ -191,8 +191,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                                                         <button
                                                                             key={leafItem.id}
                                                                             onClick={() => setCurrentPage(leafItem.page as Page)}
-                                                                            className={`w-full text-left p-2 text-sm rounded-lg transition-colors ${
-                                                                                currentPage === leafItem.page ? 'bg-[#aa632d] text-white' : 'text-gray-500 hover:bg-gray-100'
+                                                                            className={`w-full text-left p-2 text-sm rounded-xl transition-all duration-300 ${
+                                                                                currentPage === leafItem.page ? 'bg-munnay-600 text-white shadow-soft' : 'text-gray-500 hover:bg-munnay-50'
                                                                             }`}
                                                                         >
                                                                             {leafItem.label}
@@ -205,8 +205,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                                         <button
                                                             key={subItem.id}
                                                             onClick={() => setCurrentPage(subItem.page as Page)}
-                                                            className={`w-full text-left p-2 text-sm rounded-lg transition-colors ${
-                                                                currentPage === subItem.page ? 'bg-[#aa632d] text-white' : 'text-gray-500 hover:bg-gray-100'
+                                                            className={`w-full text-left p-2 text-sm rounded-xl transition-all duration-300 ${
+                                                                currentPage === subItem.page ? 'bg-munnay-600 text-white shadow-soft' : 'text-gray-500 hover:bg-munnay-50'
                                                             }`}
                                                         >
                                                             {subItem.label}
@@ -220,8 +220,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                             ) : (
                                 <button
                                     onClick={() => setCurrentPage(item.page as Page)}
-                                    className={`w-full flex items-center p-2 rounded-lg text-sm font-medium transition-colors ${
-                                        currentPage === item.page ? 'bg-[#aa632d] text-white' : 'text-gray-600 hover:bg-gray-100'
+                                    className={`w-full flex items-center p-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                                        currentPage === item.page ? 'bg-munnay-600 text-white shadow-soft' : 'text-gray-600 hover:bg-munnay-50'
                                     }`}
                                 >
                                     <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>

@@ -399,7 +399,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-munnay-50">
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={handleSetCurrentPage}
@@ -417,7 +417,7 @@ const App: React.FC = () => {
                     onNotificationClick={handleNotificationClick}
                     onMarkAllAsRead={handleMarkAllAsRead}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 print:p-0">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-munnay-50 p-6 print:p-0">
                     {renderPage()}
                 </main>
             </div>

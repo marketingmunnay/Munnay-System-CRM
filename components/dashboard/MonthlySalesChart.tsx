@@ -66,13 +66,13 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
     }, [leads, ventasExtra, selectedYear]);
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow mt-6">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Total General de Ventas (Mes a Mes)</h3>
+        <div className="bg-white p-6 rounded-3xl shadow-soft-lg mt-6 border border-munnay-100">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-munnay-900">Total General de Ventas (Mes a Mes)</h3>
                 <select 
                     value={selectedYear} 
                     onChange={e => setSelectedYear(parseInt(e.target.value))}
-                    className="border-gray-300 rounded-md shadow-sm text-sm p-2 focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                    className="border-munnay-200 bg-munnay-50 rounded-xl shadow-soft text-sm p-2 focus:ring-2 focus:ring-munnay-500 focus:border-munnay-500 transition-all duration-300"
                 >
                     {availableYears.map(year => (
                         <option key={year} value={year}>{year}</option>
@@ -85,22 +85,22 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
                         data={chartData}
                         margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                        <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E7D2A0" />
+                        <XAxis dataKey="name" stroke="#AA632D" fontSize={12} />
+                        <YAxis stroke="#AA632D" fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
                         <Tooltip
                             contentStyle={{ 
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)', 
-                                backdropFilter: 'blur(5px)',
-                                border: '1px solid #d1d5db', 
-                                borderRadius: '0.5rem',
-                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                backdropFilter: 'blur(10px)',
+                                border: '1px solid #E7D2A0', 
+                                borderRadius: '16px',
+                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10)',
                             }}
                             formatter={(value: number, name: string) => [`S/ ${value.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, name]}
-                            labelStyle={{ fontWeight: 'bold' }}
+                            labelStyle={{ fontWeight: 'bold', color: '#643423' }}
                         />
                         <Legend wrapperStyle={{fontSize: "14px"}} />
-                        <Line type="monotone" dataKey="Ventas" stroke="#aa632d" strokeWidth={2} activeDot={{ r: 8 }} dot={{ r: 4 }}/>
+                        <Line type="monotone" dataKey="Ventas" stroke="#C88338" strokeWidth={3} activeDot={{ r: 8, fill: '#D29F4D' }} dot={{ r: 4, fill: '#C88338' }}/>
                     </LineChart>
                 </ResponsiveContainer>
             </div>

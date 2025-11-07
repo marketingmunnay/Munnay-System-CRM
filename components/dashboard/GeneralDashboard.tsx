@@ -22,7 +22,7 @@ interface GeneralDashboardProps {
 }
 
 const TransactionTypeCard: React.FC<{ title: string; amount: number; color: string; iconName: string; iconColor: string; }> = ({ title, amount, color, iconName, iconColor }) => (
-    <div className={`p-4 rounded-xl shadow-lg ${color} text-black w-36 h-32 flex flex-col justify-between`}>
+    <div className={`p-4 rounded-2xl shadow-soft-md hover:shadow-soft-lg transition-all duration-300 ${color} text-black w-36 h-32 flex flex-col justify-between`}>
         <div className="flex justify-end">
              <GoogleIcon name={iconName} className={`${iconColor} text-3xl`} />
         </div>
@@ -202,7 +202,7 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
     return (
          <div>
             <div className="mb-6">
-                <h3 className="text-xl font-bold text-black mb-4">Progreso de Objetivos Clave</h3>
+                <h3 className="text-xl font-bold text-munnay-900 mb-4">Progreso de Objetivos Clave</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {activeGoals.map(goal => (
                         <GoalProgressWidget 
@@ -216,44 +216,44 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
                         />
                     ))}
                     {activeGoals.length === 0 && (
-                        <div className="col-span-full bg-white p-6 rounded-lg shadow-md text-center text-gray-500">
+                        <div className="col-span-full bg-white p-6 rounded-2xl shadow-soft-md text-center text-gray-600 border border-munnay-100">
                             <p>No hay objetivos activos para el periodo actual.</p>
-                            <p className="text-sm">Puedes configurarlos en la sección de Configuración.</p>
+                            <p className="text-sm mt-1">Puedes configurarlos en la sección de Configuración.</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-lg flex flex-col lg:flex-row items-start justify-between mb-6">
+            <div className="bg-white p-6 rounded-3xl shadow-soft-lg flex flex-col lg:flex-row items-start justify-between mb-6 border border-munnay-100">
                 <div className="flex-1 lg:pr-8 w-full">
-                    <h3 className="text-lg font-semibold text-gray-500">Total Ventas General</h3>
-                    <p className="text-5xl font-bold text-black my-2">
+                    <h3 className="text-lg font-semibold text-munnay-700">Total Ventas General</h3>
+                    <p className="text-5xl font-bold text-munnay-900 my-2">
                         S/ {stats.totalVentasFormatted.integerPart}
                         <sup className="text-2xl font-semibold top-[-0.7em]">.{stats.totalVentasFormatted.decimalPart}</sup>
                     </p>
-                    <div className="flex space-x-8 mt-4 pt-4 border-t">
+                    <div className="flex space-x-8 mt-4 pt-4 border-t border-munnay-200">
                         <div className="flex items-center text-sm">
-                            <div className="w-8 h-8 flex items-center justify-center bg-green-100 rounded-full mr-2">
+                            <div className="w-8 h-8 flex items-center justify-center bg-green-100 rounded-xl mr-2">
                                 <GoogleIcon name="arrow_downward" className="text-green-600 text-base" />
                             </div>
                             <div>
-                                <p className="text-gray-500">Ingresos</p>
-                                <p className="font-semibold text-gray-800">S/ {stats.totalVentasGeneral.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+                                <p className="text-munnay-600">Ingresos</p>
+                                <p className="font-semibold text-munnay-900">S/ {stats.totalVentasGeneral.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
                             </div>
                         </div>
                         <div className="flex items-center text-sm">
-                            <div className="w-8 h-8 flex items-center justify-center bg-red-100 rounded-full mr-2">
+                            <div className="w-8 h-8 flex items-center justify-center bg-red-100 rounded-xl mr-2">
                                 <GoogleIcon name="arrow_upward" className="text-red-600 text-base" />
                             </div>
                             <div>
-                                <p className="text-gray-500">Egresos</p>
-                                <p className="font-semibold text-gray-800">S/ {stats.totalEgresos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+                                <p className="text-munnay-600">Egresos</p>
+                                <p className="font-semibold text-munnay-900">S/ {stats.totalEgresos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div className="flex-shrink-0 lg:pl-8 lg:border-l border-gray-200 mt-8 lg:mt-0 w-full lg:w-auto">
-                    <h4 className="text-lg font-semibold text-gray-500 mb-4">Ventas por Tipo de Transacción</h4>
+                <div className="flex-shrink-0 lg:pl-8 lg:border-l border-munnay-200 mt-8 lg:mt-0 w-full lg:w-auto">
+                    <h4 className="text-lg font-semibold text-munnay-700 mb-4">Ventas por Tipo de Transacción</h4>
                     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                         <TransactionTypeCard title="Efectivo" amount={stats.ventasPorMetodo.Efectivo} color="bg-[#FEF08A]" iconName="payments" iconColor="text-yellow-500" />
                         <TransactionTypeCard title="Tarjeta" amount={stats.ventasPorMetodo.Tarjeta} color="bg-[#BBF7D0]" iconName="credit_card" iconColor="text-green-500" />
@@ -267,32 +267,32 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
                  <StatCard 
                     title="Total Generado por Marketing" 
                     value={`S/ ${stats.totalVentasMarketing.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`} 
-                    icon={<GoogleIcon name="campaign" className="text-blue-600" />}
-                    iconBgClass="bg-blue-100"
+                    icon={<GoogleIcon name="campaign" className="text-munnay-600" />}
+                    iconBgClass="bg-munnay-100"
                 />
                  <StatCard 
                     title="Recuperados (Recepción)" 
                     value={`S/ ${stats.ventasExtraRecepcion.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
-                    icon={<GoogleIcon name="point_of_sale" className="text-cyan-600" />}
-                    iconBgClass="bg-cyan-100"
+                    icon={<GoogleIcon name="point_of_sale" className="text-munnay-700" />}
+                    iconBgClass="bg-munnay-200"
                 />
                 <StatCard 
                     title="Ventas (Procedimientos)" 
                     value={`S/ ${stats.ventasExtraProcedimientos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
-                    icon={<GoogleIcon name="vaccines" className="text-orange-600" />}
-                    iconBgClass="bg-orange-100"
+                    icon={<GoogleIcon name="vaccines" className="text-munnay-500" />}
+                    iconBgClass="bg-munnay-100"
                 />
                 <StatCard 
                     title="Tasa de Conversión (Leads)" 
                     value={`${stats.tasaConversion.toFixed(1)}%`}
-                    icon={<GoogleIcon name="trending_up" className="text-purple-600" />}
-                    iconBgClass="bg-purple-100"
+                    icon={<GoogleIcon name="trending_up" className="text-munnay-600" />}
+                    iconBgClass="bg-munnay-200"
                 />
                 <StatCard 
                     title="% Aceptación Tratamiento" 
                     value={`${stats.tasaAceptacionTratamiento.toFixed(1)}%`}
-                    icon={<GoogleIcon name="fact_check" className="text-teal-600" />}
-                    iconBgClass="bg-teal-100"
+                    icon={<GoogleIcon name="fact_check" className="text-munnay-700" />}
+                    iconBgClass="bg-munnay-100"
                 />
             </div>
 

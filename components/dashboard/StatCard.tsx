@@ -18,21 +18,21 @@ const StatCard: React.FC<CustomStatCardData> = ({ title, value, change, changeTy
   const changeColor = isIncrease ? 'text-green-600' : 'text-red-600';
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow-md flex items-start justify-between">
+    <div className="bg-white p-6 rounded-2xl shadow-soft-md hover:shadow-soft-lg transition-all duration-300 flex items-start justify-between border border-munnay-100">
       <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
+        <p className="text-sm font-medium text-munnay-700">{title}</p>
+        <p className="text-2xl font-bold text-munnay-900 mt-2">{value}</p>
         {change && (
-          <div className="flex items-center mt-2">
+          <div className="flex items-center mt-3">
             <span className={`flex items-center text-xs font-semibold ${changeColor}`}>
                 {isIncrease ? <ArrowUpIcon /> : <ArrowDownIcon />}
                 {change}
             </span>
-            <span className="text-xs text-gray-400 ml-1">vs mes anterior</span>
+            <span className="text-xs text-gray-500 ml-1">vs mes anterior</span>
           </div>
         )}
       </div>
-      <div className={`p-3 rounded-full ${iconBgClass || 'bg-gray-100'}`}>
+      <div className={`p-3 rounded-xl ${iconBgClass || 'bg-munnay-50'}`}>
         {typeof icon === 'string' ? <GoogleIcon name={icon} className={iconColorClass} /> : icon}
       </div>
     </div>

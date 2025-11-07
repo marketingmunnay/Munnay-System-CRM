@@ -58,31 +58,31 @@ const TopBar: React.FC<TopBarProps> = ({
   }
 
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+    <header className="h-16 bg-white border-b border-munnay-200 flex items-center justify-between px-4 md:px-6 flex-shrink-0 shadow-soft">
       <div className="flex items-center">
-        <button onClick={onToggleSidebar} className="text-gray-500 hover:text-gray-700 lg:hidden mr-4">
+        <button onClick={onToggleSidebar} className="text-gray-500 hover:text-munnay-700 lg:hidden mr-4 transition-all duration-300">
           <Bars3Icon />
         </button>
       </div>
 
       <div className="flex items-center space-x-4">
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-munnay-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Buscar paciente..."
-            className="w-48 md:w-64 bg-[#f9f9fa] border border-black text-black rounded-full pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+            className="w-48 md:w-64 bg-munnay-50 border border-munnay-200 text-gray-800 rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-munnay-500 focus:border-munnay-500 transition-all duration-300"
           />
         </div>
 
         <div className="relative" ref={notificationsRef}>
             <button 
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full"
+                className="relative text-gray-500 hover:text-munnay-700 p-1 hover:bg-munnay-50 rounded-full transition-all duration-300"
             >
                 <GoogleIcon name="notifications" className="text-2xl" />
                 {hasUnreadNotifications && (
-                    <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                    <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white shadow-soft"></span>
                 )}
             </button>
             {isNotificationsOpen && (
@@ -95,28 +95,28 @@ const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         <div className="relative" ref={dropdownRef}>
-          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-2 cursor-pointer p-1 rounded-md hover:bg-gray-100">
+          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-2 cursor-pointer p-1 rounded-xl hover:bg-munnay-50 transition-all duration-300">
             <img
               src={currentUser?.avatarUrl || "https://picsum.photos/id/237/40/40"}
               alt="User Avatar"
-              className="h-9 w-9 rounded-full"
+              className="h-9 w-9 rounded-full ring-2 ring-munnay-200"
             />
             <div className="hidden md:block text-left">
-              <p className="text-sm font-semibold text-black">{currentUser?.nombres} {currentUser?.apellidos}</p>
-              <p className="text-xs text-gray-500">{currentUserRole?.nombre}</p>
+              <p className="text-sm font-semibold text-gray-800">{currentUser?.nombres} {currentUser?.apellidos}</p>
+              <p className="text-xs text-munnay-600">{currentUserRole?.nombre}</p>
             </div>
             <ChevronDownIcon className="w-4 h-4 text-gray-500" />
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 ring-1 ring-black ring-opacity-5">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-soft-lg z-50 border border-munnay-200">
               <div className="py-1">
-                <a href="#" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <a href="#" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-munnay-50 rounded-xl transition-all duration-300 mx-1">
                     <GoogleIcon name="person" className="mr-2 text-lg" /> Mi Perfil
                 </a>
                 <button
                     onClick={onLogout}
-                    className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 mx-1"
                 >
                     <GoogleIcon name="logout" className="mr-2 text-lg" /> Cerrar Sesión
                 </button>
