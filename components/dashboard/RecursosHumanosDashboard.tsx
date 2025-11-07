@@ -110,10 +110,10 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
 
     return (
         <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-md col-span-full">
+            <div className="bg-white p-6 rounded-2xl shadow-soft-lg col-span-full border border-munnay-100">
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <div className="flex items-center text-gray-700">
+                    <div className="flex items-center text-munnay-800">
                         <GoogleIcon name="groups" className="text-xl mr-2" />
                         <h3 className="font-semibold">Total de Empleados</h3>
                     </div>
@@ -122,8 +122,8 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                 {/* Body */}
                 <div className="flex justify-between items-end mt-4">
                     <div>
-                        <span className="text-4xl font-bold text-black">{stats.totalEmployees}</span>
-                        <span className="ml-2 text-3xl font-semibold text-gray-700">Empleados</span>
+                        <span className="text-4xl font-bold text-munnay-900">{stats.totalEmployees}</span>
+                        <span className="ml-2 text-3xl font-semibold text-munnay-700">Empleados</span>
                     </div>
                     <div className="flex items-center space-x-2 text-sm">
                         <span className="text-gray-500">From last year</span>
@@ -135,7 +135,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                 </div>
 
                 {/* Progress Bar */}
-                <div className="flex w-full h-2.5 rounded-full overflow-hidden mt-6 bg-gray-200">
+                <div className="flex w-full h-3 rounded-full overflow-hidden mt-6 bg-munnay-100">
                     {stats.roleDistribution.map(role => (
                         <div
                             key={role.name}
@@ -159,10 +159,10 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Card de genero */}
-                <div className="bg-white p-6 rounded-lg shadow col-span-1 flex items-center h-full">
+                <div className="bg-white p-6 rounded-2xl shadow-soft-lg col-span-1 flex items-center h-full border border-munnay-100">
                     <div className="text-left pr-4">
-                        <h3 className="text-sm font-semibold text-gray-500 whitespace-nowrap mb-1">Colaboradores por género</h3>
-                        <p className="text-5xl font-bold text-black">{stats.totalEmployees}</p>
+                        <h3 className="text-sm font-semibold text-munnay-700 whitespace-nowrap mb-1">Colaboradores por género</h3>
+                        <p className="text-5xl font-bold text-munnay-900">{stats.totalEmployees}</p>
                         <p className="text-xs text-gray-500 mt-1">Total de colaboradores</p>
                     </div>
                     <div className="border-l border-gray-200 h-20 mx-4"></div>
@@ -181,7 +181,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                 </div>
 
                 {/* Card sueldo promedio */}
-                <div className="bg-white p-6 rounded-lg shadow col-span-1 flex items-center space-x-6 h-full">
+                <div className="bg-white p-6 rounded-2xl shadow-soft-lg col-span-1 border border-munnay-100 flex items-center space-x-6 h-full">
                     <GoogleIcon name="payments" className="text-green-500 text-5xl"/>
                     <div>
                          <h3 className="text-sm font-semibold text-gray-500">Sueldo Promedio</h3>
@@ -192,7 +192,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                 </div>
                 
                 {/* Card condicion */}
-                <div className="bg-white p-6 rounded-lg shadow col-span-1 h-full">
+                <div className="bg-white p-6 rounded-2xl shadow-soft-lg col-span-1 border border-munnay-100 h-full">
                      <h3 className="text-sm font-semibold text-gray-500 mb-4 flex items-center">
                         <GoogleIcon name="contract" className="text-lg mr-2 text-gray-500" />
                         Trabajadores por Condición
@@ -207,7 +207,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                                         cy="50%"
                                         innerRadius={25}
                                         outerRadius={35}
-                                        fill="#8884d8"
+                                        fill="#C88338"
                                         paddingAngle={5}
                                         dataKey="value"
                                     >
@@ -233,7 +233,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Card estado civil */}
-                <div className="bg-white p-4 rounded-lg shadow">
+                <div className="bg-white p-5 rounded-2xl shadow-soft-lg border border-munnay-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <GoogleIcon name="favorite" className="text-xl mr-2 text-red-400" />
                         Trabajadores por Estado Civil
@@ -244,13 +244,13 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                             <XAxis type="number" />
                             <YAxis type="category" dataKey="name" width={80} />
                             <Tooltip />
-                            <Bar dataKey="value" fill="#8884d8" name="N° de trabajadores" barSize={15} />
+                            <Bar dataKey="value" fill="#C88338" name="N° de trabajadores" barSize={15} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
                 
                 {/* Card rango de edad */}
-                <div className="bg-white p-4 rounded-lg shadow">
+                <div className="bg-white p-5 rounded-2xl shadow-soft-lg border border-munnay-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <GoogleIcon name="cake" className="text-xl mr-2 text-pink-400" />
                         Trabajadores por Rango de Edad
@@ -261,7 +261,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                             <XAxis dataKey="name" />
                             <YAxis />
                             <Tooltip />
-                            <Bar dataKey="N° de trabajadores" fill="#82ca9d" />
+                            <Bar dataKey="N° de trabajadores" fill="#D29F4D" />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -269,7 +269,7 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
 
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Card años de servicio */}
-                <div className="bg-white p-4 rounded-lg shadow">
+                <div className="bg-white p-5 rounded-2xl shadow-soft-lg border border-munnay-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <GoogleIcon name="hourglass_top" className="text-xl mr-2 text-blue-400" />
                         Colaboradores por Años de Servicio
@@ -281,13 +281,13 @@ const RecursosHumanosDashboard: React.FC<RecursosHumanosDashboardProps> = ({ use
                              <YAxis />
                              <Tooltip />
                              <Legend />
-                             <Line type="monotone" dataKey="colaboradores" stroke="#ffc658" strokeWidth={2} />
+                             <Line type="monotone" dataKey="colaboradores" stroke="#C88338" strokeWidth={2} />
                         </LineChart>
                      </ResponsiveContainer>
                 </div>
                 
                 {/* Card top trabajadores */}
-                <div className="bg-white p-4 rounded-lg shadow">
+                <div className="bg-white p-5 rounded-2xl shadow-soft-lg border border-munnay-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <GoogleIcon name="emoji_events" className="text-xl mr-2 text-yellow-500" />
                         Top Colaboradores por Metas Cumplidas

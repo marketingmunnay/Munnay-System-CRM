@@ -67,14 +67,14 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
     }, [leads]);
 
     const ListCard: React.FC<{title: string, items: {name: string, value: string}[], bgColor: string}> = ({title, items, bgColor}) => (
-        <div className={`${bgColor} p-4 rounded-lg shadow h-full`}>
-            <h4 className="font-semibold text-gray-700 text-base mb-3">{title}</h4>
+        <div className={`bg-white p-5 rounded-2xl shadow-soft-md hover:shadow-soft-lg transition-all duration-300 h-full border border-munnay-100`}>
+            <h4 className="font-semibold text-munnay-900 text-base mb-3">{title}</h4>
             {items.length > 0 ? (
                 <ul className="space-y-2">
                     {items.map((item, index) => (
-                         <li key={index} className="flex justify-between items-center text-sm bg-white/50 p-2 rounded-md">
-                            <span className="text-gray-600">{item.name}</span>
-                            <span className="font-semibold text-gray-800">{item.value}</span>
+                         <li key={index} className="flex justify-between items-center text-sm bg-munnay-50 p-3 rounded-xl hover:bg-munnay-100 transition-all duration-300">
+                            <span className="text-munnay-700">{item.name}</span>
+                            <span className="font-semibold text-munnay-900">{item.value}</span>
                         </li>
                     ))}
                 </ul>
@@ -88,8 +88,8 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
                  <StatCard
                     title="Total Ventas Extra Procedimientos"
                     value={`S/ ${stats.totalVentasExtraProcedimientos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
-                    icon={<GoogleIcon name="vaccines" className="text-orange-600" />}
-                    iconBgClass="bg-orange-100"
+                    icon={<GoogleIcon name="vaccines" className="text-munnay-600" />}
+                    iconBgClass="bg-munnay-100"
                 />
                  <StatCard
                     title="Total Incidencias"
@@ -100,20 +100,20 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
                  <StatCard
                     title="Total Pacientes con Inflamación"
                     value={stats.totalConInflamacion.toString()}
-                    icon={<GoogleIcon name="local_fire_department" className="text-orange-600" />}
-                    iconBgClass="bg-orange-100"
+                    icon={<GoogleIcon name="local_fire_department" className="text-munnay-700" />}
+                    iconBgClass="bg-munnay-200"
                 />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  <ListCard 
                     title="Top 5 Servicios Más Vendidos" 
                     items={serviceStats.map(([name, count]) => ({name, value: `${count} vendidos`}))}
-                    bgColor="bg-indigo-50"
+                    bgColor=""
                  />
                  <ListCard 
                     title="Pacientes con Más Complicaciones" 
                     items={patientLists.conComplicaciones.map(p => ({name: `${p.lead.nombres} ${p.lead.apellidos}`, value: `${p.complications} síntoma(s)`}))} 
-                    bgColor="bg-red-50"
+                    bgColor=""
                  />
                 <div>
                      <ListCard 
@@ -123,7 +123,7 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
                             { name: 'Entre 4 y 9 sesiones', value: `${patientLists.entre4y9.length} paciente(s)`},
                             { name: 'Menos de 3 sesiones', value: `${patientLists.menosDe3.length} paciente(s)`},
                         ]}
-                        bgColor="bg-yellow-50"
+                        bgColor=""
                     />
                 </div>
             </div>

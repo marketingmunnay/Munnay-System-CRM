@@ -24,12 +24,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
       aria-labelledby="modal-title"
     >
       <div 
-        className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col`}
+        className={`bg-white rounded-3xl shadow-soft-lg w-full ${maxWidthClass} max-h-[90vh] flex flex-col border border-munnay-200`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 id="modal-title" className="text-xl font-semibold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800" aria-label="Close modal">
+        <div className="flex justify-between items-center p-5 border-b border-munnay-200">
+          <h2 id="modal-title" className="text-xl font-semibold text-munnay-900">{title}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-munnay-700 transition-all duration-300 rounded-xl p-1 hover:bg-munnay-50" aria-label="Close modal">
             <XMarkIcon />
           </button>
         </div>
@@ -37,7 +37,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
           {children}
         </div>
         {footer && (
-          <div className="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+          <div className="flex justify-end items-center p-5 border-t border-munnay-200 bg-munnay-50 rounded-b-3xl">
             {footer}
           </div>
         )}

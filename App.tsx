@@ -149,6 +149,16 @@ const App: React.FC = () => {
         loadData();
     }, []);
 
+    // Auto-login: Bypass login page and authenticate with first user
+    useEffect(() => {
+        if (!loading && users.length > 0 && !isAuthenticated) {
+            const firstUser = users[0];
+            setCurrentUser(firstUser);
+            setIsAuthenticated(true);
+            setCurrentPage('dashboard');
+        }
+    }, [loading, users, isAuthenticated]);
+
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
@@ -399,7 +409,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-munnay-50">
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={handleSetCurrentPage}
@@ -417,7 +427,7 @@ const App: React.FC = () => {
                     onNotificationClick={handleNotificationClick}
                     onMarkAllAsRead={handleMarkAllAsRead}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 print:p-0">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-munnay-50 p-6 print:p-0">
                     {renderPage()}
                 </main>
             </div>

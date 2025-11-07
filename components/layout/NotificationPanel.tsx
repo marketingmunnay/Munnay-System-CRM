@@ -14,12 +14,12 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 
 const NotificationPanel: React.FC<NotificationPanelProps> = ({ notifications, onNotificationClick, onMarkAllAsRead }) => {
     return (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-2xl z-50 ring-1 ring-black ring-opacity-5">
-            <div className="p-4 border-b flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">Notificaciones</h3>
+        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-soft-lg z-50 border border-munnay-200">
+            <div className="p-4 border-b border-munnay-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-munnay-900">Notificaciones</h3>
                 <button 
                     onClick={onMarkAllAsRead} 
-                    className="text-xs font-medium text-[#aa632d] hover:underline"
+                    className="text-xs font-medium text-munnay-600 hover:text-munnay-700 hover:underline transition-all duration-300"
                 >
                     Marcar todo como leído
                 </button>
@@ -35,13 +35,13 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ notifications, on
                     ))
                 ) : (
                     <div className="text-center p-8 text-gray-500">
-                        <GoogleIcon name="notifications_off" className="text-4xl mx-auto mb-2" />
+                        <GoogleIcon name="notifications_off" className="text-4xl mx-auto mb-2 text-munnay-300" />
                         <p className="text-sm">No tienes notificaciones nuevas.</p>
                     </div>
                 )}
             </div>
-            <div className="p-2 bg-gray-50 text-center border-t">
-                 <button className="w-full text-sm font-medium text-[#aa632d] hover:bg-gray-100 p-2 rounded-md">
+            <div className="p-2 bg-munnay-50 text-center border-t border-munnay-200 rounded-b-2xl">
+                 <button className="w-full text-sm font-medium text-munnay-700 hover:bg-munnay-100 p-2 rounded-xl transition-all duration-300">
                     Ver todas las notificaciones
                 </button>
             </div>

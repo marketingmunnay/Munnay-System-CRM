@@ -15,6 +15,14 @@ const CATEGORIES_TO_DISPLAY: ('Evaluación Médica' | 'Evaluación Específica' 
     'Limpieza Facial'
 ];
 
+// Munnay color palette constants for charts (Recharts requires hex values)
+const CHART_COLORS = {
+    grid: '#E7D2A0',      // munnay-200
+    axis: '#AA632D',      // munnay-600
+    primary: '#C88338',   // munnay-500
+    border: '#E7D2A0',    // munnay-200
+};
+
 const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ leads, ventasExtra }) => {
     const availableYears = useMemo(() => {
         const allYears = new Set<number>();
@@ -81,12 +89,12 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
         const { data, average } = chartsData[category];
         
         return (
-            <div key={category} className="border p-4 rounded-lg bg-gray-50/50">
+            <div key={category} className="border border-munnay-200 p-4 rounded-2xl bg-munnay-50/30">
                 <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-md font-semibold text-gray-700">{category}</h4>
-                    <div className="bg-white border border-gray-200 rounded-md px-3 py-1 text-right shadow-sm">
-                        <p className="text-xs text-gray-500">Promedio Mensual</p>
-                        <p className="text-sm font-bold text-[#8884d8]">
+                    <h4 className="text-md font-semibold text-munnay-800">{category}</h4>
+                    <div className="bg-white border border-munnay-200 rounded-xl px-3 py-1 text-right shadow-soft">
+                        <p className="text-xs text-munnay-600">Promedio Mensual</p>
+                        <p className="text-sm font-bold text-munnay-700">
                             {`S/ ${average.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </p>
                     </div>
@@ -94,15 +102,16 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
                  <div style={{ width: '100%', height: 250 }}>
                     <ResponsiveContainer>
                         <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                            <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
-                            <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                            <XAxis dataKey="name" stroke={CHART_COLORS.axis} fontSize={12} />
+                            <YAxis stroke={CHART_COLORS.axis} fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: '1px solid #d1d5db', borderRadius: '0.5rem' }}
+                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: `1px solid ${CHART_COLORS.border}`, borderRadius: '16px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10)' }}
                                 formatter={(value: number) => [`S/ ${value.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Ventas']}
+                                labelStyle={{ fontWeight: 'bold', color: '#643423' }}
                             />
                             <Legend wrapperStyle={{fontSize: "12px"}} />
-                            <Line type="monotone" dataKey="Ventas" stroke="#aa632d" strokeWidth={2} dot={{ r: 3 }} />
+                            <Line type="monotone" dataKey="Ventas" stroke={CHART_COLORS.primary} strokeWidth={3} dot={{ r: 3, fill: CHART_COLORS.primary }} />
                         </LineChart>
                     </ResponsiveContainer>
                  </div>
@@ -111,13 +120,13 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow mt-6">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Ventas por Categoría de Servicio</h3>
+        <div className="bg-white p-6 rounded-3xl shadow-soft-lg mt-6 border border-munnay-100">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-munnay-900">Ventas por Categoría de Servicio</h3>
                 <select 
                     value={selectedYear} 
                     onChange={e => setSelectedYear(parseInt(e.target.value))}
-                    className="border-gray-300 rounded-md shadow-sm text-sm p-2 focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                    className="border-munnay-200 bg-munnay-50 rounded-xl shadow-soft text-sm p-2 focus:ring-2 focus:ring-munnay-500 focus:border-munnay-500 transition-all duration-300"
                 >
                     {availableYears.map(year => (
                         <option key={year} value={year}>{year}</option>

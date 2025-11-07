@@ -61,9 +61,9 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
     const renderContent = () => {
         if (!activeTab) {
             return (
-                <div className="text-center p-8 bg-white rounded-lg shadow">
-                    <h2 className="text-xl font-semibold text-gray-700">Bienvenido</h2>
-                    <p className="text-gray-500 mt-2">No tienes permisos para ver ninguna sección del panel de control.</p>
+                <div className="text-center p-8 bg-white rounded-2xl shadow-soft-md">
+                    <h2 className="text-xl font-semibold text-munnay-800">Bienvenido</h2>
+                    <p className="text-gray-600 mt-2">No tienes permisos para ver ninguna sección del panel de control.</p>
                 </div>
             );
         }
@@ -88,8 +88,8 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold text-black">Dashboard</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-munnay-900">Dashboard</h1>
                  {visibleTabs.some(tab => tab.id === 'general') && activeTab === 'General' && (
                      <DateRangeFilter onApply={handleApplyDateFilter} />
                 )}
@@ -97,7 +97,7 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
 
             {visibleTabs.length > 0 && (
                  <div className="mb-6">
-                    <div className="border-b border-gray-200">
+                    <div className="border-b border-munnay-200">
                         <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                             {visibleTabs.map((tab) => (
                                 <button
@@ -105,9 +105,9 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
                                     onClick={() => setActiveTab(tab.name)}
                                     className={`${
                                         activeTab === tab.name
-                                            ? 'border-[#aa632d] text-[#aa632d]'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                                            ? 'border-munnay-600 text-munnay-700 font-semibold'
+                                            : 'border-transparent text-gray-500 hover:text-munnay-700 hover:border-munnay-300'
+                                    } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300`}
                                 >
                                     {tab.icon}
                                     {tab.name}
