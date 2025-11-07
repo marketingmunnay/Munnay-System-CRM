@@ -24,22 +24,22 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
     return (
         <div 
             onClick={onClick}
-            className={`flex items-start p-4 border-b border-gray-100 cursor-pointer transition-colors ${
-                notification.isRead ? 'bg-white' : 'bg-blue-50'
-            } hover:bg-gray-100`}
+            className={`flex items-start p-4 border-b border-munnay-100 cursor-pointer transition-all duration-300 ${
+                notification.isRead ? 'bg-white' : 'bg-munnay-50'
+            } hover:bg-munnay-100`}
         >
-            <div className={`mr-4 mt-1 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ${color}`}>
+            <div className={`mr-4 mt-1 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 ${color}`}>
                 <GoogleIcon name={icon} className="text-xl" />
             </div>
             <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-800">{notification.message}</p>
-                <p className="text-sm text-gray-600">{notification.details}</p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-sm font-semibold text-munnay-900">{notification.message}</p>
+                <p className="text-sm text-munnay-700">{notification.details}</p>
+                <p className="text-xs text-gray-500 mt-1">
                     {formatDistanceToNow(new Date(notification.timestamp))}
                 </p>
             </div>
             {!notification.isRead && (
-                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full ml-4 mt-1 flex-shrink-0"></div>
+                <div className="w-2.5 h-2.5 bg-munnay-600 rounded-full ml-4 mt-1 flex-shrink-0 shadow-soft"></div>
             )}
         </div>
     );
