@@ -404,9 +404,10 @@ const App: React.FC = () => {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
 
-    if (!isAuthenticated) {
-        return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
-    }
+    // Auto-login is enabled, so we skip the login page
+    // if (!isAuthenticated) {
+    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
+    // }
 
     return (
         <div className="flex h-screen bg-munnay-50">
