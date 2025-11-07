@@ -32,19 +32,19 @@ const RecepcionDashboard: React.FC<RecepcionDashboardProps> = ({ leads, ventasEx
     }, [leads, ventasExtra, incidencias]);
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-2xl shadow-soft-lg border border-munnay-100">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                     title="% de Aceptación de Tratamiento"
                     value={`${stats.conversionTreatment.toFixed(1)}%`}
-                    icon={<GoogleIcon name="thumb_up" className="text-indigo-600" />}
-                    iconBgClass="bg-indigo-100"
+                    icon={<GoogleIcon name="thumb_up" className="text-munnay-600" />}
+                    iconBgClass="bg-munnay-100"
                 />
                 <StatCard
                     title="Total Recuperado en Recepción"
                     value={`S/ ${stats.totalVentasExtraRecepcion.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
-                    icon={<GoogleIcon name="point_of_sale" className="text-cyan-600" />}
-                    iconBgClass="bg-cyan-100"
+                    icon={<GoogleIcon name="point_of_sale" className="text-munnay-700" />}
+                    iconBgClass="bg-munnay-200"
                 />
                 <StatCard
                     title="Total de Incidencias"
