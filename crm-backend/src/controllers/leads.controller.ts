@@ -63,10 +63,10 @@ export const createLead = async (req: Request, res: Response) => {
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
-        fechaLead: new Date(leadData.fechaLead),
+        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead + 'T00:00:00') : new Date(),
         fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : null,
         fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : null,
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate) : null,
+        birthDate: leadData.birthDate ? new Date(leadData.birthDate + 'T00:00:00') : null,
         // Handle relation for memberships if needed, currently not supported in simple create
         membresiasAdquiridas: {
           connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
@@ -98,10 +98,10 @@ export const updateLead = async (req: Request, res: Response) => {
       where: { id: id },
       data: {
         ...leadData,
-        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead) : undefined,
+        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead + 'T00:00:00') : undefined,
         fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : (leadData.fechaHoraAgenda === null ? null : undefined),
         fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : (leadData.fechaVolverLlamar === null ? null : undefined),
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate) : (leadData.birthDate === null ? null : undefined),
+        birthDate: leadData.birthDate ? new Date(leadData.birthDate + 'T00:00:00') : (leadData.birthDate === null ? null : undefined),
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         }
