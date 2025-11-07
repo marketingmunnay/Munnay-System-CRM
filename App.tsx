@@ -273,6 +273,27 @@ const App: React.FC = () => {
         }
         return [];
     }, [currentUser, roles]);
+
+    // Map user permissions to dashboard tabs
+    const currentUserDashboardTabs = useMemo(() => {
+        if (!currentUser) return [];
+        // Return all tabs by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh'];
+        }
+        const tabs: string[] = [];
+        const perms = currentUserPermissions;
+        
+        // Map permissions to tabs
+        if (perms.some(p => p === 'dashboard')) tabs.push('general');
+        if (perms.some(p => p.startsWith('marketing-') || p.startsWith('redes-sociales-'))) tabs.push('marketing');
+        if (perms.some(p => p.startsWith('recepcion-'))) tabs.push('recepcion');
+        if (perms.some(p => p.startsWith('procedimientos-'))) tabs.push('procedimientos');
+        if (perms.some(p => p.startsWith('finanzas-'))) tabs.push('finanzas');
+        if (perms.some(p => p.startsWith('rrhh-'))) tabs.push('rrhh');
+        
+        return tabs;
+    }, [currentUser, currentUserPermissions]);
     
     const handleSetCurrentPage = (page: Page) => {
         if (currentUserPermissions.includes(page)) {
@@ -303,7 +324,7 @@ const App: React.FC = () => {
             ventasExtra, 
             incidencias, 
             egresos, 
-            permissions: currentUserDashboardMetrics,
+            permissions: currentUserDashboardTabs,
             goals,
             seguidores,
             publicaciones,
