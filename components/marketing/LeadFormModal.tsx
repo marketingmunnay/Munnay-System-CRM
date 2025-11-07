@@ -24,7 +24,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
     return (
         <div className="space-y-6">
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
@@ -409,6 +409,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 return <FichaTabContent 
                             formData={formData} 
                             handleChange={handleChange}
+                            setFormData={setFormData}
                             currentLlamada={currentLlamada}
                             setCurrentLlamada={setCurrentLlamada}
                             handleShowAddLlamadaForm={handleShowAddLlamadaForm}
