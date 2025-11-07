@@ -149,6 +149,16 @@ const App: React.FC = () => {
         loadData();
     }, []);
 
+    // Auto-login: Bypass login page and authenticate with first user
+    useEffect(() => {
+        if (!loading && users.length > 0 && !isAuthenticated) {
+            const firstUser = users[0];
+            setCurrentUser(firstUser);
+            setIsAuthenticated(true);
+            setCurrentPage('dashboard');
+        }
+    }, [loading, users, isAuthenticated]);
+
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
