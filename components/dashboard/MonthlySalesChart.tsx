@@ -9,6 +9,15 @@ interface MonthlySalesChartProps {
 
 const MONTH_NAMES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
+// Munnay color palette constants for charts (Recharts requires hex values)
+const CHART_COLORS = {
+    grid: '#E7D2A0',      // munnay-200
+    axis: '#AA632D',      // munnay-600
+    primary: '#C88338',   // munnay-500
+    secondary: '#D29F4D', // munnay-400
+    border: '#E7D2A0',    // munnay-200
+};
+
 const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtra }) => {
     const availableYears = useMemo(() => {
         const allYears = new Set<number>();
@@ -85,14 +94,14 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
                         data={chartData}
                         margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E7D2A0" />
-                        <XAxis dataKey="name" stroke="#AA632D" fontSize={12} />
-                        <YAxis stroke="#AA632D" fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                        <XAxis dataKey="name" stroke={CHART_COLORS.axis} fontSize={12} />
+                        <YAxis stroke={CHART_COLORS.axis} fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
                         <Tooltip
                             contentStyle={{ 
                                 backgroundColor: 'rgba(255, 255, 255, 0.95)', 
                                 backdropFilter: 'blur(10px)',
-                                border: '1px solid #E7D2A0', 
+                                border: `1px solid ${CHART_COLORS.border}`, 
                                 borderRadius: '16px',
                                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10)',
                             }}
@@ -100,7 +109,7 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
                             labelStyle={{ fontWeight: 'bold', color: '#643423' }}
                         />
                         <Legend wrapperStyle={{fontSize: "14px"}} />
-                        <Line type="monotone" dataKey="Ventas" stroke="#C88338" strokeWidth={3} activeDot={{ r: 8, fill: '#D29F4D' }} dot={{ r: 4, fill: '#C88338' }}/>
+                        <Line type="monotone" dataKey="Ventas" stroke={CHART_COLORS.primary} strokeWidth={3} activeDot={{ r: 8, fill: CHART_COLORS.secondary }} dot={{ r: 4, fill: CHART_COLORS.primary }}/>
                     </LineChart>
                 </ResponsiveContainer>
             </div>

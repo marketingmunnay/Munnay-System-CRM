@@ -24,7 +24,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Nunito Sans', 'Poppins', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter', 'Poppins', 'Nunito Sans', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
         'xl': '12px',

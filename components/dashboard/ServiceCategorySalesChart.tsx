@@ -15,6 +15,14 @@ const CATEGORIES_TO_DISPLAY: ('Evaluación Médica' | 'Evaluación Específica' 
     'Limpieza Facial'
 ];
 
+// Munnay color palette constants for charts (Recharts requires hex values)
+const CHART_COLORS = {
+    grid: '#E7D2A0',      // munnay-200
+    axis: '#AA632D',      // munnay-600
+    primary: '#C88338',   // munnay-500
+    border: '#E7D2A0',    // munnay-200
+};
+
 const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ leads, ventasExtra }) => {
     const availableYears = useMemo(() => {
         const allYears = new Set<number>();
@@ -94,16 +102,16 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
                  <div style={{ width: '100%', height: 250 }}>
                     <ResponsiveContainer>
                         <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E7D2A0" />
-                            <XAxis dataKey="name" stroke="#AA632D" fontSize={12} />
-                            <YAxis stroke="#AA632D" fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                            <XAxis dataKey="name" stroke={CHART_COLORS.axis} fontSize={12} />
+                            <YAxis stroke={CHART_COLORS.axis} fontSize={12} tickFormatter={(value: number) => `S/${value/1000}k`} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #E7D2A0', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10)' }}
+                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: `1px solid ${CHART_COLORS.border}`, borderRadius: '16px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10)' }}
                                 formatter={(value: number) => [`S/ ${value.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Ventas']}
                                 labelStyle={{ fontWeight: 'bold', color: '#643423' }}
                             />
                             <Legend wrapperStyle={{fontSize: "12px"}} />
-                            <Line type="monotone" dataKey="Ventas" stroke="#C88338" strokeWidth={3} dot={{ r: 3, fill: '#C88338' }} />
+                            <Line type="monotone" dataKey="Ventas" stroke={CHART_COLORS.primary} strokeWidth={3} dot={{ r: 3, fill: CHART_COLORS.primary }} />
                         </LineChart>
                     </ResponsiveContainer>
                  </div>

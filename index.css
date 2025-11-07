@@ -9,13 +9,14 @@
     @apply font-sans antialiased;
   }
   
-  * {
-    transition: all 0.3s ease;
-  }
-  
-  /* Remove transition from certain elements to avoid unwanted animations */
+  /* Apply transitions only to specific properties that benefit from animation */
   input, textarea, select, button {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  /* Apply transitions to interactive elements */
+  a, button, [role="button"] {
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
   }
 }
 
