@@ -34,6 +34,17 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada
                     <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
                 </div>
                 <div>
+                    <label className="text-sm font-medium">Tipo Documento</label>
+                    <select name="documentType" value={formData.documentType || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <option value="">Seleccionar...</option>
+                        {Object.values(DocumentType).map(dt => <option key={dt} value={dt}>{dt}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-sm font-medium">Número Documento</label>
+                    <input type="text" name="documentNumber" value={formData.documentNumber || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                </div>
+                <div>
                     <label className="text-sm font-medium">Nombres</label>
                     <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
                 </div>
@@ -93,7 +104,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada
                 </div>
                 <div className="md:col-span-2">
                     <label className="text-sm font-medium">Servicios de Interés</label>
-                    <select multiple name="servicios" value={formData.servicios || []} onChange={handleChange} className="w-full h-24 border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <select name="servicioInteres" value={formData.servicios?.[0] || ''} onChange={(e) => setFormData(prev => ({...prev, servicios: e.target.value ? [e.target.value] : []}))} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <option value="">Seleccionar servicio...</option>
                          {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
                     </select>
                 </div>
@@ -293,10 +305,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             let newState = { ...prev };
             if (type === 'number') {
                 newState = { ...newState, [name]: Number(value) };
-            } else if (name === 'servicios') {
-                 newState = { ...newState, servicios: Array.from((e.target as HTMLSelectElement).selectedOptions, option => option.value) };
-            }
-            else {
+            } else {
                 newState = { ...newState, [name]: value };
             }
 
@@ -453,7 +462,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             <button
                                 type="button"
                                 onClick={handleOpenFacturacionModal}
-                                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                disabled={true}
+                                className="flex items-center bg-gray-400 text-white px-4 py-2 rounded-lg shadow cursor-not-allowed opacity-60"
                             >
                                 <GoogleIcon name="add_to_photos" className="mr-2 text-xl" />
                                 Generar Comprobante
