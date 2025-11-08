@@ -25,136 +25,219 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 );
 
 const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
+    const isAgendado = formData.estado === LeadStatus.Agendado;
+    
     return (
-        <div className="space-y-6">
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
-                <div>
-                    <label className="text-sm font-medium">Fecha Lead</label>
-                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
-                </div>
-                <div>
-                    <label className="text-sm font-medium">Nombres</label>
-                    <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Apellidos</label>
-                    <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Número de Teléfono</label>
-                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Sexo</label>
-                    <select name="sexo" value={formData.sexo || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="F">Femenino</option>
-                        <option value="M">Masculino</option>
-                    </select>
-                </div>
-            </fieldset>
-
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Origen y Seguimiento</legend>
-                <div>
-                    <label className="text-sm font-medium">Red Social / Origen</label>
-                    <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        {clientSources.map(cs => <option key={cs.id} value={cs.nombre}>{cs.nombre}</option>)}
-                    </select>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Campaña / Anuncio</label>
-                    <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar campaña...</option>
-                        {metaCampaigns.map(mc => <option key={mc.id} value={mc.nombre}>{mc.nombre}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="text-sm font-medium">Vendedor(a)</label>
-                    <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        {Object.values(Seller).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="text-sm font-medium">Estado del Lead</label>
-                    <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-            </fieldset>
-
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Intereses y Pago</legend>
-                <div>
-                    <label className="text-sm font-medium">Categoría de Interés</label>
-                    <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                         {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                </div>
-                <div className="md:col-span-2">
-                    <label className="text-sm font-medium">Servicios de Interés</label>
-                    <select multiple name="servicios" value={formData.servicios || []} onChange={handleChange} className="w-full h-24 border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                         {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
-                    </select>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Monto Pagado</label>
-                    <input type="number" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
-                </div>
-                <div>
-                    <label className="text-sm font-medium">Método de Pago</label>
-                    <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar...</option>
-                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
-                    </select>
-                </div>
-            </fieldset>
-            
-             <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
-                 <legend className="text-md font-bold px-2 text-black">Registro de Llamadas</legend>
-                {/* Call log table */}
-                <div className="overflow-x-auto">
-                     <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="p-2">N°</th>
-                                <th className="p-2">Duración</th>
-                                <th className="p-2">Estado</th>
-                                <th className="p-2">Observación</th>
-                                <th className="p-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {formData.registrosLlamada?.map((llamada: any) => (
-                                <tr key={llamada.id} className="border-b">
-                                    <td className="p-2">{llamada.numeroLlamada}</td>
-                                    <td className="p-2">{llamada.duracionLlamada}</td>
-                                    <td className="p-2">{llamada.estadoLlamada}</td>
-                                    <td className="p-2 truncate max-w-xs">{llamada.observacion}</td>
-                                    <td className="p-2"><button type="button" onClick={() => handleRemoveLlamada(llamada.id)} className="text-red-500"><GoogleIcon name="delete"/></button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                {/* Form to add a new call log */}
-                {currentLlamada ? (
-                    <div className="grid grid-cols-4 gap-4 p-4 bg-gray-100 rounded-md">
-                        <input type="time" step="1" value={currentLlamada.duracionLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} className="border-black bg-white rounded p-2" />
-                        <select value={currentLlamada.estadoLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} className="border-black bg-white rounded p-2">
-                            {Object.values(EstadoLlamada).map(e => <option key={e} value={e}>{e}</option>)}
-                        </select>
-                        <input type="text" placeholder="Observación" value={currentLlamada.observacion || ''} onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} className="col-span-2 border-black bg-white rounded p-2" />
-                        <div className="col-span-4 flex justify-end space-x-2">
-                            <button type="button" onClick={() => setCurrentLlamada(null)} className="px-3 py-1 bg-gray-300 rounded">Cancelar</button>
-                            <button type="button" onClick={handleSaveCurrentLlamada} className="px-3 py-1 bg-green-500 text-white rounded">Guardar Llamada</button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left/Center Column (2/3 width) */}
+            <div className="md:col-span-2 space-y-4">
+                <div className="bg-white rounded-lg border shadow-sm p-4 space-y-4">
+                    <h3 className="text-md font-bold text-black border-b pb-2">Información Básica</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium">Fecha Lead</label>
+                            <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Nombres</label>
+                            <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Apellidos</label>
+                            <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Número de Teléfono</label>
+                            <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Sexo</label>
+                            <select name="sexo" value={formData.sexo || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                <option value="F">Femenino</option>
+                                <option value="M">Masculino</option>
+                            </select>
                         </div>
                     </div>
-                ) : (
-                    <button type="button" onClick={handleShowAddLlamadaForm} className="text-sm text-blue-600 flex items-center"><GoogleIcon name="add_call"/> Añadir Registro de Llamada</button>
-                )}
-            </fieldset>
+                </div>
 
+                <div className="bg-white rounded-lg border shadow-sm p-4 space-y-4">
+                    <h3 className="text-md font-bold text-black border-b pb-2">Origen y Seguimiento</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium">Red Social / Origen</label>
+                            <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                {clientSources.map(cs => <option key={cs.id} value={cs.nombre}>{cs.nombre}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Campaña / Anuncio</label>
+                            <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                <option value="">Seleccionar campaña...</option>
+                                {metaCampaigns.map(mc => <option key={mc.id} value={mc.nombre}>{mc.nombre}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Vendedor(a)</label>
+                            <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                {Object.values(Seller).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Estado del Lead</label>
+                            <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        {isAgendado && (
+                            <>
+                                <div>
+                                    <label className="text-sm font-medium">Fecha/Hora de Agenda</label>
+                                    <input 
+                                        type="datetime-local" 
+                                        name="fechaHoraAgenda" 
+                                        value={formData.fechaHoraAgenda?.substring(0, 16) || ''} 
+                                        onChange={handleChange} 
+                                        className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
+                                        style={{ colorScheme: 'light' }} 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium">Recurso Asignado</label>
+                                    <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                                        <option value="">Seleccionar Recurso...</option>
+                                        {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                    </select>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg border shadow-sm p-4 space-y-4">
+                    <h3 className="text-md font-bold text-black border-b pb-2">Intereses y Pago</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium">Categoría de Servicio</label>
+                            <select 
+                                name="categoria" 
+                                value={formData.categoria || ''} 
+                                onChange={handleChange} 
+                                disabled={!isAgendado}
+                                className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Servicio de Interés</label>
+                            <select 
+                                multiple 
+                                name="servicios" 
+                                value={formData.servicios || []} 
+                                onChange={handleChange} 
+                                disabled={!isAgendado}
+                                className="w-full h-24 border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Precio Cita</label>
+                            <input 
+                                type="number" 
+                                name="precioCita" 
+                                value={formData.precioCita || 0} 
+                                onChange={handleChange} 
+                                disabled={!isAgendado}
+                                className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Monto Pagado Cita (S/.)</label>
+                            <input 
+                                type="number" 
+                                name="montoPagado" 
+                                value={formData.montoPagado || 0} 
+                                onChange={handleChange} 
+                                disabled={!isAgendado}
+                                className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Método Pago Inicial</label>
+                            <select 
+                                name="metodoPago" 
+                                value={formData.metodoPago || ''} 
+                                onChange={handleChange} 
+                                disabled={!isAgendado}
+                                className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <option value="">Seleccionar...</option>
+                                {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Deuda Cita</label>
+                            <input 
+                                type="number" 
+                                name="deudaCita" 
+                                value={formData.deudaCita || 0} 
+                                readOnly
+                                disabled={!isAgendado}
+                                className="w-full border-black bg-gray-100 text-black rounded-md p-2 disabled:opacity-50"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Column (1/3 width) */}
+            <div className="md:col-span-1">
+                <div className="bg-white rounded-lg border shadow-sm p-4 flex flex-col space-y-4">
+                    <h3 className="text-md font-bold text-black border-b pb-2">Registro de Llamadas</h3>
+                    {/* Call log table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2">N°</th>
+                                    <th className="p-2">Duración</th>
+                                    <th className="p-2">Estado</th>
+                                    <th className="p-2">Obs.</th>
+                                    <th className="p-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {formData.registrosLlamada?.map((llamada: any) => (
+                                    <tr key={llamada.id} className="border-b">
+                                        <td className="p-2">{llamada.numeroLlamada}</td>
+                                        <td className="p-2 text-xs">{llamada.duracionLlamada}</td>
+                                        <td className="p-2 text-xs">{llamada.estadoLlamada}</td>
+                                        <td className="p-2 truncate max-w-xs text-xs">{llamada.observacion}</td>
+                                        <td className="p-2"><button type="button" onClick={() => handleRemoveLlamada(llamada.id)} className="text-red-500"><GoogleIcon name="delete"/></button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {/* Form to add a new call log */}
+                    {currentLlamada ? (
+                        <div className="space-y-3 p-3 bg-gray-100 rounded-md">
+                            <input type="time" step="1" value={currentLlamada.duracionLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} className="w-full border-black bg-white rounded p-2 text-sm" />
+                            <select value={currentLlamada.estadoLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} className="w-full border-black bg-white rounded p-2 text-sm">
+                                {Object.values(EstadoLlamada).map(e => <option key={e} value={e}>{e}</option>)}
+                            </select>
+                            <input type="text" placeholder="Observación" value={currentLlamada.observacion || ''} onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} className="w-full border-black bg-white rounded p-2 text-sm" />
+                            <div className="flex justify-end space-x-2">
+                                <button type="button" onClick={() => setCurrentLlamada(null)} className="px-3 py-1 bg-gray-300 rounded text-sm">Cancelar</button>
+                                <button type="button" onClick={handleSaveCurrentLlamada} className="px-3 py-1 bg-green-500 text-white rounded text-sm">Guardar</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button type="button" onClick={handleShowAddLlamadaForm} className="text-sm text-blue-600 flex items-center"><GoogleIcon name="add_call"/> Añadir Registro de Llamada</button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -281,7 +364,20 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
-            setFormData(lead ? { ...lead } : initialFormData);
+            if (lead) {
+                // Convert ISO dates to YYYY-MM-DD format for date inputs
+                const processedLead = { ...lead };
+                if (processedLead.fechaLead && processedLead.fechaLead.includes('T')) {
+                    processedLead.fechaLead = processedLead.fechaLead.split('T')[0];
+                }
+                if (processedLead.fechaVolverLlamar && processedLead.fechaVolverLlamar.includes('T')) {
+                    processedLead.fechaVolverLlamar = processedLead.fechaVolverLlamar.split('T')[0];
+                }
+                // fechaHoraAgenda is datetime-local, keep it as is (already handled in the input with substring(0,16))
+                setFormData(processedLead);
+            } else {
+                setFormData(initialFormData);
+            }
             setActiveTab('ficha');
         }
     }, [lead, isOpen, initialFormData]);
@@ -300,7 +396,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 newState = { ...newState, [name]: value };
             }
 
-            if (name === 'precioCita' || (name === 'montoPagado' && activeTab === 'ficha')) {
+            // Calculate deudaCita when precioCita or montoPagado changes
+            if (name === 'precioCita' || name === 'montoPagado') {
                 const precio = name === 'precioCita' ? Number(value) : (newState.precioCita || 0);
                 const montoPagado = name === 'montoPagado' ? Number(value) : (newState.montoPagado || 0);
                 newState.deudaCita = precio - montoPagado;
