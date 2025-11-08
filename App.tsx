@@ -38,9 +38,16 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    // Auth states - Login disabled, direct access to dashboard
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
+    const [currentUser, setCurrentUser] = useState<User | null>({
+        id: 1,
+        nombres: 'Admin',
+        apellidos: 'User',
+        usuario: 'admin',
+        rolId: 1,
+        avatarUrl: ''
+    });
 
     // Data states
     const [leads, setLeads] = useState<Lead[]>([]);
