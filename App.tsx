@@ -38,8 +38,8 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Auth states - Authentication disabled, default user with full permissions
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // Data states
@@ -140,7 +140,34 @@ const App: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to load data", error);
+            // Set minimal business info on error
+            if (!businessInfo) {
+                setBusinessInfo({ nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            }
         } finally {
+            // Always set up a default admin user with full permissions (authentication disabled)
+            if (!currentUser) {
+                const allPermissions: Page[] = [
+                    'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                    'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
+                    'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
+                    'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
+                    'finanzas-facturacion', 'rrhh-perfiles', 'informes', 'configuracion'
+                ];
+                
+                const defaultUser = {
+                    id: 0,
+                    nombres: 'Usuario',
+                    apellidos: 'Administrador',
+                    usuario: 'admin',
+                    rolId: 1,
+                    avatarUrl: '',
+                    permissions: allPermissions,
+                } as User & { permissions: Page[] };
+                
+                setCurrentUser(defaultUser);
+            }
             setLoading(false);
         }
     };
@@ -148,28 +175,6 @@ const App: React.FC = () => {
     useEffect(() => {
         loadData();
     }, []);
-
-    // Auto-login: Bypass login page and authenticate with first user (or dummy user if none available)
-    useEffect(() => {
-        if (!loading && !isAuthenticated) {
-            if (users.length > 0) {
-                const firstUser = users[0];
-                setCurrentUser(firstUser);
-            } else {
-                // Create a dummy user if no users are loaded (e.g., due to API errors)
-                const dummyUser = {
-                    id: 1,
-                    usuario: 'admin',
-                    password: '',
-                    nombreCompleto: 'Administrador',
-                    rol: 'Administrador'
-                };
-                setCurrentUser(dummyUser as User);
-            }
-            setIsAuthenticated(true);
-            setCurrentPage('dashboard');
-        }
-    }, [loading, users, isAuthenticated]);
 
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
@@ -243,15 +248,31 @@ const App: React.FC = () => {
     };
 
     const currentUserPermissions = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.permissions : [];
+        if (!currentUser) return [];
+        // If user has permissions directly (our default user), use those
+        const userWithPermissions = currentUser as User & { permissions?: Page[] };
+        if (userWithPermissions.permissions && userWithPermissions.permissions.length > 0) {
+            return userWithPermissions.permissions;
+        }
+        // Otherwise try to find from roles
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.permissions : [];
+        }
+        return [];
     }, [currentUser, roles]);
 
     const currentUserDashboardMetrics = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.dashboardMetrics || [] : [];
+        if (!currentUser) return [];
+        // Return all metrics by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+        }
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.dashboardMetrics || [] : [];
+        }
+        return [];
     }, [currentUser, roles]);
     
     const handleSetCurrentPage = (page: Page) => {
@@ -416,10 +437,10 @@ const App: React.FC = () => {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
 
-    // Auto-login is enabled, so we show loading state instead of login page
-    if (!isAuthenticated) {
-        return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
-    }
+    // Authentication disabled - go directly to dashboard
+    // if (!isAuthenticated) {
+    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
+    // }
 
     return (
         <div className="flex h-screen bg-munnay-50">
