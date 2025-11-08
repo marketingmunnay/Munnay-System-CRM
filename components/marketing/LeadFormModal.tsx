@@ -32,37 +32,37 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
                     <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
-                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} required />
+                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} required />
                 </div>
                 <div>
                     <label className="text-sm font-medium">Tipo Documento</label>
-                    <select name="documentType" value={formData.documentType || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <select name="documentType" value={formData.documentType || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         <option value="">Seleccionar...</option>
                         {Object.values(DocumentType).map(dt => <option key={dt} value={dt}>{dt}</option>)}
                     </select>
                 </div>
                 <div>
                     <label className="text-sm font-medium">Número Documento</label>
-                    <input type="text" name="documentNumber" value={formData.documentNumber || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                    <input type="text" name="documentNumber" value={formData.documentNumber || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}/>
                 </div>
                 <div>
                     <label className="text-sm font-medium">Nombres <span className="text-red-500">*</span></label>
-                    <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required />
                     {!formData.nombres?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
                     <label className="text-sm font-medium">Apellidos <span className="text-red-500">*</span></label>
-                    <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required />
                     {!formData.apellidos?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
                     <label className="text-sm font-medium">Número de Teléfono <span className="text-red-500">*</span></label>
-                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required />
                     {!formData.numero?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
                     <label className="text-sm font-medium">Sexo</label>
-                    <select name="sexo" value={formData.sexo || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <select name="sexo" value={formData.sexo || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         <option value="F">Femenino</option>
                         <option value="M">Masculino</option>
                     </select>
@@ -73,14 +73,14 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                      <legend className="text-md font-bold px-2 text-black">Origen y Seguimiento</legend>
                 <div>
                     <label className="text-sm font-medium">Red Social / Origen <span className="text-red-500">*</span></label>
-                    <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                    <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         {clientSources.map(cs => <option key={cs.id} value={cs.nombre}>{cs.nombre}</option>)}
                     </select>
                     {!formData.redSocial && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
                     <label className="text-sm font-medium">Campaña / Anuncio <span className="text-red-500">*</span></label>
-                    <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                    <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar anuncio...</option>
                         {campaigns?.map(c => <option key={c.id} value={c.nombreAnuncio}>{c.nombreAnuncio}</option>)}
                     </select>
@@ -88,7 +88,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 </div>
                 <div>
                     <label className="text-sm font-medium">Vendedor(a) <span className="text-red-500">*</span></label>
-                    <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                    <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar...</option>
                         {Object.values(Seller).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -96,7 +96,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 </div>
                 <div>
                     <label className="text-sm font-medium">Estado del Lead <span className="text-red-500">*</span></label>
-                    <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                    <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar...</option>
                         {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -110,11 +110,11 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <legend className="text-md font-bold px-2 text-black">Agenda</legend>
                     <div>
                         <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
-                        <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
+                        <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} />
                     </div>
                     <div>
                         <label className="text-sm font-medium">Recurso Asignado</label>
-                        <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                             <option value="">Seleccionar Recurso...</option>
                             {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
@@ -126,7 +126,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                <legend className="text-md font-bold px-2 text-black">Agenda y pago</legend>
                <div>
                    <label className="text-sm font-medium">Categoría de Servicio</label>
-                   <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                   <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
                    </select>
                </div>
@@ -140,7 +140,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                            const montoPagado = prev.montoPagado || 0;
                            return { ...prev, servicios: selected ? [selected] : [], precioCita: precio, deudaCita: precio - montoPagado };
                        });
-                   }} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                   }} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                        <option value="">Seleccionar servicio...</option>
                        {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
                    </select>
@@ -171,7 +171,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                            }));
                        }}
                        placeholder="0.00"
-                       className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
+                       className="w-full bg-[#f9f9fa] p-2"
+                       style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                        required={formData.estado === LeadStatus.Agendado}
                    />
                    {formData.estado === LeadStatus.Agendado && formData.montoPagado === undefined && (
@@ -187,7 +188,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        name="metodoPago" 
                        value={formData.metodoPago || ''} 
                        onChange={handleChange} 
-                       className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
+                       className="w-full bg-[#f9f9fa] p-2"
+                       style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                        required={formData.estado === LeadStatus.Agendado}
                    >
                        <option value="">Seleccionar...</option>
@@ -235,11 +237,11 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 {/* Form to add a new call log */}
                 {currentLlamada ? (
                     <div className="grid grid-cols-4 gap-4 p-4 bg-gray-100 rounded-md">
-                        <input type="time" step="1" value={currentLlamada.duracionLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} className="border-black bg-white rounded p-2" />
-                        <select value={currentLlamada.estadoLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} className="border-black bg-white rounded p-2">
+                        <input type="time" step="1" value={currentLlamada.duracionLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} className="bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} />
+                        <select value={currentLlamada.estadoLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} className="bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                             {Object.values(EstadoLlamada).map(e => <option key={e} value={e}>{e}</option>)}
                         </select>
-                        <input type="text" placeholder="Observación" value={currentLlamada.observacion || ''} onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} className="col-span-2 border-black bg-white rounded p-2" />
+                        <input type="text" placeholder="Observación" value={currentLlamada.observacion || ''} onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} className="col-span-2 bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} />
                         <div className="col-span-4 flex justify-end space-x-2">
                             <button type="button" onClick={() => setCurrentLlamada(null)} className="px-3 py-1 bg-gray-300 rounded">Cancelar</button>
                             <button type="button" onClick={handleSaveCurrentLlamada} className="px-3 py-1 bg-green-500 text-white rounded">Guardar Llamada</button>
@@ -374,7 +376,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                             value={formData.nHistoria || ''} 
                             onChange={handleChange} 
                             disabled={!!formData.nHistoria}
-                            className="w-full border-black bg-[#f9f9fa] text-black rounded-l-md p-2 disabled:bg-gray-100"
+                            className="w-full bg-[#f9f9fa] rounded-l-md p-2 disabled:bg-gray-100"
+                            style={{ borderColor: '#6b7280', borderRadius: '8px 0 0 8px', color: 'black', borderWidth: '1px' }}
                         />
                         <button 
                             type="button" 
@@ -388,14 +391,14 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                 </div>
                 <div>
                     <label className="text-sm font-medium">Estado en Recepción</label>
-                    <select name="estadoRecepcion" value={formData.estadoRecepcion || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <select name="estadoRecepcion" value={formData.estadoRecepcion || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         <option value="">Seleccionar...</option>
                         {Object.values(ReceptionStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                 </div>
                 <div>
                     <label className="text-sm font-medium">¿Aceptó tratamiento?</label>
-                    <select name="aceptoTratamiento" value={formData.aceptoTratamiento || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <select name="aceptoTratamiento" value={formData.aceptoTratamiento || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         <option value="">Seleccionar...</option>
                         <option value="Si">Sí</option>
                         <option value="No">No</option>
@@ -410,7 +413,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                             value={formData.motivoNoCierre || ''} 
                             onChange={handleChange} 
                             required
-                            className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"
+                            className="w-full bg-[#f9f9fa] p-2"
+                            style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                             placeholder="Indique el motivo por el cual no se concretó la venta"
                         />
                     </div>
@@ -466,13 +470,15 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                 step="0.01"
                                                 value={newPago.monto}
                                                 onChange={(e) => setNewPago({...newPago, monto: Number(e.target.value)})}
-                                                className="border-black bg-white rounded p-2"
+                                                className="bg-white p-2"
+                                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                 placeholder="Monto"
                                             />
                                             <select 
                                                 value={newPago.metodoPago}
                                                 onChange={(e) => setNewPago({...newPago, metodoPago: e.target.value})}
-                                                className="border-black bg-white rounded p-2"
+                                                className="bg-white p-2"
+                                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                             >
                                                 <option value="">Método de pago...</option>
                                                 {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
@@ -538,7 +544,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                             updated[index].monto = Number(e.target.value);
                                                             setTempPagosRecepcion(updated);
                                                         }}
-                                                        className="w-full border rounded p-1"
+                                                        className="w-full p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     />
                                                 ) : (
                                                     `S/ ${pago.monto.toFixed(2)}`
@@ -553,7 +560,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                             updated[index].metodoPago = e.target.value;
                                                             setTempPagosRecepcion(updated);
                                                         }}
-                                                        className="w-full border rounded p-1"
+                                                        className="w-full p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     >
                                                         {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                                                     </select>
@@ -632,7 +640,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                     <select 
                                                         value={treatment.nombre}
                                                         onChange={(e) => handleTreatmentChange(treatment.id, 'nombre', e.target.value)}
-                                                        className="w-full border rounded p-1"
+                                                        className="w-full p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     >
                                                         <option value="">Seleccionar...</option>
                                                         {services?.map((s: Service) => (
@@ -649,7 +658,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                         type="number"
                                                         value={treatment.cantidadSesiones || 1}
                                                         onChange={(e) => handleTreatmentChange(treatment.id, 'cantidadSesiones', Number(e.target.value))}
-                                                        className="w-20 border rounded p-1"
+                                                        className="w-20 p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     />
                                                 ) : (
                                                     treatment.cantidadSesiones || 1
@@ -662,7 +672,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                         step="0.01"
                                                         value={treatment.precio}
                                                         onChange={(e) => handleTreatmentChange(treatment.id, 'precio', Number(e.target.value))}
-                                                        className="w-24 border rounded p-1"
+                                                        className="w-24 p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     />
                                                 ) : (
                                                     `S/ ${treatment.precio.toFixed(2)}`
@@ -675,7 +686,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                         step="0.01"
                                                         value={treatment.montoPagado}
                                                         onChange={(e) => handleTreatmentChange(treatment.id, 'montoPagado', Number(e.target.value))}
-                                                        className="w-24 border rounded p-1"
+                                                        className="w-24 p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     />
                                                 ) : (
                                                     `S/ ${treatment.montoPagado.toFixed(2)}`
