@@ -149,11 +149,23 @@ const App: React.FC = () => {
         loadData();
     }, []);
 
-    // Auto-login: Bypass login page and authenticate with first user
+    // Auto-login: Bypass login page and authenticate with first user (or dummy user if none available)
     useEffect(() => {
-        if (!loading && users.length > 0 && !isAuthenticated) {
-            const firstUser = users[0];
-            setCurrentUser(firstUser);
+        if (!loading && !isAuthenticated) {
+            if (users.length > 0) {
+                const firstUser = users[0];
+                setCurrentUser(firstUser);
+            } else {
+                // Create a dummy user if no users are loaded (e.g., due to API errors)
+                const dummyUser = {
+                    id: 1,
+                    usuario: 'admin',
+                    password: '',
+                    nombreCompleto: 'Administrador',
+                    rol: 'Administrador'
+                };
+                setCurrentUser(dummyUser as User);
+            }
             setIsAuthenticated(true);
             setCurrentPage('dashboard');
         }
