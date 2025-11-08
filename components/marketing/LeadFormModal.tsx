@@ -24,7 +24,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services }) => {
     return (
         <div className="space-y-6">
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
@@ -84,31 +84,56 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada
             </fieldset>
 
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Intereses y Pago</legend>
+                <legend className="text-md font-bold px-2 text-black">Agenda y pago</legend>
                 <div>
-                    <label className="text-sm font-medium">Categoría de Interés</label>
+                    <label className="text-sm font-medium">Categoría de Servicio</label>
                     <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
                          {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                 </div>
                 <div className="md:col-span-2">
-                    <label className="text-sm font-medium">Servicios de Interés</label>
+                    <label className="text-sm font-medium">Servicio de Interés</label>
                     <select multiple name="servicios" value={formData.servicios || []} onChange={handleChange} className="w-full h-24 border-black bg-[#f9f9fa] text-black rounded-md p-2">
                          {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
                     </select>
                 </div>
+                <div>
+                    <label className="text-sm font-medium">Precio Cita (S/.)</label>
+                    <input type="number" step="0.01" name="precioCita" value={formData.precioCita || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                </div>
                  <div>
-                    <label className="text-sm font-medium">Monto Pagado</label>
-                    <input type="number" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                    <label className="text-sm font-medium">Monto Pagado Cita (S/.)</label>
+                    <input type="number" step="0.01" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Método de Pago</label>
+                    <label className="text-sm font-medium">Método Pago</label>
                     <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
                         <option value="">Seleccionar...</option>
                         {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                     </select>
                 </div>
+                <div>
+                    <label className="text-sm font-medium">Deuda Cita (S/.)</label>
+                    <input type="number" step="0.01" name="deudaCita" value={formData.deudaCita || 0} readOnly className="w-full border-black bg-gray-100 text-black rounded-md p-2"/>
+                </div>
             </fieldset>
+            
+            {formData.estado === LeadStatus.Agendado && (
+                <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-2 border p-4 rounded-md">
+                    <legend className="text-md font-bold px-2 text-black">Información de Agenda</legend>
+                    <div>
+                        <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
+                        <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Recurso Asignado</label>
+                        <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                            <option value="">Seleccionar Recurso...</option>
+                            {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                    </div>
+                </fieldset>
+            )}
             
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Registro de Llamadas</legend>
@@ -163,29 +188,19 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     // ... logic to handle treatments ...
     return (
          <div className="space-y-6">
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Gestión de Cita</legend>
+             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-2 border p-4 rounded-md">
+                <legend className="text-md font-bold px-2 text-black">Información General y Estado del Paciente</legend>
                  <div>
-                    <label className="text-sm font-medium">N° Historia Clínica</label>
+                    <label className="text-sm font-medium">N° Historia</label>
                     <div className="flex items-center">
-                        <input type="text" name="nHistoria" value={formData.nHistoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-l-md p-2"/>
-                        <button type="button" onClick={handleGenerateHistoryNumber} className="bg-gray-200 px-3 py-2 rounded-r-md text-sm">Generar</button>
+                        <input type="text" name="nHistoria" value={formData.nHistoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-l-md p-2" disabled={!!formData.nHistoria}/>
+                        <button type="button" onClick={handleGenerateHistoryNumber} className="bg-gray-200 px-3 py-2 rounded-r-md text-sm" disabled={!!formData.nHistoria}>Generar</button>
                     </div>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
-                    <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Recurso Asignado</label>
-                    <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar Recurso...</option>
-                        {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
                 </div>
                  <div>
                     <label className="text-sm font-medium">Estado en Recepción</label>
                     <select name="estadoRecepcion" value={formData.estadoRecepcion || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <option value="">Seleccionar...</option>
                         {Object.values(ReceptionStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                 </div>
@@ -312,7 +327,29 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     
     const handleGenerateHistoryNumber = async () => {
         try {
-            const nextHistoryNumber = await api.getNextHistoryNumber();
+            // Get all leads to find the highest history number
+            const allLeads = await api.getLeads();
+            
+            // Extract the numeric part from history numbers and find the max
+            let maxNumber = 99; // Start from 99 so first number will be 100
+            allLeads.forEach(lead => {
+                if (lead.nHistoria) {
+                    // Extract numeric part from format like "H00100"
+                    const match = lead.nHistoria.match(/\d+$/);
+                    if (match) {
+                        const num = parseInt(match[0]);
+                        if (num > maxNumber) {
+                            maxNumber = num;
+                        }
+                    }
+                }
+            });
+            
+            // Generate new number with format: FirstLetterLastName + "00" + number
+            const firstLetter = (formData.apellidos || 'X').charAt(0).toUpperCase();
+            const nextNumber = maxNumber + 1;
+            const nextHistoryNumber = `${firstLetter}00${nextNumber}`;
+            
             setFormData(prev => ({ ...prev, nHistoria: nextHistoryNumber }));
         } catch (error) {
             console.error("Failed to generate history number", error);
@@ -409,6 +446,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             clientSources={clientSources}
                             CATEGORY_OPTIONS={CATEGORY_OPTIONS}
                             SERVICE_CATEGORIES={SERVICE_CATEGORIES}
+                            services={services}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
