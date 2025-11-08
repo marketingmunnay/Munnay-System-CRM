@@ -72,29 +72,35 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                  <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
                      <legend className="text-md font-bold px-2 text-black">Origen y Seguimiento</legend>
                 <div>
-                    <label className="text-sm font-medium">Red Social / Origen</label>
-                    <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <label className="text-sm font-medium">Red Social / Origen <span className="text-red-500">*</span></label>
+                    <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
                         {clientSources.map(cs => <option key={cs.id} value={cs.nombre}>{cs.nombre}</option>)}
                     </select>
+                    {!formData.redSocial && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
-                    <label className="text-sm font-medium">Campaña / Anuncio</label>
-                    <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <label className="text-sm font-medium">Campaña / Anuncio <span className="text-red-500">*</span></label>
+                    <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
                         <option value="">Seleccionar anuncio...</option>
                         {campaigns?.map(c => <option key={c.id} value={c.nombreAnuncio}>{c.nombreAnuncio}</option>)}
                     </select>
+                    {!formData.anuncio && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Vendedor(a)</label>
-                    <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <label className="text-sm font-medium">Vendedor(a) <span className="text-red-500">*</span></label>
+                    <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                        <option value="">Seleccionar...</option>
                         {Object.values(Seller).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    {!formData.vendedor && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Estado del Lead</label>
-                    <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                    <label className="text-sm font-medium">Estado del Lead <span className="text-red-500">*</span></label>
+                    <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                        <option value="">Seleccionar...</option>
                         {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    {!formData.estado && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
             </fieldset>
 
@@ -146,7 +152,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                    </div>
                </div>
                <div>
-                   <label className="text-sm font-medium">Monto Pagado Cita <span className="text-red-500">*</span></label>
+                   <label className="text-sm font-medium">
+                       Monto Pagado Cita 
+                       {formData.estado === LeadStatus.Agendado && <span className="text-red-500">*</span>}
+                   </label>
                    <input 
                        type="number" 
                        step="0.01" 
@@ -163,17 +172,30 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        }}
                        placeholder="0.00"
                        className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
-                       required
+                       required={formData.estado === LeadStatus.Agendado}
                    />
-                   {formData.montoPagado === undefined && <span className="text-red-500 text-xs">Este campo es requerido</span>}
+                   {formData.estado === LeadStatus.Agendado && formData.montoPagado === undefined && (
+                       <span className="text-red-500 text-xs">Este campo es requerido</span>
+                   )}
                </div>
                <div>
-                   <label className="text-sm font-medium">Método Pago <span className="text-red-500">*</span></label>
-                   <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
+                   <label className="text-sm font-medium">
+                       Método Pago 
+                       {formData.estado === LeadStatus.Agendado && <span className="text-red-500">*</span>}
+                   </label>
+                   <select 
+                       name="metodoPago" 
+                       value={formData.metodoPago || ''} 
+                       onChange={handleChange} 
+                       className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
+                       required={formData.estado === LeadStatus.Agendado}
+                   >
                        <option value="">Seleccionar...</option>
                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                    </select>
-                   {!formData.metodoPago && <span className="text-red-500 text-xs">Este campo es requerido</span>}
+                   {formData.estado === LeadStatus.Agendado && !formData.metodoPago && (
+                       <span className="text-red-500 text-xs">Este campo es requerido</span>
+                   )}
                </div>
                <div>
                    <label className="text-sm font-medium">Deuda Cita</label>
@@ -794,6 +816,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         servicios: [],
         categoria: CATEGORY_OPTIONS[0] || '',
         registrosLlamada: [],
+        pagosRecepcion: [],
+        tratamientos: [],
     }), [CATEGORY_OPTIONS]);
 
 
@@ -858,18 +882,31 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Validar campos requeridos
         const errors: string[] = [];
         
+        // Campos siempre requeridos
         if (!formData.nombres?.trim()) errors.push('Nombres');
         if (!formData.apellidos?.trim()) errors.push('Apellidos');
         if (!formData.numero?.trim()) errors.push('Número de Teléfono');
-        if (formData.montoPagado === undefined || formData.montoPagado === null) errors.push('Monto Pagado Cita');
-        if (!formData.metodoPago) errors.push('Método Pago');
+        if (!formData.redSocial) errors.push('Red Social / Origen');
+        if (!formData.anuncio) errors.push('Campaña / Anuncio');
+        if (!formData.vendedor) errors.push('Vendedor(a)');
+        if (!formData.estado) errors.push('Estado del Lead');
+        
+        // Campos requeridos solo si el estado es "Agendado"
+        if (formData.estado === LeadStatus.Agendado) {
+            if (formData.montoPagado === undefined || formData.montoPagado === null) {
+                errors.push('Monto Pagado Cita (requerido cuando está Agendado)');
+            }
+            if (!formData.metodoPago) {
+                errors.push('Método Pago (requerido cuando está Agendado)');
+            }
+        }
         
         if (errors.length > 0) {
             alert(`Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
             return;
         }
         
-        // Asegurar que montoPagado sea 0 si está vacío
+        // Asegurar que montoPagado sea 0 si está vacío y no es Agendado
         const dataToSave = {
             ...formData,
             montoPagado: formData.montoPagado ?? 0,
