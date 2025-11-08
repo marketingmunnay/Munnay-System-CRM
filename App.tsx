@@ -104,13 +104,13 @@ const App: React.FC = () => {
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
-                api.getLeads(), api.getCampaigns(), api.getVentasExtra(),
-                api.getIncidencias(), api.getEgresos(), api.getProveedores(),
-                api.getUsers(), api.getRoles(), api.getBusinessInfo(),
-                api.getClientSources(), api.getServices(), api.getProducts(), api.getMemberships(),
-                api.getServiceCategories(), api.getProductCategories(), api.getJobPositions(),
-                api.getPublicaciones(), api.getSeguidores(), api.getMetaCampaigns(), api.getEgresoCategories(),
-                api.getTiposProveedor(), api.getGoals(), api.getComprobantes()
+                api.getLeads(), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
+                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
+                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
+                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
+                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
@@ -120,7 +120,7 @@ const App: React.FC = () => {
             setProveedores(proveedoresData);
             setUsers(usersData);
             setRoles(rolesData);
-            setBusinessInfo(businessInfoData);
+            setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
             setClientSources(clientSourcesData);
             setServices(servicesData);
             setProducts(productsData);
