@@ -161,6 +161,7 @@ export interface Lead {
     precioCita?: number;
     deudaCita?: number;
     metodoPagoDeuda?: MetodoPago;
+    pagosRecepcion?: Array<{ id: number; monto: number; metodoPago: string }>;
     // For billing related info, but not the invoice itself
     documentType?: DocumentType;
     documentNumber?: string;
