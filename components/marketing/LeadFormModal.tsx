@@ -31,7 +31,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
-                    <label className="text-sm font-medium">Fecha Lead</label>
+                    <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
                     <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} required />
                 </div>
                 <div>
@@ -46,16 +46,19 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <input type="text" name="documentNumber" value={formData.documentNumber || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
                 </div>
                 <div>
-                    <label className="text-sm font-medium">Nombres</label>
-                    <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                    <label className="text-sm font-medium">Nombres <span className="text-red-500">*</span></label>
+                    <input type="text" name="nombres" value={formData.nombres || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    {!formData.nombres?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
-                    <label className="text-sm font-medium">Apellidos</label>
-                    <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                    <label className="text-sm font-medium">Apellidos <span className="text-red-500">*</span></label>
+                    <input type="text" name="apellidos" value={formData.apellidos || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    {!formData.apellidos?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
-                    <label className="text-sm font-medium">Número de Teléfono</label>
-                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
+                    <label className="text-sm font-medium">Número de Teléfono <span className="text-red-500">*</span></label>
+                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required />
+                    {!formData.numero?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
                     <label className="text-sm font-medium">Sexo</label>
@@ -138,22 +141,45 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                </div>
                <div>
                    <label className="text-sm font-medium">Precio Cita</label>
-                   <input type="number" name="precioCita" value={formData.precioCita || 0} onChange={handleChange} readOnly className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                   <div className="w-full border border-black bg-gray-100 text-black rounded-md p-2 font-medium">
+                       S/ {(formData.precioCita || 0).toFixed(2)}
+                   </div>
                </div>
                <div>
-                   <label className="text-sm font-medium">Monto Pagado Cita</label>
-                   <input type="number" step="0.01" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                   <label className="text-sm font-medium">Monto Pagado Cita <span className="text-red-500">*</span></label>
+                   <input 
+                       type="number" 
+                       step="0.01" 
+                       name="montoPagado" 
+                       value={formData.montoPagado ?? ''} 
+                       onChange={(e) => {
+                           const value = e.target.value === '' ? undefined : Number(e.target.value);
+                           const precio = formData.precioCita || 0;
+                           setFormData(prev => ({ 
+                               ...prev, 
+                               montoPagado: value,
+                               deudaCita: precio - (value || 0)
+                           }));
+                       }}
+                       placeholder="0.00"
+                       className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" 
+                       required
+                   />
+                   {formData.montoPagado === undefined && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                </div>
                <div>
-                   <label className="text-sm font-medium">Método Pago</label>
-                   <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                   <label className="text-sm font-medium">Método Pago <span className="text-red-500">*</span></label>
+                   <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" required>
                        <option value="">Seleccionar...</option>
                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                    </select>
+                   {!formData.metodoPago && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                </div>
                <div>
                    <label className="text-sm font-medium">Deuda Cita</label>
-                   <input type="number" step="0.01" name="deudaCita" value={formData.deudaCita || 0} readOnly className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+                   <div className="w-full border border-black bg-gray-100 text-black rounded-md p-2 font-medium">
+                       S/ {(formData.deudaCita || 0).toFixed(2)}
+                   </div>
                </div>
            </fieldset>
             
@@ -207,44 +233,499 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
 };
 
 const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGenerateHistoryNumber, handleSetFormData, totales, services }) => {
-    // ... logic to handle treatments ...
+    const [editingPayments, setEditingPayments] = useState(false);
+    const [tempPagosRecepcion, setTempPagosRecepcion] = useState<any[]>([]);
+    const [newPago, setNewPago] = useState<any>(null);
+    
+    const [editingTreatments, setEditingTreatments] = useState(false);
+    const [tempTreatments, setTempTreatments] = useState<Treatment[]>([]);
+
+    // Calcular deuda de la cita
+    const precioCita = formData.precioCita || 0;
+    const pagoInicial = formData.montoPagado || 0;
+    const pagosRecepcion = formData.pagosRecepcion || [];
+    const totalPagosRecepcion = pagosRecepcion.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+    const deudaCita = precioCita - pagoInicial - totalPagosRecepcion;
+
+    // Mostrar sección de pagos solo si hay precio o pagos
+    const mostrarSeccionPagos = precioCita > 0 || pagosRecepcion.length > 0;
+
+    // Calcular totales de tratamientos
+    const tratamientos = formData.tratamientos || [];
+    const totalesTratamientos = tratamientos.reduce((acc: any, t: Treatment) => {
+        acc.precio += t.precio || 0;
+        acc.pagado += t.montoPagado || 0;
+        acc.deuda += t.deuda || 0;
+        return acc;
+    }, { precio: 0, pagado: 0, deuda: 0 });
+
+    const handleStartEditPayments = () => {
+        setTempPagosRecepcion([...(formData.pagosRecepcion || [])]);
+        setEditingPayments(true);
+    };
+
+    const handleSavePayments = () => {
+        handleSetFormData({ ...formData, pagosRecepcion: tempPagosRecepcion });
+        setEditingPayments(false);
+    };
+
+    const handleCancelPayments = () => {
+        setTempPagosRecepcion([]);
+        setEditingPayments(false);
+    };
+
+    const handleAddPago = () => {
+        if (newPago && newPago.monto > 0 && newPago.metodoPago) {
+            const updatedPagos = [...(formData.pagosRecepcion || []), { ...newPago, id: Date.now() }];
+            handleSetFormData({ ...formData, pagosRecepcion: updatedPagos });
+            setNewPago(null);
+        }
+    };
+
+    const handleStartEditTreatments = () => {
+        setTempTreatments([...(formData.tratamientos || [])]);
+        setEditingTreatments(true);
+    };
+
+    const handleAddTreatment = () => {
+        const newTreatment: Treatment = {
+            id: Date.now(),
+            nombre: '',
+            cantidadSesiones: 1,
+            precio: 0,
+            montoPagado: 0,
+            deuda: 0,
+        };
+        setTempTreatments([...tempTreatments, newTreatment]);
+    };
+
+    const handleTreatmentChange = (id: number, field: string, value: any) => {
+        setTempTreatments(prev => prev.map(t => {
+            if (t.id === id) {
+                const updated = { ...t, [field]: value };
+                
+                // Si cambió el nombre (servicio), buscar precio automático
+                if (field === 'nombre') {
+                    const service = services?.find((s: Service) => s.nombre === value);
+                    if (service) {
+                        updated.precio = service.precio;
+                        updated.deuda = service.precio - (updated.montoPagado || 0);
+                    }
+                }
+                
+                // Recalcular deuda si cambió precio o montoPagado
+                if (field === 'precio' || field === 'montoPagado') {
+                    updated.deuda = (updated.precio || 0) - (updated.montoPagado || 0);
+                }
+                
+                return updated;
+            }
+            return t;
+        }));
+    };
+
+    const handleRemoveTreatment = (id: number) => {
+        setTempTreatments(prev => prev.filter(t => t.id !== id));
+    };
+
+    const handleSaveTreatments = () => {
+        handleSetFormData({ ...formData, tratamientos: tempTreatments });
+        setEditingTreatments(false);
+    };
+
+    const handleCancelTreatments = () => {
+        setTempTreatments([]);
+        setEditingTreatments(false);
+    };
+
     return (
          <div className="space-y-6">
+            {/* Información General y Estado del Paciente */}
             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Gestión de Cita</legend>
-                 <div>
+                <legend className="text-md font-bold px-2 text-black">Información General y Estado del Paciente</legend>
+                <div>
                     <label className="text-sm font-medium">N° Historia Clínica</label>
                     <div className="flex items-center">
-                        <input type="text" name="nHistoria" value={formData.nHistoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-l-md p-2"/>
-                        <button type="button" onClick={handleGenerateHistoryNumber} className="bg-gray-200 px-3 py-2 rounded-r-md text-sm">Generar</button>
+                        <input 
+                            type="text" 
+                            name="nHistoria" 
+                            value={formData.nHistoria || ''} 
+                            onChange={handleChange} 
+                            disabled={!!formData.nHistoria}
+                            className="w-full border-black bg-[#f9f9fa] text-black rounded-l-md p-2 disabled:bg-gray-100"
+                        />
+                        <button 
+                            type="button" 
+                            onClick={handleGenerateHistoryNumber} 
+                            disabled={!!formData.nHistoria}
+                            className="bg-[#aa632d] hover:bg-[#8e5225] text-white px-3 py-2 rounded-r-md text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                            Generar
+                        </button>
                     </div>
                 </div>
                 <div>
                     <label className="text-sm font-medium">Estado en Recepción</label>
                     <select name="estadoRecepcion" value={formData.estadoRecepcion || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <option value="">Seleccionar...</option>
                         {Object.values(ReceptionStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                 </div>
+                <div>
+                    <label className="text-sm font-medium">¿Aceptó tratamiento?</label>
+                    <select name="aceptoTratamiento" value={formData.aceptoTratamiento || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        <option value="">Seleccionar...</option>
+                        <option value="Si">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                {formData.aceptoTratamiento === 'No' && (
+                    <div className="md:col-span-3">
+                        <label className="text-sm font-medium">Motivo de No Cierre <span className="text-red-500">*</span></label>
+                        <input 
+                            type="text" 
+                            name="motivoNoCierre" 
+                            value={formData.motivoNoCierre || ''} 
+                            onChange={handleChange} 
+                            required
+                            className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"
+                            placeholder="Indique el motivo por el cual no se concretó la venta"
+                        />
+                    </div>
+                )}
             </fieldset>
 
-            <fieldset className="border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Evaluación y Cierre</legend>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="text-sm font-medium">¿Aceptó tratamiento?</label>
-                        <select name="aceptoTratamiento" value={formData.aceptoTratamiento || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                            <option value="">Seleccionar...</option>
-                            <option value="Si">Sí</option>
-                            <option value="No">No</option>
-                        </select>
+            {/* Gestión de Pago de la Cita de Evaluación */}
+            {mostrarSeccionPagos && (
+                <fieldset className="border p-4 rounded-md">
+                    <legend className="text-md font-bold px-2 text-black">Gestión de Pago de la Cita de Evaluación</legend>
+                    
+                    <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
+                        <div className="bg-blue-50 p-3 rounded">
+                            <div className="text-gray-600">Precio Cita</div>
+                            <div className="text-lg font-bold text-blue-700">S/ {precioCita.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded">
+                            <div className="text-gray-600">Total Pagado</div>
+                            <div className="text-lg font-bold text-green-700">S/ {(pagoInicial + totalPagosRecepcion).toFixed(2)}</div>
+                        </div>
+                        <div className={`p-3 rounded ${deudaCita > 0 ? 'bg-yellow-50' : 'bg-gray-50'}`}>
+                            <div className="text-gray-600">Deuda Cita</div>
+                            <div className={`text-lg font-bold ${deudaCita > 0 ? 'text-yellow-700' : 'text-gray-700'}`}>
+                                S/ {deudaCita.toFixed(2)}
+                            </div>
+                        </div>
                     </div>
-                     <div>
-                        <label className="text-sm font-medium">Motivo de No Cierre</label>
-                        <input type="text" name="motivoNoCierre" value={formData.motivoNoCierre || ''} onChange={handleChange} disabled={formData.aceptoTratamiento === 'Si'} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2 disabled:bg-gray-100"/>
+
+                    {/* Alerta de deuda pendiente */}
+                    {deudaCita > 0 && (
+                        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4">
+                            <div className="flex items-start">
+                                <GoogleIcon name="warning" className="text-yellow-600 mr-2" />
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-yellow-800">Deuda Pendiente: S/ {deudaCita.toFixed(2)}</h4>
+                                    <p className="text-sm text-yellow-700 mb-3">Complete el pago de la cita de evaluación</p>
+                                    
+                                    {/* Formulario para completar pago */}
+                                    {!newPago && (
+                                        <button 
+                                            type="button"
+                                            onClick={() => setNewPago({ monto: deudaCita, metodoPago: '' })}
+                                            className="text-sm bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                                        >
+                                            Completar Pago
+                                        </button>
+                                    )}
+                                    
+                                    {newPago && (
+                                        <div className="grid grid-cols-3 gap-2 mt-2">
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                value={newPago.monto}
+                                                onChange={(e) => setNewPago({...newPago, monto: Number(e.target.value)})}
+                                                className="border-black bg-white rounded p-2"
+                                                placeholder="Monto"
+                                            />
+                                            <select 
+                                                value={newPago.metodoPago}
+                                                onChange={(e) => setNewPago({...newPago, metodoPago: e.target.value})}
+                                                className="border-black bg-white rounded p-2"
+                                            >
+                                                <option value="">Método de pago...</option>
+                                                {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                                            </select>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleAddPago}
+                                                    className="flex-1 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                                                >
+                                                    Registrar
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setNewPago(null)}
+                                                    className="flex-1 bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500 text-sm"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Lista de pagos en recepción */}
+                    {pagosRecepcion.length > 0 && (
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-medium">Pagos Registrados en Recepción</h4>
+                                {!editingPayments && (
+                                    <button 
+                                        type="button"
+                                        onClick={handleStartEditPayments}
+                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                    >
+                                        <GoogleIcon name="edit" className="text-base" /> Editar Pagos
+                                    </button>
+                                )}
+                            </div>
+                            
+                            <table className="w-full text-sm border">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="p-2 text-left">Monto</th>
+                                        <th className="p-2 text-left">Método de Pago</th>
+                                        {editingPayments && <th className="p-2">Acciones</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(editingPayments ? tempPagosRecepcion : pagosRecepcion).map((pago: any, index: number) => (
+                                        <tr key={pago.id || index} className="border-b">
+                                            <td className="p-2">
+                                                {editingPayments ? (
+                                                    <input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={pago.monto}
+                                                        onChange={(e) => {
+                                                            const updated = [...tempPagosRecepcion];
+                                                            updated[index].monto = Number(e.target.value);
+                                                            setTempPagosRecepcion(updated);
+                                                        }}
+                                                        className="w-full border rounded p-1"
+                                                    />
+                                                ) : (
+                                                    `S/ ${pago.monto.toFixed(2)}`
+                                                )}
+                                            </td>
+                                            <td className="p-2">
+                                                {editingPayments ? (
+                                                    <select 
+                                                        value={pago.metodoPago}
+                                                        onChange={(e) => {
+                                                            const updated = [...tempPagosRecepcion];
+                                                            updated[index].metodoPago = e.target.value;
+                                                            setTempPagosRecepcion(updated);
+                                                        }}
+                                                        className="w-full border rounded p-1"
+                                                    >
+                                                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                                                    </select>
+                                                ) : (
+                                                    pago.metodoPago
+                                                )}
+                                            </td>
+                                            {editingPayments && (
+                                                <td className="p-2 text-center">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setTempPagosRecepcion(tempPagosRecepcion.filter((_, i) => i !== index))}
+                                                        className="text-red-500 hover:text-red-700"
+                                                    >
+                                                        <GoogleIcon name="delete" />
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            
+                            {editingPayments && (
+                                <div className="flex justify-end gap-2 mt-2">
+                                    <button 
+                                        type="button"
+                                        onClick={handleCancelPayments}
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={handleSavePayments}
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                    >
+                                        Guardar Cambios
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </fieldset>
+            )}
+
+            {/* Tratamientos Vendidos - Solo si aceptó tratamiento */}
+            {formData.aceptoTratamiento === 'Si' && (
+                <fieldset className="border p-4 rounded-md">
+                    <legend className="text-md font-bold px-2 text-black">Tratamientos Vendidos</legend>
+                    
+                    {!editingTreatments && tratamientos.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                            <p>No hay tratamientos registrados</p>
+                        </div>
+                    )}
+                    
+                    {(editingTreatments ? tempTreatments : tratamientos).length > 0 && (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm border">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="p-2">Servicio</th>
+                                        <th className="p-2">Sesiones</th>
+                                        <th className="p-2">Precio</th>
+                                        <th className="p-2">Monto Pagado</th>
+                                        <th className="p-2">Deuda</th>
+                                        {editingTreatments && <th className="p-2">Acciones</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(editingTreatments ? tempTreatments : tratamientos).map((treatment: Treatment) => (
+                                        <tr key={treatment.id} className="border-b">
+                                            <td className="p-2">
+                                                {editingTreatments ? (
+                                                    <select 
+                                                        value={treatment.nombre}
+                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'nombre', e.target.value)}
+                                                        className="w-full border rounded p-1"
+                                                    >
+                                                        <option value="">Seleccionar...</option>
+                                                        {services?.map((s: Service) => (
+                                                            <option key={s.id} value={s.nombre}>{s.nombre}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    treatment.nombre
+                                                )}
+                                            </td>
+                                            <td className="p-2">
+                                                {editingTreatments ? (
+                                                    <input 
+                                                        type="number"
+                                                        value={treatment.cantidadSesiones || 1}
+                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'cantidadSesiones', Number(e.target.value))}
+                                                        className="w-20 border rounded p-1"
+                                                    />
+                                                ) : (
+                                                    treatment.cantidadSesiones || 1
+                                                )}
+                                            </td>
+                                            <td className="p-2">
+                                                {editingTreatments ? (
+                                                    <input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={treatment.precio}
+                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'precio', Number(e.target.value))}
+                                                        className="w-24 border rounded p-1"
+                                                    />
+                                                ) : (
+                                                    `S/ ${treatment.precio.toFixed(2)}`
+                                                )}
+                                            </td>
+                                            <td className="p-2">
+                                                {editingTreatments ? (
+                                                    <input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={treatment.montoPagado}
+                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'montoPagado', Number(e.target.value))}
+                                                        className="w-24 border rounded p-1"
+                                                    />
+                                                ) : (
+                                                    `S/ ${treatment.montoPagado.toFixed(2)}`
+                                                )}
+                                            </td>
+                                            <td className="p-2 font-medium">
+                                                S/ {treatment.deuda.toFixed(2)}
+                                            </td>
+                                            {editingTreatments && (
+                                                <td className="p-2 text-center">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handleRemoveTreatment(treatment.id)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                    >
+                                                        <GoogleIcon name="delete" />
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))}
+                                    <tr className="bg-gray-50 font-bold">
+                                        <td className="p-2" colSpan={2}>TOTALES</td>
+                                        <td className="p-2">S/ {(editingTreatments ? tempTreatments : tratamientos).reduce((sum: number, t: Treatment) => sum + (t.precio || 0), 0).toFixed(2)}</td>
+                                        <td className="p-2">S/ {(editingTreatments ? tempTreatments : tratamientos).reduce((sum: number, t: Treatment) => sum + (t.montoPagado || 0), 0).toFixed(2)}</td>
+                                        <td className="p-2">S/ {(editingTreatments ? tempTreatments : tratamientos).reduce((sum: number, t: Treatment) => sum + (t.deuda || 0), 0).toFixed(2)}</td>
+                                        {editingTreatments && <td></td>}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    
+                    <div className="flex justify-between mt-4">
+                        {editingTreatments ? (
+                            <>
+                                <button 
+                                    type="button"
+                                    onClick={handleAddTreatment}
+                                    className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 flex items-center"
+                                >
+                                    <GoogleIcon name="add" className="mr-1" /> Añadir Tratamiento
+                                </button>
+                                <div className="flex gap-2">
+                                    <button 
+                                        type="button"
+                                        onClick={handleCancelTreatments}
+                                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={handleSaveTreatments}
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                    >
+                                        Guardar Tratamientos
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <button 
+                                type="button"
+                                onClick={handleStartEditTreatments}
+                                className="text-sm bg-[#aa632d] text-white px-4 py-2 rounded hover:bg-[#8e5225] flex items-center"
+                            >
+                                <GoogleIcon name="edit" className="mr-1" /> Gestionar Tratamientos
+                            </button>
+                        )}
                     </div>
-                </div>
-            </fieldset>
-             {/* Dynamic Treatments Table will go here */}
+                </fieldset>
+            )}
         </div>
     );
 };
@@ -309,7 +790,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         anuncio: '',
         vendedor: Seller.Vanesa,
         estado: LeadStatus.Nuevo,
-        montoPagado: 0,
+        montoPagado: undefined,
         servicios: [],
         categoria: CATEGORY_OPTIONS[0] || '',
         registrosLlamada: [],
@@ -327,16 +808,21 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         const { name, value, type } = e.target;
         
         setFormData(prev => {
-            let newState = { ...prev };
+            const newState = { ...prev } as any;
+            
             if (type === 'number') {
-                newState = { ...newState, [name]: Number(value) };
+                newState[name] = value === '' ? undefined : Number(value);
+            } else if (type === 'datetime-local') {
+                // Convert to ISO format for datetime-local
+                newState[name] = value ? new Date(value).toISOString() : '';
             } else {
-                newState = { ...newState, [name]: value };
+                newState[name] = value;
             }
 
-            if (name === 'precioCita' || (name === 'montoPagado' && activeTab === 'ficha')) {
-                const precio = name === 'precioCita' ? Number(value) : (newState.precioCita || 0);
-                const montoPagado = name === 'montoPagado' ? Number(value) : (newState.montoPagado || 0);
+            // Recalculate deudaCita when montoPagado changes
+            if (name === 'montoPagado') {
+                const precio = newState.precioCita || 0;
+                const montoPagado = newState.montoPagado || 0;
                 newState.deudaCita = precio - montoPagado;
             }
             
@@ -346,8 +832,22 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     
     const handleGenerateHistoryNumber = async () => {
         try {
+            // Validar que haya apellido antes de generar
+            if (!formData.apellidos?.trim()) {
+                alert('Por favor ingrese el apellido del paciente antes de generar el número de historia.');
+                return;
+            }
+            
+            // Obtener primera letra del apellido en mayúscula
+            const primeraLetra = formData.apellidos.trim()[0].toUpperCase();
+            
+            // Obtener el siguiente número correlativo desde el backend
             const nextHistoryNumber = await api.getNextHistoryNumber();
-            setFormData(prev => ({ ...prev, nHistoria: nextHistoryNumber }));
+            
+            // Formato: LetraApellido + 00 + número correlativo (ej: H00100)
+            const numeroHistoria = `${primeraLetra}00${nextHistoryNumber}`;
+            
+            setFormData(prev => ({ ...prev, nHistoria: numeroHistoria }));
         } catch (error) {
             console.error("Failed to generate history number", error);
             alert("Hubo un error al generar el número de historia.");
@@ -355,11 +855,27 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     };
     
     const handleSave = () => {
-        if (!formData.nombres?.trim() || !formData.apellidos?.trim() || !formData.numero?.trim()) {
-            alert('Nombres, apellidos y número son requeridos.');
+        // Validar campos requeridos
+        const errors: string[] = [];
+        
+        if (!formData.nombres?.trim()) errors.push('Nombres');
+        if (!formData.apellidos?.trim()) errors.push('Apellidos');
+        if (!formData.numero?.trim()) errors.push('Número de Teléfono');
+        if (formData.montoPagado === undefined || formData.montoPagado === null) errors.push('Monto Pagado Cita');
+        if (!formData.metodoPago) errors.push('Método Pago');
+        
+        if (errors.length > 0) {
+            alert(`Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
             return;
         }
-        onSave(formData as Lead);
+        
+        // Asegurar que montoPagado sea 0 si está vacío
+        const dataToSave = {
+            ...formData,
+            montoPagado: formData.montoPagado ?? 0,
+        };
+        
+        onSave(dataToSave as Lead);
     };
 
     const handleDeleteClick = () => {

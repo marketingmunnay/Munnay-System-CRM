@@ -150,6 +150,7 @@ export interface Lead {
     tratamientos?: Treatment[];
     estadoRecepcion?: ReceptionStatus;
     recursoId?: string;
+    pagosRecepcion?: Array<{ id: number; monto: number; metodoPago: MetodoPago }>;
     // Procedure properties
     procedimientos?: Procedure[];
     seguimientos?: Seguimiento[];

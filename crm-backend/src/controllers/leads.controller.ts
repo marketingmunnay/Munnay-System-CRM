@@ -161,32 +161,39 @@ export const deleteLead = async (req: Request, res: Response) => {
 };
 
 // FIX: Added getNextHistoryNumber controller function
+// Retorna solo el número correlativo (empezando en 100)
+// El frontend construye el formato completo: LetraApellido + 00 + número
 export const getNextHistoryNumber = async (req: Request, res: Response) => {
   try {
-    const lastLeadWithHistory = await prisma.lead.findFirst({
+    // Buscar todos los leads que tengan número de historia
+    const allLeadsWithHistory = await prisma.lead.findMany({
       where: {
         nHistoria: {
-          startsWith: 'H-',
+          not: null,
         },
-      },
-      orderBy: {
-        nHistoria: 'desc',
       },
       select: {
         nHistoria: true,
       },
     });
 
-    let nextNumber = 1;
-    if (lastLeadWithHistory && lastLeadWithHistory.nHistoria) {
-      const lastNumber = parseInt(lastLeadWithHistory.nHistoria.split('-')[1]);
-      if (!isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
-      }
-    }
+    // Extraer números de todos los formatos (ej: H00100, A00101, etc.)
+    const numbers = allLeadsWithHistory
+      .map((lead: any) => {
+        if (lead.nHistoria) {
+          // Extraer dígitos después de "00" (formato: Letra + 00 + número)
+          const match = lead.nHistoria.match(/00(\d+)$/);
+          return match ? parseInt(match[1]) : 0;
+        }
+        return 0;
+      })
+      .filter((num: number) => num > 0);
 
-    const nextHistoryNumber = `H-${String(nextNumber).padStart(5, '0')}`;
-    res.status(200).json(nextHistoryNumber);
+    // Encontrar el máximo y sumar 1, o empezar en 100
+    let nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 100;
+
+    // Retornar solo el número correlativo como string
+    res.status(200).json(String(nextNumber));
   } catch (error) {
     console.error("Error generating next history number:", error);
     res.status(500).json({ message: 'Error generating next history number', error: (error as Error).message });
