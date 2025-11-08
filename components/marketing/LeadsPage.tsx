@@ -95,15 +95,14 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         let results = leads;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
             results = results.filter(lead => {
-                const leadDate = new Date(`${lead.fechaLead}T00:00:00`);
-                if (fromDate && leadDate < fromDate) {
+                if (!lead.fechaLead) return false;
+                
+                // Simple string comparison works for YYYY-MM-DD format
+                if (dateRange.from && lead.fechaLead < dateRange.from) {
                     return false;
                 }
-                if (toDate && leadDate > toDate) {
+                if (dateRange.to && lead.fechaLead > dateRange.to) {
                     return false;
                 }
                 return true;

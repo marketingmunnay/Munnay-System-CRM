@@ -125,12 +125,12 @@ const PublicacionesPage: React.FC<PublicacionesPageProps> = ({ publicaciones, on
         let results = publicaciones;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(p => {
-                const pubDate = new Date(`${p.fechaPost}T00:00:00`);
-                if (fromDate && pubDate < fromDate) return false;
-                if (toDate && pubDate > toDate) return false;
+                if (!p.fechaPost) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && p.fechaPost < dateRange.from) return false;
+                if (dateRange.to && p.fechaPost > dateRange.to) return false;
                 return true;
             });
         }

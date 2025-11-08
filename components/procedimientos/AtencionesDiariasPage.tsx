@@ -172,13 +172,12 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
 
         // Apply date range filter based on procedure date
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
             allAtenciones = allAtenciones.filter(atencion => {
-                const procedureDate = new Date(`${atencion.procedure.fechaAtencion}T00:00:00`);
-                if (fromDate && procedureDate < fromDate) return false;
-                if (toDate && procedureDate > toDate) return false;
+                if (!atencion.procedure.fechaAtencion) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && atencion.procedure.fechaAtencion < dateRange.from) return false;
+                if (dateRange.to && atencion.procedure.fechaAtencion > dateRange.to) return false;
                 return true;
             });
         }

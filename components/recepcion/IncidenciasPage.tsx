@@ -22,12 +22,12 @@ const IncidenciasPage: React.FC<IncidenciasPageProps> = ({ incidencias, paciente
         let results = incidencias;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(inc => {
-                const incDate = new Date(`${inc.fecha}T00:00:00`);
-                if (fromDate && incDate < fromDate) return false;
-                if (toDate && incDate > toDate) return false;
+                if (!inc.fecha) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && inc.fecha < dateRange.from) return false;
+                if (dateRange.to && inc.fecha > dateRange.to) return false;
                 return true;
             });
         }

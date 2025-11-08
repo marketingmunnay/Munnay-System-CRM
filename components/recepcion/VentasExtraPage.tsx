@@ -27,12 +27,12 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacien
         let results = ventas;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(venta => {
-                const ventaDate = new Date(`${venta.fechaVenta}T00:00:00`);
-                if (fromDate && ventaDate < fromDate) return false;
-                if (toDate && ventaDate > toDate) return false;
+                if (!venta.fechaVenta) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && venta.fechaVenta < dateRange.from) return false;
+                if (dateRange.to && venta.fechaVenta > dateRange.to) return false;
                 return true;
             });
         }

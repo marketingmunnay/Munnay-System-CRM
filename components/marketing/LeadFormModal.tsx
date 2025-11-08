@@ -25,6 +25,10 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+// Constantes para tipos de Personal y Medico
+const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
+const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
+
 const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services }) => {
     return (
         <div className="space-y-6">
@@ -765,17 +769,885 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
 };
 
 const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
-     return (
+    const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
+    const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
+
+    // Función para obtener el siguiente número de sesión para un tratamiento
+    const getNextSessionNumber = (tratamientoId: number): number => {
+        if (!formData.procedimientos || formData.procedimientos.length === 0) return 1;
+        
+        const procedimientosDelTratamiento = formData.procedimientos.filter(
+            (p: Procedure) => p.tratamientoId === tratamientoId
+        );
+        
+        if (procedimientosDelTratamiento.length === 0) return 1;
+        
+        const maxSession = Math.max(...procedimientosDelTratamiento.map((p: Procedure) => p.sesionNumero));
+        return maxSession + 1;
+    };
+
+    // Agrupar procedimientos por tratamiento
+    const procedimientosPorTratamiento = useMemo(() => {
+        if (!formData.procedimientos) return {};
+        
+        const grupos: Record<number, Procedure[]> = {};
+        formData.procedimientos.forEach((proc: Procedure) => {
+            if (!grupos[proc.tratamientoId]) {
+                grupos[proc.tratamientoId] = [];
+            }
+            grupos[proc.tratamientoId].push(proc);
+        });
+        
+        return grupos;
+    }, [formData.procedimientos]);
+
+    const handleAddProcedure = () => {
+        if (!formData.tratamientos || formData.tratamientos.length === 0) return;
+        
+        setCurrentProcedure({
+            id: Date.now(),
+            fechaAtencion: new Date().toISOString().split('T')[0],
+            horaInicio: '',
+            horaFin: '',
+            tratamientoId: formData.tratamientos[0].id,
+            nombreTratamiento: formData.tratamientos[0].nombre,
+            sesionNumero: getNextSessionNumber(formData.tratamientos[0].id),
+            personal: 'Vanesa',
+            asistenciaMedica: false,
+            observacion: ''
+        });
+        setEditingProcedureId(null);
+    };
+
+    const handleEditProcedure = (procedure: Procedure) => {
+        setCurrentProcedure({ ...procedure });
+        setEditingProcedureId(procedure.id);
+    };
+
+    const handleSaveProcedure = () => {
+        if (!currentProcedure) return;
+        
+        const procedureToSave: Procedure = {
+            id: currentProcedure.id || Date.now(),
+            fechaAtencion: currentProcedure.fechaAtencion || '',
+            horaInicio: currentProcedure.horaInicio || '',
+            horaFin: currentProcedure.horaFin || '',
+            tratamientoId: currentProcedure.tratamientoId || 0,
+            nombreTratamiento: currentProcedure.nombreTratamiento || '',
+            sesionNumero: currentProcedure.sesionNumero || 1,
+            personal: currentProcedure.personal || 'Vanesa',
+            asistenciaMedica: currentProcedure.asistenciaMedica || false,
+            medico: currentProcedure.medico,
+            observacion: currentProcedure.observacion
+        };
+
+        handleSetFormData((prev: Partial<Lead>) => {
+            const procedimientos = prev.procedimientos || [];
+            
+            if (editingProcedureId !== null) {
+                return {
+                    ...prev,
+                    procedimientos: procedimientos.map((p: Procedure) => 
+                        p.id === editingProcedureId ? procedureToSave : p
+                    )
+                };
+            } else {
+                return {
+                    ...prev,
+                    procedimientos: [...procedimientos, procedureToSave]
+                };
+            }
+        });
+
+        setCurrentProcedure(null);
+        setEditingProcedureId(null);
+    };
+
+    const handleDeleteProcedure = (procedureId: number) => {
+        handleSetFormData((prev: Partial<Lead>) => ({
+            ...prev,
+            procedimientos: (prev.procedimientos || []).filter((p: Procedure) => p.id !== procedureId),
+            // Eliminar todos los seguimientos asociados a este procedimiento
+            seguimientos: (prev.seguimientos || []).filter((s: Seguimiento) => s.procedimientoId !== procedureId)
+        }));
+    };
+
+    const handleProcedureFieldChange = (field: string, value: any) => {
+        setCurrentProcedure(prev => {
+            if (!prev) return null;
+            
+            const updated = { ...prev, [field]: value };
+            
+            // Si cambia el tratamiento, actualizar el nombre y el número de sesión
+            if (field === 'tratamientoId') {
+                const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === Number(value));
+                if (tratamiento) {
+                    updated.nombreTratamiento = tratamiento.nombre;
+                    updated.sesionNumero = getNextSessionNumber(Number(value));
+                }
+            }
+            
+            return updated;
+        });
+    };
+
+    const tratamientosDisponibles = formData.tratamientos || [];
+    const hasTratamientos = tratamientosDisponibles.length > 0;
+
+    return (
         <div className="space-y-6">
-            <p>Sección de Procedimientos en construcción.</p>
+            {/* Header con botón Añadir */}
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-800">Procedimientos Realizados</h3>
+                <button
+                    type="button"
+                    onClick={handleAddProcedure}
+                    disabled={!hasTratamientos}
+                    className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
+                        hasTratamientos 
+                            ? 'bg-[#aa632d] hover:bg-[#8e5225]' 
+                            : 'bg-gray-300 cursor-not-allowed'
+                    }`}
+                    title={!hasTratamientos ? 'Debe agregar tratamientos en la pestaña Recepción primero' : ''}
+                >
+                    <GoogleIcon name="add" className="mr-1" />
+                    Añadir Procedimiento
+                </button>
+            </div>
+
+            {!hasTratamientos && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <GoogleIcon name="info" className="text-yellow-600 text-2xl mb-2" />
+                    <p className="text-yellow-800 font-medium">No hay tratamientos registrados</p>
+                    <p className="text-yellow-600 text-sm">Agregue tratamientos en la pestaña "Recepción" para poder registrar procedimientos.</p>
+                </div>
+            )}
+
+            {/* Formulario de Añadir/Editar Procedimiento */}
+            {currentProcedure && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-4">
+                    <h4 className="font-semibold text-blue-900 flex items-center">
+                        <GoogleIcon name="medical_services" className="mr-2" />
+                        {editingProcedureId ? 'Editar Procedimiento' : 'Nuevo Procedimiento'}
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Tratamiento *</label>
+                            <select
+                                value={currentProcedure.tratamientoId || ''}
+                                onChange={(e) => handleProcedureFieldChange('tratamientoId', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            >
+                                {tratamientosDisponibles.map((t: Treatment) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.nombre} ({t.cantidadSesiones} sesiones)
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">N° de Sesión *</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={currentProcedure.sesionNumero || ''}
+                                onChange={(e) => handleProcedureFieldChange('sesionNumero', Number(e.target.value))}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Fecha de Atención *</label>
+                            <input
+                                type="date"
+                                value={currentProcedure.fechaAtencion || ''}
+                                onChange={(e) => handleProcedureFieldChange('fechaAtencion', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Personal *</label>
+                            <select
+                                value={currentProcedure.personal || ''}
+                                onChange={(e) => handleProcedureFieldChange('personal', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            >
+                                {PERSONAL_OPTIONS.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Hora Inicio *</label>
+                            <input
+                                type="time"
+                                value={currentProcedure.horaInicio || ''}
+                                onChange={(e) => handleProcedureFieldChange('horaInicio', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Hora Fin *</label>
+                            <input
+                                type="time"
+                                value={currentProcedure.horaFin || ''}
+                                onChange={(e) => handleProcedureFieldChange('horaFin', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked={currentProcedure.asistenciaMedica || false}
+                                    onChange={(e) => handleProcedureFieldChange('asistenciaMedica', e.target.checked)}
+                                    className="w-4 h-4"
+                                />
+                                <span className="text-sm font-medium text-gray-700">Asistencia Médica</span>
+                            </label>
+                        </div>
+
+                        {currentProcedure.asistenciaMedica && (
+                            <div className="col-span-2">
+                                <label className="text-sm font-medium text-gray-700">Médico *</label>
+                                <select
+                                    value={currentProcedure.medico || ''}
+                                    onChange={(e) => handleProcedureFieldChange('medico', e.target.value)}
+                                    className="w-full bg-white p-2"
+                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                    required
+                                >
+                                    <option value="">Seleccionar médico...</option>
+                                    {MEDICO_OPTIONS.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <div className="col-span-2">
+                            <label className="text-sm font-medium text-gray-700">Observación</label>
+                            <textarea
+                                value={currentProcedure.observacion || ''}
+                                onChange={(e) => handleProcedureFieldChange('observacion', e.target.value)}
+                                rows={3}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                placeholder="Notas sobre el procedimiento..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCurrentProcedure(null);
+                                setEditingProcedureId(null);
+                            }}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveProcedure}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                            Guardar Procedimiento
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Lista de Procedimientos Agrupados por Tratamiento */}
+            {hasTratamientos && Object.keys(procedimientosPorTratamiento).length > 0 && (
+                <div className="space-y-4">
+                    {tratamientosDisponibles.map((tratamiento: Treatment) => {
+                        const procedimientos = procedimientosPorTratamiento[tratamiento.id] || [];
+                        const sesionesCompletadas = procedimientos.length;
+                        const totalSesiones = tratamiento.cantidadSesiones;
+                        const progreso = totalSesiones > 0 ? (sesionesCompletadas / totalSesiones) * 100 : 0;
+                        
+                        if (sesionesCompletadas === 0) return null;
+
+                        return (
+                            <div key={tratamiento.id} className="border border-gray-300 rounded-lg overflow-hidden">
+                                {/* Header del Tratamiento */}
+                                <div className="bg-gradient-to-r from-purple-100 to-purple-50 p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-bold text-gray-800 flex items-center">
+                                            <GoogleIcon name="spa" className="mr-2 text-purple-600" />
+                                            {tratamiento.nombre}
+                                        </h4>
+                                        <span className="text-sm font-semibold text-purple-700 bg-white px-3 py-1 rounded-full">
+                                            {sesionesCompletadas} / {totalSesiones} sesiones
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Barra de Progreso */}
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                            style={{ width: `${Math.min(progreso, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Lista de Procedimientos */}
+                                <div className="divide-y divide-gray-200">
+                                    {procedimientos
+                                        .sort((a: Procedure, b: Procedure) => b.sesionNumero - a.sesionNumero)
+                                        .map((proc: Procedure) => (
+                                            <div key={proc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+                                                        <div>
+                                                            <span className="font-semibold text-purple-700">Sesión #{proc.sesionNumero}</span>
+                                                            <p className="text-gray-600 text-xs mt-1">{proc.fechaAtencion}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-500">Horario:</span>
+                                                            <p className="text-gray-800 font-medium">{proc.horaInicio} - {proc.horaFin}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-500">Personal:</span>
+                                                            <p className="text-gray-800 font-medium">{proc.personal}</p>
+                                                        </div>
+                                                        <div>
+                                                            {proc.asistenciaMedica && (
+                                                                <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                                                    <GoogleIcon name="local_hospital" className="mr-1 text-xs" />
+                                                                    {proc.medico || 'Médico'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex space-x-2 ml-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleEditProcedure(proc)}
+                                                            className="text-blue-600 hover:text-blue-800"
+                                                            title="Editar procedimiento"
+                                                        >
+                                                            <GoogleIcon name="edit" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (window.confirm('¿Está seguro de eliminar este procedimiento? También se eliminarán todos los seguimientos asociados.')) {
+                                                                    handleDeleteProcedure(proc.id);
+                                                                }
+                                                            }}
+                                                            className="text-red-600 hover:text-red-800"
+                                                            title="Eliminar procedimiento"
+                                                        >
+                                                            <GoogleIcon name="delete" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {proc.observacion && (
+                                                    <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
+                                                        <span className="text-gray-500 font-medium">Observación: </span>
+                                                        <span className="text-gray-700">{proc.observacion}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {hasTratamientos && Object.keys(procedimientosPorTratamiento).length === 0 && !currentProcedure && (
+                <div className="text-center py-12 text-gray-500">
+                    <GoogleIcon name="event_note" className="text-6xl mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No hay procedimientos registrados</p>
+                    <p className="text-sm">Haga clic en "Añadir Procedimiento" para comenzar el historial clínico.</p>
+                </div>
+            )}
         </div>
     );
 };
 
 const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
-     return (
+    const [currentSeguimiento, setCurrentSeguimiento] = useState<Partial<Seguimiento> | null>(null);
+    const [editingSeguimientoId, setEditingSeguimientoId] = useState<number | null>(null);
+
+    const procedimientosDisponibles = formData.procedimientos || [];
+    const hasProcedimientos = procedimientosDisponibles.length > 0;
+
+    // Generar texto descriptivo para cada procedimiento
+    const getProcedimientoLabel = (proc: Procedure): string => {
+        return `${proc.nombreTratamiento} - Sesión ${proc.sesionNumero} (${proc.fechaAtencion})`;
+    };
+
+    const handleAddSeguimiento = () => {
+        if (!hasProcedimientos) return;
+        
+        const primerProcedimiento = procedimientosDisponibles[0];
+        
+        setCurrentSeguimiento({
+            id: Date.now(),
+            procedimientoId: primerProcedimiento.id,
+            nombreProcedimiento: getProcedimientoLabel(primerProcedimiento),
+            fechaSeguimiento: new Date().toISOString().split('T')[0],
+            personal: 'Vanesa',
+            inflamacion: false,
+            ampollas: false,
+            alergias: false,
+            malestarGeneral: false,
+            brote: false,
+            dolorDeCabeza: false,
+            moretones: false,
+            observacion: ''
+        });
+        setEditingSeguimientoId(null);
+    };
+
+    const handleEditSeguimiento = (seguimiento: Seguimiento) => {
+        setCurrentSeguimiento({ ...seguimiento });
+        setEditingSeguimientoId(seguimiento.id);
+    };
+
+    const handleSaveSeguimiento = () => {
+        if (!currentSeguimiento) return;
+        
+        const seguimientoToSave: Seguimiento = {
+            id: currentSeguimiento.id || Date.now(),
+            procedimientoId: currentSeguimiento.procedimientoId || 0,
+            nombreProcedimiento: currentSeguimiento.nombreProcedimiento || '',
+            fechaSeguimiento: currentSeguimiento.fechaSeguimiento || '',
+            personal: currentSeguimiento.personal || 'Vanesa',
+            inflamacion: currentSeguimiento.inflamacion || false,
+            ampollas: currentSeguimiento.ampollas || false,
+            alergias: currentSeguimiento.alergias || false,
+            malestarGeneral: currentSeguimiento.malestarGeneral || false,
+            brote: currentSeguimiento.brote || false,
+            dolorDeCabeza: currentSeguimiento.dolorDeCabeza || false,
+            moretones: currentSeguimiento.moretones || false,
+            observacion: currentSeguimiento.observacion
+        };
+
+        handleSetFormData((prev: Partial<Lead>) => {
+            const seguimientos = prev.seguimientos || [];
+            
+            if (editingSeguimientoId !== null) {
+                return {
+                    ...prev,
+                    seguimientos: seguimientos.map((s: Seguimiento) => 
+                        s.id === editingSeguimientoId ? seguimientoToSave : s
+                    )
+                };
+            } else {
+                return {
+                    ...prev,
+                    seguimientos: [...seguimientos, seguimientoToSave]
+                };
+            }
+        });
+
+        setCurrentSeguimiento(null);
+        setEditingSeguimientoId(null);
+    };
+
+    const handleDeleteSeguimiento = (seguimientoId: number) => {
+        handleSetFormData((prev: Partial<Lead>) => ({
+            ...prev,
+            seguimientos: (prev.seguimientos || []).filter((s: Seguimiento) => s.id !== seguimientoId)
+        }));
+    };
+
+    const handleSeguimientoFieldChange = (field: string, value: any) => {
+        setCurrentSeguimiento(prev => {
+            if (!prev) return null;
+            
+            const updated = { ...prev, [field]: value };
+            
+            // Si cambia el procedimiento, actualizar el nombre descriptivo
+            if (field === 'procedimientoId') {
+                const procedimiento = procedimientosDisponibles.find((p: Procedure) => p.id === Number(value));
+                if (procedimiento) {
+                    updated.nombreProcedimiento = getProcedimientoLabel(procedimiento);
+                }
+            }
+            
+            return updated;
+        });
+    };
+
+    // Contar síntomas reportados
+    const contarSintomas = (seg: Seguimiento): number => {
+        let count = 0;
+        if (seg.inflamacion) count++;
+        if (seg.ampollas) count++;
+        if (seg.alergias) count++;
+        if (seg.malestarGeneral) count++;
+        if (seg.brote) count++;
+        if (seg.dolorDeCabeza) count++;
+        if (seg.moretones) count++;
+        return count;
+    };
+
+    const seguimientos = formData.seguimientos || [];
+
+    return (
         <div className="space-y-6">
-            <p>Sección de Seguimiento en construcción.</p>
+            {/* Header con botón Añadir */}
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-800">Seguimientos Post-Tratamiento</h3>
+                <button
+                    type="button"
+                    onClick={handleAddSeguimiento}
+                    disabled={!hasProcedimientos}
+                    className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
+                        hasProcedimientos 
+                            ? 'bg-[#aa632d] hover:bg-[#8e5225]' 
+                            : 'bg-gray-300 cursor-not-allowed'
+                    }`}
+                    title={!hasProcedimientos ? 'Debe registrar procedimientos primero' : ''}
+                >
+                    <GoogleIcon name="add" className="mr-1" />
+                    Añadir Seguimiento
+                </button>
+            </div>
+
+            {!hasProcedimientos && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <GoogleIcon name="info" className="text-yellow-600 text-2xl mb-2" />
+                    <p className="text-yellow-800 font-medium">No hay procedimientos registrados</p>
+                    <p className="text-yellow-600 text-sm">Registre procedimientos en la pestaña "Procedimientos" para poder hacer seguimiento.</p>
+                </div>
+            )}
+
+            {/* Formulario de Añadir/Editar Seguimiento */}
+            {currentSeguimiento && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 space-y-4">
+                    <h4 className="font-semibold text-green-900 flex items-center">
+                        <GoogleIcon name="monitor_heart" className="mr-2" />
+                        {editingSeguimientoId ? 'Editar Seguimiento' : 'Nuevo Seguimiento'}
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                            <label className="text-sm font-medium text-gray-700">Procedimiento a Seguir *</label>
+                            <select
+                                value={currentSeguimiento.procedimientoId || ''}
+                                onChange={(e) => handleSeguimientoFieldChange('procedimientoId', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            >
+                                {procedimientosDisponibles.map((proc: Procedure) => (
+                                    <option key={proc.id} value={proc.id}>
+                                        {getProcedimientoLabel(proc)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Fecha de Seguimiento *</label>
+                            <input
+                                type="date"
+                                value={currentSeguimiento.fechaSeguimiento || ''}
+                                onChange={(e) => handleSeguimientoFieldChange('fechaSeguimiento', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Personal *</label>
+                            <select
+                                value={currentSeguimiento.personal || ''}
+                                onChange={(e) => handleSeguimientoFieldChange('personal', e.target.value)}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                required
+                            >
+                                {PERSONAL_OPTIONS.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="text-sm font-medium text-gray-700 mb-3 block">Síntomas / Reacciones Reportadas</label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.inflamacion || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('inflamacion', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Inflamación</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.ampollas || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('ampollas', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Ampollas</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.alergias || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('alergias', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Alergias</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.malestarGeneral || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('malestarGeneral', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Malestar General</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.brote || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('brote', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Brote</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.dolorDeCabeza || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('dolorDeCabeza', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Dolor de Cabeza</span>
+                                </label>
+                                
+                                <label className="flex items-center space-x-2 p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentSeguimiento.moretones || false}
+                                        onChange={(e) => handleSeguimientoFieldChange('moretones', e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Moretones</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="text-sm font-medium text-gray-700">Observación</label>
+                            <textarea
+                                value={currentSeguimiento.observacion || ''}
+                                onChange={(e) => handleSeguimientoFieldChange('observacion', e.target.value)}
+                                rows={3}
+                                className="w-full bg-white p-2"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                placeholder="Notas detalladas sobre la conversación con el paciente..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCurrentSeguimiento(null);
+                                setEditingSeguimientoId(null);
+                            }}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveSeguimiento}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                            Guardar Seguimiento
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Lista de Seguimientos */}
+            {seguimientos.length > 0 && (
+                <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 flex items-center">
+                        <GoogleIcon name="history" className="mr-2" />
+                        Historial de Seguimientos ({seguimientos.length})
+                    </h4>
+                    
+                    <div className="space-y-3">
+                        {seguimientos
+                            .sort((a: Seguimiento, b: Seguimiento) => 
+                                new Date(b.fechaSeguimiento).getTime() - new Date(a.fechaSeguimiento).getTime()
+                            )
+                            .map((seg: Seguimiento) => {
+                                const numSintomas = contarSintomas(seg);
+                                const tieneSintomas = numSintomas > 0;
+                                
+                                return (
+                                    <div 
+                                        key={seg.id} 
+                                        className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                                            tieneSintomas ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+                                        }`}
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-2 mb-2">
+                                                    <GoogleIcon 
+                                                        name={tieneSintomas ? "warning" : "check_circle"} 
+                                                        className={`${tieneSintomas ? 'text-red-600' : 'text-green-600'}`} 
+                                                    />
+                                                    <h5 className="font-semibold text-gray-800">
+                                                        {seg.nombreProcedimiento}
+                                                    </h5>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-3 gap-3 text-sm">
+                                                    <div>
+                                                        <span className="text-gray-500">Fecha:</span>
+                                                        <p className="text-gray-800 font-medium">{seg.fechaSeguimiento}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500">Personal:</span>
+                                                        <p className="text-gray-800 font-medium">{seg.personal}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500">Síntomas:</span>
+                                                        <p className={`font-bold ${tieneSintomas ? 'text-red-600' : 'text-green-600'}`}>
+                                                            {tieneSintomas ? `${numSintomas} reportado(s)` : 'Sin síntomas'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex space-x-2 ml-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEditSeguimiento(seg)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                    title="Editar seguimiento"
+                                                >
+                                                    <GoogleIcon name="edit" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (window.confirm('¿Está seguro de eliminar este seguimiento?')) {
+                                                            handleDeleteSeguimiento(seg.id);
+                                                        }
+                                                    }}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    title="Eliminar seguimiento"
+                                                >
+                                                    <GoogleIcon name="delete" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Síntomas reportados */}
+                                        {tieneSintomas && (
+                                            <div className="mt-3 p-3 bg-white rounded border border-red-200">
+                                                <p className="text-xs font-semibold text-red-700 mb-2 uppercase">Síntomas Reportados:</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {seg.inflamacion && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="healing" className="mr-1 text-xs" /> Inflamación
+                                                        </span>
+                                                    )}
+                                                    {seg.ampollas && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="water_drop" className="mr-1 text-xs" /> Ampollas
+                                                        </span>
+                                                    )}
+                                                    {seg.alergias && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="sentiment_very_dissatisfied" className="mr-1 text-xs" /> Alergias
+                                                        </span>
+                                                    )}
+                                                    {seg.malestarGeneral && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="sick" className="mr-1 text-xs" /> Malestar General
+                                                        </span>
+                                                    )}
+                                                    {seg.brote && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="auto_fix_high" className="mr-1 text-xs" /> Brote
+                                                        </span>
+                                                    )}
+                                                    {seg.dolorDeCabeza && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="sentiment_stressed" className="mr-1 text-xs" /> Dolor de Cabeza
+                                                        </span>
+                                                    )}
+                                                    {seg.moretones && (
+                                                        <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                            <GoogleIcon name="colorize" className="mr-1 text-xs" /> Moretones
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Observación */}
+                                        {seg.observacion && (
+                                            <div className="mt-3 p-3 bg-white rounded border border-gray-200">
+                                                <p className="text-xs font-semibold text-gray-600 mb-1 uppercase">Observación:</p>
+                                                <p className="text-sm text-gray-700">{seg.observacion}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                    </div>
+                </div>
+            )}
+
+            {hasProcedimientos && seguimientos.length === 0 && !currentSeguimiento && (
+                <div className="text-center py-12 text-gray-500">
+                    <GoogleIcon name="medical_information" className="text-6xl mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No hay seguimientos registrados</p>
+                    <p className="text-sm">Haga clic en "Añadir Seguimiento" para documentar el estado post-tratamiento del paciente.</p>
+                </div>
+            )}
         </div>
     );
 };
@@ -830,6 +1702,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         registrosLlamada: [],
         pagosRecepcion: [],
         tratamientos: [],
+        procedimientos: [],
+        seguimientos: [],
     }), [CATEGORY_OPTIONS]);
 
 
@@ -1073,8 +1947,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 </div>
             }
         >
-            <div className="flex flex-col h-[calc(90vh-70px)]">
-                <div className="border-b border-gray-200">
+            <div className="flex flex-col max-h-[calc(90vh-70px)]">
+                <div className="border-b border-gray-200 flex-shrink-0">
                     <nav className="-mb-px flex space-x-6 px-6" aria-label="Tabs">
                         {tabs.map(tab => (
                             <button
@@ -1092,7 +1966,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                         ))}
                     </nav>
                 </div>
-                 <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6">
+                 <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                     {renderContent()}
                 </div>
             </div>
