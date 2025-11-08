@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "../shared/Icons.tsx";
 
 interface LoginPageProps {
@@ -17,8 +16,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const navigate = useNavigate();
 
   const defaultImage =
     "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070";
@@ -48,7 +45,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
       }
 
       onLogin(usuario, password);
-      navigate("/dashboard");
     } catch (err) {
       console.error("Error en login:", err);
     } finally {
