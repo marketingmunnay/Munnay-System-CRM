@@ -26,3 +26,4 @@ dist
 *.sw?
 
 
+package-lock.json

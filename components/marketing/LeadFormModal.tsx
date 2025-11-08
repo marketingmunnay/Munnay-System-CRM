@@ -31,7 +31,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, currentLlamada
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
                     <label className="text-sm font-medium">Fecha Lead</label>
-                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
+                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} required />
                 </div>
                 <div>
                     <label className="text-sm font-medium">Nombres</label>
