@@ -5,12 +5,13 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
+import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
 interface LeadsPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
     onSaveLead: (lead: Lead) => void;
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
@@ -83,7 +84,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -230,6 +231,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
             onDelete={onDeleteLead}
             lead={editingLead}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}

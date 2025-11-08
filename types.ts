@@ -403,6 +403,7 @@ export interface User {
     emergencyContacts?: EmergencyContact[];
     reconocimientos?: Reconocimiento[];
     salary?: number;
+    permissions?: Page[];
     contractType?: 'Plazo Fijo' | 'Indefinido';
     maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
     sex?: 'M' | 'F';

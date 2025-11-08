@@ -158,12 +158,11 @@ const App: React.FC = () => {
                 
                 const defaultUser: User = {
                     id: 0,
-                    nombre: 'Usuario',
-                    apellido: 'Administrador',
+                    nombres: 'Usuario',
+                    apellidos: 'Administrador',
                     usuario: 'admin',
                     rolId: 1,
-                    activo: true,
-                    permissions: allPermissions,
+                    avatarUrl: '',
                 };
                 
                 setCurrentUser(defaultUser);
@@ -340,7 +339,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <LeadsPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
                     campaigns={campaigns} 
@@ -357,19 +356,19 @@ const App: React.FC = () => {
             case 'redes-sociales-seguidores':
                 return <SeguidoresPage seguidores={seguidores} onSave={handleSaveSeguidor} onDelete={handleDeleteSeguidor} requestConfirmation={requestConfirmation} />;
             case 'recepcion-agendados':
-                return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AgendadosPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
                 return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
-                return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AtencionesDiariasPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-seguimiento':
                 return <AnalisisSeguimientoPage leads={leads} />;
             case 'pacientes-historia':
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
-                return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-incidencias':

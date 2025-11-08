@@ -10,6 +10,7 @@ import StatCard from '../dashboard/StatCard';
 interface AgendadosPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   onSaveLead: (lead: Lead) => void;
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
@@ -157,7 +158,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 };
 
 
-const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -311,6 +312,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
             onDelete={onDeleteLead}
             lead={editingLead}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}

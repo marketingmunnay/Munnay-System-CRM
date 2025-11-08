@@ -41,8 +41,8 @@ export const saveLead = (lead: Lead): Promise<Lead> =>
     : apiRequest<Lead>('/leads', 'POST', { ...lead, id: undefined });
 export const deleteLead = (id: number): Promise<void> => 
   apiRequest<void>(`/leads/${id}`, 'DELETE');
-export const getNextHistoryNumber = (): Promise<{ nextNumber: number }> =>
-  apiRequest<{ nextNumber: number }>('/leads/next-history-number', 'GET');
+export const getNextHistoryNumber = (): Promise<string> =>
+  apiRequest<string>('/leads/next-history-number', 'GET');
 
 // ====== CAMPAIGNS ======
 export const getCampaigns = (): Promise<Campaign[]> => apiRequest<Campaign[]>('/campaigns', 'GET');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico } from '../../types';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
@@ -13,6 +13,7 @@ interface LeadFormModalProps {
   onDelete: (leadId: number) => void;
   lead: Lead | null;
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   clientSources: ClientSource[];
   services: Service[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
@@ -24,7 +25,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services }) => {
     return (
         <div className="space-y-6">
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
@@ -65,8 +66,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 </div>
             </fieldset>
 
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Origen y Seguimiento</legend>
+                 <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
+                     <legend className="text-md font-bold px-2 text-black">Origen y Seguimiento</legend>
                 <div>
                     <label className="text-sm font-medium">Red Social / Origen</label>
                     <select name="redSocial" value={formData.redSocial || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
@@ -76,8 +77,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                  <div>
                     <label className="text-sm font-medium">Campaña / Anuncio</label>
                     <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar campaña...</option>
-                        {metaCampaigns.map(mc => <option key={mc.id} value={mc.nombre}>{mc.nombre}</option>)}
+                        <option value="">Seleccionar anuncio...</option>
+                        {campaigns?.map(c => <option key={c.id} value={c.nombreAnuncio}>{c.nombreAnuncio}</option>)}
                     </select>
                 </div>
                 <div>
@@ -94,33 +95,67 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 </div>
             </fieldset>
 
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">Intereses y Pago</legend>
-                <div>
-                    <label className="text-sm font-medium">Categoría de Interés</label>
-                    <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                         {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                </div>
-                <div className="md:col-span-2">
-                    <label className="text-sm font-medium">Servicios de Interés</label>
-                    <select name="servicioInteres" value={formData.servicios?.[0] || ''} onChange={(e) => setFormData(prev => ({...prev, servicios: e.target.value ? [e.target.value] : []}))} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar servicio...</option>
-                         {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
-                    </select>
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Monto Pagado</label>
-                    <input type="number" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2"/>
-                </div>
-                <div>
-                    <label className="text-sm font-medium">Método de Pago</label>
-                    <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar...</option>
-                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
-                    </select>
-                </div>
-            </fieldset>
+            {/* When lead is Agendado show agenda fields (Fecha/Hora y Recurso) */}
+            {formData.estado === LeadStatus.Agendado && (
+                <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
+                    <legend className="text-md font-bold px-2 text-black">Agenda</legend>
+                    <div>
+                        <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
+                        <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Recurso Asignado</label>
+                        <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                            <option value="">Seleccionar Recurso...</option>
+                            {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                    </div>
+                </fieldset>
+            )}
+
+            <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
+               <legend className="text-md font-bold px-2 text-black">Agenda y pago</legend>
+               <div>
+                   <label className="text-sm font-medium">Categoría de Servicio</label>
+                   <select name="categoria" value={formData.categoria || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                        {CATEGORY_OPTIONS.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
+                   </select>
+               </div>
+               <div>
+                   <label className="text-sm font-medium">Servicio de Interés</label>
+                   <select name="servicioInteres" value={formData.servicios?.[0] || ''} onChange={(e) => {
+                       const selected = e.target.value;
+                       const found = services?.find(s => s.nombre === selected);
+                       setFormData(prev => {
+                           const precio = found ? found.precio : (prev.precioCita || 0);
+                           const montoPagado = prev.montoPagado || 0;
+                           return { ...prev, servicios: selected ? [selected] : [], precioCita: precio, deudaCita: precio - montoPagado };
+                       });
+                   }} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                       <option value="">Seleccionar servicio...</option>
+                       {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
+                   </select>
+               </div>
+               <div>
+                   <label className="text-sm font-medium">Precio Cita</label>
+                   <input type="number" name="precioCita" value={formData.precioCita || 0} onChange={handleChange} readOnly className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+               </div>
+               <div>
+                   <label className="text-sm font-medium">Monto Pagado Cita</label>
+                   <input type="number" step="0.01" name="montoPagado" value={formData.montoPagado || 0} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+               </div>
+               <div>
+                   <label className="text-sm font-medium">Método Pago</label>
+                   <select name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
+                       <option value="">Seleccionar...</option>
+                       {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                   </select>
+               </div>
+               <div>
+                   <label className="text-sm font-medium">Deuda Cita</label>
+                   <input type="number" step="0.01" name="deudaCita" value={formData.deudaCita || 0} readOnly className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" />
+               </div>
+           </fieldset>
             
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Registro de Llamadas</legend>
@@ -175,7 +210,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     // ... logic to handle treatments ...
     return (
          <div className="space-y-6">
-             <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
+            <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
                 <legend className="text-md font-bold px-2 text-black">Gestión de Cita</legend>
                  <div>
                     <label className="text-sm font-medium">N° Historia Clínica</label>
@@ -184,18 +219,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                         <button type="button" onClick={handleGenerateHistoryNumber} className="bg-gray-200 px-3 py-2 rounded-r-md text-sm">Generar</button>
                     </div>
                 </div>
-                 <div>
-                    <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
-                    <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2" style={{ colorScheme: 'light' }} />
-                </div>
-                 <div>
-                    <label className="text-sm font-medium">Recurso Asignado</label>
-                    <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
-                        <option value="">Seleccionar Recurso...</option>
-                        {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
-                </div>
-                 <div>
+                <div>
                     <label className="text-sm font-medium">Estado en Recepción</label>
                     <select name="estadoRecepcion" value={formData.estadoRecepcion || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md p-2">
                         {Object.values(ReceptionStatus).map(s => <option key={s} value={s}>{s}</option>)}
@@ -248,6 +272,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   onSave,
   onDelete,
   lead,
+  campaigns,
   metaCampaigns,
   clientSources,
   services,
@@ -415,10 +440,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             handleShowAddLlamadaForm={handleShowAddLlamadaForm}
                             handleSaveCurrentLlamada={handleSaveCurrentLlamada}
                             handleRemoveLlamada={handleRemoveLlamada}
+                            campaigns={campaigns}
                             metaCampaigns={metaCampaigns}
                             clientSources={clientSources}
                             CATEGORY_OPTIONS={CATEGORY_OPTIONS}
                             SERVICE_CATEGORIES={SERVICE_CATEGORIES}
+                            services={services}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 

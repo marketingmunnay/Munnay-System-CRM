@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Campaign } from '../../types';
 import { AtencionStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons';
@@ -9,6 +9,7 @@ import StatCard from '../dashboard/StatCard';
 interface AtencionesDiariasPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   onSaveLead: (lead: Lead) => void;
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
@@ -140,7 +141,7 @@ const AtencionesTable: React.FC<{ atenciones: Atencion[], onEdit: (lead: Lead) =
     );
 };
 
-export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -298,6 +299,7 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
                 onDelete={onDeleteLead}
                 lead={editingLead}
                 metaCampaigns={metaCampaigns}
+                campaigns={campaigns}
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}
