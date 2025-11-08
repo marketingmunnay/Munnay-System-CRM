@@ -163,6 +163,16 @@ const App: React.FC = () => {
                     usuario: 'admin',
                     rolId: 1,
                     avatarUrl: '',
+                    permissions: [
+                        'calendario', 'marketing-campanas', 'marketing-leads', 
+                        'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                        'procedimientos-ventas-extra', 'recepcion-agendados', 
+                        'recepcion-ventas-extra', 'recepcion-incidencias',
+                        'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
+                        'procedimientos-atenciones', 'procedimientos-seguimiento',
+                        'procedimientos-incidencias', 'pacientes-historia', 
+                        'informes', 'configuracion'
+                    ],
                 };
                 
                 setCurrentUser(defaultUser);
