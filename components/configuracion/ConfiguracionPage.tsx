@@ -494,7 +494,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
 
     return (
         <div className="flex space-x-6 h-full">
-            <aside className="w-64 flex-shrink-0 bg-white p-6 rounded-lg shadow-md overflow-y-auto">
+            <aside className="w-80 flex-shrink-0 bg-white p-6 rounded-lg shadow-md overflow-y-auto">
                 <h2 className="text-xl font-bold text-black mb-4">Configuración</h2>
                 <nav className="space-y-1">
                     {SETTINGS_SECTIONS.filter(s => !s.parent).map(section => (
