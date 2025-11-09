@@ -101,6 +101,7 @@ export const updateLead = async (req: Request, res: Response) => {
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
+    pagosRecepcion, // Extract pagosRecepcion to prevent it from going to leadData
     ...leadData
   } = req.body;
 
@@ -120,28 +121,86 @@ export const updateLead = async (req: Request, res: Response) => {
       }
     };
 
-    // NOTE: This is a simplified update that only handles scalar fields.
-    // A real-world scenario requires complex logic to handle updates, creations,
-    // and deletions of related records (treatments, procedures, etc.) within a transaction.
+    // Helper function to normalize enum values (remove spaces)
+    const normalizeEnum = (value: string | undefined | null): string | undefined | null => {
+      if (!value) return value;
+      return value.replace(/\s+/g, ''); // Remove all spaces
+    };
+
+    // Get existing lead to preserve fechaLead if not provided
+    const existingLead = await prisma.lead.findUnique({
+      where: { id: id }
+    });
+
+    const parsedFechaLead = parseDate(leadData.fechaLead, true);
+    const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
+
+    // Delete existing related records first
+    await prisma.treatment.deleteMany({ where: { leadId: id } });
+    await prisma.procedure.deleteMany({ where: { leadId: id } });
+    await prisma.seguimiento.deleteMany({ where: { leadId: id } });
+
+    // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
       data: {
         ...leadData,
-        fechaLead: parseDate(leadData.fechaLead, true),
+        fechaLead: finalFechaLead,
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
         birthDate: parseDate(leadData.birthDate, true),
+        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-        }
+        },
+        // Create related records
+        tratamientos: tratamientos ? {
+          create: tratamientos.map((t: any) => ({
+            nombre: t.nombre,
+            cantidadSesiones: t.cantidadSesiones,
+            precio: t.precio,
+            montoPagado: t.montoPagado,
+            metodoPago: t.metodoPago,
+            deuda: t.deuda
+          }))
+        } : undefined,
+        procedimientos: procedimientos ? {
+          create: procedimientos.map((p: any) => ({
+            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+            personal: p.personal,
+            horaInicio: p.horaInicio,
+            horaFin: p.horaFin,
+            tratamientoId: p.tratamientoId,
+            nombreTratamiento: p.nombreTratamiento,
+            sesionNumero: p.sesionNumero,
+            asistenciaMedica: p.asistenciaMedica,
+            medico: p.medico,
+            observacion: p.observacion
+          }))
+        } : undefined,
+        seguimientos: seguimientos ? {
+          create: seguimientos.map((s: any) => ({
+            procedimientoId: s.procedimientoId,
+            nombreProcedimiento: s.nombreProcedimiento,
+            fechaSeguimiento: parseDate(s.fechaSeguimiento, true) || new Date(),
+            personal: s.personal,
+            inflamacion: s.inflamacion,
+            ampollas: s.ampollas,
+            alergias: s.alergias,
+            malestarGeneral: s.malestarGeneral,
+            brote: s.brote,
+            dolorDeCabeza: s.dolorDeCabeza,
+            moretones: s.moretones,
+            observacion: s.observacion
+          }))
+        } : undefined
       },
-       include: {
+      include: {
         tratamientos: true,
         procedimientos: true,
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
-        // Include new relation for ComprobanteElectronico
         comprobantes: true,
       }
     });
