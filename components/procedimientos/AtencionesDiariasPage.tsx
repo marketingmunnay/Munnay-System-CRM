@@ -182,8 +182,25 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
             });
         }
         
-        // Sort by date and time
-        return allAtenciones.sort((a, b) => {
+        // Group by patient - show only the most recent procedure for each patient
+        const groupedByPatient = new Map<number, Atencion>();
+        
+        allAtenciones
+            .sort((a, b) => {
+                // Sort by date and time to get most recent first
+                const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
+                const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
+                return dateB.getTime() - dateA.getTime(); // Most recent first
+            })
+            .forEach(atencion => {
+                // Only keep the first (most recent) procedure for each patient
+                if (!groupedByPatient.has(atencion.lead.id)) {
+                    groupedByPatient.set(atencion.lead.id, atencion);
+                }
+            });
+
+        // Convert back to array and sort by date/time
+        return Array.from(groupedByPatient.values()).sort((a, b) => {
             const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
             const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
             return dateA.getTime() - dateB.getTime();
@@ -227,6 +244,21 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Atenciones Diarias</h1>
                 <DateRangeFilter onApply={handleApplyDateFilter} />
+            </div>
+
+            {/* Information Note */}
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <GoogleIcon name="info" className="text-blue-400" />
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                            <strong>Vista resumida:</strong> Se muestra únicamente la atención más reciente de cada paciente. 
+                            Para ver todos los procedimientos, utiliza el formulario de edición del paciente.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

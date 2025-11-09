@@ -23,8 +23,12 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  // Inicializar con la fecha de HOY por defecto
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const [startDate, setStartDate] = useState<Date | null>(today);
+  const [endDate, setEndDate] = useState<Date | null>(today);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   
   const [leftCalendarDate, setLeftCalendarDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -32,6 +36,11 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   const rightCalendarDate = useMemo(() => {
     return new Date(leftCalendarDate.getFullYear(), leftCalendarDate.getMonth() + 1, 1);
   }, [leftCalendarDate]);
+
+  // Aplicar fecha HOY por defecto al cargar el componente
+  useEffect(() => {
+    onApply({ from: formatDate(today), to: formatDate(today) });
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
