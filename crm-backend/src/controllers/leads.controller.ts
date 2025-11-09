@@ -74,18 +74,87 @@ export const createLead = async (req: Request, res: Response) => {
       }
     };
 
+    // Helper function to normalize enum values (remove spaces)
+    const normalizeEnum = (value: any): any => {
+      if (typeof value === 'string') {
+        return value.replace(/\s+/g, '');
+      }
+      return value;
+    };
+
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
+        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
         fechaLead: parseDate(leadData.fechaLead, true, new Date()),
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
         birthDate: parseDate(leadData.birthDate, true),
-        // Handle relation for memberships if needed, currently not supported in simple create
+        // Handle relation for memberships if needed
         membresiasAdquiridas: {
           connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-        }
+        },
+        // Create tratamientos if provided
+        tratamientos: tratamientos && tratamientos.length > 0 ? {
+          create: tratamientos.map((t: any) => ({
+            nombreTratamiento: t.nombreTratamiento,
+            precio: t.precio,
+            montoPagado: t.montoPagado,
+            deuda: t.deuda,
+            sesionesTotales: t.sesionesTotales,
+          }))
+        } : undefined,
+        // Create procedimientos if provided
+        procedimientos: procedimientos && procedimientos.length > 0 ? {
+          create: procedimientos.map((p: any) => ({
+            tratamientoId: p.tratamientoId,
+            numeroSesion: p.numeroSesion,
+            fecha: parseDate(p.fecha, true),
+            personalAsistente: p.personalAsistente,
+            medicoAsistente: p.medicoAsistente,
+            observaciones: p.observaciones,
+          }))
+        } : undefined,
+        // Create registrosLlamada if provided
+        registrosLlamada: registrosLlamada && registrosLlamada.length > 0 ? {
+          create: registrosLlamada.map((r: any) => ({
+            numeroLlamada: r.numeroLlamada,
+            duracionLlamada: r.duracionLlamada,
+            estadoLlamada: r.estadoLlamada,
+            observacion: r.observacion,
+          }))
+        } : undefined,
+        // Create seguimientos if provided
+        seguimientos: seguimientos && seguimientos.length > 0 ? {
+          create: seguimientos.map((s: any) => ({
+            fecha: parseDate(s.fecha, true, new Date()),
+            procedimientoId: s.procedimientoId,
+            dolor: s.dolor || false,
+            hinchazon: s.hinchazon || false,
+            enrojecimiento: s.enrojecimiento || false,
+            picazon: s.picazon || false,
+            hematomas: s.hematomas || false,
+            sensibilidad: s.sensibilidad || false,
+            otrosSintomas: s.otrosSintomas || false,
+            descripcionOtros: s.descripcionOtros,
+            observaciones: s.observaciones,
+          }))
+        } : undefined,
+        // Create alergias if provided
+        alergias: alergias && alergias.length > 0 ? {
+          create: alergias.map((a: any) => ({
+            nombreAlergia: a.nombreAlergia,
+          }))
+        } : undefined,
       },
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+        comprobantes: true,
+      }
     });
     res.status(201).json(newLead);
   } catch (error) {
