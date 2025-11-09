@@ -60,13 +60,27 @@ export const createLead = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
+    // Helper function to safely parse dates for creation
+    const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
+      if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
+      
+      try {
+        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // Check if date is valid
+        if (isNaN(dateValue.getTime())) return defaultValue;
+        return dateValue;
+      } catch {
+        return defaultValue;
+      }
+    };
+
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
-        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead + 'T00:00:00') : new Date(),
-        fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : null,
-        fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : null,
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate + 'T00:00:00') : null,
+        fechaLead: parseDate(leadData.fechaLead, true, new Date()),
+        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+        birthDate: parseDate(leadData.birthDate, true),
         // Handle relation for memberships if needed, currently not supported in simple create
         membresiasAdquiridas: {
           connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
@@ -91,6 +105,21 @@ export const updateLead = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
+    // Helper function to safely parse dates
+    const parseDate = (dateStr: any, addTime: boolean = false): Date | null | undefined => {
+      if (dateStr === null) return null;
+      if (!dateStr || dateStr === '' || dateStr === 'undefined') return undefined;
+      
+      try {
+        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // Check if date is valid
+        if (isNaN(dateValue.getTime())) return undefined;
+        return dateValue;
+      } catch {
+        return undefined;
+      }
+    };
+
     // NOTE: This is a simplified update that only handles scalar fields.
     // A real-world scenario requires complex logic to handle updates, creations,
     // and deletions of related records (treatments, procedures, etc.) within a transaction.
@@ -98,10 +127,10 @@ export const updateLead = async (req: Request, res: Response) => {
       where: { id: id },
       data: {
         ...leadData,
-        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead + 'T00:00:00') : undefined,
-        fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : (leadData.fechaHoraAgenda === null ? null : undefined),
-        fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : (leadData.fechaVolverLlamar === null ? null : undefined),
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate + 'T00:00:00') : (leadData.birthDate === null ? null : undefined),
+        fechaLead: parseDate(leadData.fechaLead, true),
+        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+        birthDate: parseDate(leadData.birthDate, true),
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         }
