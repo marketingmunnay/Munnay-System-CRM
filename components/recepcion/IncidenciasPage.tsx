@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Incidencia, Lead } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
+import { formatDateTimeForDisplay } from '../../utils/time.ts';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '../shared/Icons.tsx';
 import IncidenciaFormModal from './IncidenciaFormModal.tsx';
 
@@ -105,7 +106,7 @@ const IncidenciasPage: React.FC<IncidenciasPageProps> = ({ incidencias, paciente
                         <tbody>
                             {filteredIncidencias.map(inc => (
                                 <tr key={inc.id} className="bg-white border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4">{new Date(inc.fecha + `T${inc.hora}`).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td className="px-6 py-4">{formatDateTimeForDisplay(inc.fecha + `T${inc.hora}`)}</td>
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{inc.nombrePaciente}</th>
                                     <td className="px-6 py-4">{inc.tipoIncidencia}</td>
                                     <td className="px-6 py-4">{inc.detalleIncidencia}</td>

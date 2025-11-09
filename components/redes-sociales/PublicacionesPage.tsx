@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import type { Publicacion } from '../../types.ts';
 import { TipoPost, RedSocialPost } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
+import { formatDateTimeForDisplay } from '../../utils/time.ts';
 import { PlusIcon, MagnifyingGlassIcon } from '../shared/Icons.tsx';
 import PublicacionFormModal from './PublicacionFormModal.tsx';
 
@@ -76,7 +77,7 @@ const PublicacionesTable: React.FC<{ publicaciones: Publicacion[], onEdit: (pub:
                                         </div>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{new Date(p.fechaPost + `T${p.horaPost || '00:00'}`).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{formatDateTimeForDisplay(p.fechaPost + `T${p.horaPost || '00:00'}`)}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900">{p.temaVideo}</th>
                                 <td className="px-6 py-4">
                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${tipoPostBadgeColors[p.tipoPost]}`}>

@@ -87,6 +87,14 @@ export interface Treatment {
     deuda: number;
 }
 
+export interface PagoRecepcion {
+    id: number;
+    monto: number;
+    metodoPago: MetodoPago;
+    fechaPago: string; // ISO string
+    observacion?: string;
+}
+
 export interface Procedure {
     id: number;
     fechaAtencion: string; // YYYY-MM-DD
@@ -150,7 +158,7 @@ export interface Lead {
     tratamientos?: Treatment[];
     estadoRecepcion?: ReceptionStatus;
     recursoId?: string;
-    pagosRecepcion?: Array<{ id: number; monto: number; metodoPago: MetodoPago }>;
+    pagosRecepcion?: PagoRecepcion[];
     // Procedure properties
     procedimientos?: Procedure[];
     seguimientos?: Seguimiento[];

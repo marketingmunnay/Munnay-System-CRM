@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
 import { Seller } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
+import { formatDateForDisplay } from '../../utils/time';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons';
 import { VentaExtraFormModal } from './VentaExtraFormModal';
 
@@ -239,7 +240,7 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacien
                             {filteredVentas.map(venta => (
                                 <tr key={venta.id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4 font-semibold">{venta.codigoVenta}</td>
-                                    <td className="px-6 py-4">{new Date(venta.fechaVenta + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                    <td className="px-6 py-4">{formatDateForDisplay(venta.fechaVenta)}</td>
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{venta.nombrePaciente}</th>
                                     <td className="px-6 py-4">{venta.servicio}</td>
                                     <td className="px-6 py-4">{formatCurrency(venta.precio)}</td>

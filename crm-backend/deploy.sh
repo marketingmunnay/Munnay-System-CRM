@@ -5,13 +5,13 @@
 
 echo "🚀 Iniciando deployment del backend..."
 
-# Generar el cliente de Prisma
-echo "📦 Generando cliente de Prisma..."
-npx prisma generate
-
 # Aplicar migraciones a la base de datos de producción
 echo "🗄️  Aplicando migraciones a la base de datos..."
 npx prisma migrate deploy
+
+# Generar el cliente de Prisma
+echo "📦 Generando cliente de Prisma..."
+npx prisma generate
 
 # Construir el proyecto TypeScript
 echo "🔨 Construyendo el proyecto..."

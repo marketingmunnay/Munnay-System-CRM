@@ -5,6 +5,7 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
@@ -52,7 +53,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
                     <tbody>
                         {leads.map(lead => (
                             <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{lead.fechaLead ? new Date(lead.fechaLead + 'T00:00:00').toLocaleDateString('es-PE') : '-'}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead)}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {lead.nombres} {lead.apellidos}
                                 </th>
