@@ -216,11 +216,19 @@ export const updateLead = async (req: Request, res: Response) => {
     const parsedFechaLead = parseDate(leadData.fechaLead, true);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
-    // Delete existing related records first
-    await prisma.treatment.deleteMany({ where: { leadId: id } });
-    await prisma.procedure.deleteMany({ where: { leadId: id } });
-    await prisma.seguimiento.deleteMany({ where: { leadId: id } });
-    await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
+    // Delete existing related records first only if new data is being sent
+    if (tratamientos !== undefined) {
+      await prisma.treatment.deleteMany({ where: { leadId: id } });
+    }
+    if (procedimientos !== undefined) {
+      await prisma.procedure.deleteMany({ where: { leadId: id } });
+    }
+    if (seguimientos !== undefined) {
+      await prisma.seguimiento.deleteMany({ where: { leadId: id } });
+    }
+    if (pagosRecepcion !== undefined) {
+      await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
+    }
 
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({

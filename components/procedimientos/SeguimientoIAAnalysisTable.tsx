@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Seguimiento } from '../../types.ts';
 import SeguimientoDetailModal from './SeguimientoDetailModal.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 import * as api from '../../services/api.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -109,7 +110,7 @@ const SeguimientoIAAnalysisTable: React.FC<SeguimientoIAAnalysisTableProps> = ({
                                             <p className="text-xs text-gray-500 font-normal">{patient.nHistoria}</p>
                                         </th>
                                         <td className="px-6 py-4">
-                                            {lastFollowUp ? new Date(lastFollowUp.fechaSeguimiento + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A'}
+                                            {lastFollowUp ? formatDateForDisplay(lastFollowUp.fechaSeguimiento) : 'N/A'}
                                         </td>
                                         <td className="px-6 py-4">
                                             {result?.status === 'loading' && <span className="text-xs text-gray-500">Analizando...</span>}
