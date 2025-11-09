@@ -54,12 +54,23 @@ export const getLeadById = async (req: Request, res: Response) => {
 };
 
 export const createLead = async (req: Request, res: Response) => {
-  const { 
-    id, createdAt, updatedAt, 
+  try {
+    console.log('Creating lead with data:', JSON.stringify(req.body, null, 2));
+    
+export const updateLead = async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  try {
+    console.log('Updating lead with ID:', id);
+    console.log('Update data:', JSON.stringify(req.body, null, 2));
+
+    const {
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, pagosRecepcion,
-    ...leadData
-  } = req.body;
+    alergias, membresiasAdquiridas, pagosRecepcion, ...leadData
+    } = req.body;
+
+    console.log('Procedimientos for update:', procedimientos);
+    console.log('Tratamientos for update:', tratamientos);    console.log('Procedimientos received:', procedimientos);
+    console.log('Tratamientos received:', tratamientos);
 
   try {
     // Helper function to safely parse dates for creation
@@ -99,22 +110,27 @@ export const createLead = async (req: Request, res: Response) => {
         // Create tratamientos if provided
         tratamientos: tratamientos && tratamientos.length > 0 ? {
           create: tratamientos.map((t: any) => ({
-            nombreTratamiento: t.nombreTratamiento,
-            precio: t.precio,
-            montoPagado: t.montoPagado,
-            deuda: t.deuda,
-            sesionesTotales: t.sesionesTotales,
+            nombre: t.nombre || '',
+            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+            precio: parseFloat(t.precio) || 0,
+            montoPagado: parseFloat(t.montoPagado) || 0,
+            metodoPago: t.metodoPago || null,
+            deuda: parseFloat(t.deuda) || 0
           }))
         } : undefined,
         // Create procedimientos if provided
         procedimientos: procedimientos && procedimientos.length > 0 ? {
           create: procedimientos.map((p: any) => ({
-            tratamientoId: p.tratamientoId,
-            numeroSesion: p.numeroSesion,
-            fecha: parseDate(p.fecha, true),
-            personalAsistente: p.personalAsistente,
-            medicoAsistente: p.medicoAsistente,
-            observaciones: p.observaciones,
+            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+            personal: p.personal || '',
+            horaInicio: p.horaInicio || '',
+            horaFin: p.horaFin || '',
+            tratamientoId: parseInt(p.tratamientoId) || 0,
+            nombreTratamiento: p.nombreTratamiento || '',
+            sesionNumero: parseInt(p.sesionNumero) || 1,
+            asistenciaMedica: Boolean(p.asistenciaMedica),
+            medico: p.medico || null,
+            observacion: p.observacion || null
           }))
         } : undefined,
         // Create registrosLlamada if provided
@@ -246,26 +262,26 @@ export const updateLead = async (req: Request, res: Response) => {
         // Create related records
         tratamientos: tratamientos ? {
           create: tratamientos.map((t: any) => ({
-            nombre: t.nombre,
-            cantidadSesiones: t.cantidadSesiones,
-            precio: t.precio,
-            montoPagado: t.montoPagado,
-            metodoPago: t.metodoPago,
-            deuda: t.deuda
+            nombre: t.nombre || '',
+            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+            precio: parseFloat(t.precio) || 0,
+            montoPagado: parseFloat(t.montoPagado) || 0,
+            metodoPago: t.metodoPago || null,
+            deuda: parseFloat(t.deuda) || 0
           }))
         } : undefined,
         procedimientos: procedimientos ? {
           create: procedimientos.map((p: any) => ({
             fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-            personal: p.personal,
-            horaInicio: p.horaInicio,
-            horaFin: p.horaFin,
-            tratamientoId: p.tratamientoId,
-            nombreTratamiento: p.nombreTratamiento,
-            sesionNumero: p.sesionNumero,
-            asistenciaMedica: p.asistenciaMedica,
-            medico: p.medico,
-            observacion: p.observacion
+            personal: p.personal || '',
+            horaInicio: p.horaInicio || '',
+            horaFin: p.horaFin || '',
+            tratamientoId: parseInt(p.tratamientoId) || 0,
+            nombreTratamiento: p.nombreTratamiento || '',
+            sesionNumero: parseInt(p.sesionNumero) || 1,
+            asistenciaMedica: Boolean(p.asistenciaMedica),
+            medico: p.medico || null,
+            observacion: p.observacion || null
           }))
         } : undefined,
         seguimientos: seguimientos ? {
