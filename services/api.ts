@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import type { 
   Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
   BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
@@ -261,8 +260,24 @@ export const deleteComprobante = (id: number): Promise<void> =>
 
 // ====== AI CONTENT GENERATION ======
 export const generateAiContent = async (prompt: string): Promise<string> => {
-  // This would need Google Gemini API key configuration
-  // For now, return a placeholder
-  console.warn('AI content generation not fully configured');
-  return 'Contenido generado por IA no disponible';
+  try {
+    const response = await apiRequest<{ content: string }>('/ai/generate', 'POST', { prompt });
+    return response.content;
+  } catch (error) {
+    console.error('Error generating AI content:', error);
+    return 'Error al generar contenido con IA. Por favor, intenta nuevamente.';
+  }
+};
+
+export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): Promise<string> => {
+  try {
+    const response = await apiRequest<{ analysis: string }>('/ai/analysis', 'POST', { 
+      seguimientos, 
+      paciente 
+    });
+    return response.analysis;
+  } catch (error) {
+    console.error('Error generating AI analysis:', error);
+    return 'Error al generar análisis con IA. Por favor, intenta nuevamente.';
+  }
 };
