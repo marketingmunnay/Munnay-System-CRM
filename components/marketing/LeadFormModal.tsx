@@ -5,6 +5,7 @@ import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
+import { formatDateForInput, formatDateForDisplay } from '../../utils/time';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -966,7 +967,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                             <label className="text-sm font-medium text-gray-700">Fecha de Atención *</label>
                             <input
                                 type="date"
-                                value={currentProcedure.fechaAtencion || ''}
+                                value={formatDateForInput(currentProcedure.fechaAtencion)}
                                 onChange={(e) => handleProcedureFieldChange('fechaAtencion', e.target.value)}
                                 className="w-full bg-white p-2"
                                 style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
@@ -1122,7 +1123,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                                                     <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
                                                         <div>
                                                             <span className="font-semibold text-purple-700">Sesión #{proc.sesionNumero}</span>
-                                                            <p className="text-gray-600 text-xs mt-1">{proc.fechaAtencion}</p>
+                                                            <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
                                                         </div>
                                                         <div>
                                                             <span className="text-gray-500">Horario:</span>

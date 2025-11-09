@@ -32,7 +32,7 @@ const StatCard: React.FC<CustomStatCardData> = ({ title, value, change, changeTy
           </div>
         )}
       </div>
-      <div className={`p-3 rounded-full ${iconBgClass || 'bg-gray-100'}`}>
+      <div className={`p-3 ${iconBgClass || ''}`}>
         {typeof icon === 'string' ? <GoogleIcon name={icon} className={iconColorClass} /> : icon}
       </div>
     </div>

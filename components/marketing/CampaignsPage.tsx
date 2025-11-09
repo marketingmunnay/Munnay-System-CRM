@@ -8,6 +8,7 @@ import MetaCampaignFormModal from './MetaCampaignFormModal.tsx';
 import AnunciosTable from './AnunciosTable.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Campaign, Lead, MetaCampaign } from '../../types.ts';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 interface CampaignsPageProps {
     campaigns: Campaign[];
@@ -45,8 +46,8 @@ const MetaCampaignsTable: React.FC<{ campaigns: MetaCampaign[], onEdit: (campaig
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {campaign.nombre}
                                 </th>
-                                <td className="px-6 py-4">{new Date(campaign.fechaInicio + 'T00:00:00').toLocaleDateString('es-PE')}</td>
-                                <td className="px-6 py-4">{new Date(campaign.fechaFin + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(campaign.fechaInicio)}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(campaign.fechaFin)}</td>
                                 <td className="px-6 py-4">{campaign.categoria}</td>
                                 <td className="px-6 py-4">
                                     <button
