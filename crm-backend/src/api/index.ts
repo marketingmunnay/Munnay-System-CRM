@@ -28,7 +28,7 @@ router.use('/users', usersRouter);
 router.use('/config', configRouter);
 router.use('/goals', goalsRouter);
 // FIX: Add comprobantes router to be handled by the API.
-router.use('/comprobantes', comprobantesRouter);
+router.use('/config/comprobantes', comprobantesRouter);
 
 
 export default router;

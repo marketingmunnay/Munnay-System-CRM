@@ -15,6 +15,7 @@ export const getLeads = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         // Include new relation for ComprobanteElectronico
         comprobantes: true,
       }
@@ -37,6 +38,7 @@ export const getLeadById = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         // Include new relation for ComprobanteElectronico
         comprobantes: true,
       }
@@ -55,7 +57,7 @@ export const createLead = async (req: Request, res: Response) => {
   const { 
     id, createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, 
+    alergias, membresiasAdquiridas, comprobantes, pagosRecepcion,
     ...leadData
   } = req.body;
 
@@ -146,6 +148,15 @@ export const createLead = async (req: Request, res: Response) => {
             nombreAlergia: a.nombreAlergia,
           }))
         } : undefined,
+        // Create pagos de recepción if provided
+        pagosRecepcion: pagosRecepcion && pagosRecepcion.length > 0 ? {
+          create: pagosRecepcion.map((p: any) => ({
+            monto: p.monto,
+            metodoPago: p.metodoPago,
+            fechaPago: parseDate(p.fechaPago) || new Date(),
+            observacion: p.observacion,
+          }))
+        } : undefined,
       },
       include: {
         tratamientos: true,
@@ -153,6 +164,7 @@ export const createLead = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         comprobantes: true,
       }
     });
@@ -208,6 +220,7 @@ export const updateLead = async (req: Request, res: Response) => {
     await prisma.treatment.deleteMany({ where: { leadId: id } });
     await prisma.procedure.deleteMany({ where: { leadId: id } });
     await prisma.seguimiento.deleteMany({ where: { leadId: id } });
+    await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
 
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
@@ -262,6 +275,15 @@ export const updateLead = async (req: Request, res: Response) => {
             moretones: s.moretones,
             observacion: s.observacion
           }))
+        } : undefined,
+        // Create pagos de recepción if provided
+        pagosRecepcion: pagosRecepcion ? {
+          create: pagosRecepcion.map((p: any) => ({
+            monto: p.monto,
+            metodoPago: p.metodoPago,
+            fechaPago: parseDate(p.fechaPago) || new Date(),
+            observacion: p.observacion,
+          }))
         } : undefined
       },
       include: {
@@ -270,6 +292,7 @@ export const updateLead = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         comprobantes: true,
       }
     });
