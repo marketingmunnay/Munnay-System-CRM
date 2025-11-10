@@ -800,14 +800,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             grupos[proc.tratamientoId].push(proc);
         });
         
-        console.log('🔍 DEBUGGING procedimientosPorTratamiento:', {
-            grupos,
-            procedimientosIds: formData.procedimientos.map((p: Procedure) => p.tratamientoId),
-            tratamientosIds: (formData.tratamientos || []).map((t: Treatment) => t.id),
-            procedimientos: formData.procedimientos,
-            tratamientos: formData.tratamientos
-        });
-        
         return grupos;
     }, [formData.procedimientos]);
 
@@ -1107,18 +1099,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
-            {/* Debug Info */}
-            {true && (
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
-                    <h4 className="font-semibold text-yellow-800">DEBUG INFO:</h4>
-                    <p>hasTratamientos: {hasTratamientos.toString()}</p>
-                    <p>procedimientosExistentes: {procedimientosExistentes.toString()}</p>
-                    <p>formData.procedimientos.length: {(formData.procedimientos || []).length}</p>
-                    <p>formData.tratamientos.length: {(formData.tratamientos || []).length}</p>
-                    <p>procedimientosPorTratamiento keys: {Object.keys(procedimientosPorTratamiento).join(', ')}</p>
-                    <p>tratamientos IDs: {(formData.tratamientos || []).map(t => t.id).join(', ')}</p>
-                </div>
-            )}
+
 
             {/* Lista de Procedimientos Agrupados por Tratamiento */}
             {hasTratamientos && procedimientosExistentes && (
@@ -1128,15 +1109,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                         const sesionesCompletadas = procedimientos.length;
                         const totalSesiones = tratamiento.cantidadSesiones;
                         const progreso = totalSesiones > 0 ? (sesionesCompletadas / totalSesiones) * 100 : 0;
-                        
-                        console.log('🔍 DEBUGGING tratamiento mapping:', {
-                            tratamientoId: tratamiento.id,
-                            tratamientoNombre: tratamiento.nombreTratamiento,
-                            procedimientosEncontrados: procedimientos.length,
-                            procedimientos: procedimientos,
-                            sesionesCompletadas,
-                            willShow: sesionesCompletadas > 0
-                        });
                         
                         if (sesionesCompletadas === 0) return null;
 
@@ -1250,97 +1222,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
-            {/* CORRECCIÓN: Mostrar procedimientos sin tratamiento asociado */}
-            {procedimientosExistentes && (
-                <div className="space-y-4">
-                    <h4 className="text-md font-semibold text-orange-700 flex items-center">
-                        <GoogleIcon name="warning" className="mr-2" />
-                        Procedimientos Existentes (Corrección Automática)
-                    </h4>
-                    
-                    {(formData.procedimientos || []).map((proc: Procedure, index: number) => (
-                        <div key={proc.id || index} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-                                    <div>
-                                        <span className="font-semibold text-orange-700">
-                                            {proc.nombreTratamiento} - Sesión #{proc.sesionNumero}
-                                        </span>
-                                        <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">Horario:</span>
-                                        <p className="text-gray-800 font-medium">{proc.horaInicio} - {proc.horaFin}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">Personal:</span>
-                                        <p className="text-gray-800 font-medium">{proc.personal}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-500">ID Tratamiento:</span>
-                                        <p className="text-orange-600 font-medium">{proc.tratamientoId}</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex space-x-2 ml-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleEditProcedure(proc)}
-                                        className="text-blue-600 hover:text-blue-800"
-                                        title="Editar procedimiento"
-                                    >
-                                        <GoogleIcon name="edit" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDeleteProcedure(proc.id)}
-                                        className="text-red-600 hover:text-red-800"
-                                        title="Eliminar procedimiento"
-                                    >
-                                        <GoogleIcon name="delete" />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            {proc.observacion && (
-                                <div className="mt-3 p-3 bg-white rounded text-sm">
-                                    <span className="text-gray-500 font-medium">Observación: </span>
-                                    <span className="text-gray-700">{proc.observacion}</span>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                    
-                    <div className="bg-orange-100 border border-orange-300 p-3 rounded text-sm">
-                        <p className="text-orange-800 font-medium">ℹ️ Nota de Corrección:</p>
-                        <p className="text-orange-700">
-                            Estos procedimientos se están mostrando porque los IDs de tratamiento no coinciden 
-                            (Procedimientos: {Object.keys(procedimientosPorTratamiento).join(', ')} | 
-                            Tratamientos: {(formData.tratamientos || []).map(t => t.id).join(', ')})
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (formData.tratamientos && formData.tratamientos.length > 0) {
-                                    const primerTratamientoId = formData.tratamientos[0].id;
-                                    const procedimientosCorregidos = (formData.procedimientos || []).map(proc => ({
-                                        ...proc,
-                                        tratamientoId: primerTratamientoId
-                                    }));
-                                    handleSetFormData(prev => ({
-                                        ...prev,
-                                        procedimientos: procedimientosCorregidos
-                                    }));
-                                    alert('✅ IDs corregidos! Los procedimientos ahora se asociarán al primer tratamiento.');
-                                }
-                            }}
-                            className="mt-2 px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
-                        >
-                            🔧 Corregir IDs Automáticamente
-                        </button>
-                    </div>
-                </div>
-            )}
+
 
             {hasTratamientos && !procedimientosExistentes && !currentProcedure && (
                 <div className="text-center py-12 text-gray-500">
@@ -1350,22 +1232,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
-            {/* TEST: Simple procedimientos list (like seguimientos) */}
-            {(formData.procedimientos || []).length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded">
-                    <h4 className="font-semibold text-blue-800 mb-3">TEST - Lista Simple de Procedimientos:</h4>
-                    <div className="space-y-2">
-                        {(formData.procedimientos || []).map((proc: Procedure, index: number) => (
-                            <div key={proc.id || index} className="bg-white p-2 rounded border">
-                                <p><strong>Tratamiento:</strong> {proc.nombreTratamiento}</p>
-                                <p><strong>Sesión:</strong> {proc.sesionNumero}</p>
-                                <p><strong>Fecha:</strong> {proc.fechaAtencion}</p>
-                                <p><strong>Personal:</strong> {proc.personal}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 };
@@ -1993,15 +1860,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         };
         
         try {
-            console.log('🔍 DEBUGGING: Saving lead with data:', {
-                id: dataToSave.id,
-                nombres: dataToSave.nombres,
-                apellidos: dataToSave.apellidos,
-                estadoRecepcion: dataToSave.estadoRecepcion,
-                procedimientos: dataToSave.procedimientos,
-                procedimientosCount: (dataToSave.procedimientos || []).length
-            });
-            
             await onSave(dataToSave as Lead);
             
             // Mostrar mensaje de éxito
