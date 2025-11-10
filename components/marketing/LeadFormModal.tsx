@@ -848,19 +848,33 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
         handleSetFormData((prev: Partial<Lead>) => {
             const procedimientos = prev.procedimientos || [];
+            console.log('📋 SAVING PROCEDURE: Current state before save:', {
+                currentProcedimientos: procedimientos.length,
+                procedureToSave: procedureToSave,
+                isEditing: editingProcedureId !== null
+            });
             
             if (editingProcedureId !== null) {
-                return {
+                const updated = {
                     ...prev,
                     procedimientos: procedimientos.map((p: Procedure) => 
                         p.id === editingProcedureId ? procedureToSave : p
                     )
                 };
+                console.log('📝 EDITING PROCEDURE: Updated state:', {
+                    newCount: updated.procedimientos?.length
+                });
+                return updated;
             } else {
-                return {
+                const updated = {
                     ...prev,
                     procedimientos: [...procedimientos, procedureToSave]
                 };
+                console.log('➕ ADDING PROCEDURE: Updated state:', {
+                    newCount: updated.procedimientos?.length,
+                    lastProcedure: procedureToSave
+                });
+                return updated;
             }
         });
 
@@ -1724,7 +1738,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         data: formData,
         onSave: async (data) => {
             if (!data.id) throw new Error('Cannot auto-save new lead');
+            console.log('🚀 AUTO-SAVE: Sending data to backend:', {
+                id: data.id,
+                procedimientosCount: (data.procedimientos || []).length,
+                procedimientos: data.procedimientos
+            });
             const savedData = await api.saveLead(data as Lead);
+            console.log('✅ AUTO-SAVE: Response from backend:', {
+                id: savedData.id,
+                procedimientosCount: (savedData.procedimientos || []).length
+            });
             return savedData;
         },
         delay: 2000, // Auto-save every 2 seconds

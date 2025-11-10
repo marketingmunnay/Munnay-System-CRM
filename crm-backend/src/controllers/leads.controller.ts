@@ -190,6 +190,10 @@ export const updateLead = async (req: Request, res: Response) => {
     ...leadData
   } = req.body;
 
+  console.log(`🔍 UPDATING LEAD ${id}`);
+  console.log('📦 Procedimientos received:', JSON.stringify(procedimientos, null, 2));
+  console.log('📊 Procedimientos count:', procedimientos ? procedimientos.length : 'undefined');
+
   try {
     // Helper function to safely parse dates
     const parseDate = (dateStr: any, addTime: boolean = false): Date | null | undefined => {
