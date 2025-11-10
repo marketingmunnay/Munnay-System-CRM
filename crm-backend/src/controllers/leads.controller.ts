@@ -192,7 +192,8 @@ export const updateLead = async (req: Request, res: Response) => {
   console.log('🔍 DEBUGGING: UpdateLead received:', {
     leadId: id,
     procedimientos: procedimientos ? procedimientos.length : 'undefined',
-    procedimientosData: procedimientos
+    procedimientosData: procedimientos,
+    estadoRecepcion: req.body.estadoRecepcion
   });
 
   try {
@@ -225,17 +226,21 @@ export const updateLead = async (req: Request, res: Response) => {
     const parsedFechaLead = parseDate(leadData.fechaLead, true);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
-    // Delete existing related records first only if new data is being sent AND is valid
+    // Delete existing related records first only if new data is being sent AND has valid content
     if (tratamientos !== undefined && Array.isArray(tratamientos)) {
+      console.log('🔄 Deleting existing treatments, will recreate:', tratamientos.length);
       await prisma.treatment.deleteMany({ where: { leadId: id } });
     }
     if (procedimientos !== undefined && Array.isArray(procedimientos)) {
+      console.log('🔄 Deleting existing procedimientos, will recreate:', procedimientos.length);
       await prisma.procedure.deleteMany({ where: { leadId: id } });
     }
     if (seguimientos !== undefined && Array.isArray(seguimientos)) {
+      console.log('🔄 Deleting existing seguimientos, will recreate:', seguimientos.length);
       await prisma.seguimiento.deleteMany({ where: { leadId: id } });
     }
     if (pagosRecepcion !== undefined && Array.isArray(pagosRecepcion)) {
+      console.log('🔄 Deleting existing pagosRecepcion, will recreate:', pagosRecepcion.length);
       await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
     }
 
@@ -264,19 +269,29 @@ export const updateLead = async (req: Request, res: Response) => {
           }))
         } : undefined,
         procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
-          create: procedimientos.map((p: any) => ({
-            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-            personal: p.personal || '',
-            horaInicio: p.horaInicio || '',
-            horaFin: p.horaFin || '',
-            tratamientoId: parseInt(p.tratamientoId) || 0,
-            nombreTratamiento: p.nombreTratamiento || '',
-            sesionNumero: parseInt(p.sesionNumero) || 1,
-            asistenciaMedica: Boolean(p.asistenciaMedica),
-            medico: p.medico || null,
-            observacion: p.observacion || null
-          }))
-        } : undefined,
+          create: procedimientos.map((p: any) => {
+            console.log('✨ Creating procedimiento:', p);
+            return {
+              fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+              personal: p.personal || '',
+              horaInicio: p.horaInicio || '',
+              horaFin: p.horaFin || '',
+              tratamientoId: parseInt(p.tratamientoId) || 0,
+              nombreTratamiento: p.nombreTratamiento || '',
+              sesionNumero: parseInt(p.sesionNumero) || 1,
+              asistenciaMedica: Boolean(p.asistenciaMedica),
+              medico: p.medico || null,
+              observacion: p.observacion || null
+            };
+          })
+        } : (() => {
+          console.log('❌ NOT creating procedimientos - array empty or invalid:', {
+            procedimientos,
+            isArray: Array.isArray(procedimientos),
+            length: procedimientos?.length
+          });
+          return undefined;
+        })(),
         seguimientos: (seguimientos && Array.isArray(seguimientos) && seguimientos.length > 0) ? {
           create: seguimientos.map((s: any) => ({
             procedimientoId: s.procedimientoId,
