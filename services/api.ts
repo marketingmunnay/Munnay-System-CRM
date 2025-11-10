@@ -98,7 +98,7 @@ export const getProveedores = (): Promise<Proveedor[]> =>
 export const saveProveedor = (proveedor: Proveedor): Promise<Proveedor> =>
   proveedor.id && proveedor.id < 1000000
     ? apiRequest<Proveedor>(`/proveedores/${proveedor.id}`, 'PUT', proveedor)
-    : apiRequest<Proveedor>('/proveedores', 'POST', proveedor);
+    : apiRequest<Proveedor>('/proveedores', 'POST', { ...proveedor, id: undefined });
 export const deleteProveedor = (id: number): Promise<void> =>
   apiRequest<void>(`/proveedores/${id}`, 'DELETE');
 
@@ -108,7 +108,7 @@ export const getTiposProveedor = (): Promise<TipoProveedor[]> =>
 export const saveTipoProveedor = (tipo: TipoProveedor): Promise<TipoProveedor> =>
   tipo.id && tipo.id < 1000000
     ? apiRequest<TipoProveedor>(`/proveedores/tipos/${tipo.id}`, 'PUT', tipo)
-    : apiRequest<TipoProveedor>('/proveedores/tipos', 'POST', tipo);
+    : apiRequest<TipoProveedor>('/proveedores/tipos', 'POST', { ...tipo, id: undefined });
 export const deleteTipoProveedor = (id: number): Promise<void> =>
   apiRequest<void>(`/proveedores/tipos/${id}`, 'DELETE');
 

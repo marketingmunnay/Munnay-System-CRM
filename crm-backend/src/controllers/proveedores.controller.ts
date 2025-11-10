@@ -26,7 +26,7 @@ export const getProveedorById = async (req: Request, res: Response) => {
 };
 
 export const createProveedor = async (req: Request, res: Response) => {
-  const data = req.body;
+  const { id: _, ...data } = req.body; // Exclude id from create data
   try {
     const newProveedor = await prisma.proveedor.create({ data });
     res.status(201).json(newProveedor);
@@ -68,7 +68,7 @@ export const getTiposProveedor = async (req: Request, res: Response) => {
 };
 
 export const createTipoProveedor = async (req: Request, res: Response) => {
-  const data = req.body;
+  const { id: _, ...data } = req.body; // Exclude id from create data
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
     res.status(201).json(newTipo);
