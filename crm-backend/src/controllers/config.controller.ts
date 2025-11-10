@@ -35,8 +35,9 @@ const createCrudHandlers = (modelName: string) => {
         },
         update: async (req: Request, res: Response) => {
             const id = parseInt(req.params.id);
+            const { id: _, ...data } = req.body; // Exclude id from update data
             try {
-                const updatedItem = await typedModel.update({ where: { id: id }, data: req.body });
+                const updatedItem = await typedModel.update({ where: { id: id }, data });
                 res.status(200).json(updatedItem);
             } catch (error) {
                 res.status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message });
@@ -81,21 +82,22 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
 };
 
 export const updateBusinessInfo = async (req: Request, res: Response) => {
+    const { id: _, ...data } = req.body; // Exclude id from update data
     try {
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
         const updatedInfo = await prisma.businessInfo.upsert({
             where: { id: 1 },
-            update: req.body,
+            update: data,
             create: { // Provide default values for create if it doesn't exist
                 id: 1,
-                nombre: req.body.nombre || 'Munnay System',
-                ruc: req.body.ruc || '12345678901',
-                direccion: req.body.direccion || 'Av. Principal 123',
-                telefono: req.body.telefono || '987654321',
-                email: req.body.email || 'info@munnay.com',
-                logoUrl: req.body.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
-                loginImageUrl: req.body.loginImageUrl || '',
+                nombre: data.nombre || 'Munnay System',
+                ruc: data.ruc || '12345678901',
+                direccion: data.direccion || 'Av. Principal 123',
+                telefono: data.telefono || '987654321',
+                email: data.email || 'info@munnay.com',
+                logoUrl: data.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
+                loginImageUrl: data.loginImageUrl || '',
             },
         });
         res.status(200).json(updatedInfo);

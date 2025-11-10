@@ -3,33 +3,28 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
-import path from 'path';
 
 dotenv.config();
 
 const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
 
-// Lista de orígenes permitidos
+// ✅ Lista de orígenes permitidos en producción
 const allowedOrigins = [
-  'http://localhost:5173',  // Vite default dev port for frontend
-  'http://127.0.0.1:5173',  // Alternative local dev
-  'https://mcc.munnaymedicinaestetica.com', // Tu subdominio de producción
-  'https://munnay-system-crm.vercel.app', // Frontend desplegado en Vercel (dominio principal)
+  'https://mcc.munnaymedicinaestetica.com',
+  'https://munnay-system-crm.vercel.app',
+  'https://munnay-system.vercel.app',
+  'https://munnay-crm-frontend.onrender.com',
+  'http://localhost:4173',
+  'http://localhost:3000'
 ];
 
-// Regex para permitir cualquier subdominio de Vercel para proyectos de marketingmunnays
+// ✅ Regex para permitir previews de Vercel
 const vercelPreviewRegex = /^https:\/\/(.+)-marketingmunnays-projects\.vercel\.app$/;
-
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Permitir solicitudes sin origen (ej. Postman, curl)
-    if (!origin) {
-      callback(null, true);
-    } else if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (vercelPreviewRegex.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || vercelPreviewRegex.test(origin)) {
       callback(null, true);
     } else {
       console.error(`CORS: Origen no permitido: ${origin}`);
@@ -42,23 +37,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// Health check endpoint
-app.get('/health', (req, res) => {
+// ✅ Health check
+app.get('/health', (_req, res) => {
   res.status(200).send('CRM Munnay Backend is running!');
 });
 
-// API routes are prefixed with /api
+// ✅ API routes
 app.use('/api', apiRouter);
 
-// For any other request that doesn't match an API route or a static file,
-// serve the frontend's index.html file. This is crucial for client-side routing.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
-
+// ✅ Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

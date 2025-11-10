@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken'; 
 // import { Address, EmergencyContact, User } from '@prisma/client';
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -94,7 +95,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { password, addresses, emergencyContacts, ...userData } = req.body;
+  const { id: _, password, addresses, emergencyContacts, ...userData } = req.body; // Exclude id from update data
   try {
     let updateData: any = {
         ...userData,
@@ -163,5 +164,39 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { usuario, password } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { usuario } });
+    if (!user) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    // 🔑 Generar token JWT
+    const token = jwt.sign(
+      { id: user.id, rolId: user.rolId },
+      process.env.JWT_SECRET || 'secret_key',
+      { expiresIn: '1h' }
+    );
+
+    return res.json({
+      message: 'Login exitoso',
+      user: userWithoutPassword,
+      token,
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    return res.status(500).json({ error: 'Error en el servidor' });
   }
 };

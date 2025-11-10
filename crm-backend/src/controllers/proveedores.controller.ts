@@ -37,8 +37,9 @@ export const createProveedor = async (req: Request, res: Response) => {
 
 export const updateProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+  const { id: _, ...data } = req.body; // Exclude id from update data
   try {
-    const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
+    const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data });
     res.status(200).json(updatedProveedor);
   } catch (error) {
     res.status(500).json({ message: 'Error updating proveedor', error: (error as Error).message });
@@ -78,8 +79,9 @@ export const createTipoProveedor = async (req: Request, res: Response) => {
 
 export const updateTipoProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+  const { id: _, ...data } = req.body; // Exclude id from update data
   try {
-    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });
+    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data });
     res.status(200).json(updatedTipo);
   } catch (error) {
     res.status(500).json({ message: 'Error updating tipo de proveedor', error: (error as Error).message });

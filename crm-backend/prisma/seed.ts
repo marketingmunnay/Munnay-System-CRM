@@ -1,52 +1,38 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-// FIX: Import 'process' to resolve typing issues with 'process.exit'.
-import { process } from 'node:process';
-// FIX: Changed import path to be relative to the backend root.
-import { LeadStatus, ReceptionStatus, MetodoPago, Seller, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus, TipoComprobante, ModoPagoEgreso, GoalArea, GoalObjective, GoalUnit, Personal, Medico } from '../../types'; // Import frontend types
+import { PrismaClient, DocumentType, MetodoPago, Seller, LeadStatus } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Start seeding...');
+  console.log('🌱 Iniciando seed...')
 
   // --- 1. Business Info ---
-  console.log('Seeding BusinessInfo...');
   await prisma.businessInfo.upsert({
     where: { id: 1 },
     update: {},
     create: {
-      id: 1, // Explicitly set ID if it's not autoincrement
+      id: 1,
       nombre: 'Munnay System',
       ruc: '20512345678',
       direccion: 'Av. Las Palmeras 456, Surco, Lima',
       telefono: '987654321',
       email: 'info@munnay.com',
-      logoUrl: 'https://i.imgur.com/JmZt2eU.png', // Replace with an actual logo URL if available
-      loginImageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070', // Example login image
+      logoUrl: 'https://i.imgur.com/JmZt2eU.png',
+      loginImageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070',
     },
-  });
+  })
 
   // --- 2. Roles ---
-  console.log('Seeding Roles...');
   const adminRole = await prisma.role.upsert({
     where: { id: 1 },
     update: {},
     create: {
       id: 1,
       nombre: 'Administrador',
-      permissions: [
-        'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
-        'redes-sociales-publicaciones', 'redes-sociales-seguidores',
-        'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
-        'procedimientos-atenciones', 'procedimientos-seguimiento',
-        'procedimientos-ventas-extra', 'procedimientos-incidencias',
-        'pacientes-historia', 'finanzas-egresos', 'finanzas-facturacion',
-        'rrhh-perfiles', 'informes', 'configuracion'
-      ],
-      dashboardMetrics: ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh'],
+      permissions: ['dashboard', 'configuracion', 'informes'],
+      dashboardMetrics: ['general', 'marketing', 'finanzas'],
     },
-  });
+  })
 
   const marketingRole = await prisma.role.upsert({
     where: { id: 2 },
@@ -54,90 +40,39 @@ async function main() {
     create: {
       id: 2,
       nombre: 'Marketing',
-      permissions: [
-        'dashboard', 'marketing-campanas', 'marketing-leads',
-        'redes-sociales-publicaciones', 'redes-sociales-seguidores', 'informes'
-      ],
+      permissions: ['dashboard', 'marketing-campanas', 'marketing-leads'],
       dashboardMetrics: ['general', 'marketing'],
     },
-  });
-
-  const recepcionRole = await prisma.role.upsert({
-    where: { id: 3 },
-    update: {},
-    create: {
-      id: 3,
-      nombre: 'Recepción',
-      permissions: [
-        'dashboard', 'calendario', 'recepcion-agendados', 'recepcion-ventas-extra',
-        'recepcion-incidencias', 'pacientes-historia', 'informes'
-      ],
-      dashboardMetrics: ['general', 'recepcion'],
-    },
-  });
-
-  const procedimientosRole = await prisma.role.upsert({
-    where: { id: 4 },
-    update: {},
-    create: {
-      id: 4,
-      nombre: 'Procedimientos',
-      permissions: [
-        'dashboard', 'calendario', 'procedimientos-atenciones', 'procedimientos-seguimiento',
-        'procedimientos-incidencias', 'pacientes-historia', 'informes'
-      ],
-      dashboardMetrics: ['general', 'procedimientos'],
-    },
-  });
-  
-  const rrhhRole = await prisma.role.upsert({
-    where: { id: 5 },
-    update: {},
-    create: {
-      id: 5,
-      nombre: 'Recursos Humanos',
-      permissions: [
-        'dashboard', 'rrhh-perfiles', 'configuracion'
-      ],
-      dashboardMetrics: ['general', 'rrhh'],
-    },
-  });
-
+  })
 
   // --- 3. Job Positions ---
-  console.log('Seeding JobPositions...');
-  const jobPositionsData = [
+  const jobPositions = [
     { id: 1, nombre: 'Gerente General' },
     { id: 2, nombre: 'Coordinador de Marketing' },
-    { id: 3, nombre: 'Vendedor' },
-    { id: 4, nombre: 'Recepcionista Principal' },
-    { id: 5, nombre: 'Asistente de Recepción' },
-    { id: 6, nombre: 'Enfermera Principal' },
-    { id: 7, nombre: 'Enfermera Asistente' },
-    { id: 8, nombre: 'Dermatólogo' },
-    { id: 9, nombre: 'Esteticista' },
-    { id: 10, nombre: 'Contador' },
-  ];
-  for (const pos of jobPositionsData) {
+    { id: 3, nombre: 'Recepcionista' },
+  ]
+  for (const pos of jobPositions) {
     await prisma.jobPosition.upsert({
       where: { id: pos.id },
       update: {},
       create: pos,
-    });
+    })
   }
 
   // --- 4. Users ---
-  console.log('Seeding Users...');
-  const hashedPassword = await bcrypt.hash('password123', 10);
-  const usersData = [
-    {
+  const hashedPassword = await bcrypt.hash('123456', 10)
+
+  await prisma.user.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
       id: 1,
       nombres: 'Admin',
       apellidos: 'Munnay',
       usuario: 'admin',
       password: hashedPassword,
       rolId: adminRole.id,
-      avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      avatarUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png", // 👈 agregado
       position: 'Gerente General',
       documentType: DocumentType.DNI,
       documentNumber: '12345678',
@@ -149,14 +84,19 @@ async function main() {
       salary: 5000,
       contractType: 'Indefinido',
     },
-    {
+  })
+
+  await prisma.user.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
       id: 2,
       nombres: 'Vanesa',
       apellidos: 'Lopez',
       usuario: 'vanesa',
       password: hashedPassword,
       rolId: marketingRole.id,
-      avatarUrl: 'https://randomuser.me/api/portraits/women/1.jpg',
+      avatarUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png", // 👈 agregado
       position: 'Vendedor',
       documentType: DocumentType.DNI,
       documentNumber: '87654321',
@@ -168,115 +108,40 @@ async function main() {
       salary: 2500,
       contractType: 'Plazo Fijo',
     },
-    {
-      id: 3,
-      nombres: 'Elvira',
-      apellidos: 'Garcia',
-      usuario: 'elvira',
-      password: hashedPassword,
-      rolId: recepcionRole.id,
-      avatarUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
-      position: 'Recepcionista Principal',
-      documentType: DocumentType.DNI,
-      documentNumber: '12121212',
-      phone: '987123456',
-      birthDate: new Date('1988-07-01'),
-      startDate: new Date('2020-08-10'),
-      maritalStatus: 'Casado(a)',
-      sex: 'F',
-      salary: 2200,
-      contractType: 'Indefinido',
-    },
-    {
-      id: 4,
-      nombres: 'Dra. Marilia',
-      apellidos: 'Vargas',
-      usuario: 'marilia',
-      password: hashedPassword,
-      rolId: procedimientosRole.id,
-      avatarUrl: 'https://randomuser.me/api/portraits/women/3.jpg',
-      position: 'Dermatólogo',
-      documentType: DocumentType.DNI,
-      documentNumber: '34343434',
-      phone: '999333444',
-      birthDate: new Date('1980-03-15'),
-      startDate: new Date('2019-06-01'),
-      maritalStatus: 'Casado(a)',
-      sex: 'F',
-      salary: 7000,
-      contractType: 'Indefinido',
-    },
-    {
-      id: 5,
-      nombres: 'Janela',
-      apellidos: 'Torres',
-      usuario: 'janela',
-      password: hashedPassword,
-      rolId: rrhhRole.id,
-      avatarUrl: 'https://randomuser.me/api/portraits/women/4.jpg',
-      position: 'Jefa de RRHH',
-      documentType: DocumentType.DNI,
-      documentNumber: '45454545',
-      phone: '987654321',
-      birthDate: new Date('1992-02-28'),
-      startDate: new Date('2022-01-20'),
-      maritalStatus: 'Soltero(a)',
-      sex: 'F',
-      salary: 3500,
-      contractType: 'Indefinido',
-    }
-  ];
+  })
 
-  for (const userData of usersData) {
-    await prisma.user.upsert({
-      where: { id: userData.id },
-      update: {},
-      create: userData,
-    });
-  }
-  
-  // FIX: Add more seed data to ensure the application is well-populated for testing.
-
-  // --- 5. Catalogs ---
-  console.log('Seeding Catalogs...');
+  // --- 5. Catálogos ---
   const catalogs = [
-    { model: prisma.clientSource, data: [{ id: 1, nombre: 'Facebook' }, { id: 2, nombre: 'Instagram' }, { id: 3, nombre: 'Recomendación' }] },
-    { model: prisma.serviceCategory, data: [{ id: 1, nombre: 'Faciales' }, { id: 2, nombre: 'Corporales' }, { id: 3, nombre: 'Depilación' }] },
+    { model: prisma.clientSource, data: [{ id: 1, nombre: 'Facebook' }, { id: 2, nombre: 'Instagram' }] },
+    { model: prisma.serviceCategory, data: [{ id: 1, nombre: 'Faciales' }, { id: 2, nombre: 'Corporales' }] },
     { model: prisma.productCategory, data: [{ id: 1, nombre: 'Cuidado Facial' }, { id: 2, nombre: 'Cuidado Corporal' }] },
-    { model: prisma.egresoCategory, data: [{ id: 1, nombre: 'Marketing' }, { id: 2, nombre: 'Insumos Médicos' }, { id: 3, nombre: 'Alquiler' }, { id: 4, nombre: 'Planilla' }] },
-    { model: prisma.tipoProveedor, data: [{ id: 1, nombre: 'Insumos' }, { id: 2, nombre: 'Servicios' }, { id: 3, nombre: 'Marketing Digital' }] },
-  ];
-
+    { model: prisma.egresoCategory, data: [{ id: 1, nombre: 'Marketing' }, { id: 2, nombre: 'Insumos Médicos' }] },
+    { model: prisma.tipoProveedor, data: [{ id: 1, nombre: 'Insumos' }, { id: 2, nombre: 'Servicios' }] },
+  ]
   for (const catalog of catalogs) {
     for (const item of catalog.data) {
       await (catalog.model as any).upsert({
         where: { id: item.id },
         update: {},
         create: item,
-      });
+      })
     }
   }
 
-  const servicesData = [
-    { id: 1, nombre: 'Limpieza Facial Profunda', categoria: 'Faciales', precio: 150 },
-    { id: 2, nombre: 'Hydrafacial', categoria: 'Faciales', precio: 300 },
-    { id: 3, nombre: 'Masaje Reductor', categoria: 'Corporales', precio: 120 },
-    { id: 4, nombre: 'Depilación Láser Piernas', categoria: 'Depilación', precio: 400 },
-  ];
-  for (const service of servicesData) {
-    await prisma.service.upsert({ where: { id: service.id }, update: {}, create: service });
-  }
-  
-  const productsData = [
-    { id: 1, nombre: 'Bloqueador Solar SPF 50', categoria: 'Cuidado Facial', precio: 80 },
-    { id: 2, nombre: 'Crema Hidratante', categoria: 'Cuidado Facial', precio: 120 },
-  ];
-  for (const product of productsData) {
-    await prisma.product.upsert({ where: { id: product.id }, update: {}, create: product });
-  }
+  // --- 6. Services & Products ---
+  await prisma.service.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, nombre: 'Limpieza Facial Profunda', categoria: 'Faciales', precio: 150 },
+  })
 
-  // --- 6. MetaCampaigns ---
-  console.log('Seeding MetaCampaigns...');
+  await prisma.product.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, nombre: 'Bloqueador Solar SPF 50', categoria: 'Cuidado Facial', precio: 80 },
+  })
+
+  // --- 7. MetaCampaign ---
   await prisma.metaCampaign.upsert({
     where: { id: 1 },
     update: {},
@@ -285,18 +150,47 @@ async function main() {
       nombre: 'Campaña Verano 2023',
       fechaInicio: new Date('2023-01-01'),
       fechaFin: new Date('2023-03-31'),
-      categoria: 'Corporales'
-    }
-  });
-  
-  console.log('Seeding finished.');
+      categoria: 'Corporales',
+    },
+  })
+
+  // --- 8. Lead de ejemplo con tratamiento ---
+  const lead = await prisma.lead.create({
+    data: {
+      fechaLead: new Date(),
+      nombres: 'Juan',
+      apellidos: 'Pérez',
+      numero: '999888777',
+      sexo: 'M',
+      redSocial: 'Facebook',
+      anuncio: 'Campaña Verano',
+      vendedor: Seller.Vanesa,
+      estado: LeadStatus.Nuevo,
+      categoria: 'Faciales',
+      tratamientos: {
+        create: [
+          {
+            nombre: 'Limpieza Facial Profunda',
+            cantidadSesiones: 5,
+            precio: 150,
+            montoPagado: 100,
+            deuda: 50,
+            metodoPago: MetodoPago.Efectivo,
+          },
+        ],
+      },
+    },
+  })
+  console.log('Lead creado con tratamiento:', lead)
+
+  console.log('✅ Seed finalizado.')
 }
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

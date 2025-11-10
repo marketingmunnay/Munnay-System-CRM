@@ -45,7 +45,7 @@ const navItems: NavItem[] = [
                 id: 'recepcion', 
                 label: 'Recepción', 
                 subItems: [
-                    { id: 'recepcion-agendados', label: 'Agendados', page: 'recepcion-agendados' },
+                    { id: 'recepcion-agendados', label: 'Asistidos', page: 'recepcion-agendados' },
                     { id: 'recepcion-ventas-extra', label: 'Recuperados', page: 'recepcion-ventas-extra' },
                     { id: 'recepcion-incidencias', label: 'Incidencias', page: 'recepcion-incidencias' },
                 ]

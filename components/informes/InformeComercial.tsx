@@ -38,15 +38,17 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
 
     const { filteredLeads, filteredCampaigns, filteredVentasExtra } = useMemo(() => {
         const { from, to } = dateRange;
-        const fromDate = from ? new Date(`${from}T00:00:00`) : null;
-        const toDate = to ? new Date(`${to}T23:59:59`) : null;
         
         const checkDate = (itemDateStr?: string) => {
-            if (!fromDate && !toDate) return true;
+            if (!from && !to) return true;
             if (!itemDateStr) return false;
-            const itemDate = new Date(itemDateStr);
-            if (fromDate && itemDate < fromDate) return false;
-            if (toDate && itemDate > toDate) return false;
+            
+            // Extract date part if it's a datetime (YYYY-MM-DD)
+            const dateOnly = itemDateStr.split('T')[0];
+            
+            // Simple string comparison for YYYY-MM-DD format
+            if (from && dateOnly < from) return false;
+            if (to && dateOnly > to) return false;
             return true;
         };
 
@@ -75,13 +77,14 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
     
     const goalAnalysisText = useMemo(() => {
         const calculateGoalProgress = (goal: Goal): number => {
-            const goalStart = new Date(goal.startDate + 'T00:00:00');
-            const goalEnd = new Date(goal.endDate + 'T23:59:59');
-
             const isWithinGoalRange = (dateStr?: string) => {
                 if (!dateStr) return false;
-                const itemDate = new Date(dateStr);
-                return itemDate >= goalStart && itemDate <= goalEnd;
+                
+                // Extract date part if it's a datetime (YYYY-MM-DD)
+                const dateOnly = dateStr.split('T')[0];
+                
+                // Simple string comparison for YYYY-MM-DD format
+                return dateOnly >= goal.startDate && dateOnly <= goal.endDate;
             };
 
             switch (goal.objective) {
@@ -119,15 +122,13 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
 
         if (!goals || goals.length === 0) return 'No hay metas definidas para analizar.';
 
-        const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-        const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+        const { from, to } = dateRange;
 
         const relevantGoals = goals.filter(goal => {
-            const goalStart = new Date(goal.startDate + 'T00:00:00');
-            const goalEnd = new Date(goal.endDate + 'T23:59:59');
-            if (fromDate && toDate) return goalStart <= toDate && goalEnd >= fromDate;
-            if (fromDate) return goalEnd >= fromDate;
-            if (toDate) return goalStart <= toDate;
+            // Simple string comparison for YYYY-MM-DD format
+            if (from && to) return goal.startDate <= to && goal.endDate >= from;
+            if (from) return goal.endDate >= from;
+            if (to) return goal.startDate <= to;
             return true;
         });
 

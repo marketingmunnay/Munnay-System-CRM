@@ -6,6 +6,7 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 interface EgresosDiariosPageProps {
     egresos: Egreso[];
@@ -24,7 +25,7 @@ const formatCurrency = (value: number, moneda: 'Soles' | 'Dólares' = 'Soles') =
     const prefix = moneda === 'Soles' ? 'S/' : '$';
     return `${prefix} ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-const formatDate = (dateString?: string) => dateString ? new Date(dateString + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A';
+const formatDate = (dateString?: string) => formatDateForDisplay(dateString);
 
 
 const ImagePreviewModal: React.FC<{

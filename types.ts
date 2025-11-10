@@ -87,6 +87,14 @@ export interface Treatment {
     deuda: number;
 }
 
+export interface PagoRecepcion {
+    id: number;
+    monto: number;
+    metodoPago: MetodoPago;
+    fechaPago: string; // ISO string
+    observacion?: string;
+}
+
 export interface Procedure {
     id: number;
     fechaAtencion: string; // YYYY-MM-DD
@@ -150,6 +158,7 @@ export interface Lead {
     tratamientos?: Treatment[];
     estadoRecepcion?: ReceptionStatus;
     recursoId?: string;
+    pagosRecepcion?: PagoRecepcion[];
     // Procedure properties
     procedimientos?: Procedure[];
     seguimientos?: Seguimiento[];
@@ -403,6 +412,7 @@ export interface User {
     emergencyContacts?: EmergencyContact[];
     reconocimientos?: Reconocimiento[];
     salary?: number;
+    permissions?: Page[];
     contractType?: 'Plazo Fijo' | 'Indefinido';
     maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
     sex?: 'M' | 'F';

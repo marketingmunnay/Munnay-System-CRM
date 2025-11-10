@@ -5,12 +5,14 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
+import { formatDateForDisplay } from '../../utils/time.ts';
+import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
 interface LeadsPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
     onSaveLead: (lead: Lead) => void;
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
@@ -51,7 +53,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
                     <tbody>
                         {leads.map(lead => (
                             <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{new Date(lead.fechaLead + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead)}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {lead.nombres} {lead.apellidos}
                                 </th>
@@ -83,7 +85,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -94,15 +96,14 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         let results = leads;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
             results = results.filter(lead => {
-                const leadDate = new Date(`${lead.fechaLead}T00:00:00`);
-                if (fromDate && leadDate < fromDate) {
+                if (!lead.fechaLead) return false;
+                
+                // Simple string comparison works for YYYY-MM-DD format
+                if (dateRange.from && lead.fechaLead < dateRange.from) {
                     return false;
                 }
-                if (toDate && leadDate > toDate) {
+                if (dateRange.to && lead.fechaLead > dateRange.to) {
                     return false;
                 }
                 return true;
@@ -135,9 +136,19 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         setEditingLead(null);
     };
 
-    const handleSaveLead = (leadToSave: Lead) => {
-        onSaveLead(leadToSave);
-        handleCloseModal();
+    const handleSaveLead = async (leadToSave: Lead) => {
+        await onSaveLead(leadToSave);
+        // Update editingLead with the latest data after save
+        if (leadToSave.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === leadToSave.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
     };
     
     const handleApplyDateFilter = (dates: { from: string, to: string }) => {
@@ -230,6 +241,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
             onDelete={onDeleteLead}
             lead={editingLead}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}

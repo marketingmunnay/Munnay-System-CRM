@@ -47,7 +47,7 @@ export const ALL_PAGES_CONFIG: { id: Page; label: string; group: string }[] = [
     { id: 'marketing-leads', label: 'Leads', group: 'Comercial' },
     { id: 'redes-sociales-publicaciones', label: 'Publicaciones', group: 'Comercial' },
     { id: 'redes-sociales-seguidores', label: 'Seguidores', group: 'Comercial' },
-    { id: 'recepcion-agendados', label: 'Agendados', group: 'Administración' },
+    { id: 'recepcion-agendados', label: 'Asistidos', group: 'Administración' },
     { id: 'recepcion-ventas-extra', label: 'Recuperados', group: 'Administración' },
     { id: 'recepcion-incidencias', label: 'Incidencias (Recepción)', group: 'Administración' },
     { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', group: 'Procedimientos' },

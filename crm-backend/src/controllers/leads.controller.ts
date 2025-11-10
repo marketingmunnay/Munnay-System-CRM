@@ -15,6 +15,7 @@ export const getLeads = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         // Include new relation for ComprobanteElectronico
         comprobantes: true,
       }
@@ -37,6 +38,7 @@ export const getLeadById = async (req: Request, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
+        pagosRecepcion: true,
         // Include new relation for ComprobanteElectronico
         comprobantes: true,
       }
@@ -52,26 +54,122 @@ export const getLeadById = async (req: Request, res: Response) => {
 };
 
 export const createLead = async (req: Request, res: Response) => {
-  const { 
-    id, createdAt, updatedAt, 
+  const {
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, 
-    ...leadData
+    alergias, membresiasAdquiridas, pagosRecepcion, ...leadData
   } = req.body;
 
   try {
+    // Helper function to safely parse dates for creation
+    const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
+      if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
+      
+      try {
+        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // Check if date is valid
+        if (isNaN(dateValue.getTime())) return defaultValue;
+        return dateValue;
+      } catch {
+        return defaultValue;
+      }
+    };
+
+    // Helper function to normalize enum values (remove spaces)
+    const normalizeEnum = (value: any): any => {
+      if (typeof value === 'string') {
+        return value.replace(/\s+/g, '');
+      }
+      return value;
+    };
+
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
-        fechaLead: new Date(leadData.fechaLead),
-        fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : null,
-        fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : null,
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate) : null,
-        // Handle relation for memberships if needed, currently not supported in simple create
+        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
+        fechaLead: parseDate(leadData.fechaLead, true, new Date()),
+        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+        birthDate: parseDate(leadData.birthDate, true),
+        // Handle relation for memberships if needed
         membresiasAdquiridas: {
           connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-        }
+        },
+        // Create tratamientos if provided
+        tratamientos: tratamientos && tratamientos.length > 0 ? {
+          create: tratamientos.map((t: any) => ({
+            nombre: t.nombre || '',
+            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+            precio: parseFloat(t.precio) || 0,
+            montoPagado: parseFloat(t.montoPagado) || 0,
+            metodoPago: t.metodoPago || null,
+            deuda: parseFloat(t.deuda) || 0
+          }))
+        } : undefined,
+        // Create procedimientos if provided
+        procedimientos: procedimientos && procedimientos.length > 0 ? {
+          create: procedimientos.map((p: any) => ({
+            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+            personal: p.personal || '',
+            horaInicio: p.horaInicio || '',
+            horaFin: p.horaFin || '',
+            tratamientoId: parseInt(p.tratamientoId) || 0,
+            nombreTratamiento: p.nombreTratamiento || '',
+            sesionNumero: parseInt(p.sesionNumero) || 1,
+            asistenciaMedica: Boolean(p.asistenciaMedica),
+            medico: p.medico || null,
+            observacion: p.observacion || null
+          }))
+        } : undefined,
+        // Create registrosLlamada if provided
+        registrosLlamada: registrosLlamada && registrosLlamada.length > 0 ? {
+          create: registrosLlamada.map((r: any) => ({
+            numeroLlamada: r.numeroLlamada,
+            duracionLlamada: r.duracionLlamada,
+            estadoLlamada: r.estadoLlamada,
+            observacion: r.observacion,
+          }))
+        } : undefined,
+        // Create seguimientos if provided
+        seguimientos: seguimientos && seguimientos.length > 0 ? {
+          create: seguimientos.map((s: any) => ({
+            fecha: parseDate(s.fecha, true, new Date()),
+            procedimientoId: s.procedimientoId,
+            dolor: s.dolor || false,
+            hinchazon: s.hinchazon || false,
+            enrojecimiento: s.enrojecimiento || false,
+            picazon: s.picazon || false,
+            hematomas: s.hematomas || false,
+            sensibilidad: s.sensibilidad || false,
+            otrosSintomas: s.otrosSintomas || false,
+            descripcionOtros: s.descripcionOtros,
+            observaciones: s.observaciones,
+          }))
+        } : undefined,
+        // Create alergias if provided
+        alergias: alergias && alergias.length > 0 ? {
+          create: alergias.map((a: any) => ({
+            nombreAlergia: a.nombreAlergia,
+          }))
+        } : undefined,
+        // Create pagos de recepción if provided
+        pagosRecepcion: pagosRecepcion && pagosRecepcion.length > 0 ? {
+          create: pagosRecepcion.map((p: any) => ({
+            monto: p.monto,
+            metodoPago: p.metodoPago,
+            fechaPago: parseDate(p.fechaPago) || new Date(),
+            observacion: p.observacion,
+          }))
+        } : undefined,
       },
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+        pagosRecepcion: true,
+        comprobantes: true,
+      }
     });
     res.status(201).json(newLead);
   } catch (error) {
@@ -83,35 +181,129 @@ export const createLead = async (req: Request, res: Response) => {
 export const updateLead = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { 
+    id: _, // Exclude id from update data
     createdAt, updatedAt, 
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, comprobantes, 
+    pagosRecepcion, // Extract pagosRecepcion to prevent it from going to leadData
     ...leadData
   } = req.body;
 
   try {
-    // NOTE: This is a simplified update that only handles scalar fields.
-    // A real-world scenario requires complex logic to handle updates, creations,
-    // and deletions of related records (treatments, procedures, etc.) within a transaction.
+    // Helper function to safely parse dates
+    const parseDate = (dateStr: any, addTime: boolean = false): Date | null | undefined => {
+      if (dateStr === null) return null;
+      if (!dateStr || dateStr === '' || dateStr === 'undefined') return undefined;
+      
+      try {
+        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // Check if date is valid
+        if (isNaN(dateValue.getTime())) return undefined;
+        return dateValue;
+      } catch {
+        return undefined;
+      }
+    };
+
+    // Helper function to normalize enum values (remove spaces)
+    const normalizeEnum = (value: string | undefined | null): string | undefined | null => {
+      if (!value) return value;
+      return value.replace(/\s+/g, ''); // Remove all spaces
+    };
+
+    // Get existing lead to preserve fechaLead if not provided
+    const existingLead = await prisma.lead.findUnique({
+      where: { id: id }
+    });
+
+    const parsedFechaLead = parseDate(leadData.fechaLead, true);
+    const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
+
+    // Delete existing related records first only if new data is being sent
+    if (tratamientos !== undefined) {
+      await prisma.treatment.deleteMany({ where: { leadId: id } });
+    }
+    if (procedimientos !== undefined) {
+      await prisma.procedure.deleteMany({ where: { leadId: id } });
+    }
+    if (seguimientos !== undefined) {
+      await prisma.seguimiento.deleteMany({ where: { leadId: id } });
+    }
+    if (pagosRecepcion !== undefined) {
+      await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
+    }
+
+    // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
       data: {
         ...leadData,
-        fechaLead: leadData.fechaLead ? new Date(leadData.fechaLead) : undefined,
-        fechaHoraAgenda: leadData.fechaHoraAgenda ? new Date(leadData.fechaHoraAgenda) : (leadData.fechaHoraAgenda === null ? null : undefined),
-        fechaVolverLlamar: leadData.fechaVolverLlamar ? new Date(leadData.fechaVolverLlamar) : (leadData.fechaVolverLlamar === null ? null : undefined),
-        birthDate: leadData.birthDate ? new Date(leadData.birthDate) : (leadData.birthDate === null ? null : undefined),
+        fechaLead: finalFechaLead,
+        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+        birthDate: parseDate(leadData.birthDate, true),
+        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-        }
+        },
+        // Create related records
+        tratamientos: tratamientos ? {
+          create: tratamientos.map((t: any) => ({
+            nombre: t.nombre || '',
+            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+            precio: parseFloat(t.precio) || 0,
+            montoPagado: parseFloat(t.montoPagado) || 0,
+            metodoPago: t.metodoPago || null,
+            deuda: parseFloat(t.deuda) || 0
+          }))
+        } : undefined,
+        procedimientos: procedimientos ? {
+          create: procedimientos.map((p: any) => ({
+            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+            personal: p.personal || '',
+            horaInicio: p.horaInicio || '',
+            horaFin: p.horaFin || '',
+            tratamientoId: parseInt(p.tratamientoId) || 0,
+            nombreTratamiento: p.nombreTratamiento || '',
+            sesionNumero: parseInt(p.sesionNumero) || 1,
+            asistenciaMedica: Boolean(p.asistenciaMedica),
+            medico: p.medico || null,
+            observacion: p.observacion || null
+          }))
+        } : undefined,
+        seguimientos: seguimientos ? {
+          create: seguimientos.map((s: any) => ({
+            procedimientoId: s.procedimientoId,
+            nombreProcedimiento: s.nombreProcedimiento,
+            fechaSeguimiento: parseDate(s.fechaSeguimiento, true) || new Date(),
+            personal: s.personal,
+            inflamacion: s.inflamacion,
+            ampollas: s.ampollas,
+            alergias: s.alergias,
+            malestarGeneral: s.malestarGeneral,
+            brote: s.brote,
+            dolorDeCabeza: s.dolorDeCabeza,
+            moretones: s.moretones,
+            observacion: s.observacion
+          }))
+        } : undefined,
+        // Create pagos de recepción if provided
+        pagosRecepcion: pagosRecepcion ? {
+          create: pagosRecepcion.map((p: any) => ({
+            monto: p.monto,
+            metodoPago: p.metodoPago,
+            fechaPago: parseDate(p.fechaPago) || new Date(),
+            observacion: p.observacion,
+          }))
+        } : undefined
       },
-       include: {
+      include: {
         tratamientos: true,
         procedimientos: true,
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
-        // Include new relation for ComprobanteElectronico
+        pagosRecepcion: true,
         comprobantes: true,
       }
     });
@@ -160,32 +352,39 @@ export const deleteLead = async (req: Request, res: Response) => {
 };
 
 // FIX: Added getNextHistoryNumber controller function
+// Retorna solo el número correlativo (empezando en 100)
+// El frontend construye el formato completo: LetraApellido + 00 + número
 export const getNextHistoryNumber = async (req: Request, res: Response) => {
   try {
-    const lastLeadWithHistory = await prisma.lead.findFirst({
+    // Buscar todos los leads que tengan número de historia
+    const allLeadsWithHistory = await prisma.lead.findMany({
       where: {
         nHistoria: {
-          startsWith: 'H-',
+          not: null,
         },
-      },
-      orderBy: {
-        nHistoria: 'desc',
       },
       select: {
         nHistoria: true,
       },
     });
 
-    let nextNumber = 1;
-    if (lastLeadWithHistory && lastLeadWithHistory.nHistoria) {
-      const lastNumber = parseInt(lastLeadWithHistory.nHistoria.split('-')[1]);
-      if (!isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
-      }
-    }
+    // Extraer números de todos los formatos (ej: H00100, A00101, etc.)
+    const numbers = allLeadsWithHistory
+      .map((lead: any) => {
+        if (lead.nHistoria) {
+          // Extraer dígitos después de "00" (formato: Letra + 00 + número)
+          const match = lead.nHistoria.match(/00(\d+)$/);
+          return match ? parseInt(match[1]) : 0;
+        }
+        return 0;
+      })
+      .filter((num: number) => num > 0);
 
-    const nextHistoryNumber = `H-${String(nextNumber).padStart(5, '0')}`;
-    res.status(200).json(nextHistoryNumber);
+    // Encontrar el máximo y sumar 1, o empezar en 100
+    let nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 100;
+
+    // Retornar solo el número correlativo como string
+    res.status(200).json(String(nextNumber));
   } catch (error) {
     console.error("Error generating next history number:", error);
     res.status(500).json({ message: 'Error generating next history number', error: (error as Error).message });

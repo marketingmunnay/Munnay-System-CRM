@@ -26,34 +26,52 @@ export const getExpenseById = async (req: Request, res: Response) => {
 
 export const createExpense = async (req: Request, res: Response) => {
   const { id, fechaRegistro, fechaPago, ...data } = req.body;
+  
+  // Helper para parsear fechas correctamente
+  const parseDate = (dateStr: string | undefined): Date | undefined => {
+    if (!dateStr || dateStr === 'undefined' || dateStr === '') return undefined;
+    const date = new Date(dateStr + 'T00:00:00');
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+  
   try {
     const newExpense = await prisma.egreso.create({
       data: {
         ...data,
-        fechaRegistro: new Date(fechaRegistro),
-        fechaPago: new Date(fechaPago),
+        fechaRegistro: parseDate(fechaRegistro) || new Date(),
+        fechaPago: parseDate(fechaPago) || new Date(),
       },
     });
     res.status(201).json(newExpense);
   } catch (error) {
+    console.error('Error creating expense:', error);
     res.status(500).json({ message: 'Error creating expense', error: (error as Error).message });
   }
 };
 
 export const updateExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fechaRegistro, fechaPago, ...data } = req.body;
+  const { id: _, fechaRegistro, fechaPago, ...data } = req.body; // Exclude id from update data
+  
+  // Helper para parsear fechas correctamente
+  const parseDate = (dateStr: string | undefined): Date | undefined => {
+    if (!dateStr || dateStr === 'undefined' || dateStr === '') return undefined;
+    const date = new Date(dateStr + 'T00:00:00');
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+  
   try {
     const updatedExpense = await prisma.egreso.update({
       where: { id: id },
       data: {
         ...data,
-        fechaRegistro: fechaRegistro ? new Date(fechaRegistro) : undefined,
-        fechaPago: fechaPago ? new Date(fechaPago) : undefined,
+        fechaRegistro: parseDate(fechaRegistro),
+        fechaPago: parseDate(fechaPago),
       },
     });
     res.status(200).json(updatedExpense);
   } catch (error) {
+    console.error('Error updating expense:', error);
     res.status(500).json({ message: 'Error updating expense', error: (error as Error).message });
   }
 };

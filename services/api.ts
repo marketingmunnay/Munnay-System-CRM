@@ -1,299 +1,283 @@
-import { GoogleGenAI } from "@google/genai";
 import type { 
-    Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
-    BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
-    ProductCategory, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
-    TipoProveedor,
-    Goal, ComprobanteElectronico
+  Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
+  BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
+  ProductCategory, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
+  TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// ===================================================================================
-// ¡IMPORTANTE PARA LA PUESTA EN PRODUCCIÓN (HOSTING)!
-// ===================================================================================
-// Cuando despliegues el backend en un servicio de hosting (como Google Cloud Run),
-// obtendrás una URL pública (ej: https://crm-munnay-backend-xyz.a.run.app).
-//
-// **DEBES REEMPLAZAR 'http://localhost:4000' POR ESA URL PÚBLICA.**
-//
-// Ejemplo: const API_URL = 'https://crm-munnay-backend-xyz.a.run.app/api'; // <--- ASÍ DEBERÍA QUEDAR
-//
-// Mientras tanto, se mantiene 'localhost' para que las pruebas locales sigan funcionando.
-const API_URL = 'http://localhost:4000/api'; // Placeholder for actual API URL
+// URL del backend en Render
+const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
+// Helper genérico para requests
+const apiRequest = async <T>(
+  endpoint: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  body?: any
+): Promise<T> => {
+  const options: RequestInit = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) options.body = JSON.stringify(body);
 
-const apiRequest = async <T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: any): Promise<T> => {
-    const options: RequestInit = {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
+  const response = await fetch(`${API_URL}${endpoint}`, options);
 
-    const response = await fetch(`${API_URL}${endpoint}`, options);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(errorData.message || 'Error en la petición a la API');
+  }
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.message || 'Error en la petición a la API');
-    }
-    
-    if (response.status === 204) { // No Content
-        return {} as T;
-    }
-
-    return response.json();
+  if (response.status === 204) return {} as T;
+  return response.json();
 };
 
-
-// --- LIVE API IMPLEMENTATION ---
-
-// Leads
+// ====== LEADS ======
 export const getLeads = (): Promise<Lead[]> => apiRequest<Lead[]>('/leads', 'GET');
+export const saveLead = (lead: Lead): Promise<Lead> =>
+  // Database IDs are small autoincrement values (< 1000000), timestamps are much larger
+  lead.id && lead.id < 1000000
+    ? apiRequest<Lead>(`/leads/${lead.id}`, 'PUT', lead)
+    : apiRequest<Lead>('/leads', 'POST', { ...lead, id: undefined });
+export const deleteLead = (id: number): Promise<void> => 
+  apiRequest<void>(`/leads/${id}`, 'DELETE');
+export const getNextHistoryNumber = (): Promise<string> =>
+  apiRequest<string>('/leads/next-history-number', 'GET');
 
-export const saveLead = (lead: Lead): Promise<Lead> => {
-    // A simple check to see if it's a new lead with a temporary frontend ID
-    if (String(lead.id).length > 7) { 
-        const { id, ...leadToCreate } = lead;
-        return apiRequest<Lead>('/leads', 'POST', leadToCreate);
-    }
-    return apiRequest<Lead>(`/leads/${lead.id}`, 'PUT', lead);
-};
-
-export const deleteLead = (leadId: number): Promise<void> => apiRequest(`/leads/${leadId}`, 'DELETE');
-
-// FIX: Added getNextHistoryNumber function
-export const getNextHistoryNumber = (): Promise<string> => apiRequest<string>('/leads/next-history-number', 'GET');
-
-
-// Campaigns
+// ====== CAMPAIGNS ======
 export const getCampaigns = (): Promise<Campaign[]> => apiRequest<Campaign[]>('/campaigns', 'GET');
-export const saveCampaign = (campaign: Campaign): Promise<Campaign> => {
-    if (String(campaign.id).length > 7) {
-        const { id, ...data } = campaign;
-        return apiRequest<Campaign>('/campaigns', 'POST', data);
-    }
-    return apiRequest<Campaign>(`/campaigns/${campaign.id}`, 'PUT', campaign);
-};
-export const deleteCampaign = (campaignId: number): Promise<void> => apiRequest(`/campaigns/${campaignId}`, 'DELETE');
+export const saveCampaign = (campaign: Campaign): Promise<Campaign> =>
+  campaign.id && campaign.id < 1000000
+    ? apiRequest<Campaign>(`/campaigns/${campaign.id}`, 'PUT', campaign)
+    : apiRequest<Campaign>('/campaigns', 'POST', campaign);
+export const deleteCampaign = (id: number): Promise<void> =>
+  apiRequest<void>(`/campaigns/${id}`, 'DELETE');
 
-// MetaCampaigns
-export const getMetaCampaigns = (): Promise<MetaCampaign[]> => apiRequest<MetaCampaign[]>('/campaigns/meta', 'GET');
-export const saveMetaCampaign = (campaign: MetaCampaign): Promise<MetaCampaign> => {
-    if (String(campaign.id).length > 7) {
-        const { id, ...data } = campaign;
-        return apiRequest<MetaCampaign>('/campaigns/meta', 'POST', data);
-    }
-    return apiRequest<MetaCampaign>(`/campaigns/meta/${campaign.id}`, 'PUT', campaign);
-};
-export const deleteMetaCampaign = (campaignId: number): Promise<void> => apiRequest(`/campaigns/meta/${campaignId}`, 'DELETE');
+// ====== META CAMPAIGNS ======
+export const getMetaCampaigns = (): Promise<MetaCampaign[]> => 
+  apiRequest<MetaCampaign[]>('/campaigns/meta', 'GET');
+export const saveMetaCampaign = (campaign: MetaCampaign): Promise<MetaCampaign> =>
+  campaign.id && campaign.id < 1000000
+    ? apiRequest<MetaCampaign>(`/campaigns/meta/${campaign.id}`, 'PUT', campaign)
+    : apiRequest<MetaCampaign>('/campaigns/meta', 'POST', campaign);
+export const deleteMetaCampaign = (id: number): Promise<void> =>
+  apiRequest<void>(`/campaigns/meta/${id}`, 'DELETE');
 
-// Egresos
-export const getEgresos = (): Promise<Egreso[]> => apiRequest<Egreso[]>('/expenses', 'GET');
-export const saveEgreso = (egreso: Egreso): Promise<Egreso> => {
-    if (String(egreso.id).length > 7) {
-        const { id, ...data } = egreso;
-        return apiRequest<Egreso>('/expenses', 'POST', data);
-    }
-    return apiRequest<Egreso>(`/expenses/${egreso.id}`, 'PUT', egreso);
-};
-export const deleteEgreso = (egresoId: number): Promise<void> => apiRequest(`/expenses/${egresoId}`, 'DELETE');
+// ====== VENTAS EXTRA ======
+export const getVentasExtra = (): Promise<VentaExtra[]> => 
+  apiRequest<VentaExtra[]>('/ventas-extra', 'GET');
+export const saveVentaExtra = (venta: VentaExtra): Promise<VentaExtra> =>
+  venta.id && venta.id < 1000000
+    ? apiRequest<VentaExtra>(`/ventas-extra/${venta.id}`, 'PUT', venta)
+    : apiRequest<VentaExtra>('/ventas-extra', 'POST', venta);
+export const deleteVentaExtra = (id: number): Promise<void> =>
+  apiRequest<void>(`/ventas-extra/${id}`, 'DELETE');
 
-// Roles
-export const getRoles = (): Promise<Role[]> => apiRequest<Role[]>('/roles', 'GET');
-export const saveRole = (role: Role): Promise<Role> => {
-    if (String(role.id).length > 7) {
-        const { id, ...data } = role;
-        return apiRequest<Role>('/roles', 'POST', data);
-    }
-    return apiRequest<Role>(`/roles/${role.id}`, 'PUT', role);
-};
-export const deleteRole = (roleId: number): Promise<void> => apiRequest(`/roles/${roleId}`, 'DELETE');
+// ====== INCIDENCIAS ======
+export const getIncidencias = (): Promise<Incidencia[]> => 
+  apiRequest<Incidencia[]>('/incidencias', 'GET');
+export const saveIncidencia = (incidencia: Incidencia): Promise<Incidencia> =>
+  incidencia.id && incidencia.id < 1000000
+    ? apiRequest<Incidencia>(`/incidencias/${incidencia.id}`, 'PUT', incidencia)
+    : apiRequest<Incidencia>('/incidencias', 'POST', incidencia);
+export const deleteIncidencia = (id: number): Promise<void> =>
+  apiRequest<void>(`/incidencias/${id}`, 'DELETE');
 
-// Publicaciones
-export const getPublicaciones = (): Promise<Publicacion[]> => apiRequest<Publicacion[]>('/publicaciones', 'GET');
-export const savePublicacion = (pub: Publicacion): Promise<Publicacion> => {
-    if (String(pub.id).length > 7) {
-        const { id, ...data } = pub;
-        return apiRequest<Publicacion>('/publicaciones', 'POST', data);
-    }
-    return apiRequest<Publicacion>(`/publicaciones/${pub.id}`, 'PUT', pub);
-};
-export const deletePublicacion = (pubId: number): Promise<void> => apiRequest(`/publicaciones/${pubId}`, 'DELETE');
+// ====== EGRESOS ======
+export const getEgresos = (): Promise<Egreso[]> => 
+  apiRequest<Egreso[]>('/expenses', 'GET');
+export const saveEgreso = (egreso: Egreso): Promise<Egreso> =>
+  egreso.id && egreso.id < 1000000
+    ? apiRequest<Egreso>(`/expenses/${egreso.id}`, 'PUT', egreso)
+    : apiRequest<Egreso>('/expenses', 'POST', egreso);
+export const deleteEgreso = (id: number): Promise<void> =>
+  apiRequest<void>(`/expenses/${id}`, 'DELETE');
 
-// Seguidores
-export const getSeguidores = (): Promise<Seguidor[]> => apiRequest<Seguidor[]>('/seguidores', 'GET');
-export const saveSeguidor = (seg: Seguidor): Promise<Seguidor> => {
-    if (String(seg.id).length > 7) {
-        const { id, ...data } = seg;
-        return apiRequest<Seguidor>('/seguidores', 'POST', data);
-    }
-    return apiRequest<Seguidor>(`/seguidores/${seg.id}`, 'PUT', seg);
-};
-export const deleteSeguidor = (segId: number): Promise<void> => apiRequest(`/seguidores/${segId}`, 'DELETE');
+// ====== PROVEEDORES ======
+export const getProveedores = (): Promise<Proveedor[]> => 
+  apiRequest<Proveedor[]>('/proveedores', 'GET');
+export const saveProveedor = (proveedor: Proveedor): Promise<Proveedor> =>
+  proveedor.id && proveedor.id < 1000000
+    ? apiRequest<Proveedor>(`/proveedores/${proveedor.id}`, 'PUT', proveedor)
+    : apiRequest<Proveedor>('/proveedores', 'POST', proveedor);
+export const deleteProveedor = (id: number): Promise<void> =>
+  apiRequest<void>(`/proveedores/${id}`, 'DELETE');
 
-// Ventas Extra
-export const getVentasExtra = (): Promise<VentaExtra[]> => apiRequest<VentaExtra[]>('/ventas-extra', 'GET');
-export const saveVentaExtra = (venta: VentaExtra): Promise<VentaExtra> => {
-    if (String(venta.id).length > 7) {
-        const { id, ...data } = venta;
-        return apiRequest<VentaExtra>('/ventas-extra', 'POST', data);
-    }
-    return apiRequest<VentaExtra>(`/ventas-extra/${venta.id}`, 'PUT', venta);
-};
-export const deleteVentaExtra = (ventaId: number): Promise<void> => apiRequest(`/ventas-extra/${ventaId}`, 'DELETE');
+// ====== TIPOS DE PROVEEDOR ======
+export const getTiposProveedor = (): Promise<TipoProveedor[]> => 
+  apiRequest<TipoProveedor[]>('/proveedores/tipos', 'GET');
+export const saveTipoProveedor = (tipo: TipoProveedor): Promise<TipoProveedor> =>
+  tipo.id && tipo.id < 1000000
+    ? apiRequest<TipoProveedor>(`/proveedores/tipos/${tipo.id}`, 'PUT', tipo)
+    : apiRequest<TipoProveedor>('/proveedores/tipos', 'POST', tipo);
+export const deleteTipoProveedor = (id: number): Promise<void> =>
+  apiRequest<void>(`/proveedores/tipos/${id}`, 'DELETE');
 
-// Incidencias
-export const getIncidencias = (): Promise<Incidencia[]> => apiRequest<Incidencia[]>('/incidencias', 'GET');
-export const saveIncidencia = (incidencia: Incidencia): Promise<Incidencia> => {
-    if (String(incidencia.id).length > 7) {
-        const { id, ...data } = incidencia;
-        return apiRequest<Incidencia>('/incidencias', 'POST', data);
-    }
-    return apiRequest<Incidencia>(`/incidencias/${incidencia.id}`, 'PUT', incidencia);
-};
-export const deleteIncidencia = (incidenciaId: number): Promise<void> => apiRequest(`/incidencias/${incidenciaId}`, 'DELETE');
+// ====== PUBLICACIONES ======
+export const getPublicaciones = (): Promise<Publicacion[]> => 
+  apiRequest<Publicacion[]>('/publicaciones', 'GET');
+export const savePublicacion = (publicacion: Publicacion): Promise<Publicacion> =>
+  publicacion.id && publicacion.id < 1000000
+    ? apiRequest<Publicacion>(`/publicaciones/${publicacion.id}`, 'PUT', publicacion)
+    : apiRequest<Publicacion>('/publicaciones', 'POST', publicacion);
+export const deletePublicacion = (id: number): Promise<void> =>
+  apiRequest<void>(`/publicaciones/${id}`, 'DELETE');
 
-// Proveedores
-export const getProveedores = (): Promise<Proveedor[]> => apiRequest<Proveedor[]>('/proveedores', 'GET');
-export const saveProveedor = (proveedor: Proveedor): Promise<Proveedor> => {
-    if (String(proveedor.id).length > 7) {
-        const { id, ...data } = proveedor;
-        return apiRequest<Proveedor>('/proveedores', 'POST', data);
-    }
-    return apiRequest<Proveedor>(`/proveedores/${proveedor.id}`, 'PUT', proveedor);
-};
-export const deleteProveedor = (proveedorId: number): Promise<void> => apiRequest(`/proveedores/${proveedorId}`, 'DELETE');
+// ====== SEGUIDORES ======
+export const getSeguidores = (): Promise<Seguidor[]> => 
+  apiRequest<Seguidor[]>('/seguidores', 'GET');
+export const saveSeguidor = (seguidor: Seguidor): Promise<Seguidor> =>
+  seguidor.id && seguidor.id < 1000000
+    ? apiRequest<Seguidor>(`/seguidores/${seguidor.id}`, 'PUT', seguidor)
+    : apiRequest<Seguidor>('/seguidores', 'POST', seguidor);
+export const deleteSeguidor = (id: number): Promise<void> =>
+  apiRequest<void>(`/seguidores/${id}`, 'DELETE');
 
-// Tipos de Proveedor
-export const getTiposProveedor = (): Promise<TipoProveedor[]> => apiRequest<TipoProveedor[]>('/proveedores/tipos', 'GET');
-export const saveTipoProveedor = (tipo: TipoProveedor): Promise<TipoProveedor> => {
-    if (String(tipo.id).length > 7) {
-        const { id, ...data } = tipo;
-        return apiRequest<TipoProveedor>('/proveedores/tipos', 'POST', data);
-    }
-    return apiRequest<TipoProveedor>(`/proveedores/tipos/${tipo.id}`, 'PUT', tipo);
-};
-export const deleteTipoProveedor = (id: number): Promise<void> => apiRequest(`/proveedores/tipos/${id}`, 'DELETE');
+// ====== USERS ======
+export const getUsers = (): Promise<User[]> => 
+  apiRequest<User[]>('/users', 'GET');
+export const saveUser = (user: User): Promise<User> =>
+  user.id && user.id < 1000000
+    ? apiRequest<User>(`/users/${user.id}`, 'PUT', user)
+    : apiRequest<User>('/users', 'POST', user);
+export const deleteUser = (id: number): Promise<void> =>
+  apiRequest<void>(`/users/${id}`, 'DELETE');
 
-// Users
-export const getUsers = (): Promise<User[]> => apiRequest<User[]>('/users', 'GET');
-export const saveUser = (user: User): Promise<User> => {
-    if (String(user.id).length > 7) {
-        const { id, ...data } = user;
-        return apiRequest<User>('/users', 'POST', data);
-    }
-    return apiRequest<User>(`/users/${user.id}`, 'PUT', user);
-};
-export const deleteUser = (userId: number): Promise<void> => apiRequest(`/users/${userId}`, 'DELETE');
+// ====== ROLES ======
+export const getRoles = (): Promise<Role[]> => 
+  apiRequest<Role[]>('/roles', 'GET');
+export const saveRole = (role: Role): Promise<Role> =>
+  role.id && role.id < 1000000
+    ? apiRequest<Role>(`/roles/${role.id}`, 'PUT', role)
+    : apiRequest<Role>('/roles', 'POST', role);
+export const deleteRole = (id: number): Promise<void> =>
+  apiRequest<void>(`/roles/${id}`, 'DELETE');
 
-// Comprobantes Electronicos
-export const getComprobantes = (): Promise<ComprobanteElectronico[]> => apiRequest<ComprobanteElectronico[]>('/comprobantes', 'GET');
-export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<ComprobanteElectronico> => {
-    if (String(comprobante.id).length > 7) {
-        const { id, ...data } = comprobante;
-        return apiRequest<ComprobanteElectronico>('/comprobantes', 'POST', data);
-    }
-    return apiRequest<ComprobanteElectronico>(`/comprobantes/${comprobante.id}`, 'PUT', comprobante);
-};
-export const deleteComprobante = (comprobanteId: number): Promise<void> => apiRequest(`/comprobantes/${comprobanteId}`, 'DELETE');
+// ====== GOALS ======
+export const getGoals = (): Promise<Goal[]> => 
+  apiRequest<Goal[]>('/goals', 'GET');
+export const saveGoal = (goal: Goal): Promise<Goal> =>
+  goal.id && goal.id < 1000000
+    ? apiRequest<Goal>(`/goals/${goal.id}`, 'PUT', goal)
+    : apiRequest<Goal>('/goals', 'POST', goal);
+export const deleteGoal = (id: number): Promise<void> =>
+  apiRequest<void>(`/goals/${id}`, 'DELETE');
 
+// ====== BUSINESS INFO ======
+export const getBusinessInfo = (): Promise<BusinessInfo> => 
+  apiRequest<BusinessInfo>('/config/business-info', 'GET');
+export const saveBusinessInfo = (info: BusinessInfo): Promise<BusinessInfo> =>
+  apiRequest<BusinessInfo>('/config/business-info', 'PUT', info);
 
-// Generic Config Handlers
-const createConfigApi = <T extends { id: number, nombre?: string }>(endpoint: string) => ({
-    getAll: (): Promise<T[]> => apiRequest<T[]>(`/config/${endpoint}`, 'GET'),
-    save: (item: T): Promise<T> => {
-        if (String(item.id).length > 7) {
-            const { id, ...data } = item;
-            return apiRequest<T>(`/config/${endpoint}`, 'POST', data);
-        }
-        return apiRequest<T>(`/config/${endpoint}/${item.id}`, 'PUT', item);
-    },
-    delete: (id: number): Promise<void> => apiRequest(`/config/${endpoint}/${id}`, 'DELETE'),
-});
+// ====== CLIENT SOURCES ======
+export const getClientSources = (): Promise<ClientSource[]> => 
+  apiRequest<ClientSource[]>('/config/client-sources', 'GET');
+export const saveClientSource = (source: ClientSource): Promise<ClientSource> =>
+  source.id && source.id < 1000000
+    ? apiRequest<ClientSource>(`/config/client-sources/${source.id}`, 'PUT', source)
+    : apiRequest<ClientSource>('/config/client-sources', 'POST', source);
+export const deleteClientSource = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/client-sources/${id}`, 'DELETE');
 
-const businessInfoApi = {
-    get: (): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'GET'),
-    save: (info: BusinessInfo): Promise<BusinessInfo> => apiRequest<BusinessInfo>('/config/business-info', 'PUT', info),
-};
+// ====== SERVICES ======
+export const getServices = (): Promise<Service[]> => 
+  apiRequest<Service[]>('/config/services', 'GET');
+export const saveService = (service: Service): Promise<Service> =>
+  service.id && service.id < 1000000
+    ? apiRequest<Service>(`/config/services/${service.id}`, 'PUT', service)
+    : apiRequest<Service>('/config/services', 'POST', service);
+export const deleteService = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/services/${id}`, 'DELETE');
 
+// ====== PRODUCTS ======
+export const getProducts = (): Promise<Product[]> => 
+  apiRequest<Product[]>('/config/products', 'GET');
+export const saveProduct = (product: Product): Promise<Product> =>
+  product.id && product.id < 1000000
+    ? apiRequest<Product>(`/config/products/${product.id}`, 'PUT', product)
+    : apiRequest<Product>('/config/products', 'POST', product);
+export const deleteProduct = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/products/${id}`, 'DELETE');
 
-export const getBusinessInfo = businessInfoApi.get;
-export const saveBusinessInfo = businessInfoApi.save;
+// ====== MEMBERSHIPS ======
+export const getMemberships = (): Promise<Membership[]> => 
+  apiRequest<Membership[]>('/config/memberships', 'GET');
+export const saveMembership = (membership: Membership): Promise<Membership> =>
+  membership.id && membership.id < 1000000
+    ? apiRequest<Membership>(`/config/memberships/${membership.id}`, 'PUT', membership)
+    : apiRequest<Membership>('/config/memberships', 'POST', membership);
+export const deleteMembership = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/memberships/${id}`, 'DELETE');
 
-const clientSourceApi = createConfigApi<ClientSource>('client-sources');
-export const getClientSources = clientSourceApi.getAll;
-export const saveClientSource = clientSourceApi.save;
-export const deleteClientSource = clientSourceApi.delete;
+// ====== SERVICE CATEGORIES ======
+export const getServiceCategories = (): Promise<ServiceCategory[]> => 
+  apiRequest<ServiceCategory[]>('/config/service-categories', 'GET');
+export const saveServiceCategory = (category: ServiceCategory): Promise<ServiceCategory> =>
+  category.id && category.id < 1000000
+    ? apiRequest<ServiceCategory>(`/config/service-categories/${category.id}`, 'PUT', category)
+    : apiRequest<ServiceCategory>('/config/service-categories', 'POST', category);
+export const deleteServiceCategory = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/service-categories/${id}`, 'DELETE');
 
-const serviceApi = createConfigApi<Service>('services');
-export const getServices = serviceApi.getAll;
-export const saveService = serviceApi.save;
-export const deleteService = serviceApi.delete;
+// ====== PRODUCT CATEGORIES ======
+export const getProductCategories = (): Promise<ProductCategory[]> => 
+  apiRequest<ProductCategory[]>('/config/product-categories', 'GET');
+export const saveProductCategory = (category: ProductCategory): Promise<ProductCategory> =>
+  category.id && category.id < 1000000
+    ? apiRequest<ProductCategory>(`/config/product-categories/${category.id}`, 'PUT', category)
+    : apiRequest<ProductCategory>('/config/product-categories', 'POST', category);
+export const deleteProductCategory = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/product-categories/${id}`, 'DELETE');
 
-const productApi = createConfigApi<Product>('products');
-export const getProducts = productApi.getAll;
-export const saveProduct = productApi.save;
-export const deleteProduct = productApi.delete;
+// ====== EGRESO CATEGORIES ======
+export const getEgresoCategories = (): Promise<EgresoCategory[]> => 
+  apiRequest<EgresoCategory[]>('/config/egreso-categories', 'GET');
+export const saveEgresoCategory = (category: EgresoCategory): Promise<EgresoCategory> =>
+  category.id && category.id < 1000000
+    ? apiRequest<EgresoCategory>(`/config/egreso-categories/${category.id}`, 'PUT', category)
+    : apiRequest<EgresoCategory>('/config/egreso-categories', 'POST', category);
+export const deleteEgresoCategory = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/egreso-categories/${id}`, 'DELETE');
 
-const membershipApi = createConfigApi<Membership>('memberships');
-export const getMemberships = membershipApi.getAll;
-export const saveMembership = membershipApi.save;
-export const deleteMembership = membershipApi.delete;
+// ====== JOB POSITIONS ======
+export const getJobPositions = (): Promise<JobPosition[]> => 
+  apiRequest<JobPosition[]>('/config/job-positions', 'GET');
+export const saveJobPosition = (position: JobPosition): Promise<JobPosition> =>
+  position.id && position.id < 1000000
+    ? apiRequest<JobPosition>(`/config/job-positions/${position.id}`, 'PUT', position)
+    : apiRequest<JobPosition>('/config/job-positions', 'POST', position);
+export const deleteJobPosition = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/job-positions/${id}`, 'DELETE');
 
-const serviceCategoryHandlers = createConfigApi<ServiceCategory>('service-categories');
-export const getServiceCategories = serviceCategoryHandlers.getAll;
-export const saveServiceCategory = serviceCategoryHandlers.save;
-export const deleteServiceCategory = serviceCategoryHandlers.delete;
+// ====== COMPROBANTES ======
+export const getComprobantes = (): Promise<ComprobanteElectronico[]> => 
+  apiRequest<ComprobanteElectronico[]>('/config/comprobantes', 'GET');
+export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<ComprobanteElectronico> =>
+  comprobante.id && comprobante.id < 1000000
+    ? apiRequest<ComprobanteElectronico>(`/config/comprobantes/${comprobante.id}`, 'PUT', comprobante)
+    : apiRequest<ComprobanteElectronico>('/config/comprobantes', 'POST', comprobante);
+export const deleteComprobante = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/comprobantes/${id}`, 'DELETE');
 
-const productCategoryHandlers = createConfigApi<ProductCategory>('product-categories');
-export const getProductCategories = productCategoryHandlers.getAll;
-export const saveProductCategory = productCategoryHandlers.save;
-export const deleteProductCategory = productCategoryHandlers.delete;
-
-const egresoCategoryApi = createConfigApi<EgresoCategory>('egreso-categories');
-export const getEgresoCategories = egresoCategoryApi.getAll;
-// FIX: Changed to `saveEgresoCategory` to match the `createConfigApi` return type.
-export const saveEgresoCategory = egresoCategoryApi.save;
-export const deleteEgresoCategory = egresoCategoryApi.delete;
-
-const jobPositionApi = createConfigApi<JobPosition>('job-positions');
-export const getJobPositions = jobPositionApi.getAll;
-// FIX: Changed to `saveJobPosition` to match the `createConfigApi` return type.
-export const saveJobPosition = jobPositionApi.save;
-export const deleteJobPosition = jobPositionApi.delete;
-
-// Goals
-export const getGoals = (): Promise<Goal[]> => apiRequest<Goal[]>('/goals', 'GET');
-export const saveGoal = (goal: Goal): Promise<Goal> => {
-    if (String(goal.id).length > 7) {
-        const { id, ...data } = goal;
-        return apiRequest<Goal>('/goals', 'POST', data);
-    }
-    return apiRequest<Goal>(`/goals/${goal.id}`, 'PUT', goal);
-};
-export const deleteGoal = (goalId: number): Promise<void> => apiRequest(`/goals/${goalId}`, 'DELETE');
-
-
-// AI function is common for both environments
+// ====== AI CONTENT GENERATION ======
 export const generateAiContent = async (prompt: string): Promise<string> => {
-    try {
-        if (!process.env.API_KEY) {
-            console.error("API key for Google GenAI is not set.");
-            return "Error: La clave de API no está configurada.";
-        }
-        // FIX: Corrected API call to use ai.models.generateContent with contents.parts structure and correct model.
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', // Corrected model name as per guidelines
-            contents: [{ parts: [{text: prompt}] }], // Corrected structure as per guidelines
-        });
+  try {
+    const response = await apiRequest<{ content: string }>('/ai/generate', 'POST', { prompt });
+    return response.content;
+  } catch (error) {
+    console.error('Error generating AI content:', error);
+    return 'Error al generar contenido con IA. Por favor, intenta nuevamente.';
+  }
+};
 
-        // Use .text directly as per new guidelines
-        return response.text;
-    } catch (error) {
-        console.error("Error al generar contenido con IA:", error);
-        return "Error al conectar con el servicio de IA. Por favor, intente de nuevo más tarde.";
-    }
+export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): Promise<string> => {
+  try {
+    const response = await apiRequest<{ analysis: string }>('/ai/analysis', 'POST', { 
+      seguimientos, 
+      paciente 
+    });
+    return response.analysis;
+  } catch (error) {
+    console.error('Error generating AI analysis:', error);
+    return 'Error al generar análisis con IA. Por favor, intenta nuevamente.';
+  }
 };
