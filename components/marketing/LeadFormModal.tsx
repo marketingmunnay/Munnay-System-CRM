@@ -1250,6 +1250,98 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
+            {/* CORRECCIÓN: Mostrar procedimientos sin tratamiento asociado */}
+            {procedimientosExistentes && (
+                <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-orange-700 flex items-center">
+                        <GoogleIcon name="warning" className="mr-2" />
+                        Procedimientos Existentes (Corrección Automática)
+                    </h4>
+                    
+                    {(formData.procedimientos || []).map((proc: Procedure, index: number) => (
+                        <div key={proc.id || index} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                            <div className="flex justify-between items-start">
+                                <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span className="font-semibold text-orange-700">
+                                            {proc.nombreTratamiento} - Sesión #{proc.sesionNumero}
+                                        </span>
+                                        <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Horario:</span>
+                                        <p className="text-gray-800 font-medium">{proc.horaInicio} - {proc.horaFin}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Personal:</span>
+                                        <p className="text-gray-800 font-medium">{proc.personal}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">ID Tratamiento:</span>
+                                        <p className="text-orange-600 font-medium">{proc.tratamientoId}</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex space-x-2 ml-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleEditProcedure(proc)}
+                                        className="text-blue-600 hover:text-blue-800"
+                                        title="Editar procedimiento"
+                                    >
+                                        <GoogleIcon name="edit" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteProcedure(proc.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                        title="Eliminar procedimiento"
+                                    >
+                                        <GoogleIcon name="delete" />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {proc.observacion && (
+                                <div className="mt-3 p-3 bg-white rounded text-sm">
+                                    <span className="text-gray-500 font-medium">Observación: </span>
+                                    <span className="text-gray-700">{proc.observacion}</span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    
+                    <div className="bg-orange-100 border border-orange-300 p-3 rounded text-sm">
+                        <p className="text-orange-800 font-medium">ℹ️ Nota de Corrección:</p>
+                        <p className="text-orange-700">
+                            Estos procedimientos se están mostrando porque los IDs de tratamiento no coinciden 
+                            (Procedimientos: {Object.keys(procedimientosPorTratamiento).join(', ')} | 
+                            Tratamientos: {(formData.tratamientos || []).map(t => t.id).join(', ')})
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (formData.tratamientos && formData.tratamientos.length > 0) {
+                                    const primerTratamientoId = formData.tratamientos[0].id;
+                                    const procedimientosCorregidos = (formData.procedimientos || []).map(proc => ({
+                                        ...proc,
+                                        tratamientoId: primerTratamientoId
+                                    }));
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        procedimientos: procedimientosCorregidos
+                                    }));
+                                    alert('IDs corregidos! Los procedimientos ahora se asociarán al primer tratamiento.');
+                                }
+                            }}
+                            className="mt-2 px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
+                        >
+                            🔧 Corregir IDs Automáticamente
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {hasTratamientos && !procedimientosExistentes && !currentProcedure && (
                 <div className="text-center py-12 text-gray-500">
                     <GoogleIcon name="event_note" className="text-6xl mb-4 opacity-50" />
