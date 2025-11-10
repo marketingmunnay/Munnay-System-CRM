@@ -788,21 +788,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         return maxSession + 1;
     };
 
-    // Agrupar procedimientos por tratamiento
-    const procedimientosPorTratamiento = useMemo(() => {
-        if (!formData.procedimientos) return {};
-        
-        const grupos: Record<number, Procedure[]> = {};
-        formData.procedimientos.forEach((proc: Procedure) => {
-            if (!grupos[proc.tratamientoId]) {
-                grupos[proc.tratamientoId] = [];
-            }
-            grupos[proc.tratamientoId].push(proc);
-        });
-        
-        return grupos;
-    }, [formData.procedimientos]);
-
     const handleAddProcedure = () => {
         if (!formData.tratamientos || formData.tratamientos.length === 0) return;
         
@@ -1101,124 +1086,93 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
 
 
-            {/* Lista de Procedimientos Agrupados por Tratamiento */}
-            {hasTratamientos && procedimientosExistentes && (
+            {/* Lista Simple de Procedimientos */}
+            {procedimientosExistentes && (
                 <div className="space-y-4">
-                    {tratamientosDisponibles.map((tratamiento: Treatment) => {
-                        const procedimientos = procedimientosPorTratamiento[tratamiento.id] || [];
-                        const sesionesCompletadas = procedimientos.length;
-                        const totalSesiones = tratamiento.cantidadSesiones;
-                        const progreso = totalSesiones > 0 ? (sesionesCompletadas / totalSesiones) * 100 : 0;
-                        
-                        if (sesionesCompletadas === 0) return null;
-
-                        return (
-                            <div key={tratamiento.id} className="border border-gray-300 rounded-lg overflow-hidden">
-                                {/* Header del Tratamiento */}
-                                <div className="bg-gradient-to-r from-purple-100 to-purple-50 p-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="font-bold text-gray-800 flex items-center">
-                                            <GoogleIcon name="spa" className="mr-2 text-purple-600" />
-                                            {tratamiento.nombre}
-                                        </h4>
-                                        <span className="text-sm font-semibold text-purple-700 bg-white px-3 py-1 rounded-full">
-                                            {sesionesCompletadas} / {totalSesiones} sesiones
-                                        </span>
+                    <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+                        <GoogleIcon name="history_edu" className="mr-2" />
+                        Historial de Procedimientos
+                    </h4>
+                    
+                    {(formData.procedimientos || [])
+                        .sort((a: Procedure, b: Procedure) => new Date(b.fechaAtencion).getTime() - new Date(a.fechaAtencion).getTime())
+                        .map((proc: Procedure, index: number) => (
+                            <div 
+                                key={proc.id || index} 
+                                className={`border border-gray-200 rounded-lg p-4 transition-all duration-500 ${
+                                    justSavedProcedureId === proc.id 
+                                        ? 'bg-green-50 border-green-400' 
+                                        : 'bg-white hover:bg-gray-50'
+                                }`}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                            <span className={`font-semibold ${
+                                                justSavedProcedureId === proc.id 
+                                                    ? 'text-green-700' 
+                                                    : 'text-purple-700'
+                                            }`}>
+                                                {proc.nombreTratamiento} - Sesión #{proc.sesionNumero}
+                                                {justSavedProcedureId === proc.id && (
+                                                    <span className="ml-2 text-green-600 text-xs">
+                                                        ✓ Guardado
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Horario:</span>
+                                            <p className="text-gray-800 font-medium">{proc.horaInicio} - {proc.horaFin}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Personal:</span>
+                                            <p className="text-gray-800 font-medium">{proc.personal}</p>
+                                        </div>
+                                        <div>
+                                            {proc.asistenciaMedica && (
+                                                <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                                    <GoogleIcon name="local_hospital" className="mr-1 text-xs" />
+                                                    {proc.medico || 'Médico'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     
-                                    {/* Barra de Progreso */}
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                        <div 
-                                            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                                            style={{ width: `${Math.min(progreso, 100)}%` }}
-                                        />
+                                    <div className="flex space-x-2 ml-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleEditProcedure(proc)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                            title="Editar procedimiento"
+                                        >
+                                            <GoogleIcon name="edit" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (window.confirm('¿Está seguro de eliminar este procedimiento? También se eliminarán todos los seguimientos asociados.')) {
+                                                    handleDeleteProcedure(proc.id);
+                                                }
+                                            }}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Eliminar procedimiento"
+                                        >
+                                            <GoogleIcon name="delete" />
+                                        </button>
                                     </div>
                                 </div>
-
-                                {/* Lista de Procedimientos */}
-                                <div className="divide-y divide-gray-200">
-                                    {procedimientos
-                                        .sort((a: Procedure, b: Procedure) => b.sesionNumero - a.sesionNumero)
-                                        .map((proc: Procedure) => (
-                                            <div 
-                                                key={proc.id} 
-                                                className={`p-4 transition-all duration-500 ${
-                                                    justSavedProcedureId === proc.id 
-                                                        ? 'bg-green-50 border-l-4 border-green-400' 
-                                                        : 'hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-                                                        <div>
-                                                            <span className={`font-semibold ${
-                                                                justSavedProcedureId === proc.id 
-                                                                    ? 'text-green-700' 
-                                                                    : 'text-purple-700'
-                                                            }`}>
-                                                                Sesión #{proc.sesionNumero}
-                                                                {justSavedProcedureId === proc.id && (
-                                                                    <span className="ml-2 text-green-600 text-xs">
-                                                                        ✓ Guardado
-                                                                    </span>
-                                                                )}
-                                                            </span>
-                                                            <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-gray-500">Horario:</span>
-                                                            <p className="text-gray-800 font-medium">{proc.horaInicio} - {proc.horaFin}</p>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-gray-500">Personal:</span>
-                                                            <p className="text-gray-800 font-medium">{proc.personal}</p>
-                                                        </div>
-                                                        <div>
-                                                            {proc.asistenciaMedica && (
-                                                                <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                                                    <GoogleIcon name="local_hospital" className="mr-1 text-xs" />
-                                                                    {proc.medico || 'Médico'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="flex space-x-2 ml-4">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleEditProcedure(proc)}
-                                                            className="text-blue-600 hover:text-blue-800"
-                                                            title="Editar procedimiento"
-                                                        >
-                                                            <GoogleIcon name="edit" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (window.confirm('¿Está seguro de eliminar este procedimiento? También se eliminarán todos los seguimientos asociados.')) {
-                                                                    handleDeleteProcedure(proc.id);
-                                                                }
-                                                            }}
-                                                            className="text-red-600 hover:text-red-800"
-                                                            title="Eliminar procedimiento"
-                                                        >
-                                                            <GoogleIcon name="delete" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                
-                                                {proc.observacion && (
-                                                    <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
-                                                        <span className="text-gray-500 font-medium">Observación: </span>
-                                                        <span className="text-gray-700">{proc.observacion}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                </div>
+                                
+                                {proc.observacion && (
+                                    <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
+                                        <span className="text-gray-500 font-medium">Observación: </span>
+                                        <span className="text-gray-700">{proc.observacion}</span>
+                                    </div>
+                                )}
                             </div>
-                        );
-                    })}
+                        ))
+                    }
                 </div>
             )}
 
