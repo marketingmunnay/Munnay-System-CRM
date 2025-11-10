@@ -772,7 +772,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     );
 };
 
-const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, autoSaveEnabled, forceSave }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
@@ -886,6 +886,18 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
         setCurrentProcedure(null);
         setEditingProcedureId(null);
+        
+        // Force immediate save after adding/editing procedure
+        console.log('🔧 FORCING IMMEDIATE SAVE after procedure change');
+        setTimeout(() => {
+            if (autoSaveEnabled) {
+                forceSave().then(() => {
+                    console.log('✅ FORCED SAVE completed successfully');
+                }).catch((error) => {
+                    console.error('❌ FORCED SAVE failed:', error);
+                });
+            }
+        }, 100); // Small delay to ensure state is updated
     };
 
     const handleDeleteProcedure = (procedureId: number) => {
@@ -2003,7 +2015,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             services={services}
                         />;
             case 'procedimientos':
-                return <ProcedimientosTabContent formData={formData} handleSetFormData={setFormData} />;
+                return <ProcedimientosTabContent 
+                    formData={formData} 
+                    handleSetFormData={setFormData}
+                    autoSaveEnabled={autoSaveEnabled}
+                    forceSave={forceSave}
+                />;
             case 'seguimiento':
                 return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} />;
             default:
