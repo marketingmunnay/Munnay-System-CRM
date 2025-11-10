@@ -3,9 +3,12 @@ import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguim
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
+import SaveIndicator from '../shared/SaveIndicator';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay } from '../../utils/time';
+import { useAutoSave } from '../../hooks/useAutoSave';
+import { useOptimisticUI } from '../../hooks/useOptimisticUI';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -772,6 +775,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
 const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
+    const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
 
     // Función para obtener el siguiente número de sesión para un tratamiento
     const getNextSessionNumber = (tratamientoId: number): number => {
@@ -859,6 +863,12 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 };
             }
         });
+
+        // Show success feedback
+        setJustSavedProcedureId(procedureToSave.id);
+        setTimeout(() => {
+            setJustSavedProcedureId(null);
+        }, 2000);
 
         setCurrentProcedure(null);
         setEditingProcedureId(null);
@@ -1118,11 +1128,29 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                                     {procedimientos
                                         .sort((a: Procedure, b: Procedure) => b.sesionNumero - a.sesionNumero)
                                         .map((proc: Procedure) => (
-                                            <div key={proc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <div 
+                                                key={proc.id} 
+                                                className={`p-4 transition-all duration-500 ${
+                                                    justSavedProcedureId === proc.id 
+                                                        ? 'bg-green-50 border-l-4 border-green-400' 
+                                                        : 'hover:bg-gray-50'
+                                                }`}
+                                            >
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
                                                         <div>
-                                                            <span className="font-semibold text-purple-700">Sesión #{proc.sesionNumero}</span>
+                                                            <span className={`font-semibold ${
+                                                                justSavedProcedureId === proc.id 
+                                                                    ? 'text-green-700' 
+                                                                    : 'text-purple-700'
+                                                            }`}>
+                                                                Sesión #{proc.sesionNumero}
+                                                                {justSavedProcedureId === proc.id && (
+                                                                    <span className="ml-2 text-green-600 text-xs">
+                                                                        ✓ Guardado
+                                                                    </span>
+                                                                )}
+                                                            </span>
                                                             <p className="text-gray-600 text-xs mt-1">{formatDateForDisplay(proc.fechaAtencion)}</p>
                                                         </div>
                                                         <div>
@@ -1674,6 +1702,30 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
 
+    // Auto-save functionality
+    const autoSaveEnabled = !!lead?.id; // Only auto-save for existing leads
+    const {
+        saveStatus,
+        lastSaved,
+        forceSave,
+        hasUnsavedChanges
+    } = useAutoSave({
+        data: formData,
+        onSave: async (data) => {
+            if (!data.id) throw new Error('Cannot auto-save new lead');
+            const savedData = await api.saveLead(data as Lead);
+            return savedData;
+        },
+        delay: 2000, // Auto-save every 2 seconds
+        enabled: autoSaveEnabled && isOpen,
+        onError: (error) => {
+            console.error('Auto-save error:', error);
+        },
+        onSuccess: (savedData) => {
+            console.log('Auto-saved successfully:', savedData.id);
+        }
+    });
+
     const SERVICE_CATEGORIES = useMemo(() => {
         return services.reduce((acc, service) => {
             if (!acc[service.categoria]) {
@@ -1772,7 +1824,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
     };
     
-    const handleSave = () => {
+    const handleSave = async () => {
         // Validar campos requeridos
         const errors: string[] = [];
         
@@ -1806,7 +1858,20 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             montoPagado: formData.montoPagado ?? 0,
         };
         
-        onSave(dataToSave as Lead);
+        // For new leads or when we want to save and close, call onSave
+        if (isNewLead) {
+            onSave(dataToSave as Lead);
+        } else {
+            // For existing leads, force save and then close
+            try {
+                await forceSave();
+                onClose();
+            } catch (error) {
+                console.error('Error saving lead:', error);
+                // Fallback to regular save
+                onSave(dataToSave as Lead);
+            }
+        }
     };
 
     const handleDeleteClick = () => {
@@ -1917,7 +1982,21 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
+            title={
+                <div className="flex items-center justify-between w-full">
+                    <span>
+                        {isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
+                    </span>
+                    {!isNewLead && (
+                        <SaveIndicator 
+                            status={saveStatus}
+                            lastSaved={lastSaved}
+                            hasUnsavedChanges={hasUnsavedChanges}
+                            className="ml-4"
+                        />
+                    )}
+                </div>
+            }
             maxWidthClass="max-w-7xl"
             footer={
                 <div className="w-full flex justify-between items-center">
@@ -1944,12 +2023,31 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                                 Generar Comprobante
                             </button>
                         )}
+                        
+                        {!isNewLead && autoSaveEnabled && (
+                            <button
+                                type="button"
+                                onClick={forceSave}
+                                disabled={!hasUnsavedChanges}
+                                className={`flex items-center px-4 py-2 rounded-lg shadow transition-all duration-200 ${
+                                    hasUnsavedChanges 
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
+                                title="Guardar cambios inmediatamente"
+                            >
+                                <GoogleIcon name="save" className="mr-2" />
+                                Guardar Ahora
+                            </button>
+                        )}
+                        
                         <button
                             type="button"
                             onClick={handleSave}
-                            className="bg-[#aa632d] text-white px-6 py-2 rounded-lg shadow hover:bg-[#8e5225]"
+                            className="bg-[#aa632d] text-white px-6 py-2 rounded-lg shadow hover:bg-[#8e5225] flex items-center"
                         >
-                            Guardar Cambios
+                            <GoogleIcon name="check" className="mr-2" />
+                            {isNewLead ? 'Crear Lead' : 'Guardar y Cerrar'}
                         </button>
                     </div>
                 </div>
