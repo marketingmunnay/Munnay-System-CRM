@@ -904,6 +904,17 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
     const tratamientosDisponibles = formData.tratamientos || [];
     const hasTratamientos = tratamientosDisponibles.length > 0;
+    const procedimientosExistentes = (formData.procedimientos || []).length > 0;
+
+    // Debug: Monitor procedimientos changes
+    useEffect(() => {
+        console.log('ProcedimientosTabContent - formData.procedimientos updated:', {
+            count: (formData.procedimientos || []).length,
+            procedimientos: formData.procedimientos,
+            procedimientosExistentes,
+            hasTratamientos
+        });
+    }, [formData.procedimientos, procedimientosExistentes, hasTratamientos]);
 
     return (
         <div className="space-y-6">
@@ -1090,7 +1101,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             )}
 
             {/* Lista de Procedimientos Agrupados por Tratamiento */}
-            {hasTratamientos && Object.keys(procedimientosPorTratamiento).length > 0 && (
+            {hasTratamientos && procedimientosExistentes && (
                 <div className="space-y-4">
                     {tratamientosDisponibles.map((tratamiento: Treatment) => {
                         const procedimientos = procedimientosPorTratamiento[tratamiento.id] || [];
@@ -1210,7 +1221,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
-            {hasTratamientos && Object.keys(procedimientosPorTratamiento).length === 0 && !currentProcedure && (
+            {hasTratamientos && !procedimientosExistentes && !currentProcedure && (
                 <div className="text-center py-12 text-gray-500">
                     <GoogleIcon name="event_note" className="text-6xl mb-4 opacity-50" />
                     <p className="text-lg font-medium">No hay procedimientos registrados</p>
