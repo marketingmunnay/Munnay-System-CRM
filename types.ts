@@ -57,7 +57,8 @@ export type Medico = 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
 export enum MetodoPago {
     Efectivo = 'Efectivo',
     Tarjeta = 'Tarjeta',
-    Transferencia = 'Transferencia',
+    TransferenciaBCP = 'Transferencia BCP',
+    TransferenciaInterbank = 'Transferencia Interbank',
     Yape = 'Yape',
     Plin = 'Plin',
 }

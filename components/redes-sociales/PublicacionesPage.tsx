@@ -18,14 +18,16 @@ interface PublicacionesPageProps {
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
-const InteractionTypeCard: React.FC<{ title: string; amount: string; color: string; iconName: string; iconColor: string; }> = ({ title, amount, color, iconName, iconColor }) => (
-    <div className={`p-4 rounded-xl shadow-lg ${color} text-black w-36 h-32 flex flex-col justify-between`}>
-        <div className="flex justify-end">
-             <GoogleIcon name={iconName} className={`${iconColor} text-3xl`} />
+const InteractionTypeCard: React.FC<{ title: string; amount: string; color: string; iconName: string; }> = ({ title, amount, color, iconName }) => (
+    <div className={`${color} p-6 rounded-2xl shadow-sm border border-gray-100`}>
+        <div className="flex items-center justify-between mb-4">
+            <div className="p-2 rounded-xl bg-white bg-opacity-20">
+                <GoogleIcon name={iconName} className="text-2xl text-current" />
+            </div>
         </div>
         <div>
-            <p className="text-sm font-medium">{title}</p>
-            <p className="text-lg font-bold">{amount}</p>
+            <p className="text-sm font-medium text-gray-700 mb-1">{title}</p>
+            <p className="text-3xl font-bold text-gray-900">{amount}</p>
         </div>
     </div>
 );
@@ -227,10 +229,10 @@ const PublicacionesPage: React.FC<PublicacionesPageProps> = ({ publicaciones, on
                 <div className="flex-shrink-0 lg:pl-8 lg:border-l border-gray-200 mt-8 lg:mt-0 w-full lg:w-auto">
                     <h4 className="text-lg font-semibold text-gray-500 mb-4">Interacciones Totales</h4>
                     <div className="grid grid-cols-2 gap-4">
-                        <InteractionTypeCard title="Vistas" amount={stats.totalVistas.toLocaleString('es-PE')} color="bg-[#BAE6FD]" iconName="visibility" iconColor="text-blue-500" />
-                        <InteractionTypeCard title="Comentarios" amount={stats.totalComentarios.toLocaleString('es-PE')} color="bg-[#BBF7D0]" iconName="comment" iconColor="text-green-500" />
-                        <InteractionTypeCard title="Reacciones" amount={stats.totalReacciones.toLocaleString('es-PE')} color="bg-[#E9D5FF]" iconName="favorite" iconColor="text-purple-500" />
-                        <InteractionTypeCard title="Conversaciones" amount={stats.totalConversaciones.toLocaleString('es-PE')} color="bg-[#FEF08A]" iconName="chat" iconColor="text-yellow-500" />
+                        <InteractionTypeCard title="Vistas" amount={stats.totalVistas.toLocaleString('es-PE')} color="bg-blue-50" iconName="visibility" />
+                        <InteractionTypeCard title="Comentarios" amount={stats.totalComentarios.toLocaleString('es-PE')} color="bg-green-50" iconName="comment" />
+                        <InteractionTypeCard title="Reacciones" amount={stats.totalReacciones.toLocaleString('es-PE')} color="bg-purple-50" iconName="favorite" />
+                        <InteractionTypeCard title="Conversaciones" amount={stats.totalConversaciones.toLocaleString('es-PE')} color="bg-yellow-50" iconName="chat" />
                     </div>
                 </div>
             </div>

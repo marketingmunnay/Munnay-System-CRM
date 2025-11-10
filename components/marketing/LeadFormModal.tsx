@@ -62,7 +62,16 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 </div>
                  <div>
                     <label className="text-sm font-medium">Número de Teléfono <span className="text-red-500">*</span></label>
-                    <input type="tel" name="numero" value={formData.numero || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required />
+                    <input 
+                        type="tel" 
+                        name="numero" 
+                        value={formData.numero || ''} 
+                        onChange={handleChange} 
+                        placeholder="970 446 695"
+                        className="w-full bg-[#f9f9fa] p-2" 
+                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
+                        required 
+                    />
                     {!formData.numero?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
@@ -796,6 +805,16 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         const procedimientosUsados = (formData.procedimientos || []).filter(
             (p: Procedure) => p.tratamientoId === tratamientoId
         ).length;
+        
+        console.log('🔍 DEBUG getSesionesRestantes:', {
+            tratamientoId,
+            tratamientoNombre: tratamiento.nombre,
+            cantidadSesiones: tratamiento.cantidadSesiones,
+            procedimientosTotal: formData.procedimientos?.length || 0,
+            procedimientosDelTratamiento: procedimientosUsados,
+            procedimientosIds: (formData.procedimientos || []).map(p => p.id),
+            tratamientosIds: (formData.procedimientos || []).filter(p => p.tratamientoId === tratamientoId).map(p => p.id)
+        });
         
         return {
             usadas: procedimientosUsados,
@@ -1814,6 +1833,24 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
     }, [lead]);
 
+    // Format phone number as 970 446 695 (9 digits with spaces)
+    const formatPhoneNumber = (phone: string): string => {
+        // Remove all non-numeric characters
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        // Limit to 9 digits
+        const limitedPhone = cleanPhone.slice(0, 9);
+        
+        // Format as 3-3-3 pattern
+        if (limitedPhone.length <= 3) {
+            return limitedPhone;
+        } else if (limitedPhone.length <= 6) {
+            return `${limitedPhone.slice(0, 3)} ${limitedPhone.slice(3)}`;
+        } else {
+            return `${limitedPhone.slice(0, 3)} ${limitedPhone.slice(3, 6)} ${limitedPhone.slice(6)}`;
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         
@@ -1825,6 +1862,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             } else if (type === 'datetime-local') {
                 // Convert to ISO format for datetime-local
                 newState[name] = value ? new Date(value).toISOString() : '';
+            } else if (name === 'numero') {
+                // Format phone number
+                newState[name] = formatPhoneNumber(value);
             } else {
                 newState[name] = value;
             }

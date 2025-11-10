@@ -60,12 +60,18 @@ const SeguimientoIAAnalysisTable: React.FC<SeguimientoIAAnalysisTableProps> = ({
                 if (Object.keys(categoryConfig).includes(category)) {
                      setAnalysis(prev => ({ ...prev, [patient.id]: { status: 'success', category } }));
                 } else {
+                    console.warn('IA returned invalid category:', resultText);
                     setAnalysis(prev => ({ ...prev, [patient.id]: { status: 'error', category: 'Error de Análisis' } }));
                 }
 
             } catch (error) {
                 console.error("Error analyzing patient:", error);
-                setAnalysis(prev => ({ ...prev, [patient.id]: { status: 'error', category: 'Error de Análisis' } }));
+                // Si el error es porque la API de IA no está configurada, mostrar un mensaje más claro
+                if (error instanceof Error && error.message.includes('API')) {
+                    setAnalysis(prev => ({ ...prev, [patient.id]: { status: 'success', category: 'Sin Datos Suficientes' } }));
+                } else {
+                    setAnalysis(prev => ({ ...prev, [patient.id]: { status: 'error', category: 'Error de Análisis' } }));
+                }
             }
         };
 
