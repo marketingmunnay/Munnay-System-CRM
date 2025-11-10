@@ -1841,6 +1841,14 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         };
         
         try {
+            console.log('🔍 DEBUGGING: Saving lead with data:', {
+                id: dataToSave.id,
+                nombres: dataToSave.nombres,
+                apellidos: dataToSave.apellidos,
+                procedimientos: dataToSave.procedimientos,
+                procedimientosCount: (dataToSave.procedimientos || []).length
+            });
+            
             await onSave(dataToSave as Lead);
             
             // Mostrar mensaje de éxito
@@ -1848,7 +1856,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             setTimeout(() => {
                 setShowSaveMessage(false);
             }, 3000);
-            
+
         } catch (error) {
             console.error('Error saving lead:', error);
             alert('Error al guardar. Por favor, inténtalo de nuevo.');

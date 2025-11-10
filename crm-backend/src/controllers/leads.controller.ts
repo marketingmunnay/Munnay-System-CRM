@@ -189,6 +189,12 @@ export const updateLead = async (req: Request, res: Response) => {
     ...leadData
   } = req.body;
 
+  console.log('🔍 DEBUGGING: UpdateLead received:', {
+    leadId: id,
+    procedimientos: procedimientos ? procedimientos.length : 'undefined',
+    procedimientosData: procedimientos
+  });
+
   try {
     // Helper function to safely parse dates
     const parseDate = (dateStr: any, addTime: boolean = false): Date | null | undefined => {
@@ -219,17 +225,17 @@ export const updateLead = async (req: Request, res: Response) => {
     const parsedFechaLead = parseDate(leadData.fechaLead, true);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
-    // Delete existing related records first only if new data is being sent
-    if (tratamientos !== undefined) {
+    // Delete existing related records first only if new data is being sent AND is valid
+    if (tratamientos !== undefined && Array.isArray(tratamientos)) {
       await prisma.treatment.deleteMany({ where: { leadId: id } });
     }
-    if (procedimientos !== undefined) {
+    if (procedimientos !== undefined && Array.isArray(procedimientos)) {
       await prisma.procedure.deleteMany({ where: { leadId: id } });
     }
-    if (seguimientos !== undefined) {
+    if (seguimientos !== undefined && Array.isArray(seguimientos)) {
       await prisma.seguimiento.deleteMany({ where: { leadId: id } });
     }
-    if (pagosRecepcion !== undefined) {
+    if (pagosRecepcion !== undefined && Array.isArray(pagosRecepcion)) {
       await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
     }
 
@@ -247,7 +253,7 @@ export const updateLead = async (req: Request, res: Response) => {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
         // Create related records
-        tratamientos: tratamientos ? {
+        tratamientos: (tratamientos && Array.isArray(tratamientos) && tratamientos.length > 0) ? {
           create: tratamientos.map((t: any) => ({
             nombre: t.nombre || '',
             cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
@@ -257,7 +263,7 @@ export const updateLead = async (req: Request, res: Response) => {
             deuda: parseFloat(t.deuda) || 0
           }))
         } : undefined,
-        procedimientos: procedimientos ? {
+        procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
           create: procedimientos.map((p: any) => ({
             fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
             personal: p.personal || '',
@@ -271,7 +277,7 @@ export const updateLead = async (req: Request, res: Response) => {
             observacion: p.observacion || null
           }))
         } : undefined,
-        seguimientos: seguimientos ? {
+        seguimientos: (seguimientos && Array.isArray(seguimientos) && seguimientos.length > 0) ? {
           create: seguimientos.map((s: any) => ({
             procedimientoId: s.procedimientoId,
             nombreProcedimiento: s.nombreProcedimiento,
@@ -288,7 +294,7 @@ export const updateLead = async (req: Request, res: Response) => {
           }))
         } : undefined,
         // Create pagos de recepción if provided
-        pagosRecepcion: pagosRecepcion ? {
+        pagosRecepcion: (pagosRecepcion && Array.isArray(pagosRecepcion) && pagosRecepcion.length > 0) ? {
           create: pagosRecepcion.map((p: any) => ({
             monto: p.monto,
             metodoPago: p.metodoPago,
