@@ -907,8 +907,13 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
     // Debug: Monitor procedimientos changes
     useEffect(() => {
-        // Silent monitoring removed - no auto-save needed
-    }, [formData.procedimientos]);
+        console.log('🔍 ProcedimientosTabContent - formData.procedimientos:', {
+            procedimientos: formData.procedimientos,
+            length: (formData.procedimientos || []).length,
+            procedimientosExistentes,
+            hasTratamientos
+        });
+    }, [formData.procedimientos, procedimientosExistentes, hasTratamientos]);
 
     return (
         <div className="space-y-6">
@@ -1094,6 +1099,17 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                 </div>
             )}
 
+            {/* Debug Info */}
+            {true && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
+                    <h4 className="font-semibold text-yellow-800">DEBUG INFO:</h4>
+                    <p>hasTratamientos: {hasTratamientos.toString()}</p>
+                    <p>procedimientosExistentes: {procedimientosExistentes.toString()}</p>
+                    <p>formData.procedimientos.length: {(formData.procedimientos || []).length}</p>
+                    <p>formData.tratamientos.length: {(formData.tratamientos || []).length}</p>
+                </div>
+            )}
+
             {/* Lista de Procedimientos Agrupados por Tratamiento */}
             {hasTratamientos && procedimientosExistentes && (
                 <div className="space-y-4">
@@ -1222,6 +1238,23 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                     <p className="text-sm">Haga clic en "Añadir Procedimiento" para comenzar el historial clínico.</p>
                 </div>
             )}
+
+            {/* TEST: Simple procedimientos list (like seguimientos) */}
+            {(formData.procedimientos || []).length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+                    <h4 className="font-semibold text-blue-800 mb-3">TEST - Lista Simple de Procedimientos:</h4>
+                    <div className="space-y-2">
+                        {(formData.procedimientos || []).map((proc: Procedure, index: number) => (
+                            <div key={proc.id || index} className="bg-white p-2 rounded border">
+                                <p><strong>Tratamiento:</strong> {proc.nombreTratamiento}</p>
+                                <p><strong>Sesión:</strong> {proc.sesionNumero}</p>
+                                <p><strong>Fecha:</strong> {proc.fechaAtencion}</p>
+                                <p><strong>Personal:</strong> {proc.personal}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -1346,6 +1379,14 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData }) =
     };
 
     const seguimientos = formData.seguimientos || [];
+
+    // Debug: Monitor seguimientos changes
+    useEffect(() => {
+        console.log('🔍 SeguimientoTabContent - formData.seguimientos:', {
+            seguimientos: formData.seguimientos,
+            length: seguimientos.length
+        });
+    }, [formData.seguimientos, seguimientos.length]);
 
     return (
         <div className="space-y-6">
@@ -1845,6 +1886,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 id: dataToSave.id,
                 nombres: dataToSave.nombres,
                 apellidos: dataToSave.apellidos,
+                estadoRecepcion: dataToSave.estadoRecepcion,
                 procedimientos: dataToSave.procedimientos,
                 procedimientosCount: (dataToSave.procedimientos || []).length
             });
