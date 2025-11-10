@@ -60,7 +60,6 @@ export const createLead = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    console.log('Creating lead with data:', JSON.stringify(req.body, null, 2));
     // Helper function to safely parse dates for creation
     const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
       if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
@@ -189,10 +188,6 @@ export const updateLead = async (req: Request, res: Response) => {
     pagosRecepcion, // Extract pagosRecepcion to prevent it from going to leadData
     ...leadData
   } = req.body;
-
-  console.log(`🔍 UPDATING LEAD ${id}`);
-  console.log('📦 Procedimientos received:', JSON.stringify(procedimientos, null, 2));
-  console.log('📊 Procedimientos count:', procedimientos ? procedimientos.length : 'undefined');
 
   try {
     // Helper function to safely parse dates

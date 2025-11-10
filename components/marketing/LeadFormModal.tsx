@@ -3,12 +3,9 @@ import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguim
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
-import SaveIndicator from '../shared/SaveIndicator';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay } from '../../utils/time';
-import { useAutoSave } from '../../hooks/useAutoSave';
-import { useOptimisticUI } from '../../hooks/useOptimisticUI';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -772,7 +769,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     );
 };
 
-const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, autoSaveEnabled, forceSave }) => {
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
@@ -848,11 +845,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
         handleSetFormData((prev: Partial<Lead>) => {
             const procedimientos = prev.procedimientos || [];
-            console.log('📋 SAVING PROCEDURE: Current state before save:', {
-                currentProcedimientos: procedimientos.length,
-                procedureToSave: procedureToSave,
-                isEditing: editingProcedureId !== null
-            });
             
             if (editingProcedureId !== null) {
                 const updated = {
@@ -861,19 +853,12 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                         p.id === editingProcedureId ? procedureToSave : p
                     )
                 };
-                console.log('📝 EDITING PROCEDURE: Updated state:', {
-                    newCount: updated.procedimientos?.length
-                });
                 return updated;
             } else {
                 const updated = {
                     ...prev,
                     procedimientos: [...procedimientos, procedureToSave]
                 };
-                console.log('➕ ADDING PROCEDURE: Updated state:', {
-                    newCount: updated.procedimientos?.length,
-                    lastProcedure: procedureToSave
-                });
                 return updated;
             }
         });
@@ -886,18 +871,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
         setCurrentProcedure(null);
         setEditingProcedureId(null);
-        
-        // Force immediate save after adding/editing procedure
-        console.log('🔧 FORCING IMMEDIATE SAVE after procedure change');
-        setTimeout(() => {
-            if (autoSaveEnabled) {
-                forceSave().then(() => {
-                    console.log('✅ FORCED SAVE completed successfully');
-                }).catch((error) => {
-                    console.error('❌ FORCED SAVE failed:', error);
-                });
-            }
-        }, 100); // Small delay to ensure state is updated
     };
 
     const handleDeleteProcedure = (procedureId: number) => {
@@ -934,13 +907,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
     // Debug: Monitor procedimientos changes
     useEffect(() => {
-        console.log('ProcedimientosTabContent - formData.procedimientos updated:', {
-            count: (formData.procedimientos || []).length,
-            procedimientos: formData.procedimientos,
-            procedimientosExistentes,
-            hasTratamientos
-        });
-    }, [formData.procedimientos, procedimientosExistentes, hasTratamientos]);
+        // Silent monitoring removed - no auto-save needed
+    }, [formData.procedimientos]);
 
     return (
         <div className="space-y-6">
@@ -1736,41 +1704,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [formData, setFormData] = useState<Partial<Lead>>({});
     const [activeTab, setActiveTab] = useState('ficha');
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [showSaveMessage, setShowSaveMessage] = useState(false);
 
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
-
-    // Auto-save functionality
-    const autoSaveEnabled = !!lead?.id; // Only auto-save for existing leads
-    const {
-        saveStatus,
-        lastSaved,
-        forceSave,
-        hasUnsavedChanges
-    } = useAutoSave({
-        data: formData,
-        onSave: async (data) => {
-            if (!data.id) throw new Error('Cannot auto-save new lead');
-            console.log('🚀 AUTO-SAVE: Sending data to backend:', {
-                id: data.id,
-                procedimientosCount: (data.procedimientos || []).length,
-                procedimientos: data.procedimientos
-            });
-            const savedData = await api.saveLead(data as Lead);
-            console.log('✅ AUTO-SAVE: Response from backend:', {
-                id: savedData.id,
-                procedimientosCount: (savedData.procedimientos || []).length
-            });
-            return savedData;
-        },
-        delay: 2000, // Auto-save every 2 seconds
-        enabled: autoSaveEnabled && isOpen,
-        onError: (error) => {
-            console.error('Auto-save error:', error);
-        },
-        onSuccess: (savedData) => {
-            console.log('Auto-saved successfully:', savedData.id);
-        }
-    });
 
     const SERVICE_CATEGORIES = useMemo(() => {
         return services.reduce((acc, service) => {
@@ -1904,19 +1840,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             montoPagado: formData.montoPagado ?? 0,
         };
         
-        // For new leads or when we want to save and close, call onSave
-        if (isNewLead) {
-            onSave(dataToSave as Lead);
-        } else {
-            // For existing leads, force save and then close
-            try {
-                await forceSave();
-                onClose();
-            } catch (error) {
-                console.error('Error saving lead:', error);
-                // Fallback to regular save
-                onSave(dataToSave as Lead);
-            }
+        try {
+            await onSave(dataToSave as Lead);
+            
+            // Mostrar mensaje de éxito
+            setShowSaveMessage(true);
+            setTimeout(() => {
+                setShowSaveMessage(false);
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Error saving lead:', error);
+            alert('Error al guardar. Por favor, inténtalo de nuevo.');
         }
     };
 
@@ -2018,8 +1953,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 return <ProcedimientosTabContent 
                     formData={formData} 
                     handleSetFormData={setFormData}
-                    autoSaveEnabled={autoSaveEnabled}
-                    forceSave={forceSave}
                 />;
             case 'seguimiento':
                 return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} />;
@@ -2033,21 +1966,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={
-                <div className="flex items-center justify-between w-full">
-                    <span>
-                        {isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
-                    </span>
-                    {!isNewLead && (
-                        <SaveIndicator 
-                            status={saveStatus}
-                            lastSaved={lastSaved}
-                            hasUnsavedChanges={hasUnsavedChanges}
-                            className="ml-4"
-                        />
-                    )}
-                </div>
-            }
+            title={isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
             maxWidthClass="max-w-7xl"
             footer={
                 <div className="w-full flex justify-between items-center">
@@ -2075,21 +1994,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             </button>
                         )}
                         
-                        {!isNewLead && autoSaveEnabled && (
-                            <button
-                                type="button"
-                                onClick={forceSave}
-                                disabled={!hasUnsavedChanges}
-                                className={`flex items-center px-4 py-2 rounded-lg shadow transition-all duration-200 ${
-                                    hasUnsavedChanges 
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                }`}
-                                title="Guardar cambios inmediatamente"
-                            >
-                                <GoogleIcon name="save" className="mr-2" />
-                                Guardar Ahora
-                            </button>
+                        {showSaveMessage && (
+                            <div className="flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-lg border border-green-300">
+                                <GoogleIcon name="check_circle" className="mr-2 text-green-600" />
+                                ¡Se guardó correctamente!
+                            </div>
                         )}
                         
                         <button
@@ -2097,8 +2006,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             onClick={handleSave}
                             className="bg-[#aa632d] text-white px-6 py-2 rounded-lg shadow hover:bg-[#8e5225] flex items-center"
                         >
-                            <GoogleIcon name="check" className="mr-2" />
-                            {isNewLead ? 'Crear Lead' : 'Guardar y Cerrar'}
+                            <GoogleIcon name="save" className="mr-2" />
+                            {isNewLead ? 'Crear Lead' : 'Guardar Cambios'}
                         </button>
                     </div>
                 </div>
