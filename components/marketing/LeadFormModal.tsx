@@ -788,8 +788,38 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         return maxSession + 1;
     };
 
+    // Función para calcular sesiones restantes de un tratamiento
+    const getSesionesRestantes = (tratamientoId: number): { usadas: number, total: number, restantes: number } => {
+        const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === tratamientoId);
+        if (!tratamiento) return { usadas: 0, total: 0, restantes: 0 };
+        
+        const procedimientosUsados = (formData.procedimientos || []).filter(
+            (p: Procedure) => p.tratamientoId === tratamientoId
+        ).length;
+        
+        return {
+            usadas: procedimientosUsados,
+            total: tratamiento.cantidadSesiones,
+            restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
+        };
+    };
+
+    // Función para verificar si se puede agregar una sesión más
+    const canAddSession = (tratamientoId: number): boolean => {
+        const { restantes } = getSesionesRestantes(tratamientoId);
+        return restantes > 0;
+    };
+
     const handleAddProcedure = () => {
         if (!formData.tratamientos || formData.tratamientos.length === 0) return;
+        
+        const primerTratamiento = formData.tratamientos[0];
+        const { restantes, usadas, total } = getSesionesRestantes(primerTratamiento.id);
+        
+        if (restantes === 0) {
+            alert(`⚠️ No se puede agregar más sesiones\n\nTratamiento: ${primerTratamiento.nombre}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
+            return;
+        }
         
         setCurrentProcedure({
             id: Date.now(),
@@ -813,6 +843,16 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
     const handleSaveProcedure = () => {
         if (!currentProcedure) return;
+        
+        // Validar sesiones disponibles solo para nuevos procedimientos
+        if (!editingProcedureId) {
+            const { restantes } = getSesionesRestantes(currentProcedure.tratamientoId || 0);
+            if (restantes === 0) {
+                const tratamiento = formData.tratamientos?.find(t => t.id === currentProcedure.tratamientoId);
+                alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nNo quedan sesiones disponibles.\n\nSolicite el pago de sesiones adicionales en Recepción.`);
+                return;
+            }
+        }
         
         const procedureToSave: Procedure = {
             id: currentProcedure.id || Date.now(),
@@ -902,23 +942,68 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
     return (
         <div className="space-y-6">
-            {/* Header con botón Añadir */}
+            {/* Header con botón Añadir y contador de sesiones */}
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-800">Procedimientos Realizados</h3>
-                <button
-                    type="button"
-                    onClick={handleAddProcedure}
-                    disabled={!hasTratamientos}
-                    className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
-                        hasTratamientos 
-                            ? 'bg-[#aa632d] hover:bg-[#8e5225]' 
-                            : 'bg-gray-300 cursor-not-allowed'
-                    }`}
-                    title={!hasTratamientos ? 'Debe agregar tratamientos en la pestaña Recepción primero' : ''}
-                >
-                    <GoogleIcon name="add" className="mr-1" />
-                    Añadir Procedimiento
-                </button>
+                <div className="flex items-center space-x-3">
+                    {/* Contador de sesiones */}
+                    {hasTratamientos && formData.tratamientos && formData.tratamientos.length > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm">
+                            {(() => {
+                                const primerTratamiento = formData.tratamientos[0];
+                                const { usadas, total, restantes } = getSesionesRestantes(primerTratamiento.id);
+                                return (
+                                    <div className="flex items-center space-x-2">
+                                        <GoogleIcon name="schedule" className="text-blue-600" />
+                                        <span className="text-gray-700">
+                                            <strong>{primerTratamiento.nombre}:</strong>
+                                        </span>
+                                        <span className={`font-semibold ${restantes > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {usadas}/{total} sesiones
+                                        </span>
+                                        <span className="text-gray-500">
+                                            ({restantes} restantes)
+                                        </span>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
+                    
+                    <button
+                        type="button"
+                        onClick={handleAddProcedure}
+                        disabled={!hasTratamientos}
+                        className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
+                            (() => {
+                                if (!hasTratamientos) return 'bg-gray-300 cursor-not-allowed';
+                                const primerTratamiento = formData.tratamientos?.[0];
+                                if (!primerTratamiento) return 'bg-gray-300 cursor-not-allowed';
+                                const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                                return restantes > 0 
+                                    ? 'bg-[#aa632d] hover:bg-[#8e5225]' 
+                                    : 'bg-red-400 cursor-not-allowed';
+                            })()
+                        }`}
+                        title={(() => {
+                            if (!hasTratamientos) return 'Debe agregar tratamientos en la pestaña Recepción primero';
+                            const primerTratamiento = formData.tratamientos?.[0];
+                            if (!primerTratamiento) return 'No hay tratamientos disponibles';
+                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                            return restantes === 0 
+                                ? 'No quedan sesiones disponibles. Solicite pago de sesiones adicionales en Recepción.' 
+                                : `${restantes} sesión(es) disponible(s)`;
+                        })()}
+                    >
+                        <GoogleIcon name="add" className="mr-1" />
+                        Añadir Procedimiento
+                        {hasTratamientos && formData.tratamientos?.[0] && (
+                            <span className="ml-2 bg-white bg-opacity-20 px-2 py-1 rounded text-xs">
+                                {getSesionesRestantes(formData.tratamientos[0].id).restantes}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </div>
 
             {!hasTratamientos && (
