@@ -1327,11 +1327,11 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                                         ...proc,
                                         tratamientoId: primerTratamientoId
                                     }));
-                                    setFormData(prev => ({
+                                    handleSetFormData(prev => ({
                                         ...prev,
                                         procedimientos: procedimientosCorregidos
                                     }));
-                                    alert('IDs corregidos! Los procedimientos ahora se asociarán al primer tratamiento.');
+                                    alert('✅ IDs corregidos! Los procedimientos ahora se asociarán al primer tratamiento.');
                                 }
                             }}
                             className="mt-2 px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
