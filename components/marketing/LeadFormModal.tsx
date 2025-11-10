@@ -37,7 +37,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
                     <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
-                    <input type="date" name="fechaLead" value={formData.fechaLead || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} required />
+                    <input type="date" name="fechaLead" value={formatDateForInput(formData.fechaLead) || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} required />
                 </div>
                 <div>
                     <label className="text-sm font-medium">Tipo Documento</label>
@@ -1406,7 +1406,7 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData }) =
                             <label className="text-sm font-medium text-gray-700">Fecha de Seguimiento *</label>
                             <input
                                 type="date"
-                                value={currentSeguimiento.fechaSeguimiento || ''}
+                                value={formatDateForInput(currentSeguimiento.fechaSeguimiento) || ''}
                                 onChange={(e) => handleSeguimientoFieldChange('fechaSeguimiento', e.target.value)}
                                 className="w-full bg-white p-2"
                                 style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
