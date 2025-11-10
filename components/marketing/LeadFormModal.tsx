@@ -800,6 +800,14 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             grupos[proc.tratamientoId].push(proc);
         });
         
+        console.log('🔍 DEBUGGING procedimientosPorTratamiento:', {
+            grupos,
+            procedimientosIds: formData.procedimientos.map((p: Procedure) => p.tratamientoId),
+            tratamientosIds: (formData.tratamientos || []).map((t: Treatment) => t.id),
+            procedimientos: formData.procedimientos,
+            tratamientos: formData.tratamientos
+        });
+        
         return grupos;
     }, [formData.procedimientos]);
 
@@ -1107,6 +1115,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                     <p>procedimientosExistentes: {procedimientosExistentes.toString()}</p>
                     <p>formData.procedimientos.length: {(formData.procedimientos || []).length}</p>
                     <p>formData.tratamientos.length: {(formData.tratamientos || []).length}</p>
+                    <p>procedimientosPorTratamiento keys: {Object.keys(procedimientosPorTratamiento).join(', ')}</p>
+                    <p>tratamientos IDs: {(formData.tratamientos || []).map(t => t.id).join(', ')}</p>
                 </div>
             )}
 
@@ -1118,6 +1128,15 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                         const sesionesCompletadas = procedimientos.length;
                         const totalSesiones = tratamiento.cantidadSesiones;
                         const progreso = totalSesiones > 0 ? (sesionesCompletadas / totalSesiones) * 100 : 0;
+                        
+                        console.log('🔍 DEBUGGING tratamiento mapping:', {
+                            tratamientoId: tratamiento.id,
+                            tratamientoNombre: tratamiento.nombreTratamiento,
+                            procedimientosEncontrados: procedimientos.length,
+                            procedimientos: procedimientos,
+                            sesionesCompletadas,
+                            willShow: sesionesCompletadas > 0
+                        });
                         
                         if (sesionesCompletadas === 0) return null;
 
