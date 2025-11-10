@@ -54,25 +54,13 @@ export const getLeadById = async (req: Request, res: Response) => {
 };
 
 export const createLead = async (req: Request, res: Response) => {
-  try {
-    console.log('Creating lead with data:', JSON.stringify(req.body, null, 2));
-    
-export const updateLead = async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
-  try {
-    console.log('Updating lead with ID:', id);
-    console.log('Update data:', JSON.stringify(req.body, null, 2));
-
-    const {
+  const {
     tratamientos, procedimientos, registrosLlamada, seguimientos, 
     alergias, membresiasAdquiridas, pagosRecepcion, ...leadData
-    } = req.body;
-
-    console.log('Procedimientos for update:', procedimientos);
-    console.log('Tratamientos for update:', tratamientos);    console.log('Procedimientos received:', procedimientos);
-    console.log('Tratamientos received:', tratamientos);
+  } = req.body;
 
   try {
+    console.log('Creating lead with data:', JSON.stringify(req.body, null, 2));
     // Helper function to safely parse dates for creation
     const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
       if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
