@@ -136,9 +136,19 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         setEditingLead(null);
     };
 
-    const handleSaveLead = (leadToSave: Lead) => {
-        onSaveLead(leadToSave);
-        handleCloseModal();
+    const handleSaveLead = async (leadToSave: Lead) => {
+        await onSaveLead(leadToSave);
+        // Update editingLead with the latest data after save
+        if (leadToSave.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === leadToSave.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
     };
     
     const handleApplyDateFilter = (dates: { from: string, to: string }) => {

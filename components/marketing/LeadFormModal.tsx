@@ -1715,6 +1715,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
     }, [lead, isOpen, initialFormData]);
 
+    // Force refresh formData when lead changes (e.g., after save)
+    useEffect(() => {
+        if (lead && isOpen) {
+            setFormData({ ...lead });
+        }
+    }, [lead]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         

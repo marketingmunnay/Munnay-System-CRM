@@ -133,10 +133,20 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
         setIsModalOpen(true);
     };
     
-    const handleSaveAndClose = (lead: Lead) => {
-        onSaveLead(lead);
-        setIsModalOpen(false);
-    }
+    const handleSaveAndClose = async (lead: Lead) => {
+        await onSaveLead(lead);
+        // Update editingLead with the latest data after save
+        if (lead.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === lead.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
+    };
 
     const { appointments, blocked } = useMemo(() => {
         const selectedDateStr = currentDate.toISOString().split('T')[0];
