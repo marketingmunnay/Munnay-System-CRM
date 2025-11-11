@@ -4,8 +4,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Configuración de Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
-// Usar gemini-1.5-pro sin el sufijo latest
-const MODEL_NAME = "gemini-1.5-pro";
+// Usar gemini-2.0-flash que es el modelo actual disponible
+const MODEL_NAME = "gemini-2.0-flash";
 
 export const generateContent = async (req: Request, res: Response) => {
   try {
@@ -30,9 +30,9 @@ export const generateContent = async (req: Request, res: Response) => {
     res.status(200).json({ content: text });
   } catch (error) {
     console.error('Error generating AI content:', error);
-    // No registrar el error completo en los logs para evitar spam
-    res.status(200).json({ 
-      content: 'La funcionalidad de IA está temporalmente no disponible. Por favor, escribe el contenido manualmente.' 
+    res.status(500).json({ 
+      message: 'Error generating AI content', 
+      error: (error as Error).message 
     });
   }
 };
@@ -94,9 +94,9 @@ export const generateAnalysis = async (req: Request, res: Response) => {
     res.status(200).json({ analysis: text });
   } catch (error) {
     console.error('Error generating AI analysis:', error);
-    // Devolver mensaje amigable en lugar de error
-    res.status(200).json({ 
-      analysis: '**⚠️ Análisis IA temporalmente no disponible**\n\nLa funcionalidad de análisis automático está en mantenimiento. Por favor, revisa los seguimientos manualmente y registra tus observaciones.\n\n**Recomendación:** Consulta con el equipo médico para una evaluación detallada del progreso del paciente.' 
+    res.status(500).json({ 
+      message: 'Error generating AI analysis', 
+      error: (error as Error).message 
     });
   }
 };
@@ -134,9 +134,9 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
     res.status(200).json({ report: text });
   } catch (error) {
     console.error('Error generating commercial report:', error);
-    // Devolver mensaje amigable en lugar de error
-    res.status(200).json({ 
-      report: '**📊 Informe Comercial**\n\n**Diagnóstico General:**\nEl sistema de informes automáticos está temporalmente no disponible. Por favor, revisa los datos manualmente.\n\n**Análisis de Metas:**\nConsulta las métricas individuales para evaluar el cumplimiento de objetivos.\n\n**Recomendaciones Clave:**\n- Revisa los datos de ventas y conversión manualmente\n- Contacta al administrador del sistema para más información' 
+    res.status(500).json({ 
+      message: 'Error generating commercial report', 
+      error: (error as Error).message 
     });
   }
 };
