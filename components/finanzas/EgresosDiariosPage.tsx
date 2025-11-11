@@ -270,10 +270,17 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         return dateFilteredEgresos
             .filter(e => e.deuda > 0 && e.fechaPago)
             .map(e => {
-                const fechaPago = new Date(e.fechaPago + 'T00:00:00');
-                const diffTime = fechaPago.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return { ...e, diasParaVencer: diffDays };
+                try {
+                    const fechaPago = new Date(e.fechaPago + 'T00:00:00');
+                    if (isNaN(fechaPago.getTime())) {
+                        return { ...e, diasParaVencer: 0 };
+                    }
+                    const diffTime = fechaPago.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return { ...e, diasParaVencer: diffDays };
+                } catch (error) {
+                    return { ...e, diasParaVencer: 0 };
+                }
             })
             .sort((a, b) => a.diasParaVencer - b.diasParaVencer);
     }, [dateFilteredEgresos]);

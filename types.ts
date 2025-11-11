@@ -354,6 +354,7 @@ export interface Proveedor {
     ruc: string;
     tipo: string;
     numeroContacto: string;
+    diasCredito?: number;
 }
 
 export interface StatCardData {

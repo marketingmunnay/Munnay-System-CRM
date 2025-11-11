@@ -404,6 +404,7 @@ model Proveedor {
   ruc            String @unique
   tipo           String
   numeroContacto String
+  diasCredito    Int?
 }
 
 model TipoProveedor {

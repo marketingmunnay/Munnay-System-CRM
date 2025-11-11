@@ -126,6 +126,20 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                 />
             </div>
+            <div>
+                <label htmlFor="diasCredito" className="mb-1 block text-sm font-medium text-gray-700">Días de Crédito</label>
+                <input
+                    type="number"
+                    id="diasCredito"
+                    name="diasCredito"
+                    value={formData.diasCredito || ''}
+                    onChange={handleChange}
+                    min="0"
+                    placeholder="Ej: 30, 60, 90 días"
+                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                />
+                <p className="mt-1 text-xs text-gray-500">Días para calcular automáticamente la fecha de pago en egresos</p>
+            </div>
         </form>
       </div>
     </Modal>

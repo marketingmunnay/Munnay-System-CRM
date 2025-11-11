@@ -48,6 +48,28 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     
     let newFormData = { ...formData, [name]: type === 'number' ? Number(value) : value };
 
+    // Calcular automáticamente la fecha de pago cuando se selecciona un proveedor
+    if (name === 'proveedor' && value) {
+        const proveedorSeleccionado = proveedores.find(p => p.razonSocial === value);
+        if (proveedorSeleccionado?.diasCredito && formData.fechaRegistro) {
+            const fechaRegistro = new Date(formData.fechaRegistro);
+            const fechaPago = new Date(fechaRegistro);
+            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
+            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+        }
+    }
+
+    // Recalcular fecha de pago si cambia la fecha de registro y hay un proveedor seleccionado
+    if (name === 'fechaRegistro' && formData.proveedor) {
+        const proveedorSeleccionado = proveedores.find(p => p.razonSocial === formData.proveedor);
+        if (proveedorSeleccionado?.diasCredito) {
+            const fechaRegistro = new Date(value);
+            const fechaPago = new Date(fechaRegistro);
+            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
+            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+        }
+    }
+
     if (name === 'montoTotal' || name === 'montoPagado') {
         const montoTotal = name === 'montoTotal' ? Number(value) : (newFormData.montoTotal || 0);
         const montoPagado = name === 'montoPagado' ? Number(value) : (newFormData.montoPagado || 0);
@@ -149,7 +171,26 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                 <legend className="text-md font-bold px-2 text-black">Información General</legend>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     {renderFormField('Fecha de Registro', 'fechaRegistro', 'date', [], true)}
-                    {renderFormField('Fecha de Pago', 'fechaPago', 'date', [], true)}
+                    <div className="flex flex-col">
+                        <label htmlFor="fechaPago" className="mb-1 text-sm font-medium text-gray-700">
+                            Fecha de Pago<span className="text-red-500">*</span>
+                            {formData.proveedor && proveedores.find(p => p.razonSocial === formData.proveedor)?.diasCredito && (
+                                <span className="ml-2 text-xs text-green-600">
+                                    <GoogleIcon name="schedule" className="text-xs" /> Auto-calculada
+                                </span>
+                            )}
+                        </label>
+                        <input
+                            type="date"
+                            id="fechaPago"
+                            name="fechaPago"
+                            value={String(formData.fechaPago ?? '')}
+                            onChange={handleChange}
+                            required
+                            className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                            style={{ colorScheme: 'light' }}
+                        />
+                    </div>
                     
                     <div className="flex flex-col">
                         <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría<span className="text-red-500">*</span></label>
