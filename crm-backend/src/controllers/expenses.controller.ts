@@ -35,11 +35,12 @@ export const createExpense = async (req: Request, res: Response) => {
   };
   
   try {
+    const parsedFechaPago = parseDate(fechaPago);
     const newExpense = await prisma.egreso.create({
       data: {
         ...data,
         fechaRegistro: parseDate(fechaRegistro) || new Date(),
-        fechaPago: parseDate(fechaPago) || new Date(),
+        ...(parsedFechaPago && { fechaPago: parsedFechaPago }),
       },
     });
     res.status(201).json(newExpense);
@@ -61,12 +62,15 @@ export const updateExpense = async (req: Request, res: Response) => {
   };
   
   try {
+    const parsedFechaRegistro = parseDate(fechaRegistro);
+    const parsedFechaPago = parseDate(fechaPago);
+    
     const updatedExpense = await prisma.egreso.update({
       where: { id: id },
       data: {
         ...data,
-        fechaRegistro: parseDate(fechaRegistro),
-        fechaPago: parseDate(fechaPago),
+        ...(parsedFechaRegistro && { fechaRegistro: parsedFechaRegistro }),
+        ...(parsedFechaPago !== undefined && { fechaPago: parsedFechaPago }),
       },
     });
     res.status(200).json(updatedExpense);
