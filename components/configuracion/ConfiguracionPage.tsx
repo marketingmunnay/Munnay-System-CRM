@@ -63,17 +63,11 @@ interface ConfiguracionPageProps {
 const SETTINGS_SECTIONS = [
     { id: 'equipo', label: 'Gestión del Equipo', icon: 'groups' },
     { id: 'miembros', label: 'Miembros del equipo', parent: 'equipo' },
-    { id: 'roles', label: 'Roles y Permisos', parent: 'equipo' },
-    { id: 'puestos', label: 'Puestos de Trabajo', parent: 'equipo' },
     { id: 'negocio', label: 'Configuración del Negocio', icon: 'store' },
     { id: 'datos', label: 'Datos del negocio', parent: 'negocio' },
     { id: 'proveedores', label: 'Proveedores', parent: 'negocio' },
-    { id: 'tipos-proveedor', label: 'Tipos de Proveedor', parent: 'negocio' },
     { id: 'origenes', label: 'Origen de Clientes', parent: 'negocio' },
-    { id: 'categorias-egresos', label: 'Categorías de Egresos', parent: 'negocio' },
     { id: 'servicios-productos', label: 'Servicios y Productos', icon: 'inventory_2' },
-    { id: 'categorias', label: 'Categorías de Servicios', parent: 'servicios-productos' },
-    { id: 'product-categorias', label: 'Categorías de Productos', parent: 'servicios-productos' },
     { id: 'servicios', label: 'Servicios', parent: 'servicios-productos' },
     { id: 'productos', label: 'Productos', parent: 'servicios-productos' },
     { id: 'membresias', label: 'Membresías', parent: 'servicios-productos' },
@@ -348,12 +342,21 @@ const ProveedoresSection: FC<{
     proveedores: Proveedor[];
     tiposProveedor: TipoProveedor[];
     egresoCategories: EgresoCategory[];
-    onSave: (proveedor: Proveedor) => void;
-    onDelete: (id: number) => void;
+    onSaveProveedor: (proveedor: Proveedor) => void;
+    onDeleteProveedor: (id: number) => void;
+    onSaveTipoProveedor: (tipo: TipoProveedor) => void;
+    onDeleteTipoProveedor: (id: number) => void;
+    onSaveEgresoCategory: (category: EgresoCategory) => void;
+    onDeleteEgresoCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ proveedores, tiposProveedor, egresoCategories, onSave, onDelete, requestConfirmation }) => {
+}> = ({ proveedores, tiposProveedor, egresoCategories, onSaveProveedor, onDeleteProveedor, onSaveTipoProveedor, onDeleteTipoProveedor, onSaveEgresoCategory, onDeleteEgresoCategory, requestConfirmation }) => {
+    const [activeTab, setActiveTab] = useState('proveedores');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
+    const [isTipoModalOpen, setIsTipoModalOpen] = useState(false);
+    const [editingTipo, setEditingTipo] = useState<TipoProveedor | null>(null);
+    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [editingCategoria, setEditingCategoria] = useState<EgresoCategory | null>(null);
 
     const handleOpenModal = (proveedor?: Proveedor) => {
         setEditingProveedor(proveedor || null);
@@ -365,87 +368,246 @@ const ProveedoresSection: FC<{
         setEditingProveedor(null);
     };
 
-    const handleSave = (proveedor: Proveedor) => {
-        onSave(proveedor);
+    const handleSaveProveedor = (proveedor: Proveedor) => {
+        onSaveProveedor(proveedor);
         handleCloseModal();
     };
 
-    const handleDelete = (id: number) => {
+    const handleDeleteProveedor = (id: number) => {
         requestConfirmation('¿Está seguro de eliminar este proveedor?', () => {
-            onDelete(id);
+            onDeleteProveedor(id);
         });
     };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md border">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Proveedores</h2>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
-                >
-                    <span className="material-symbols-outlined">add</span>
-                    Añadir Proveedor
-                </button>
+                <h2 className="text-xl font-bold text-black">Gestión de Proveedores</h2>
+                <div className="flex gap-2">
+                    {activeTab === 'proveedores' && (
+                        <button
+                            onClick={() => handleOpenModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Proveedor
+                        </button>
+                    )}
+                    {activeTab === 'tipos' && (
+                        <button
+                            onClick={() => { setEditingTipo({ id: Date.now(), nombre: '' }); setIsTipoModalOpen(true); }}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Tipo
+                        </button>
+                    )}
+                    {activeTab === 'categorias' && (
+                        <button
+                            onClick={() => { setEditingCategoria({ id: Date.now(), nombre: '' }); setIsCategoriaModalOpen(true); }}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Categoría
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b">
-                            <th className="text-left p-2">Razón Social</th>
-                            <th className="text-left p-2">RUC</th>
-                            <th className="text-left p-2">Tipo</th>
-                            <th className="text-left p-2">Categoría Egreso</th>
-                            <th className="text-left p-2">Contacto</th>
-                            <th className="text-left p-2">Días Crédito</th>
-                            <th className="text-left p-2">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {proveedores.map((proveedor) => (
-                            <tr key={proveedor.id} className="border-b hover:bg-gray-50">
-                                <td className="p-2">{proveedor.razonSocial}</td>
-                                <td className="p-2">{proveedor.ruc || 'N/A'}</td>
-                                <td className="p-2">{proveedor.tipo}</td>
-                                <td className="p-2">{proveedor.categoriaEgreso || 'N/A'}</td>
-                                <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
-                                <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
-                                <td className="p-2">
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleOpenModal(proveedor)}
-                                            className="text-blue-600 hover:text-blue-800"
-                                            title="Editar"
-                                        >
-                                            <span className="material-symbols-outlined">edit</span>
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(proveedor.id)}
-                                            className="text-red-600 hover:text-red-800"
-                                            title="Eliminar"
-                                        >
-                                            <span className="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className="border-b border-gray-200 mb-4">
+                <nav className="-mb-px flex space-x-6">
+                    <button
+                        onClick={() => setActiveTab('proveedores')}
+                        className={`${activeTab === 'proveedores' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Proveedores
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tipos')}
+                        className={`${activeTab === 'tipos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Tipos de Proveedor
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('categorias')}
+                        className={`${activeTab === 'categorias' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Categorías de Egresos
+                    </button>
+                </nav>
             </div>
+
+            {activeTab === 'proveedores' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Razón Social</th>
+                                <th className="text-left p-2">RUC</th>
+                                <th className="text-left p-2">Tipo</th>
+                                <th className="text-left p-2">Categoría Egreso</th>
+                                <th className="text-left p-2">Contacto</th>
+                                <th className="text-left p-2">Días Crédito</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {proveedores.map((proveedor) => (
+                                <tr key={proveedor.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{proveedor.razonSocial}</td>
+                                    <td className="p-2">{proveedor.ruc || 'N/A'}</td>
+                                    <td className="p-2">{proveedor.tipo}</td>
+                                    <td className="p-2">{proveedor.categoriaEgreso || 'N/A'}</td>
+                                    <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
+                                    <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(proveedor)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteProveedor(proveedor.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'tipos' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre del Tipo</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tiposProveedor.map((tipo) => (
+                                <tr key={tipo.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{tipo.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setEditingTipo(tipo); setIsTipoModalOpen(true); }}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar este tipo?', () => onDeleteTipoProveedor(tipo.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'categorias' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre de la Categoría</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {egresoCategories.map((cat) => (
+                                <tr key={cat.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{cat.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setEditingCategoria(cat); setIsCategoriaModalOpen(true); }}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar esta categoría?', () => onDeleteEgresoCategory(cat.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {isModalOpen && (
                 <ProveedorFormModal
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
-                    onSave={handleSave}
-                    onDelete={onDelete}
+                    onSave={handleSaveProveedor}
+                    onDelete={onDeleteProveedor}
                     proveedor={editingProveedor}
                     tiposProveedor={tiposProveedor}
                     egresoCategories={egresoCategories}
                     requestConfirmation={requestConfirmation}
                 />
+            )}
+
+            {isTipoModalOpen && editingTipo && (
+                <Modal isOpen={isTipoModalOpen} onClose={() => setIsTipoModalOpen(false)} title={editingTipo.id < 1000000 ? 'Editar Tipo' : 'Añadir Tipo'}>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Tipo</label>
+                        <input
+                            type="text"
+                            value={editingTipo.nombre}
+                            onChange={(e) => setEditingTipo({ ...editingTipo, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsTipoModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={() => { onSaveTipoProveedor(editingTipo); setIsTipoModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {isCategoriaModalOpen && editingCategoria && (
+                <Modal isOpen={isCategoriaModalOpen} onClose={() => setIsCategoriaModalOpen(false)} title={editingCategoria.id < 1000000 ? 'Editar Categoría' : 'Añadir Categoría'}>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la Categoría</label>
+                        <input
+                            type="text"
+                            value={editingCategoria.nombre}
+                            onChange={(e) => setEditingCategoria({ ...editingCategoria, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsCategoriaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={() => { onSaveEgresoCategory(editingCategoria); setIsCategoriaModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
@@ -454,13 +616,23 @@ const ProveedoresSection: FC<{
 const MiembrosEquipoSection: FC<{
     users: User[];
     roles: Role[];
+    jobPositions: JobPosition[];
     documentTypes: DocumentType[];
-    onSave: (user: Partial<User>) => void;
-    onDelete: (id: number) => void;
+    onSaveUser: (user: Partial<User>) => void;
+    onDeleteUser: (id: number) => void;
+    onSaveRole: (role: Role) => void;
+    onDeleteRole: (id: number) => void;
+    onSaveJobPosition: (position: JobPosition) => void;
+    onDeleteJobPosition: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ users, roles, documentTypes, onSave, onDelete, requestConfirmation }) => {
+}> = ({ users, roles, jobPositions, documentTypes, onSaveUser, onDeleteUser, onSaveRole, onDeleteRole, onSaveJobPosition, onDeleteJobPosition, requestConfirmation }) => {
+    const [activeTab, setActiveTab] = useState('miembros');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [editingRole, setEditingRole] = useState<Role | null>(null);
+    const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+    const [editingJob, setEditingJob] = useState<JobPosition | null>(null);
 
     const handleOpenModal = (user?: User) => {
         setEditingUser(user || null);
@@ -472,75 +644,208 @@ const MiembrosEquipoSection: FC<{
         setEditingUser(null);
     };
 
-    const handleSave = (user: Partial<User>) => {
-        onSave(user);
+    const handleSaveUser = (user: Partial<User>) => {
+        onSaveUser(user);
         handleCloseModal();
     };
 
-    const handleDelete = (id: number) => {
+    const handleDeleteUser = (id: number) => {
         requestConfirmation('¿Está seguro de eliminar este miembro?', () => {
-            onDelete(id);
+            onDeleteUser(id);
         });
+    };
+
+    const handleOpenRoleModal = (role?: Role) => {
+        setEditingRole(role || { id: Date.now(), nombre: '' });
+        setIsRoleModalOpen(true);
+    };
+
+    const handleOpenJobModal = (job?: JobPosition) => {
+        setEditingJob(job || { id: Date.now(), nombre: '' });
+        setIsJobModalOpen(true);
     };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md border">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Miembros del Equipo</h2>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
-                >
-                    <span className="material-symbols-outlined">add</span>
-                    Añadir Miembro
-                </button>
+                <h2 className="text-xl font-bold text-black">Gestión del Equipo</h2>
+                <div className="flex gap-2">
+                    {activeTab === 'miembros' && (
+                        <button
+                            onClick={() => handleOpenModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Miembro
+                        </button>
+                    )}
+                    {activeTab === 'roles' && (
+                        <button
+                            onClick={() => handleOpenRoleModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Rol
+                        </button>
+                    )}
+                    {activeTab === 'puestos' && (
+                        <button
+                            onClick={() => handleOpenJobModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Puesto
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b">
-                            <th className="text-left p-2">Nombres</th>
-                            <th className="text-left p-2">Apellidos</th>
-                            <th className="text-left p-2">Usuario</th>
-                            <th className="text-left p-2">Rol</th>
-                            <th className="text-left p-2">Email Personal</th>
-                            <th className="text-left p-2">Puesto</th>
-                            <th className="text-left p-2">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user) => (
-                            <tr key={user.id} className="border-b hover:bg-gray-50">
-                                <td className="p-2">{user.nombres}</td>
-                                <td className="p-2">{user.apellidos}</td>
-                                <td className="p-2">{user.usuario}</td>
-                                <td className="p-2">{roles.find(r => r.id === user.rolId)?.nombre || 'N/A'}</td>
-                                <td className="p-2">{user.personalEmail || 'N/A'}</td>
-                                <td className="p-2">{user.jobPosition || 'N/A'}</td>
-                                <td className="p-2">
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleOpenModal(user)}
-                                            className="text-blue-600 hover:text-blue-800"
-                                            title="Editar"
-                                        >
-                                            <span className="material-symbols-outlined">edit</span>
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(user.id)}
-                                            className="text-red-600 hover:text-red-800"
-                                            title="Eliminar"
-                                        >
-                                            <span className="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className="border-b border-gray-200 mb-4">
+                <nav className="-mb-px flex space-x-6">
+                    <button
+                        onClick={() => setActiveTab('miembros')}
+                        className={`${activeTab === 'miembros' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Miembros del Equipo
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('roles')}
+                        className={`${activeTab === 'roles' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Roles y Permisos
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('puestos')}
+                        className={`${activeTab === 'puestos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Puestos de Trabajo
+                    </button>
+                </nav>
             </div>
+
+            {activeTab === 'miembros' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombres</th>
+                                <th className="text-left p-2">Apellidos</th>
+                                <th className="text-left p-2">Usuario</th>
+                                <th className="text-left p-2">Rol</th>
+                                <th className="text-left p-2">Email Personal</th>
+                                <th className="text-left p-2">Puesto</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map((user) => (
+                                <tr key={user.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{user.nombres}</td>
+                                    <td className="p-2">{user.apellidos}</td>
+                                    <td className="p-2">{user.usuario}</td>
+                                    <td className="p-2">{roles.find(r => r.id === user.rolId)?.nombre || 'N/A'}</td>
+                                    <td className="p-2">{user.personalEmail || 'N/A'}</td>
+                                    <td className="p-2">{user.jobPosition || 'N/A'}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(user)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUser(user.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'roles' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre del Rol</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {roles.map((role) => (
+                                <tr key={role.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{role.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenRoleModal(role)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar este rol?', () => onDeleteRole(role.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'puestos' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre del Puesto</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {jobPositions.map((job) => (
+                                <tr key={job.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{job.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenJobModal(job)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar este puesto?', () => onDeleteJobPosition(job.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {isModalOpen && (
                 <MiembroEquipoFormModal
@@ -548,8 +853,35 @@ const MiembrosEquipoSection: FC<{
                     roles={roles}
                     documentTypes={documentTypes}
                     onClose={handleCloseModal}
-                    onSave={handleSave}
+                    onSave={handleSaveUser}
                 />
+            )}
+            
+            {isRoleModalOpen && editingRole && (
+                <RolFormModal
+                    isOpen={isRoleModalOpen}
+                    onClose={() => setIsRoleModalOpen(false)}
+                    onSave={(role) => { onSaveRole(role); setIsRoleModalOpen(false); }}
+                    role={editingRole}
+                />
+            )}
+
+            {isJobModalOpen && editingJob && (
+                <Modal isOpen={isJobModalOpen} onClose={() => setIsJobModalOpen(false)} title={editingJob.id < 1000000 ? 'Editar Puesto' : 'Añadir Puesto'}>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Puesto</label>
+                        <input
+                            type="text"
+                            value={editingJob.nombre}
+                            onChange={(e) => setEditingJob({ ...editingJob, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsJobModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={() => { onSaveJobPosition(editingJob); setIsJobModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
@@ -566,25 +898,14 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                 return <MiembrosEquipoSection
                     users={props.users}
                     roles={props.roles}
+                    jobPositions={props.jobPositions}
                     documentTypes={props.documentTypes}
-                    onSave={props.onSaveUser}
-                    onDelete={props.onDeleteUser}
-                    requestConfirmation={props.requestConfirmation}
-                />;
-            case 'roles':
-                return <SimpleListManager
-                    title="Roles"
-                    items={props.roles}
-                    onSave={props.onSaveRole}
-                    onDelete={props.onDeleteRole}
-                    requestConfirmation={props.requestConfirmation}
-                />;
-            case 'puestos':
-                return <SimpleListManager
-                    title="Puestos de Trabajo"
-                    items={props.jobPositions}
-                    onSave={props.onSaveJobPosition}
-                    onDelete={props.onDeleteJobPosition}
+                    onSaveUser={props.onSaveUser}
+                    onDeleteUser={props.onDeleteUser}
+                    onSaveRole={props.onSaveRole}
+                    onDeleteRole={props.onDeleteRole}
+                    onSaveJobPosition={props.onSaveJobPosition}
+                    onDeleteJobPosition={props.onDeleteJobPosition}
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'proveedores':
@@ -592,16 +913,12 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     proveedores={props.proveedores}
                     tiposProveedor={props.tiposProveedor}
                     egresoCategories={props.egresoCategories}
-                    onSave={props.onSaveProveedor}
-                    onDelete={props.onDeleteProveedor}
-                    requestConfirmation={props.requestConfirmation}
-                />;
-            case 'tipos-proveedor':
-                return <SimpleListManager
-                    title="Tipos de Proveedor"
-                    items={props.tiposProveedor}
-                    onSave={props.onSaveTipoProveedor}
-                    onDelete={props.onDeleteTipoProveedor}
+                    onSaveProveedor={props.onSaveProveedor}
+                    onDeleteProveedor={props.onDeleteProveedor}
+                    onSaveTipoProveedor={props.onSaveTipoProveedor}
+                    onDeleteTipoProveedor={props.onDeleteTipoProveedor}
+                    onSaveEgresoCategory={props.onSaveEgresoCategory}
+                    onDeleteEgresoCategory={props.onDeleteEgresoCategory}
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'origenes':
@@ -610,14 +927,6 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     items={props.clientSources}
                     onSave={props.onSaveClientSource}
                     onDelete={props.onDeleteClientSource}
-                    requestConfirmation={props.requestConfirmation}
-                />;
-            case 'categorias-egresos':
-                return <SimpleListManager
-                    title="Categorías de Egresos"
-                    items={props.egresoCategories}
-                    onSave={props.onSaveEgresoCategory}
-                    onDelete={props.onDeleteEgresoCategory}
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'categorias':
