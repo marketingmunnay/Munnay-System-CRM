@@ -613,6 +613,398 @@ const ProveedoresSection: FC<{
     );
 };
 
+const ServiciosSection: FC<{
+    services: Service[];
+    serviceCategories: ServiceCategory[];
+    onSaveService: (service: Service) => void;
+    onDeleteService: (id: number) => void;
+    onSaveServiceCategory: (category: ServiceCategory) => void;
+    onDeleteServiceCategory: (id: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ services, serviceCategories, onSaveService, onDeleteService, onSaveServiceCategory, onDeleteServiceCategory, requestConfirmation }) => {
+    const [activeTab, setActiveTab] = useState('servicios');
+    const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+    const [editingService, setEditingService] = useState<Service | null>(null);
+    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [editingCategoria, setEditingCategoria] = useState<ServiceCategory | null>(null);
+
+    const handleOpenServiceModal = (service?: Service) => {
+        setEditingService(service || null);
+        setIsServiceModalOpen(true);
+    };
+
+    const handleCloseServiceModal = () => {
+        setIsServiceModalOpen(false);
+        setEditingService(null);
+    };
+
+    const handleSaveService = (service: Service) => {
+        onSaveService(service);
+        handleCloseServiceModal();
+    };
+
+    const handleDeleteService = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar este servicio?', () => {
+            onDeleteService(id);
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Gestión de Servicios</h2>
+                <div className="flex gap-2">
+                    {activeTab === 'servicios' && (
+                        <button
+                            onClick={() => handleOpenServiceModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Servicio
+                        </button>
+                    )}
+                    {activeTab === 'categorias' && (
+                        <button
+                            onClick={() => { setEditingCategoria({ id: Date.now(), nombre: '' }); setIsCategoriaModalOpen(true); }}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Categoría
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="border-b border-gray-200 mb-4">
+                <nav className="-mb-px flex space-x-6">
+                    <button
+                        onClick={() => setActiveTab('servicios')}
+                        className={`${activeTab === 'servicios' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Servicios
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('categorias')}
+                        className={`${activeTab === 'categorias' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Categorías de Servicios
+                    </button>
+                </nav>
+            </div>
+
+            {activeTab === 'servicios' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre</th>
+                                <th className="text-left p-2">Categoría</th>
+                                <th className="text-left p-2">Precio</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {services.map((service) => (
+                                <tr key={service.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{service.nombre}</td>
+                                    <td className="p-2">{service.categoria}</td>
+                                    <td className="p-2">S/ {service.precio?.toFixed(2)}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenServiceModal(service)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteService(service.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'categorias' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre de la Categoría</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {serviceCategories.map((cat) => (
+                                <tr key={cat.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{cat.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setEditingCategoria(cat); setIsCategoriaModalOpen(true); }}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar esta categoría?', () => onDeleteServiceCategory(cat.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {isServiceModalOpen && (
+                <CatalogFormModal
+                    isOpen={isServiceModalOpen}
+                    onClose={handleCloseServiceModal}
+                    onSave={handleSaveService}
+                    item={editingService}
+                    title={editingService ? 'Editar Servicio' : 'Añadir Servicio'}
+                    fields={[
+                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
+                        { name: 'precio', label: 'Precio', type: 'number', required: true },
+                    ]}
+                    itemCategories={serviceCategories}
+                />
+            )}
+
+            {isCategoriaModalOpen && editingCategoria && (
+                <Modal isOpen={isCategoriaModalOpen} onClose={() => setIsCategoriaModalOpen(false)} title={editingCategoria.id < 1000000 ? 'Editar Categoría' : 'Añadir Categoría'}>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la Categoría</label>
+                        <input
+                            type="text"
+                            value={editingCategoria.nombre}
+                            onChange={(e) => setEditingCategoria({ ...editingCategoria, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsCategoriaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={() => { onSaveServiceCategory(editingCategoria); setIsCategoriaModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+        </div>
+    );
+};
+
+const ProductosSection: FC<{
+    products: Product[];
+    productCategories: ProductCategory[];
+    onSaveProduct: (product: Product) => void;
+    onDeleteProduct: (id: number) => void;
+    onSaveProductCategory: (category: ProductCategory) => void;
+    onDeleteProductCategory: (id: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation }) => {
+    const [activeTab, setActiveTab] = useState('productos');
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
+
+    const handleOpenProductModal = (product?: Product) => {
+        setEditingProduct(product || null);
+        setIsProductModalOpen(true);
+    };
+
+    const handleCloseProductModal = () => {
+        setIsProductModalOpen(false);
+        setEditingProduct(null);
+    };
+
+    const handleSaveProduct = (product: Product) => {
+        onSaveProduct(product);
+        handleCloseProductModal();
+    };
+
+    const handleDeleteProduct = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar este producto?', () => {
+            onDeleteProduct(id);
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Gestión de Productos</h2>
+                <div className="flex gap-2">
+                    {activeTab === 'productos' && (
+                        <button
+                            onClick={() => handleOpenProductModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Producto
+                        </button>
+                    )}
+                    {activeTab === 'categorias' && (
+                        <button
+                            onClick={() => { setEditingCategoria({ id: Date.now(), nombre: '' }); setIsCategoriaModalOpen(true); }}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Categoría
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="border-b border-gray-200 mb-4">
+                <nav className="-mb-px flex space-x-6">
+                    <button
+                        onClick={() => setActiveTab('productos')}
+                        className={`${activeTab === 'productos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Productos
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('categorias')}
+                        className={`${activeTab === 'categorias' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Categorías de Productos
+                    </button>
+                </nav>
+            </div>
+
+            {activeTab === 'productos' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre</th>
+                                <th className="text-left p-2">Categoría</th>
+                                <th className="text-left p-2">Precio</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products.map((product) => (
+                                <tr key={product.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{product.nombre}</td>
+                                    <td className="p-2">{product.categoria}</td>
+                                    <td className="p-2">S/ {product.precio?.toFixed(2)}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenProductModal(product)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteProduct(product.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'categorias' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre de la Categoría</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {productCategories.map((cat) => (
+                                <tr key={cat.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{cat.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setEditingCategoria(cat); setIsCategoriaModalOpen(true); }}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => requestConfirmation('¿Está seguro de eliminar esta categoría?', () => onDeleteProductCategory(cat.id))}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {isProductModalOpen && (
+                <CatalogFormModal
+                    isOpen={isProductModalOpen}
+                    onClose={handleCloseProductModal}
+                    onSave={handleSaveProduct}
+                    item={editingProduct}
+                    title={editingProduct ? 'Editar Producto' : 'Añadir Producto'}
+                    fields={[
+                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
+                        { name: 'precio', label: 'Precio', type: 'number', required: true },
+                    ]}
+                    itemCategories={productCategories}
+                />
+            )}
+
+            {isCategoriaModalOpen && editingCategoria && (
+                <Modal isOpen={isCategoriaModalOpen} onClose={() => setIsCategoriaModalOpen(false)} title={editingCategoria.id < 1000000 ? 'Editar Categoría' : 'Añadir Categoría'}>
+                    <div className="p-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la Categoría</label>
+                        <input
+                            type="text"
+                            value={editingCategoria.nombre}
+                            onChange={(e) => setEditingCategoria({ ...editingCategoria, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsCategoriaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={() => { onSaveProductCategory(editingCategoria); setIsCategoriaModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+        </div>
+    );
+};
+
 const MiembrosEquipoSection: FC<{
     users: User[];
     roles: Role[];
@@ -929,49 +1321,25 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onDelete={props.onDeleteClientSource}
                     requestConfirmation={props.requestConfirmation}
                 />;
-            case 'categorias':
-                return <SimpleListManager
-                    title="Categorías de Servicios"
-                    items={props.serviceCategories}
-                    onSave={props.onSaveServiceCategory}
-                    onDelete={props.onDeleteServiceCategory}
-                    requestConfirmation={props.requestConfirmation}
-                />;
-            case 'product-categorias':
-                return <SimpleListManager
-                    title="Categorías de Productos"
-                    items={props.productCategories}
-                    onSave={props.onSaveProductCategory}
-                    onDelete={props.onDeleteProductCategory}
-                    requestConfirmation={props.requestConfirmation}
-                />;
             case 'servicios':
-                return <CatalogManager
-                    title="Servicios"
-                    items={props.services}
-                    onSave={props.onSaveService}
-                    onDelete={props.onDeleteService}
+                return <ServiciosSection
+                    services={props.services}
+                    serviceCategories={props.serviceCategories}
+                    onSaveService={props.onSaveService}
+                    onDeleteService={props.onDeleteService}
+                    onSaveServiceCategory={props.onSaveServiceCategory}
+                    onDeleteServiceCategory={props.onDeleteServiceCategory}
                     requestConfirmation={props.requestConfirmation}
-                    fields={[
-                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
-                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'precio', label: 'Precio', type: 'number', required: true },
-                    ]}
-                    itemCategories={props.serviceCategories}
                 />;
             case 'productos':
-                return <CatalogManager
-                    title="Productos"
-                    items={props.products}
-                    onSave={props.onSaveProduct}
-                    onDelete={props.onDeleteProduct}
+                return <ProductosSection
+                    products={props.products}
+                    productCategories={props.productCategories}
+                    onSaveProduct={props.onSaveProduct}
+                    onDeleteProduct={props.onDeleteProduct}
+                    onSaveProductCategory={props.onSaveProductCategory}
+                    onDeleteProductCategory={props.onDeleteProductCategory}
                     requestConfirmation={props.requestConfirmation}
-                    fields={[
-                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
-                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'precio', label: 'Precio', type: 'number', required: true },
-                    ]}
-                    itemCategories={props.productCategories}
                 />;
             case 'membresias':
                 return <CatalogManager
