@@ -285,7 +285,7 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
                 <div className="flex items-center space-x-2 no-print">
                      <button 
                         onClick={handleGenerateAnalysis} 
-                        disabled={isGenerating || !aiAnalysis}
+                        disabled={isGenerating}
                         className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors">
                         {isGenerating ? (
                             <>
