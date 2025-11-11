@@ -1,3 +1,3 @@
-Deploy trigger - bbd808e - Fix setFormData error
-Timestamp: 2025-11-10 06:31:00
-Latest fix: Auto-correction button for procedimientos IDs
+Deploy trigger - Fix proveedores and AI model
+Timestamp: 2025-11-11 00:40:00
+Latest fix: Added logging for proveedores debugging and changed AI model to gemini-pro
