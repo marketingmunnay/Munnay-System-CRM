@@ -4,6 +4,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Configuración de Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 
+// Usar el modelo estable gemini-1.5-pro-latest
+const MODEL_NAME = "gemini-1.5-pro-latest";
+
 export const generateContent = async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
@@ -16,8 +19,8 @@ export const generateContent = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Google Gemini API key not configured' });
     }
 
-    // Obtener el modelo Gemini Pro
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Obtener el modelo Gemini
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     // Generar contenido con el prompt proporcionado
     const result = await model.generateContent(prompt);
@@ -83,7 +86,7 @@ export const generateAnalysis = async (req: Request, res: Response) => {
     Mantén un tono profesional, médico y constructivo. El análisis debe ser específico para tratamientos estéticos y orientado a la mejora continua del cuidado del paciente.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -123,7 +126,7 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
     **Importante:** No incluyas encabezados numerados o con '###' como "### 2. ...". Solo usa los títulos en negrita proporcionados.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
