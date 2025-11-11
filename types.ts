@@ -404,19 +404,46 @@ export interface User {
     rolId: number;
     avatarUrl: string;
     position?: string;
+    
+    // Datos Personales
     documentType?: DocumentType;
     documentNumber?: string;
-    phone?: string;
     birthDate?: string;
+    nationality?: string;
+    sex?: 'M' | 'F';
+    maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
+    phone?: string;
+    email?: string;
+    
+    // Datos Laborales
     startDate?: string;
+    endDate?: string;
+    contractType?: 'Indefinido' | 'Plazo Fijo' | 'Locación de Servicios' | 'Prácticas';
+    workday?: 'Tiempo Completo' | 'Tiempo Parcial';
+    workSchedule?: string;
+    directBoss?: string;
+    workCenter?: string;
+    employeeCode?: string;
+    
+    // Datos Salariales
+    salary?: number;
+    bonuses?: number;
+    currency?: 'Soles' | 'Dólares';
+    bankName?: string;
+    accountType?: 'Ahorros' | 'Corriente' | 'CCI';
+    accountNumber?: string;
+    paymentMethod?: 'Transferencia' | 'Efectivo' | 'Cheque';
+    laborRegime?: 'Privado' | 'Público' | 'Microempresa';
+    afpType?: string;
+    afpCode?: string;
+    afpPercentage?: number;
+    healthInsurance?: string;
+    
+    // Relaciones
     addresses?: Address[];
     emergencyContacts?: EmergencyContact[];
     reconocimientos?: Reconocimiento[];
-    salary?: number;
     permissions?: Page[];
-    contractType?: 'Plazo Fijo' | 'Indefinido';
-    maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
-    sex?: 'M' | 'F';
 }
 
 export interface Role {

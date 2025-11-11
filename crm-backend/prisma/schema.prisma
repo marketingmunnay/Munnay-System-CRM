@@ -418,17 +418,43 @@ model User {
   usuario             String    @unique
   password            String
   rolId               Int
-  avatarUrl String  @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
-  position            String?
+  avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
+  
+  // Datos Personales
   documentType        DocumentType?
   documentNumber      String?
-  phone               String?
   birthDate           DateTime?
-  startDate           DateTime?
-  salary              Float?
-  contractType        String?
-  maritalStatus       String?
+  nationality         String?
   sex                 String?
+  maritalStatus       String?
+  phone               String?
+  email               String?
+  
+  // Datos Laborales
+  position            String?
+  startDate           DateTime?
+  endDate             DateTime?
+  contractType        String?
+  workday             String?
+  workSchedule        String?
+  directBoss          String?
+  workCenter          String?
+  employeeCode        String?
+  
+  // Datos Salariales
+  salary              Float?
+  bonuses             Float?
+  currency            String?
+  bankName            String?
+  accountType         String?
+  accountNumber       String?
+  paymentMethod       String?
+  laborRegime         String?
+  afpType             String?
+  afpCode             String?
+  afpPercentage       Float?
+  healthInsurance     String?
+  
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
