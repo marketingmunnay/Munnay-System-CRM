@@ -23,9 +23,9 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egreso, proveedores, egresoCategories, requestConfirmation }: EgresoFormModalProps) {
   const [formData, setFormData] = useState<Partial<Egreso>>({});
 
-  // Filtrar proveedores según la categoría seleccionada
+  // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
   const filteredProveedores = formData.categoria 
-    ? proveedores.filter(p => !p.categoriaEgreso || p.categoriaEgreso === formData.categoria)
+    ? proveedores.filter(p => p.categoriaEgreso === formData.categoria)
     : proveedores;
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
 
     // Si cambia la categoría, resetear el proveedor si el actual no está en la nueva lista filtrada
     if (name === 'categoria' && formData.proveedor) {
-        const proveedoresDisponibles = proveedores.filter(p => !p.categoriaEgreso || p.categoriaEgreso === value);
+        const proveedoresDisponibles = proveedores.filter(p => p.categoriaEgreso === value);
         const proveedorActualDisponible = proveedoresDisponibles.find(p => p.razonSocial === formData.proveedor);
         if (!proveedorActualDisponible) {
             newFormData.proveedor = '';
