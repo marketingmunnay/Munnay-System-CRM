@@ -16,8 +16,8 @@ export const generateContent = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Google Gemini API key not configured' });
     }
 
-    // Obtener el modelo Gemini 1.5 Flash
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Obtener el modelo Gemini Pro
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Generar contenido con el prompt proporcionado
     const result = await model.generateContent(prompt);
@@ -83,7 +83,7 @@ export const generateAnalysis = async (req: Request, res: Response) => {
     Mantén un tono profesional, médico y constructivo. El análisis debe ser específico para tratamientos estéticos y orientado a la mejora continua del cuidado del paciente.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -123,7 +123,7 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
     **Importante:** No incluyas encabezados numerados o con '###' como "### 2. ...". Solo usa los títulos en negrita proporcionados.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
