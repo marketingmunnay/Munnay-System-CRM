@@ -399,11 +399,11 @@ model Egreso {
 }
 
 model Proveedor {
-  id             Int    @id @default(autoincrement())
-  razonSocial    String @unique
-  ruc            String @unique
+  id             Int     @id @default(autoincrement())
+  razonSocial    String  @unique
+  ruc            String?
   tipo           String
-  numeroContacto String
+  numeroContacto String?
   diasCredito    Int?
 }
 

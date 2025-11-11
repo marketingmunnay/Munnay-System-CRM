@@ -30,8 +30,8 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.razonSocial || !formData.ruc || !formData.tipo || !formData.numeroContacto) {
-      alert('Todos los campos son requeridos.');
+    if (!formData.razonSocial || !formData.tipo) {
+      alert('Razón Social y Tipo de Proveedor son campos requeridos.');
       return;
     }
     onSave(formData as Proveedor);
@@ -89,14 +89,13 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
                 />
             </div>
             <div>
-                <label htmlFor="ruc" className="mb-1 block text-sm font-medium text-gray-700">RUC</label>
+                <label htmlFor="ruc" className="mb-1 block text-sm font-medium text-gray-700">RUC <span className="text-gray-400 text-xs">(Opcional)</span></label>
                 <input
                     type="text"
                     id="ruc"
                     name="ruc"
                     value={formData.ruc || ''}
                     onChange={handleChange}
-                    required
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                 />
             </div>
@@ -115,14 +114,13 @@ const ProveedorFormModal: React.FC<ProveedorFormModalProps> = ({ isOpen, onClose
                 </select>
             </div>
              <div>
-                <label htmlFor="numeroContacto" className="mb-1 block text-sm font-medium text-gray-700">Número de Contacto</label>
+                <label htmlFor="numeroContacto" className="mb-1 block text-sm font-medium text-gray-700">Número de Contacto <span className="text-gray-400 text-xs">(Opcional)</span></label>
                 <input
                     type="text"
                     id="numeroContacto"
                     name="numeroContacto"
                     value={formData.numeroContacto || ''}
                     onChange={handleChange}
-                    required
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                 />
             </div>

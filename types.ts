@@ -351,9 +351,9 @@ export interface TipoProveedor {
 export interface Proveedor {
     id: number;
     razonSocial: string;
-    ruc: string;
+    ruc?: string;
     tipo: string;
-    numeroContacto: string;
+    numeroContacto?: string;
     diasCredito?: number;
 }
 
