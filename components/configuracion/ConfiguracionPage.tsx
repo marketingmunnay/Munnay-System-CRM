@@ -347,10 +347,11 @@ const BusinessInfoSection: FC<{
 const ProveedoresSection: FC<{
     proveedores: Proveedor[];
     tiposProveedor: TipoProveedor[];
+    egresoCategories: EgresoCategory[];
     onSave: (proveedor: Proveedor) => void;
     onDelete: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ proveedores, tiposProveedor, onSave, onDelete, requestConfirmation }) => {
+}> = ({ proveedores, tiposProveedor, egresoCategories, onSave, onDelete, requestConfirmation }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
 
@@ -395,6 +396,7 @@ const ProveedoresSection: FC<{
                             <th className="text-left p-2">Razón Social</th>
                             <th className="text-left p-2">RUC</th>
                             <th className="text-left p-2">Tipo</th>
+                            <th className="text-left p-2">Categoría Egreso</th>
                             <th className="text-left p-2">Contacto</th>
                             <th className="text-left p-2">Días Crédito</th>
                             <th className="text-left p-2">Acciones</th>
@@ -406,6 +408,7 @@ const ProveedoresSection: FC<{
                                 <td className="p-2">{proveedor.razonSocial}</td>
                                 <td className="p-2">{proveedor.ruc || 'N/A'}</td>
                                 <td className="p-2">{proveedor.tipo}</td>
+                                <td className="p-2">{proveedor.categoriaEgreso || 'N/A'}</td>
                                 <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
                                 <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
                                 <td className="p-2">
@@ -440,6 +443,7 @@ const ProveedoresSection: FC<{
                     onDelete={onDelete}
                     proveedor={editingProveedor}
                     tiposProveedor={tiposProveedor}
+                    egresoCategories={egresoCategories}
                     requestConfirmation={requestConfirmation}
                 />
             )}
@@ -587,6 +591,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                 return <ProveedoresSection
                     proveedores={props.proveedores}
                     tiposProveedor={props.tiposProveedor}
+                    egresoCategories={props.egresoCategories}
                     onSave={props.onSaveProveedor}
                     onDelete={props.onDeleteProveedor}
                     requestConfirmation={props.requestConfirmation}

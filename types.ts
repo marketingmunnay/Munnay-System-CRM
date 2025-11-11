@@ -355,6 +355,7 @@ export interface Proveedor {
     tipo: string;
     numeroContacto?: string;
     diasCredito?: number;
+    categoriaEgreso?: string;
 }
 
 export interface StatCardData {
