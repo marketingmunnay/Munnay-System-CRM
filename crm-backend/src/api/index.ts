@@ -13,6 +13,7 @@ import configRouter from './config.routes';
 import goalsRouter from './goals.routes';
 import comprobantesRouter from './comprobantes.routes'; // Assumed name for consistency
 import aiRouter from './ai.routes';
+import tipoCambioRouter from './tipoCambio.routes';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/users', usersRouter);
 router.use('/config', configRouter);
 router.use('/goals', goalsRouter);
 router.use('/ai', aiRouter);
+router.use('/tipo-cambio', tipoCambioRouter);
 // FIX: Add comprobantes router to be handled by the API.
 router.use('/config/comprobantes', comprobantesRouter);
 

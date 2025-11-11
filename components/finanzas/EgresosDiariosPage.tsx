@@ -7,6 +7,7 @@ import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon 
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
 import { formatDateForDisplay } from '../../utils/time.ts';
+import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 
 interface EgresosDiariosPageProps {
     egresos: Egreso[];
@@ -225,6 +226,16 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     const [viewingEgreso, setViewingEgreso] = useState<Egreso | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+    const [tipoCambio, setTipoCambio] = useState<TipoCambio | null>(null);
+
+    // Obtener tipo de cambio al montar el componente
+    useEffect(() => {
+        const fetchTipoCambio = async () => {
+            const tc = await getTipoCambioSunat();
+            setTipoCambio(tc);
+        };
+        fetchTipoCambio();
+    }, []);
 
     const dateFilteredEgresos = useMemo(() => {
         let results = egresos;
@@ -256,13 +267,47 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     }, [dateFilteredEgresos, searchTerm, activeTab]);
 
     const stats = useMemo(() => {
-        const totalEgresos = dateFilteredEgresos.reduce((sum, e) => sum + e.montoTotal, 0);
-        const totalDeuda = dateFilteredEgresos.reduce((sum, e) => sum + e.deuda, 0);
-        const totalInsumos = dateFilteredEgresos
-            .filter(e => e.categoria === 'Insumos')
-            .reduce((sum, e) => sum + e.montoTotal, 0);
-        return { totalEgresos, totalDeuda, totalInsumos };
-    }, [dateFilteredEgresos]);
+        const tc = tipoCambio?.venta || 3.78; // Usar tipo de cambio de venta
+        
+        let totalEgresosSoles = 0;
+        let totalEgresosDolares = 0;
+        let totalDeudaSoles = 0;
+        let totalDeudaDolares = 0;
+        let totalInsumosSoles = 0;
+        let totalInsumosDolares = 0;
+
+        dateFilteredEgresos.forEach(e => {
+            const esSoles = e.tipoMoneda === 'Soles';
+            
+            // Acumular egresos por moneda
+            if (esSoles) {
+                totalEgresosSoles += e.montoTotal;
+                totalDeudaSoles += e.deuda;
+                if (e.categoria === 'Insumos') totalInsumosSoles += e.montoTotal;
+            } else {
+                totalEgresosDolares += e.montoTotal;
+                totalDeudaDolares += e.deuda;
+                if (e.categoria === 'Insumos') totalInsumosDolares += e.montoTotal;
+            }
+        });
+
+        // Calcular totales en soles (convirtiendo dólares)
+        const totalEgresosEnSoles = totalEgresosSoles + (totalEgresosDolares * tc);
+        const totalDeudaEnSoles = totalDeudaSoles + (totalDeudaDolares * tc);
+        const totalInsumosEnSoles = totalInsumosSoles + (totalInsumosDolares * tc);
+
+        return { 
+            totalEgresosSoles, 
+            totalEgresosDolares,
+            totalEgresosEnSoles,
+            totalDeudaSoles,
+            totalDeudaDolares,
+            totalDeudaEnSoles,
+            totalInsumosSoles,
+            totalInsumosDolares,
+            totalInsumosEnSoles
+        };
+    }, [dateFilteredEgresos, tipoCambio]);
 
     const proximosPagos = useMemo(() => {
         const today = new Date();
@@ -336,24 +381,89 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                 <StatCard 
-                    title="Total de Egresos (filtrado)" 
-                    value={formatCurrency(stats.totalEgresos)}
-                    icon={<GoogleIcon name="payments" className="text-red-500" />}
-                    iconBgClass="bg-red-100"
-                />
-                 <StatCard 
-                    title="Total de Deuda (filtrado)" 
-                    value={formatCurrency(stats.totalDeuda)}
-                    icon={<GoogleIcon name="receipt_long" className="text-orange-500" />}
-                    iconBgClass="bg-orange-100"
-                />
-                 <StatCard 
-                    title="Total Compra de Insumos (filtrado)" 
-                    value={formatCurrency(stats.totalInsumos)}
-                    icon={<GoogleIcon name="inventory_2" className="text-blue-500" />}
-                    iconBgClass="bg-blue-100"
-                />
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-red-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="payments" className="text-red-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Total de Egresos</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalEgresosSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalEgresosDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                <span className="text-xl font-bold text-red-600">{formatCurrency(stats.totalEgresosEnSoles, 'Soles')}</span>
+                            </div>
+                        </div>
+                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                    </div>
+                </div>
+                
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-orange-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="receipt_long" className="text-orange-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Total de Deuda</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeudaSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeudaDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                <span className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalDeudaEnSoles, 'Soles')}</span>
+                            </div>
+                        </div>
+                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                    </div>
+                </div>
+                
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="inventory_2" className="text-blue-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Compra de Insumos</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalInsumosSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalInsumosDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                <span className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalInsumosEnSoles, 'Soles')}</span>
+                            </div>
+                        </div>
+                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                    </div>
+                </div>
             </div>
 
             <div className="border-b border-gray-200 mb-6">
