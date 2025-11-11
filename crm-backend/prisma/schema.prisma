@@ -382,7 +382,7 @@ model ComprobanteItem {
 model Egreso {
   id               Int       @id @default(autoincrement())
   fechaRegistro    DateTime
-  fechaPago        DateTime
+  fechaPago        DateTime?
   proveedor        String
   categoria        String
   descripcion      String

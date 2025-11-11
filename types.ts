@@ -327,7 +327,7 @@ export enum ModoPagoEgreso {
 export interface Egreso {
     id: number;
     fechaRegistro: string;
-    fechaPago: string;
+    fechaPago?: string;
     proveedor: string;
     categoria: string;
     descripcion: string;

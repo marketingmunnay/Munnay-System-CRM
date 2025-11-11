@@ -90,8 +90,8 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.proveedor || !formData.descripcion || !formData.montoTotal || !formData.fechaPago) {
-      alert('Proveedor, Descripción, Fecha de Pago y Monto Total son campos requeridos.');
+    if (!formData.proveedor || !formData.descripcion || !formData.montoTotal) {
+      alert('Proveedor, Descripción y Monto Total son campos requeridos.');
       return;
     }
     onSave(formData as Egreso);
@@ -173,7 +173,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     {renderFormField('Fecha de Registro', 'fechaRegistro', 'date', [], true)}
                     <div className="flex flex-col">
                         <label htmlFor="fechaPago" className="mb-1 text-sm font-medium text-gray-700">
-                            Fecha de Pago<span className="text-red-500">*</span>
+                            Fecha de Pago <span className="text-gray-400 text-xs">(Opcional)</span>
                             {formData.proveedor && proveedores.find(p => p.razonSocial === formData.proveedor)?.diasCredito && (
                                 <span className="ml-2 text-xs text-green-600">
                                     <GoogleIcon name="schedule" className="text-xs" /> Auto-calculada
@@ -186,10 +186,10 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                             name="fechaPago"
                             value={String(formData.fechaPago ?? '')}
                             onChange={handleChange}
-                            required
                             className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                             style={{ colorScheme: 'light' }}
                         />
+                        <p className="mt-1 text-xs text-gray-500">Se calcula automáticamente según días de crédito del proveedor</p>
                     </div>
                     
                     <div className="flex flex-col">
