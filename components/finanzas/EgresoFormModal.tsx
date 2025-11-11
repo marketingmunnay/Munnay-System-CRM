@@ -23,6 +23,11 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egreso, proveedores, egresoCategories, requestConfirmation }: EgresoFormModalProps) {
   const [formData, setFormData] = useState<Partial<Egreso>>({});
 
+  // Filtrar proveedores según la categoría seleccionada
+  const filteredProveedores = formData.categoria 
+    ? proveedores.filter(p => !p.categoriaEgreso || p.categoriaEgreso === formData.categoria)
+    : proveedores;
+
   useEffect(() => {
     if (isOpen) {
         if (egreso) {
@@ -47,6 +52,16 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     const { name, value, type } = e.target;
     
     let newFormData = { ...formData, [name]: type === 'number' ? Number(value) : value };
+
+    // Si cambia la categoría, resetear el proveedor si el actual no está en la nueva lista filtrada
+    if (name === 'categoria' && formData.proveedor) {
+        const proveedoresDisponibles = proveedores.filter(p => !p.categoriaEgreso || p.categoriaEgreso === value);
+        const proveedorActualDisponible = proveedoresDisponibles.find(p => p.razonSocial === formData.proveedor);
+        if (!proveedorActualDisponible) {
+            newFormData.proveedor = '';
+            newFormData.fechaPago = '';
+        }
+    }
 
     // Calcular automáticamente la fecha de pago cuando se selecciona un proveedor
     if (name === 'proveedor' && value) {
@@ -200,7 +215,14 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     </div>
                     
                     <div className="flex flex-col">
-                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">Proveedor<span className="text-red-500">*</span></label>
+                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">
+                            Proveedor<span className="text-red-500">*</span>
+                            {formData.categoria && filteredProveedores.length < proveedores.length && (
+                                <span className="ml-2 text-xs text-blue-600">
+                                    <GoogleIcon name="filter_alt" className="text-xs" /> Filtrado por categoría
+                                </span>
+                            )}
+                        </label>
                         <select 
                             id="proveedor" 
                             name="proveedor" 
@@ -210,8 +232,11 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                             className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
                             <option value="">Seleccionar proveedor...</option>
-                            {proveedores.map(p => <option key={p.id} value={p.razonSocial}>{p.razonSocial}</option>)}
+                            {filteredProveedores.map(p => <option key={p.id} value={p.razonSocial}>{p.razonSocial}</option>)}
                         </select>
+                        {filteredProveedores.length === 0 && formData.categoria && (
+                            <p className="mt-1 text-xs text-orange-600">No hay proveedores con esta categoría</p>
+                        )}
                     </div>
                     <div className="md:col-span-2">
                         <label htmlFor="descripcion" className="mb-1 text-sm font-medium text-gray-700">Descripción<span className="text-red-500">*</span></label>

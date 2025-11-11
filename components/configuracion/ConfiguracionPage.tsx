@@ -9,6 +9,8 @@ import ProveedorFormModal from '../finanzas/ProveedorFormModal';
 import MetasPage from './MetasPage';
 import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
+import Pagination from '../shared/Pagination';
+import { usePagination } from '../../utils/usePagination';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -357,6 +359,9 @@ const ProveedoresSection: FC<{
     const [editingTipo, setEditingTipo] = useState<TipoProveedor | null>(null);
     const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
     const [editingCategoria, setEditingCategoria] = useState<EgresoCategory | null>(null);
+    
+    // Paginación para proveedores
+    const proveedoresPagination = usePagination(proveedores, 20);
 
     const handleOpenModal = (proveedor?: Proveedor) => {
         setEditingProveedor(proveedor || null);
@@ -438,51 +443,62 @@ const ProveedoresSection: FC<{
             </div>
 
             {activeTab === 'proveedores' && (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left p-2">Razón Social</th>
-                                <th className="text-left p-2">RUC</th>
-                                <th className="text-left p-2">Tipo</th>
-                                <th className="text-left p-2">Categoría Egreso</th>
-                                <th className="text-left p-2">Contacto</th>
-                                <th className="text-left p-2">Días Crédito</th>
-                                <th className="text-left p-2">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {proveedores.map((proveedor) => (
-                                <tr key={proveedor.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2">{proveedor.razonSocial}</td>
-                                    <td className="p-2">{proveedor.ruc || 'N/A'}</td>
-                                    <td className="p-2">{proveedor.tipo}</td>
-                                    <td className="p-2">{proveedor.categoriaEgreso || 'N/A'}</td>
-                                    <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
-                                    <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
-                                    <td className="p-2">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleOpenModal(proveedor)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Editar"
-                                            >
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteProveedor(proveedor.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                                title="Eliminar"
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
+                <>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="text-left p-2">Razón Social</th>
+                                    <th className="text-left p-2">RUC</th>
+                                    <th className="text-left p-2">Tipo</th>
+                                    <th className="text-left p-2">Categoría Egreso</th>
+                                    <th className="text-left p-2">Contacto</th>
+                                    <th className="text-left p-2">Días Crédito</th>
+                                    <th className="text-left p-2">Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {proveedoresPagination.paginatedItems.map((proveedor) => (
+                                    <tr key={proveedor.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-2">{proveedor.razonSocial}</td>
+                                        <td className="p-2">{proveedor.ruc || 'N/A'}</td>
+                                        <td className="p-2">{proveedor.tipo}</td>
+                                        <td className="p-2">{proveedor.categoriaEgreso || 'N/A'}</td>
+                                        <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
+                                        <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
+                                        <td className="p-2">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleOpenModal(proveedor)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                    title="Editar"
+                                                >
+                                                    <span className="material-symbols-outlined">edit</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteProveedor(proveedor.id)}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    title="Eliminar"
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {proveedores.length > 20 && (
+                        <Pagination
+                            currentPage={proveedoresPagination.currentPage}
+                            totalPages={proveedoresPagination.totalPages}
+                            onPageChange={proveedoresPagination.goToPage}
+                            itemsPerPage={proveedoresPagination.itemsPerPage}
+                            totalItems={proveedoresPagination.totalItems}
+                        />
+                    )}
+                </>
             )}
 
             {activeTab === 'tipos' && (
