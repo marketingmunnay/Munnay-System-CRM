@@ -344,6 +344,109 @@ const BusinessInfoSection: FC<{
     );
 };
 
+const ProveedoresSection: FC<{
+    proveedores: Proveedor[];
+    tiposProveedor: TipoProveedor[];
+    onSave: (proveedor: Proveedor) => void;
+    onDelete: (id: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ proveedores, tiposProveedor, onSave, onDelete, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
+
+    const handleOpenModal = (proveedor?: Proveedor) => {
+        setEditingProveedor(proveedor || null);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingProveedor(null);
+    };
+
+    const handleSave = (proveedor: Proveedor) => {
+        onSave(proveedor);
+        handleCloseModal();
+    };
+
+    const handleDelete = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar este proveedor?', () => {
+            onDelete(id);
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Proveedores</h2>
+                <button
+                    onClick={() => handleOpenModal()}
+                    className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined">add</span>
+                    Añadir Proveedor
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="text-left p-2">Razón Social</th>
+                            <th className="text-left p-2">RUC</th>
+                            <th className="text-left p-2">Tipo</th>
+                            <th className="text-left p-2">Contacto</th>
+                            <th className="text-left p-2">Días Crédito</th>
+                            <th className="text-left p-2">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {proveedores.map((proveedor) => (
+                            <tr key={proveedor.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">{proveedor.razonSocial}</td>
+                                <td className="p-2">{proveedor.ruc || 'N/A'}</td>
+                                <td className="p-2">{proveedor.tipo}</td>
+                                <td className="p-2">{proveedor.numeroContacto || 'N/A'}</td>
+                                <td className="p-2">{proveedor.diasCredito ? `${proveedor.diasCredito} días` : 'N/A'}</td>
+                                <td className="p-2">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleOpenModal(proveedor)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                            title="Editar"
+                                        >
+                                            <span className="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(proveedor.id)}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Eliminar"
+                                        >
+                                            <span className="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {isModalOpen && (
+                <ProveedorFormModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSave={handleSave}
+                    onDelete={onDelete}
+                    proveedor={editingProveedor}
+                    tiposProveedor={tiposProveedor}
+                    requestConfirmation={requestConfirmation}
+                />
+            )}
+        </div>
+    );
+};
+
 const MiembrosEquipoSection: FC<{
     users: User[];
     roles: Role[];
@@ -481,20 +584,12 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'proveedores':
-                 return <CatalogManager
-                    title="Proveedores"
-                    items={props.proveedores}
+                return <ProveedoresSection
+                    proveedores={props.proveedores}
+                    tiposProveedor={props.tiposProveedor}
                     onSave={props.onSaveProveedor}
                     onDelete={props.onDeleteProveedor}
                     requestConfirmation={props.requestConfirmation}
-                    fields={[
-                        { name: 'razonSocial', label: 'Razón Social', type: 'text', required: true },
-                        { name: 'ruc', label: 'RUC', type: 'text', required: true },
-                        { name: 'tipo', label: 'Tipo', type: 'text', required: true },
-                        { name: 'numeroContacto', label: 'Contacto', type: 'text', required: true },
-                    ]}
-                    itemCategories={props.tiposProveedor}
-                    categoryField='tipo'
                 />;
             case 'tipos-proveedor':
                 return <SimpleListManager
