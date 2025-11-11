@@ -8,6 +8,7 @@ import ImportExportPage from './ImportExportPage';
 import ProveedorFormModal from '../finanzas/ProveedorFormModal';
 import MetasPage from './MetasPage';
 import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
+import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -343,6 +344,110 @@ const BusinessInfoSection: FC<{
     );
 };
 
+const MiembrosEquipoSection: FC<{
+    users: User[];
+    roles: Role[];
+    documentTypes: DocumentType[];
+    onSave: (user: Partial<User>) => void;
+    onDelete: (id: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ users, roles, documentTypes, onSave, onDelete, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+
+    const handleOpenModal = (user?: User) => {
+        setEditingUser(user || null);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingUser(null);
+    };
+
+    const handleSave = (user: Partial<User>) => {
+        onSave(user);
+        handleCloseModal();
+    };
+
+    const handleDelete = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar este miembro?', () => {
+            onDelete(id);
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Miembros del Equipo</h2>
+                <button
+                    onClick={() => handleOpenModal()}
+                    className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined">add</span>
+                    Añadir Miembro
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="text-left p-2">Nombres</th>
+                            <th className="text-left p-2">Apellidos</th>
+                            <th className="text-left p-2">Usuario</th>
+                            <th className="text-left p-2">Rol</th>
+                            <th className="text-left p-2">Email Personal</th>
+                            <th className="text-left p-2">Puesto</th>
+                            <th className="text-left p-2">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map((user) => (
+                            <tr key={user.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">{user.nombres}</td>
+                                <td className="p-2">{user.apellidos}</td>
+                                <td className="p-2">{user.usuario}</td>
+                                <td className="p-2">{roles.find(r => r.id === user.rolId)?.nombre || 'N/A'}</td>
+                                <td className="p-2">{user.personalEmail || 'N/A'}</td>
+                                <td className="p-2">{user.jobPosition || 'N/A'}</td>
+                                <td className="p-2">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleOpenModal(user)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                            title="Editar"
+                                        >
+                                            <span className="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(user.id)}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Eliminar"
+                                        >
+                                            <span className="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {isModalOpen && (
+                <MiembroEquipoFormModal
+                    user={editingUser}
+                    roles={roles}
+                    documentTypes={documentTypes}
+                    onClose={handleCloseModal}
+                    onSave={handleSave}
+                />
+            )}
+        </div>
+    );
+};
+
 const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
     const [activeSection, setActiveSection] = useState('datos');
 
@@ -351,18 +456,13 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
             case 'datos':
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;
             case 'miembros':
-                return <CatalogManager
-                    title="Miembros del Equipo"
-                    items={props.users.map(u => ({...u, rolNombre: props.roles.find(r => r.id === u.rolId)?.nombre || 'N/A'}))}
+                return <MiembrosEquipoSection
+                    users={props.users}
+                    roles={props.roles}
+                    documentTypes={props.documentTypes}
                     onSave={props.onSaveUser}
                     onDelete={props.onDeleteUser}
                     requestConfirmation={props.requestConfirmation}
-                    fields={[
-                        { name: 'nombres', label: 'Nombres', type: 'text', required: true },
-                        { name: 'apellidos', label: 'Apellidos', type: 'text', required: true },
-                        { name: 'usuario', label: 'Usuario', type: 'text', required: true },
-                        { name: 'rolNombre', label: 'Rol', type: 'text' }, // Display field for role name
-                    ]}
                 />;
             case 'roles':
                 return <SimpleListManager
