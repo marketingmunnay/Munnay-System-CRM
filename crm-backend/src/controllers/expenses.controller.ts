@@ -5,7 +5,15 @@ import prisma from '../lib/prisma';
 export const getExpenses = async (req: Request, res: Response) => {
   try {
     const expenses = await prisma.egreso.findMany();
-    res.status(200).json(expenses);
+    
+    // Formatear fechas a YYYY-MM-DD para compatibilidad con inputs type="date"
+    const formattedExpenses = expenses.map(expense => ({
+      ...expense,
+      fechaRegistro: expense.fechaRegistro.toISOString().split('T')[0],
+      fechaPago: expense.fechaPago ? expense.fechaPago.toISOString().split('T')[0] : undefined,
+    }));
+    
+    res.status(200).json(formattedExpenses);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching expenses', error: (error as Error).message });
   }
@@ -18,7 +26,15 @@ export const getExpenseById = async (req: Request, res: Response) => {
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
-    res.status(200).json(expense);
+    
+    // Formatear fechas a YYYY-MM-DD
+    const formattedExpense = {
+      ...expense,
+      fechaRegistro: expense.fechaRegistro.toISOString().split('T')[0],
+      fechaPago: expense.fechaPago ? expense.fechaPago.toISOString().split('T')[0] : undefined,
+    };
+    
+    res.status(200).json(formattedExpense);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching expense', error: (error as Error).message });
   }
@@ -43,7 +59,15 @@ export const createExpense = async (req: Request, res: Response) => {
         ...(parsedFechaPago && { fechaPago: parsedFechaPago }),
       },
     });
-    res.status(201).json(newExpense);
+    
+    // Formatear fechas en la respuesta
+    const formattedExpense = {
+      ...newExpense,
+      fechaRegistro: newExpense.fechaRegistro.toISOString().split('T')[0],
+      fechaPago: newExpense.fechaPago ? newExpense.fechaPago.toISOString().split('T')[0] : undefined,
+    };
+    
+    res.status(201).json(formattedExpense);
   } catch (error) {
     console.error('Error creating expense:', error);
     res.status(500).json({ message: 'Error creating expense', error: (error as Error).message });
@@ -73,7 +97,15 @@ export const updateExpense = async (req: Request, res: Response) => {
         ...(parsedFechaPago !== undefined && { fechaPago: parsedFechaPago }),
       },
     });
-    res.status(200).json(updatedExpense);
+    
+    // Formatear fechas en la respuesta
+    const formattedExpense = {
+      ...updatedExpense,
+      fechaRegistro: updatedExpense.fechaRegistro.toISOString().split('T')[0],
+      fechaPago: updatedExpense.fechaPago ? updatedExpense.fechaPago.toISOString().split('T')[0] : undefined,
+    };
+    
+    res.status(200).json(formattedExpense);
   } catch (error) {
     console.error('Error updating expense:', error);
     res.status(500).json({ message: 'Error updating expense', error: (error as Error).message });

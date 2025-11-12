@@ -31,7 +31,18 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   useEffect(() => {
     if (isOpen) {
         if (egreso) {
-            setFormData(egreso);
+            // Convertir fechas ISO a formato YYYY-MM-DD para inputs type="date"
+            const formatDateForInput = (dateStr?: string): string => {
+                if (!dateStr) return '';
+                // Si la fecha viene en formato ISO (2025-11-11T00:00:00.000Z), extraer solo la parte de fecha
+                return dateStr.split('T')[0];
+            };
+
+            setFormData({
+                ...egreso,
+                fechaRegistro: formatDateForInput(egreso.fechaRegistro),
+                fechaPago: formatDateForInput(egreso.fechaPago)
+            });
         } else {
             setFormData({
                 id: Date.now(),

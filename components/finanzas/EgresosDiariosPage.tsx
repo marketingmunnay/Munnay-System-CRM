@@ -318,14 +318,22 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
             .filter(e => e.deuda > 0 && e.fechaPago)
             .map(e => {
                 try {
-                    const fechaPago = new Date(e.fechaPago + 'T00:00:00');
+                    // Manejar fechas en formato ISO (YYYY-MM-DDTHH:mm:ss.sssZ) y YYYY-MM-DD
+                    let fechaPagoStr = e.fechaPago!;
+                    // Si la fecha incluye 'T', solo tomar la parte de fecha
+                    if (fechaPagoStr.includes('T')) {
+                        fechaPagoStr = fechaPagoStr.split('T')[0];
+                    }
+                    const fechaPago = new Date(fechaPagoStr + 'T00:00:00');
                     if (isNaN(fechaPago.getTime())) {
+                        console.warn('Fecha de pago inválida:', e.fechaPago);
                         return { ...e, diasParaVencer: 0 };
                     }
                     const diffTime = fechaPago.getTime() - today.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     return { ...e, diasParaVencer: diffDays };
                 } catch (error) {
+                    console.error('Error calculando días para vencer:', error, e);
                     return { ...e, diasParaVencer: 0 };
                 }
             })
