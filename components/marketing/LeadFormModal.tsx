@@ -834,15 +834,29 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
     };
 
     const handleAddProcedure = () => {
-        if (!formData.tratamientos || formData.tratamientos.length === 0) return;
+        if (!formData.tratamientos || formData.tratamientos.length === 0) {
+            console.log('❌ No hay tratamientos disponibles');
+            return;
+        }
         
         const primerTratamiento = formData.tratamientos[0];
         const { restantes, usadas, total } = getSesionesRestantes(primerTratamiento.id);
+        
+        console.log('🔍 Intentando agregar procedimiento:', {
+            tratamiento: primerTratamiento.nombre,
+            usadas,
+            total,
+            restantes,
+            procedimientosActuales: formData.procedimientos?.length || 0
+        });
         
         if (restantes === 0) {
             alert(`⚠️ No se puede agregar más sesiones\n\nTratamiento: ${primerTratamiento.nombre}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
             return;
         }
+        
+        const nextSessionNumber = getNextSessionNumber(formData.tratamientos[0].id);
+        console.log('📝 Creando nuevo procedimiento con sesión #', nextSessionNumber);
         
         setCurrentProcedure({
             id: Date.now(),
@@ -851,7 +865,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             horaFin: '',
             tratamientoId: formData.tratamientos[0].id,
             nombreTratamiento: formData.tratamientos[0].nombre,
-            sesionNumero: getNextSessionNumber(formData.tratamientos[0].id),
+            sesionNumero: nextSessionNumber,
             personal: 'Vanesa',
             asistenciaMedica: false,
             observacion: ''
@@ -867,24 +881,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
     const handleSaveProcedure = () => {
         if (!currentProcedure) return;
         
-        // Validar sesiones disponibles solo para nuevos procedimientos
-        if (!editingProcedureId) {
-            const { restantes } = getSesionesRestantes(currentProcedure.tratamientoId || 0);
-            console.log('🔍 Validando sesiones antes de guardar:', {
-                tratamientoId: currentProcedure.tratamientoId,
-                restantes,
-                editingProcedureId
-            });
-            
-            if (restantes === 0) {
-                const tratamiento = formData.tratamientos?.find(t => t.id === currentProcedure.tratamientoId);
-                alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nNo quedan sesiones disponibles.\n\nSolicite el pago de sesiones adicionales en Recepción.`);
-                return;
-            }
-        }
-        
         // Para edición, mantener el número de sesión original
-        // Para nuevo, usar el número calculado automáticamente
+        // Para nuevo, recalcular con el estado actual
         const finalSessionNumber = editingProcedureId 
             ? currentProcedure.sesionNumero 
             : getNextSessionNumber(currentProcedure.tratamientoId || 0);
@@ -902,6 +900,32 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             medico: currentProcedure.medico,
             observacion: currentProcedure.observacion
         };
+
+        // Validar sesiones disponibles ANTES de guardar (solo para nuevos)
+        if (!editingProcedureId) {
+            // Calcular cuántos procedimientos del mismo tratamiento ya existen
+            const procedimientosActuales = (formData.procedimientos || []).filter(
+                (p: Procedure) => p.tratamientoId === procedureToSave.tratamientoId
+            ).length;
+            
+            const tratamiento = formData.tratamientos?.find(t => t.id === procedureToSave.tratamientoId);
+            const sesionesTotales = tratamiento?.cantidadSesiones || 0;
+            
+            console.log('🔍 Validando sesiones antes de guardar:', {
+                tratamientoId: procedureToSave.tratamientoId,
+                tratamientoNombre: tratamiento?.nombre,
+                procedimientosActuales,
+                sesionesTotales,
+                intentandoAgregar: finalSessionNumber,
+                editingProcedureId
+            });
+            
+            // Si ya se usaron todas las sesiones, no permitir guardar
+            if (procedimientosActuales >= sesionesTotales) {
+                alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nSesiones disponibles: ${sesionesTotales}\nSesiones ya registradas: ${procedimientosActuales}\n\nNo quedan sesiones disponibles. Solicite el pago de sesiones adicionales en Recepción.`);
+                return;
+            }
+        }
 
         console.log('💾 Guardando procedimiento:', {
             procedureToSave,
