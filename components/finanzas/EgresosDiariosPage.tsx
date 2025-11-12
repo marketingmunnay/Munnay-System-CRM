@@ -161,6 +161,7 @@ const EgresosTable: React.FC<{
                         <th scope="col" className="px-6 py-3">Fecha Pago</th>
                         <th scope="col" className="px-6 py-3">Proveedor</th>
                         <th scope="col" className="px-6 py-3">Categoría</th>
+                        <th scope="col" className="px-6 py-3">Descripción</th>
                         <th scope="col" className="px-6 py-3">Monto Total</th>
                         <th scope="col" className="px-6 py-3">Deuda</th>
                         <th scope="col" className="px-6 py-3 text-center">Estado Pago</th>
@@ -174,6 +175,7 @@ const EgresosTable: React.FC<{
                             <td className="px-6 py-4">{formatDate(egreso.fechaPago)}</td>
                             <th scope="row" className="px-6 py-4 font-medium text-gray-900">{egreso.proveedor}</th>
                             <td className="px-6 py-4">{egreso.categoria}</td>
+                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate" title={egreso.descripcion}>{egreso.descripcion}</td>
                             <td className="px-6 py-4 font-semibold">{formatCurrency(egreso.montoTotal, egreso.tipoMoneda)}</td>
                             <td className={`px-6 py-4 font-semibold ${egreso.deuda > 0 ? 'text-red-600' : 'text-gray-500'}`}>{formatCurrency(egreso.deuda, egreso.tipoMoneda)}</td>
                             <td className="px-6 py-4 text-center">
@@ -270,6 +272,14 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
         const tc = tcDisponible ? tipoCambio.venta! : 0;
         
+        console.log('Calculando stats con tipo de cambio:', {
+            tipoCambio,
+            tcDisponible,
+            tc,
+            disponible: tipoCambio?.disponible,
+            venta: tipoCambio?.venta
+        });
+        
         let totalEgresosSoles = 0;
         let totalEgresosDolares = 0;
         let totalDeudaSoles = 0;
@@ -284,11 +294,11 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
             if (esSoles) {
                 totalEgresosSoles += e.montoTotal;
                 totalDeudaSoles += e.deuda;
-                if (e.categoria === 'Insumos') totalInsumosSoles += e.montoTotal;
+                if (e.categoria === 'Insumos Médicos') totalInsumosSoles += e.montoTotal;
             } else {
                 totalEgresosDolares += e.montoTotal;
                 totalDeudaDolares += e.deuda;
-                if (e.categoria === 'Insumos') totalInsumosDolares += e.montoTotal;
+                if (e.categoria === 'Insumos Médicos') totalInsumosDolares += e.montoTotal;
             }
         });
 
@@ -296,6 +306,13 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         const totalEgresosEnSoles = tcDisponible ? totalEgresosSoles + (totalEgresosDolares * tc) : null;
         const totalDeudaEnSoles = tcDisponible ? totalDeudaSoles + (totalDeudaDolares * tc) : null;
         const totalInsumosEnSoles = tcDisponible ? totalInsumosSoles + (totalInsumosDolares * tc) : null;
+
+        console.log('Resultado cálculo stats:', {
+            totalEgresosSoles,
+            totalEgresosDolares,
+            totalEgresosEnSoles,
+            tcDisponible
+        });
 
         return { 
             totalEgresosSoles, 
@@ -536,6 +553,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                                         <tr>
                                             <th className="px-4 py-2 text-left">Proveedor</th>
                                             <th className="px-4 py-2 text-left">Categoría</th>
+                                            <th className="px-4 py-2 text-left">Descripción</th>
                                             <th className="px-4 py-2 text-left">Monto Deuda</th>
                                             <th className="px-4 py-2 text-left">Fecha de Pago</th>
                                             <th className="px-4 py-2 text-left">Días p/ Vencer</th>
@@ -552,6 +570,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                                                 <tr key={p.id} className="border-b border-yellow-200 last:border-b-0">
                                                     <td className="px-4 py-2 font-medium">{p.proveedor}</td>
                                                     <td className="px-4 py-2">{p.categoria}</td>
+                                                    <td className="px-4 py-2 text-gray-600">{p.descripcion}</td>
                                                     <td className="px-4 py-2">{formatCurrency(p.deuda, p.tipoMoneda)}</td>
                                                     <td className="px-4 py-2">{formatDate(p.fechaPago)}</td>
                                                     <td className={`px-4 py-2 ${diasStyle}`}>
