@@ -1,4 +1,9 @@
 import { Request, Response } from 'express';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Configuración de Google Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
+const MODEL_NAME = "gemini-2.0-flash";
 
 // Cache simple del tipo de cambio
 let tipoCambioCache: { data: any; timestamp: number } | null = null;
@@ -14,69 +19,83 @@ export const getTipoCambio = async (req: Request, res: Response) => {
 
     const fecha = new Date().toISOString().split('T')[0];
 
-    // Intentar múltiples fuentes en orden de preferencia
-    
-    // 1. Intentar con exchangerate-api.com (gratuita, precisa, actualizada cada 24h)
+    // Verificar que la API key esté configurada
+    if (!process.env.GOOGLE_GEMINI_API_KEY) {
+      console.error('API de Gemini no configurada');
+      const noDisponible = {
+        fecha,
+        compra: null,
+        venta: null,
+        disponible: false,
+        mensaje: 'API de Gemini no configurada',
+      };
+      return res.status(200).json(noDisponible);
+    }
+
+    // Consultar a Gemini AI el tipo de cambio actual
     try {
-      const response1 = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
-        signal: AbortSignal.timeout(5000) // 5 segundos timeout
-      });
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
       
-      if (response1.ok) {
-        const data = await response1.json();
-        if (data.rates && data.rates.PEN) {
-          const rate = data.rates.PEN;
+      const prompt = `What is the current exchange rate from US Dollar (USD) to Peruvian Sol (PEN)? 
+      Please provide ONLY the numeric values in this exact format:
+      Compra: [buy rate number]
+      Venta: [sell rate number]
+      
+      Example format:
+      Compra: 3.75
+      Venta: 3.77
+      
+      Provide only these two lines with numeric values, no additional text or explanation.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('Gemini AI response for tipo de cambio:', text);
+
+      // Parsear la respuesta de Gemini
+      const compraMatch = text.match(/Compra:\s*(\d+\.?\d*)/i);
+      const ventaMatch = text.match(/Venta:\s*(\d+\.?\d*)/i);
+
+      if (compraMatch && ventaMatch) {
+        const compra = parseFloat(compraMatch[1]);
+        const venta = parseFloat(ventaMatch[1]);
+
+        if (!isNaN(compra) && !isNaN(venta) && compra > 0 && venta > 0) {
           const tipoCambio = {
             fecha,
-            compra: parseFloat((rate - 0.02).toFixed(3)), // Aproximar compra ligeramente menor
-            venta: parseFloat(rate.toFixed(3)),
+            compra: parseFloat(compra.toFixed(4)),
+            venta: parseFloat(venta.toFixed(4)),
             disponible: true,
           };
-          console.log('Tipo de cambio obtenido de exchangerate-api.com:', tipoCambio);
+          console.log('Tipo de cambio obtenido de Gemini AI:', tipoCambio);
           tipoCambioCache = { data: tipoCambio, timestamp: now };
           return res.status(200).json(tipoCambio);
         }
       }
-    } catch (error) {
-      console.warn('exchangerate-api.com no disponible, intentando siguiente fuente...');
-    }
 
-    // 2. Intentar con fixer.io como backup (alternativa)
-    try {
-      const response2 = await fetch('https://api.fixer.io/latest?base=USD&symbols=PEN', {
-        signal: AbortSignal.timeout(5000) // 5 segundos timeout
-      });
-      
-      if (response2.ok) {
-        const data = await response2.json();
-        if (data.rates && data.rates.PEN) {
-          const rate = data.rates.PEN;
-          const tipoCambio = {
-            fecha,
-            compra: parseFloat((rate - 0.02).toFixed(3)),
-            venta: parseFloat(rate.toFixed(3)),
-            disponible: true,
-          };
-          console.log('Tipo de cambio obtenido de fixer.io:', tipoCambio);
-          tipoCambioCache = { data: tipoCambio, timestamp: now };
-          return res.status(200).json(tipoCambio);
-        }
-      }
-    } catch (error) {
-      console.warn('fixer.io no disponible');
-    }
+      // Si no se pudo parsear correctamente
+      console.error('No se pudo parsear la respuesta de Gemini:', text);
+      const noDisponible = {
+        fecha,
+        compra: null,
+        venta: null,
+        disponible: false,
+        mensaje: 'No se pudo obtener el tipo de cambio',
+      };
+      return res.status(200).json(noDisponible);
 
-    // Si todas las APIs fallan, retornar que no está disponible
-    console.error('No se pudo obtener el tipo de cambio de ninguna fuente');
-    const noDisponible = {
-      fecha,
-      compra: null,
-      venta: null,
-      disponible: false,
-      mensaje: 'No se pudo calcular el tipo de cambio',
-    };
-    
-    res.status(200).json(noDisponible);
+    } catch (error) {
+      console.error('Error consultando a Gemini AI:', error);
+      const errorResponse = {
+        fecha,
+        compra: null,
+        venta: null,
+        disponible: false,
+        mensaje: 'No se pudo calcular el tipo de cambio',
+      };
+      return res.status(200).json(errorResponse);
+    }
     
   } catch (error) {
     console.error('Error general obteniendo tipo de cambio:', error);
