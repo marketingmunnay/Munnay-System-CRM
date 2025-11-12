@@ -802,12 +802,30 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === tratamientoId);
         if (!tratamiento) {
             console.log('⚠️ Tratamiento no encontrado:', tratamientoId);
+            console.log('Tratamientos disponibles:', formData.tratamientos?.map(t => ({ id: t.id, nombre: t.nombre })));
             return { usadas: 0, total: 0, restantes: 0 };
         }
         
-        const procedimientosUsados = (formData.procedimientos || []).filter(
-            (p: Procedure) => p.tratamientoId === tratamientoId
-        ).length;
+        // Log TODOS los procedimientos con sus tratamientoId
+        console.log('🔍 TODOS los procedimientos:', (formData.procedimientos || []).map(p => ({
+            id: p.id,
+            sesion: p.sesionNumero,
+            nombreTratamiento: p.nombreTratamiento,
+            tratamientoId: p.tratamientoId,
+            tratamientoIdTipo: typeof p.tratamientoId
+        })));
+        
+        console.log('🔍 Buscando procedimientos con tratamientoId:', tratamientoId, 'tipo:', typeof tratamientoId);
+        
+        const procedimientosFiltrados = (formData.procedimientos || []).filter(
+            (p: Procedure) => {
+                const coincide = p.tratamientoId === tratamientoId;
+                console.log(`  - Procedimiento ${p.id}: tratamientoId=${p.tratamientoId} (${typeof p.tratamientoId}) === ${tratamientoId} (${typeof tratamientoId})? ${coincide}`);
+                return coincide;
+            }
+        );
+        
+        const procedimientosUsados = procedimientosFiltrados.length;
         
         const resultado = {
             usadas: procedimientosUsados,
@@ -815,12 +833,12 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
         };
         
-        console.log('🔍 getSesionesRestantes:', {
+        console.log('🔍 getSesionesRestantes RESULTADO:', {
             tratamientoId,
             tratamientoNombre: tratamiento.nombre,
             cantidadSesiones: tratamiento.cantidadSesiones,
             procedimientosTotal: formData.procedimientos?.length || 0,
-            procedimientosDelTratamiento: procedimientosUsados,
+            procedimientosFiltrados: procedimientosFiltrados.length,
             resultado
         });
         
