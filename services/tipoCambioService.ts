@@ -1,8 +1,10 @@
-// Servicio para obtener el tipo de cambio de SUNAT
+// Servicio para obtener el tipo de cambio
 export interface TipoCambio {
   fecha: string;
-  compra: number;
-  venta: number;
+  compra: number | null;
+  venta: number | null;
+  disponible: boolean;
+  mensaje?: string;
 }
 
 // Cache del tipo de cambio
@@ -11,7 +13,7 @@ let tipoCambioCache: { data: TipoCambio | null; timestamp: number } = {
   timestamp: 0,
 };
 
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hora
+const CACHE_DURATION = 1000 * 60 * 30; // 30 minutos
 
 export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
   // Verificar si hay cache válido
@@ -21,7 +23,7 @@ export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
   }
 
   try {
-    // Intentar obtener del backend (que hará la consulta a SUNAT)
+    // Intentar obtener del backend
     const response = await fetch('/api/tipo-cambio');
     if (response.ok) {
       const data = await response.json();
@@ -29,18 +31,20 @@ export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
       return data;
     }
   } catch (error) {
-    console.warn('Error obteniendo tipo de cambio de SUNAT:', error);
+    console.warn('Error obteniendo tipo de cambio:', error);
   }
 
-  // Fallback: retornar tipo de cambio aproximado
-  const fallbackTC: TipoCambio = {
+  // Si falla, retornar no disponible
+  const noDisponible: TipoCambio = {
     fecha: new Date().toISOString().split('T')[0],
-    compra: 3.75,
-    venta: 3.78,
+    compra: null,
+    venta: null,
+    disponible: false,
+    mensaje: 'No se pudo calcular el tipo de cambio',
   };
   
-  tipoCambioCache = { data: fallbackTC, timestamp: now };
-  return fallbackTC;
+  tipoCambioCache = { data: noDisponible, timestamp: now };
+  return noDisponible;
 };
 
 // Función para convertir dólares a soles

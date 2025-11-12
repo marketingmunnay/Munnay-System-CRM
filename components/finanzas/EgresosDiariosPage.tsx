@@ -267,7 +267,8 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     }, [dateFilteredEgresos, searchTerm, activeTab]);
 
     const stats = useMemo(() => {
-        const tc = tipoCambio?.venta || 3.78; // Usar tipo de cambio de venta
+        const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
+        const tc = tcDisponible ? tipoCambio.venta! : 0;
         
         let totalEgresosSoles = 0;
         let totalEgresosDolares = 0;
@@ -291,10 +292,10 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
             }
         });
 
-        // Calcular totales en soles (convirtiendo dólares)
-        const totalEgresosEnSoles = totalEgresosSoles + (totalEgresosDolares * tc);
-        const totalDeudaEnSoles = totalDeudaSoles + (totalDeudaDolares * tc);
-        const totalInsumosEnSoles = totalInsumosSoles + (totalInsumosDolares * tc);
+        // Calcular totales en soles solo si el TC está disponible
+        const totalEgresosEnSoles = tcDisponible ? totalEgresosSoles + (totalEgresosDolares * tc) : null;
+        const totalDeudaEnSoles = tcDisponible ? totalDeudaSoles + (totalDeudaDolares * tc) : null;
+        const totalInsumosEnSoles = tcDisponible ? totalInsumosSoles + (totalInsumosDolares * tc) : null;
 
         return { 
             totalEgresosSoles, 
@@ -305,7 +306,8 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
             totalDeudaEnSoles,
             totalInsumosSoles,
             totalInsumosDolares,
-            totalInsumosEnSoles
+            totalInsumosEnSoles,
+            tcDisponible
         };
     }, [dateFilteredEgresos, tipoCambio]);
 
@@ -402,10 +404,18 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                         <div className="border-t pt-1 mt-1">
                             <div className="flex justify-between items-baseline">
                                 <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
-                                <span className="text-xl font-bold text-red-600">{formatCurrency(stats.totalEgresosEnSoles, 'Soles')}</span>
+                                {stats.tcDisponible && stats.totalEgresosEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-red-600">{formatCurrency(stats.totalEgresosEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
                             </div>
                         </div>
-                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
                     </div>
                 </div>
                 
@@ -430,10 +440,18 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                         <div className="border-t pt-1 mt-1">
                             <div className="flex justify-between items-baseline">
                                 <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
-                                <span className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalDeudaEnSoles, 'Soles')}</span>
+                                {stats.tcDisponible && stats.totalDeudaEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalDeudaEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
                             </div>
                         </div>
-                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
                     </div>
                 </div>
                 
@@ -458,10 +476,18 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                         <div className="border-t pt-1 mt-1">
                             <div className="flex justify-between items-baseline">
                                 <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
-                                <span className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalInsumosEnSoles, 'Soles')}</span>
+                                {stats.tcDisponible && stats.totalInsumosEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalInsumosEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
                             </div>
                         </div>
-                        {tipoCambio && <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>}
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
                     </div>
                 </div>
             </div>

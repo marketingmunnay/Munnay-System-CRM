@@ -13,25 +13,24 @@ export const getTipoCambio = async (req: Request, res: Response) => {
     }
 
     const fecha = new Date().toISOString().split('T')[0];
-    let tipoCambio = {
-      fecha,
-      compra: 3.75,
-      venta: 3.78,
-    };
 
     // Intentar múltiples fuentes en orden de preferencia
     
     // 1. Intentar con exchangerate-api.com (gratuita, precisa, actualizada cada 24h)
     try {
-      const response1 = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const response1 = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+      });
+      
       if (response1.ok) {
         const data = await response1.json();
         if (data.rates && data.rates.PEN) {
           const rate = data.rates.PEN;
-          tipoCambio = {
+          const tipoCambio = {
             fecha,
             compra: parseFloat((rate - 0.02).toFixed(3)), // Aproximar compra ligeramente menor
             venta: parseFloat(rate.toFixed(3)),
+            disponible: true,
           };
           console.log('Tipo de cambio obtenido de exchangerate-api.com:', tipoCambio);
           tipoCambioCache = { data: tipoCambio, timestamp: now };
@@ -42,44 +41,21 @@ export const getTipoCambio = async (req: Request, res: Response) => {
       console.warn('exchangerate-api.com no disponible, intentando siguiente fuente...');
     }
 
-    // 2. Intentar con API de SUNAT (puede ser inestable)
+    // 2. Intentar con fixer.io como backup (alternativa)
     try {
-      const mes = String(new Date().getMonth() + 1).padStart(2, '0');
-      const anho = new Date().getFullYear();
-      const response2 = await fetch(
-        `https://e-consulta.sunat.gob.pe/cl-at-ittipcam/tcS01Alias?mes=${mes}&anho=${anho}`,
-        { headers: { 'Accept': 'application/json' } }
-      );
+      const response2 = await fetch('https://api.fixer.io/latest?base=USD&symbols=PEN', {
+        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+      });
       
       if (response2.ok) {
         const data = await response2.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const latest = data[data.length - 1];
-          tipoCambio = {
-            fecha: latest.fecha || fecha,
-            compra: parseFloat(latest.compra) || 3.75,
-            venta: parseFloat(latest.venta) || 3.78,
-          };
-          console.log('Tipo de cambio obtenido de SUNAT:', tipoCambio);
-          tipoCambioCache = { data: tipoCambio, timestamp: now };
-          return res.status(200).json(tipoCambio);
-        }
-      }
-    } catch (error) {
-      console.warn('SUNAT no disponible, intentando siguiente fuente...');
-    }
-
-    // 3. Intentar con fixer.io como backup (alternativa)
-    try {
-      const response3 = await fetch('https://api.fixer.io/latest?base=USD&symbols=PEN');
-      if (response3.ok) {
-        const data = await response3.json();
         if (data.rates && data.rates.PEN) {
           const rate = data.rates.PEN;
-          tipoCambio = {
+          const tipoCambio = {
             fecha,
             compra: parseFloat((rate - 0.02).toFixed(3)),
             venta: parseFloat(rate.toFixed(3)),
+            disponible: true,
           };
           console.log('Tipo de cambio obtenido de fixer.io:', tipoCambio);
           tipoCambioCache = { data: tipoCambio, timestamp: now };
@@ -90,26 +66,29 @@ export const getTipoCambio = async (req: Request, res: Response) => {
       console.warn('fixer.io no disponible');
     }
 
-    // 4. Si todo falla, usar valor por defecto actualizado manualmente
-    console.warn('Todas las APIs fallaron, usando tipo de cambio por defecto');
-    tipoCambio = {
+    // Si todas las APIs fallan, retornar que no está disponible
+    console.error('No se pudo obtener el tipo de cambio de ninguna fuente');
+    const noDisponible = {
       fecha,
-      compra: 3.75,
-      venta: 3.78,
+      compra: null,
+      venta: null,
+      disponible: false,
+      mensaje: 'No se pudo calcular el tipo de cambio',
     };
-
-    tipoCambioCache = { data: tipoCambio, timestamp: now };
-    res.status(200).json(tipoCambio);
+    
+    res.status(200).json(noDisponible);
     
   } catch (error) {
     console.error('Error general obteniendo tipo de cambio:', error);
     
-    const fallback = {
+    const errorResponse = {
       fecha: new Date().toISOString().split('T')[0],
-      compra: 3.75,
-      venta: 3.78,
+      compra: null,
+      venta: null,
+      disponible: false,
+      mensaje: 'No se pudo calcular el tipo de cambio',
     };
     
-    res.status(200).json(fallback);
+    res.status(200).json(errorResponse);
   }
 };
