@@ -148,6 +148,8 @@ export interface Lead {
     fechaHoraAgenda?: string; // ISO string
     servicios: string[];
     categoria: string;
+    profesionalAsignado?: string;
+    observacionesGenerales?: string;
     fechaVolverLlamar?: string; // YYYY-MM-DD
     horaVolverLlamar?: string; // HH:mm
     notas?: string;

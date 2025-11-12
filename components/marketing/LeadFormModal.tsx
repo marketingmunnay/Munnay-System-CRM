@@ -219,7 +219,39 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        S/ {(formData.deudaCita || 0).toFixed(2)}
                    </div>
                </div>
+               <div>
+                   <label className="text-sm font-medium">
+                       Profesional <span className="text-red-500">*</span>
+                   </label>
+                   <select 
+                       name="profesionalAsignado" 
+                       value={formData.profesionalAsignado || ''} 
+                       onChange={handleChange} 
+                       className="w-full bg-[#f9f9fa] p-2"
+                       style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                       required
+                   >
+                       <option value="">Seleccionar profesional...</option>
+                       {PERSONAL_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                   </select>
+               </div>
            </fieldset>
+
+             <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
+                 <legend className="text-md font-bold px-2 text-black">Observaciones Generales</legend>
+                 <div>
+                     <label className="text-sm font-medium">Observaciones</label>
+                     <textarea
+                         name="observacionesGenerales"
+                         value={formData.observacionesGenerales || ''}
+                         onChange={handleChange}
+                         rows={3}
+                         placeholder="Observaciones sobre el paciente o tratamiento..."
+                         className="w-full bg-[#f9f9fa] p-2"
+                         style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                     />
+                 </div>
+             </fieldset>
             
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Registro de Llamadas</legend>
@@ -1909,6 +1941,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         montoPagado: undefined,
         servicios: [],
         categoria: CATEGORY_OPTIONS[0] || '',
+        profesionalAsignado: '',
+        observacionesGenerales: '',
         registrosLlamada: [],
         pagosRecepcion: [],
         tratamientos: [],
@@ -2023,6 +2057,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             if (!formData.metodoPago) {
                 errors.push('Método Pago (requerido cuando está Agendado)');
             }
+            if (!formData.profesionalAsignado?.trim()) {
+                errors.push('Profesional (requerido cuando está Agendado)');
+            }
         }
         
         if (errors.length > 0) {
@@ -2044,6 +2081,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             setTimeout(() => {
                 setShowSaveMessage(false);
             }, 3000);
+            
+            // NO cerrar el modal - mantener abierto después de guardar
 
         } catch (error) {
             console.error('Error saving lead:', error);
@@ -2053,9 +2092,21 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     const handleDeleteClick = () => {
         if (lead) {
-            requestConfirmation(`¿Estás seguro de que quieres eliminar al lead "${lead.nombres} ${lead.apellidos}"?`, () => {
-                onDelete(lead.id);
-                onClose();
+            requestConfirmation(`¿Estás seguro de que quieres eliminar al lead "${lead.nombres} ${lead.apellidos}"?`, async () => {
+                try {
+                    await onDelete(lead.id);
+                    
+                    // Mostrar mensaje de éxito
+                    setShowSaveMessage(true);
+                    setTimeout(() => {
+                        setShowSaveMessage(false);
+                        // Cerrar el modal después de eliminar
+                        onClose();
+                    }, 2000);
+                } catch (error) {
+                    console.error('Error deleting lead:', error);
+                    alert('Error al eliminar. Por favor, inténtalo de nuevo.');
+                }
             });
         }
     };

@@ -145,39 +145,41 @@ enum GoalObjective {
 // MODELS
 
 model Lead {
-  id                 Int      @id @default(autoincrement())
-  fechaLead          DateTime
-  nombres            String
-  apellidos          String
-  numero             String
-  sexo               String
-  redSocial          String
-  anuncio            String
-  vendedor           Seller
-  estado             LeadStatus
-  montoPagado        Float    @default(0)
-  metodoPago         MetodoPago?
-  fechaHoraAgenda    DateTime?
-  servicios          String[]
-  categoria          String
-  fechaVolverLlamar  DateTime?
-  horaVolverLlamar   String?
-  notas              String?  @db.Text
-  nHistoria          String?  @unique
-  aceptoTratamiento  String?
-  motivoNoCierre     String?
-  estadoRecepcion    ReceptionStatus?
-  recursoId          String?
-  birthDate          DateTime?
-  precioCita         Float?
-  deudaCita          Float?
-  metodoPagoDeuda    MetodoPago?
-  documentType       DocumentType?
-  documentNumber     String?
-  razonSocial        String?
-  direccionFiscal    String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  fechaLead              DateTime
+  nombres                String
+  apellidos              String
+  numero                 String
+  sexo                   String
+  redSocial              String
+  anuncio                String
+  vendedor               Seller
+  estado                 LeadStatus
+  montoPagado            Float    @default(0)
+  metodoPago             MetodoPago?
+  fechaHoraAgenda        DateTime?
+  servicios              String[]
+  categoria              String
+  profesionalAsignado    String?
+  observacionesGenerales String?  @db.Text
+  fechaVolverLlamar      DateTime?
+  horaVolverLlamar       String?
+  notas                  String?  @db.Text
+  nHistoria              String?  @unique
+  aceptoTratamiento      String?
+  motivoNoCierre         String?
+  estadoRecepcion        ReceptionStatus?
+  recursoId              String?
+  birthDate              DateTime?
+  precioCita             Float?
+  deudaCita              Float?
+  metodoPagoDeuda        MetodoPago?
+  documentType           DocumentType?
+  documentNumber         String?
+  razonSocial            String?
+  direccionFiscal        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   registrosLlamada     RegistroLlamada[]
   tratamientos         Treatment[]
