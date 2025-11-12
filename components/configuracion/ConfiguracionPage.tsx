@@ -724,7 +724,13 @@ const ServiciosSection: FC<{
                                 <tr key={service.id} className="border-b hover:bg-gray-50">
                                     <td className="p-2">{service.nombre}</td>
                                     <td className="p-2">{service.categoria}</td>
-                                    <td className="p-2">S/ {service.precio?.toFixed(2)}</td>
+                                    <td className="p-2">
+                                        {service.precio === 0 ? (
+                                            <span className="text-green-600 font-medium">Gratis</span>
+                                        ) : (
+                                            `S/ ${service.precio?.toFixed(2)}`
+                                        )}
+                                    </td>
                                     <td className="p-2">
                                         <div className="flex gap-2">
                                             <button
@@ -921,7 +927,13 @@ const ProductosSection: FC<{
                                 <tr key={product.id} className="border-b hover:bg-gray-50">
                                     <td className="p-2">{product.nombre}</td>
                                     <td className="p-2">{product.categoria}</td>
-                                    <td className="p-2">S/ {product.precio?.toFixed(2)}</td>
+                                    <td className="p-2">
+                                        {product.precio === 0 ? (
+                                            <span className="text-green-600 font-medium">Gratis</span>
+                                        ) : (
+                                            `S/ ${product.precio?.toFixed(2)}`
+                                        )}
+                                    </td>
                                     <td className="p-2">
                                         <div className="flex gap-2">
                                             <button
