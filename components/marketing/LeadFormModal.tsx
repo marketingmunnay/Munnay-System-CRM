@@ -866,12 +866,24 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         // Validar sesiones disponibles solo para nuevos procedimientos
         if (!editingProcedureId) {
             const { restantes } = getSesionesRestantes(currentProcedure.tratamientoId || 0);
+            console.log('🔍 Validando sesiones antes de guardar:', {
+                tratamientoId: currentProcedure.tratamientoId,
+                restantes,
+                editingProcedureId
+            });
+            
             if (restantes === 0) {
                 const tratamiento = formData.tratamientos?.find(t => t.id === currentProcedure.tratamientoId);
                 alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nNo quedan sesiones disponibles.\n\nSolicite el pago de sesiones adicionales en Recepción.`);
                 return;
             }
         }
+        
+        // Para edición, mantener el número de sesión original
+        // Para nuevo, usar el número calculado automáticamente
+        const finalSessionNumber = editingProcedureId 
+            ? currentProcedure.sesionNumero 
+            : getNextSessionNumber(currentProcedure.tratamientoId || 0);
         
         const procedureToSave: Procedure = {
             id: currentProcedure.id || Date.now(),
@@ -880,12 +892,18 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
             horaFin: currentProcedure.horaFin || '',
             tratamientoId: currentProcedure.tratamientoId || 0,
             nombreTratamiento: currentProcedure.nombreTratamiento || '',
-            sesionNumero: currentProcedure.sesionNumero || 1,
+            sesionNumero: finalSessionNumber,
             personal: currentProcedure.personal || 'Vanesa',
             asistenciaMedica: currentProcedure.asistenciaMedica || false,
             medico: currentProcedure.medico,
             observacion: currentProcedure.observacion
         };
+
+        console.log('💾 Guardando procedimiento:', {
+            procedureToSave,
+            editingProcedureId,
+            procedimientosActuales: formData.procedimientos?.length || 0
+        });
 
         handleSetFormData((prev: Partial<Lead>) => {
             const procedimientos = prev.procedimientos || [];
@@ -897,12 +915,14 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                         p.id === editingProcedureId ? procedureToSave : p
                     )
                 };
+                console.log('✏️ Procedimiento editado:', updated.procedimientos?.length);
                 return updated;
             } else {
                 const updated = {
                     ...prev,
                     procedimientos: [...procedimientos, procedureToSave]
                 };
+                console.log('➕ Nuevo procedimiento agregado. Total:', updated.procedimientos?.length);
                 return updated;
             }
         });
@@ -1065,10 +1085,10 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                                 type="number"
                                 min="1"
                                 value={currentProcedure.sesionNumero || ''}
-                                onChange={(e) => handleProcedureFieldChange('sesionNumero', Number(e.target.value))}
-                                className="w-full bg-white p-2"
-                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
-                                required
+                                readOnly
+                                className="w-full bg-gray-100 p-2 cursor-not-allowed"
+                                style={{ borderColor: '#6b7280', borderRadius: '8px', color: '#4b5563', borderWidth: '1px' }}
+                                title="El número de sesión se calcula automáticamente"
                             />
                         </div>
 
