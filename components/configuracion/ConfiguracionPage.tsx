@@ -1299,7 +1299,17 @@ const MiembrosEquipoSection: FC<{
                         />
                         <div className="flex justify-end gap-2">
                             <button onClick={() => setIsJobModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
-                            <button onClick={() => { onSaveJobPosition(editingJob); setIsJobModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                            <button onClick={() => { 
+                                console.log('Guardando puesto:', editingJob); 
+                                try {
+                                    onSaveJobPosition(editingJob); 
+                                    console.log('Puesto guardado exitosamente');
+                                    setIsJobModalOpen(false); 
+                                } catch (error) {
+                                    console.error('Error al guardar puesto:', error);
+                                    alert('Error al guardar el puesto. Por favor revisa la consola.');
+                                }
+                            }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
                         </div>
                     </div>
                 </Modal>

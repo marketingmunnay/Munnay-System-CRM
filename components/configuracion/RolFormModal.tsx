@@ -111,8 +111,15 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
       alert('El nombre del rol es requerido.');
       return;
     }
-    onSave(formData as Role);
-    onClose();
+    console.log('Guardando rol:', formData);
+    try {
+      onSave(formData as Role);
+      console.log('Rol guardado exitosamente');
+      onClose();
+    } catch (error) {
+      console.error('Error al guardar rol:', error);
+      alert('Error al guardar el rol. Por favor revisa la consola.');
+    }
   };
 
   return (

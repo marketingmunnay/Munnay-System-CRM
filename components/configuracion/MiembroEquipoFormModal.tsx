@@ -124,8 +124,15 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
             alert('Los campos Nombres, Apellidos y Usuario son requeridos.');
             return;
         }
-        onSave(formData as User);
-        onClose();
+        console.log('Guardando miembro del equipo:', formData);
+        try {
+            onSave(formData as User);
+            console.log('Miembro guardado exitosamente');
+            onClose();
+        } catch (error) {
+            console.error('Error al guardar miembro:', error);
+            alert('Error al guardar el miembro. Por favor revisa la consola.');
+        }
     };
 
     const handleDelete = () => {
