@@ -1038,7 +1038,6 @@ const MiembrosEquipoSection: FC<{
     users: User[];
     roles: Role[];
     jobPositions: JobPosition[];
-    documentTypes: DocumentType[];
     onSaveUser: (user: Partial<User>) => void;
     onDeleteUser: (id: number) => void;
     onSaveRole: (role: Role) => void;
@@ -1046,7 +1045,7 @@ const MiembrosEquipoSection: FC<{
     onSaveJobPosition: (position: JobPosition) => void;
     onDeleteJobPosition: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ users, roles, jobPositions, documentTypes, onSaveUser, onDeleteUser, onSaveRole, onDeleteRole, onSaveJobPosition, onDeleteJobPosition, requestConfirmation }) => {
+}> = ({ users, roles, jobPositions, onSaveUser, onDeleteUser, onSaveRole, onDeleteRole, onSaveJobPosition, onDeleteJobPosition, requestConfirmation }) => {
     const [activeTab, setActiveTab] = useState('miembros');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -1077,7 +1076,7 @@ const MiembrosEquipoSection: FC<{
     };
 
     const handleOpenRoleModal = (role?: Role) => {
-        setEditingRole(role || { id: Date.now(), nombre: '' });
+        setEditingRole(role || { id: Date.now(), nombre: '', permissions: ['dashboard'], dashboardMetrics: [] });
         setIsRoleModalOpen(true);
     };
 
@@ -1165,8 +1164,8 @@ const MiembrosEquipoSection: FC<{
                                     <td className="p-2">{user.apellidos}</td>
                                     <td className="p-2">{user.usuario}</td>
                                     <td className="p-2">{roles.find(r => r.id === user.rolId)?.nombre || 'N/A'}</td>
-                                    <td className="p-2">{user.personalEmail || 'N/A'}</td>
-                                    <td className="p-2">{user.jobPosition || 'N/A'}</td>
+                                    <td className="p-2">{user.email || 'N/A'}</td>
+                                    <td className="p-2">{user.position || 'N/A'}</td>
                                     <td className="p-2">
                                         <div className="flex gap-2">
                                             <button
@@ -1270,11 +1269,13 @@ const MiembrosEquipoSection: FC<{
 
             {isModalOpen && (
                 <MiembroEquipoFormModal
+                    isOpen={isModalOpen}
                     user={editingUser}
                     roles={roles}
-                    documentTypes={documentTypes}
                     onClose={handleCloseModal}
                     onSave={handleSaveUser}
+                    onDelete={onDeleteUser}
+                    requestConfirmation={requestConfirmation}
                 />
             )}
             
@@ -1330,7 +1331,6 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     users={props.users}
                     roles={props.roles}
                     jobPositions={props.jobPositions}
-                    documentTypes={props.documentTypes}
                     onSaveUser={props.onSaveUser}
                     onDeleteUser={props.onDeleteUser}
                     onSaveRole={props.onSaveRole}
