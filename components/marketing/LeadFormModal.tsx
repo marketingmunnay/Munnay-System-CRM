@@ -1011,7 +1011,11 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
         if (hasTratamientos && formData.tratamientos?.[0]) {
             const primerTratamiento = formData.tratamientos[0];
             const sesionesInfo = getSesionesRestantes(primerTratamiento.id);
-            console.log('📊 Estado actual de sesiones:', sesionesInfo);
+            console.log('📊 Estado actual de sesiones después de cambio:', sesionesInfo);
+            
+            // Verificar si el botón debería estar deshabilitado
+            const deberiaEstarDeshabilitado = sesionesInfo.restantes === 0;
+            console.log(`🔘 Botón debería estar ${deberiaEstarDeshabilitado ? 'DESHABILITADO' : 'HABILITADO'}`);
         }
     }, [formData.procedimientos, procedimientosExistentes, hasTratamientos, formData.tratamientos]);
 
@@ -1049,11 +1053,25 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                         type="button"
                         onClick={handleAddProcedure}
                         disabled={(() => {
-                            if (!hasTratamientos) return true;
+                            if (!hasTratamientos) {
+                                console.log('🔘 Botón disabled: No hay tratamientos');
+                                return true;
+                            }
                             const primerTratamiento = formData.tratamientos?.[0];
-                            if (!primerTratamiento) return true;
-                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
-                            return restantes === 0;
+                            if (!primerTratamiento) {
+                                console.log('🔘 Botón disabled: Primer tratamiento no encontrado');
+                                return true;
+                            }
+                            const { restantes, usadas, total } = getSesionesRestantes(primerTratamiento.id);
+                            const isDisabled = restantes === 0;
+                            console.log('🔘 Estado del botón:', {
+                                disabled: isDisabled,
+                                restantes,
+                                usadas,
+                                total,
+                                tratamiento: primerTratamiento.nombre
+                            });
+                            return isDisabled;
                         })()}
                         className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
                             (() => {
