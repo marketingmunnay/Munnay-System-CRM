@@ -800,27 +800,31 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
     // Función para calcular sesiones restantes de un tratamiento
     const getSesionesRestantes = (tratamientoId: number): { usadas: number, total: number, restantes: number } => {
         const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === tratamientoId);
-        if (!tratamiento) return { usadas: 0, total: 0, restantes: 0 };
+        if (!tratamiento) {
+            console.log('⚠️ Tratamiento no encontrado:', tratamientoId);
+            return { usadas: 0, total: 0, restantes: 0 };
+        }
         
         const procedimientosUsados = (formData.procedimientos || []).filter(
             (p: Procedure) => p.tratamientoId === tratamientoId
         ).length;
         
-        console.log('🔍 DEBUG getSesionesRestantes:', {
+        const resultado = {
+            usadas: procedimientosUsados,
+            total: tratamiento.cantidadSesiones,
+            restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
+        };
+        
+        console.log('🔍 getSesionesRestantes:', {
             tratamientoId,
             tratamientoNombre: tratamiento.nombre,
             cantidadSesiones: tratamiento.cantidadSesiones,
             procedimientosTotal: formData.procedimientos?.length || 0,
             procedimientosDelTratamiento: procedimientosUsados,
-            procedimientosIds: (formData.procedimientos || []).map(p => p.id),
-            tratamientosIds: (formData.procedimientos || []).filter(p => p.tratamientoId === tratamientoId).map(p => p.id)
+            resultado
         });
         
-        return {
-            usadas: procedimientosUsados,
-            total: tratamiento.cantidadSesiones,
-            restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
-        };
+        return resultado;
     };
 
     // Función para verificar si se puede agregar una sesión más
@@ -971,13 +975,21 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
 
     // Debug: Monitor procedimientos changes
     useEffect(() => {
-        console.log('🔍 ProcedimientosTabContent - formData.procedimientos:', {
+        console.log('🔍 ProcedimientosTabContent - formData.procedimientos actualizado:', {
             procedimientos: formData.procedimientos,
             length: (formData.procedimientos || []).length,
             procedimientosExistentes,
-            hasTratamientos
+            hasTratamientos,
+            timestamp: new Date().toLocaleTimeString()
         });
-    }, [formData.procedimientos, procedimientosExistentes, hasTratamientos]);
+        
+        // Si hay tratamientos, mostrar el cálculo de sesiones
+        if (hasTratamientos && formData.tratamientos?.[0]) {
+            const primerTratamiento = formData.tratamientos[0];
+            const sesionesInfo = getSesionesRestantes(primerTratamiento.id);
+            console.log('📊 Estado actual de sesiones:', sesionesInfo);
+        }
+    }, [formData.procedimientos, procedimientosExistentes, hasTratamientos, formData.tratamientos]);
 
     return (
         <div className="space-y-6">
@@ -1012,7 +1024,13 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                     <button
                         type="button"
                         onClick={handleAddProcedure}
-                        disabled={!hasTratamientos}
+                        disabled={(() => {
+                            if (!hasTratamientos) return true;
+                            const primerTratamiento = formData.tratamientos?.[0];
+                            if (!primerTratamiento) return true;
+                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                            return restantes === 0;
+                        })()}
                         className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
                             (() => {
                                 if (!hasTratamientos) return 'bg-gray-300 cursor-not-allowed';
@@ -1021,7 +1039,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
                                 const { restantes } = getSesionesRestantes(primerTratamiento.id);
                                 return restantes > 0 
                                     ? 'bg-[#aa632d] hover:bg-[#8e5225]' 
-                                    : 'bg-red-400 cursor-not-allowed';
+                                    : 'bg-gray-400 cursor-not-allowed';
                             })()
                         }`}
                         title={(() => {
