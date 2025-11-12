@@ -508,10 +508,10 @@ export interface Product {
 
 export interface Membership {
     id: number;
-    nombre: string;
+    servicioNombre: string;
     precio: number;
     numeroSesiones: number;
-    descripcion: string;
+    leadId?: number;
 }
 
 export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima';

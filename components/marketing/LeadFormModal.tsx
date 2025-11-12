@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
@@ -310,6 +310,9 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     const [editingTreatments, setEditingTreatments] = useState(false);
     const [tempTreatments, setTempTreatments] = useState<Treatment[]>([]);
 
+    const [editingMemberships, setEditingMemberships] = useState(false);
+    const [tempMemberships, setTempMemberships] = useState<Membership[]>([]);
+
     // Calcular deuda de la cita
     const precioCita = formData.precioCita || 0;
     const pagoInicial = formData.montoPagado || 0;
@@ -406,6 +409,45 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     const handleCancelTreatments = () => {
         setTempTreatments([]);
         setEditingTreatments(false);
+    };
+
+    // Handlers de Membresías
+    const handleStartEditMemberships = () => {
+        setTempMemberships([...(formData.membresiasAdquiridas || [])]);
+        setEditingMemberships(true);
+    };
+
+    const handleAddMembership = () => {
+        const newMembership: Membership = {
+            id: Date.now(),
+            servicioNombre: '',
+            precio: 0,
+            numeroSesiones: 1,
+        };
+        setTempMemberships(prev => [...prev, newMembership]);
+    };
+
+    const handleMembershipChange = (id: number, field: string, value: any) => {
+        setTempMemberships(prev => prev.map(m => {
+            if (m.id === id) {
+                return { ...m, [field]: value };
+            }
+            return m;
+        }));
+    };
+
+    const handleRemoveMembership = (id: number) => {
+        setTempMemberships(prev => prev.filter(m => m.id !== id));
+    };
+
+    const handleSaveMemberships = () => {
+        handleSetFormData({ ...formData, membresiasAdquiridas: tempMemberships });
+        setEditingMemberships(false);
+    };
+
+    const handleCancelMemberships = () => {
+        setTempMemberships([]);
+        setEditingMemberships(false);
     };
 
     return (
@@ -806,6 +848,131 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                     </div>
                 </fieldset>
             )}
+
+            {/* Membresías Adquiridas */}
+            <fieldset className="border p-4 rounded-md">
+                <legend className="text-md font-bold px-2 text-black">Membresías Adquiridas</legend>
+                
+                {!editingMemberships && (formData.membresiasAdquiridas || []).length === 0 && (
+                    <div className="text-center py-4 text-gray-500">
+                        <p>No hay membresías registradas</p>
+                    </div>
+                )}
+                
+                {(editingMemberships ? tempMemberships : (formData.membresiasAdquiridas || [])).length > 0 && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm border">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2">Servicio</th>
+                                    <th className="p-2">Precio</th>
+                                    <th className="p-2">N° Sesiones</th>
+                                    {editingMemberships && <th className="p-2">Acciones</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(editingMemberships ? tempMemberships : (formData.membresiasAdquiridas || [])).map((membership: Membership) => (
+                                    <tr key={membership.id} className="border-b">
+                                        <td className="p-2">
+                                            {editingMemberships ? (
+                                                <select 
+                                                    value={membership.servicioNombre}
+                                                    onChange={(e) => handleMembershipChange(membership.id, 'servicioNombre', e.target.value)}
+                                                    className="w-full p-1"
+                                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                                >
+                                                    <option value="">Seleccionar servicio...</option>
+                                                    {services?.map((s: Service) => (
+                                                        <option key={s.id} value={s.nombre}>{s.nombre}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                membership.servicioNombre
+                                            )}
+                                        </td>
+                                        <td className="p-2">
+                                            {editingMemberships ? (
+                                                <input 
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={membership.precio}
+                                                    onChange={(e) => handleMembershipChange(membership.id, 'precio', Number(e.target.value))}
+                                                    className="w-24 p-1"
+                                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                                />
+                                            ) : (
+                                                `S/ ${membership.precio.toFixed(2)}`
+                                            )}
+                                        </td>
+                                        <td className="p-2">
+                                            {editingMemberships ? (
+                                                <input 
+                                                    type="number"
+                                                    value={membership.numeroSesiones || 1}
+                                                    onChange={(e) => handleMembershipChange(membership.id, 'numeroSesiones', Number(e.target.value))}
+                                                    className="w-20 p-1"
+                                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                                />
+                                            ) : (
+                                                membership.numeroSesiones || 1
+                                            )}
+                                        </td>
+                                        {editingMemberships && (
+                                            <td className="p-2 text-center">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleRemoveMembership(membership.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    <GoogleIcon name="delete" />
+                                                </button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                
+                <div className="flex justify-between mt-4">
+                    {editingMemberships ? (
+                        <>
+                            <button 
+                                type="button"
+                                onClick={handleAddMembership}
+                                className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 flex items-center"
+                            >
+                                <GoogleIcon name="add" className="mr-1" /> Añadir Membresía
+                            </button>
+                            <div className="flex gap-2">
+                                <button 
+                                    type="button"
+                                    onClick={handleCancelMemberships}
+                                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={handleSaveMemberships}
+                                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                >
+                                    Guardar Membresías
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <button 
+                            type="button"
+                            onClick={handleStartEditMemberships}
+                            className="text-sm bg-[#aa632d] text-white px-4 py-2 rounded hover:bg-[#8e5225] flex items-center"
+                        >
+                            <GoogleIcon name="edit" className="mr-1" /> Gestionar Membresías
+                        </button>
+                    )}
+                </div>
+            </fieldset>
         </div>
     );
 };
