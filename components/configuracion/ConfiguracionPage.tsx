@@ -1389,8 +1389,6 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     requestConfirmation={props.requestConfirmation}
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
-                        { name: 'precio', label: 'Precio', type: 'number', required: true },
-                        { name: 'numeroSesiones', label: 'N° Sesiones', type: 'number', required: true },
                         { name: 'descripcion', label: 'Descripción', type: 'textarea', required: true },
                     ]}
                 />;

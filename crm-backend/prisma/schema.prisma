@@ -186,7 +186,7 @@ model Lead {
   procedimientos       Procedure[]
   seguimientos         Seguimiento[]
   alergias             Alergia[]
-  membresiasAdquiridas Membership[]
+  membresiasAdquiridas LeadMembership[]
   comprobantes         ComprobanteElectronico[]
   ventasExtra          VentaExtra[]
   incidencias          Incidencia[]
@@ -570,13 +570,38 @@ model Product {
   precio    Float
 }
 
+// Catálogo de membresías disponibles (configuración global)
 model Membership {
-  id             Int     @id @default(autoincrement())
-  servicioNombre String  
+  id              Int                      @id @default(autoincrement())
+  nombre          String                   @unique
+  descripcion     String                   @db.Text
+  servicios       MembershipService[]      // Servicios incluidos en la membresía
+  leadMemberships LeadMembership[]         // Membresías adquiridas por leads
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+}
+
+// Servicios incluidos en una membresía
+model MembershipService {
+  id             Int        @id @default(autoincrement())
+  membershipId   Int
+  membership     Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  servicioNombre String
   precio         Float
   numeroSesiones Int
-  leadId         Int
-  lead           Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// Membresías adquiridas por un lead
+model LeadMembership {
+  id           Int        @id @default(autoincrement())
+  leadId       Int
+  lead         Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  membershipId Int
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  fechaCompra  DateTime   @default(now())
+  precioTotal  Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

@@ -168,7 +168,7 @@ export interface Lead {
     // Historia Paciente
     birthDate?: string;
     alergias?: Alergia[];
-    membresiasAdquiridas?: Membership[];
+    membresiasAdquiridas?: LeadMembership[];
     // Split Payment
     precioCita?: number;
     deudaCita?: number;
@@ -506,12 +506,31 @@ export interface Product {
     precio: number;
 }
 
+// Catálogo de membresías (configuración global)
 export interface Membership {
     id: number;
+    nombre: string;
+    descripcion: string;
+    servicios?: MembershipService[];
+}
+
+// Servicios incluidos en una membresía
+export interface MembershipService {
+    id: number;
+    membershipId: number;
     servicioNombre: string;
     precio: number;
     numeroSesiones: number;
-    leadId?: number;
+}
+
+// Membresías adquiridas por un lead
+export interface LeadMembership {
+    id: number;
+    leadId: number;
+    membershipId: number;
+    membership?: Membership;
+    fechaCompra: string;
+    precioTotal: number;
 }
 
 export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima';
