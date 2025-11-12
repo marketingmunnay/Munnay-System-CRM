@@ -226,11 +226,30 @@ export const updateLead = async (req: Request, res: Response) => {
     const parsedFechaLead = parseDate(leadData.fechaLead, true);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
-    // Delete existing related records first only if new data is being sent AND has valid content
+    // Handle treatments: Update existing or create new, but NEVER delete to preserve tratamientoId
     if (tratamientos !== undefined && Array.isArray(tratamientos)) {
-      console.log('🔄 Deleting existing treatments, will recreate:', tratamientos.length);
-      await prisma.treatment.deleteMany({ where: { leadId: id } });
+      console.log('🔄 Processing treatments:', tratamientos.length);
+      for (const tratamiento of tratamientos) {
+        if (tratamiento.id) {
+          // Update existing treatment
+          console.log('✏️ Updating existing treatment:', tratamiento.id);
+          await prisma.treatment.update({
+            where: { id: tratamiento.id },
+            data: {
+              nombre: tratamiento.nombre || '',
+              cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
+              precio: parseFloat(tratamiento.precio) || 0,
+              montoPagado: parseFloat(tratamiento.montoPagado) || 0,
+              metodoPago: tratamiento.metodoPago || null,
+              deuda: parseFloat(tratamiento.deuda) || 0
+            }
+          });
+        }
+        // Note: New treatments will be created below in the prisma.lead.update call
+      }
     }
+    
+    // Handle procedimientos: Delete and recreate only procedimientos (safe because they reference tratamientoId)
     if (procedimientos !== undefined && Array.isArray(procedimientos)) {
       console.log('🔄 Deleting existing procedimientos, will recreate:', procedimientos.length);
       await prisma.procedure.deleteMany({ where: { leadId: id } });
@@ -257,16 +276,21 @@ export const updateLead = async (req: Request, res: Response) => {
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
-        // Create related records
+        // Create only NEW treatments (those without an id)
         tratamientos: (tratamientos && Array.isArray(tratamientos) && tratamientos.length > 0) ? {
-          create: tratamientos.map((t: any) => ({
-            nombre: t.nombre || '',
-            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
-            precio: parseFloat(t.precio) || 0,
-            montoPagado: parseFloat(t.montoPagado) || 0,
-            metodoPago: t.metodoPago || null,
-            deuda: parseFloat(t.deuda) || 0
-          }))
+          create: tratamientos
+            .filter((t: any) => !t.id) // Only create treatments that don't have an ID yet
+            .map((t: any) => {
+              console.log('✨ Creating NEW treatment:', t.nombre);
+              return {
+                nombre: t.nombre || '',
+                cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+                precio: parseFloat(t.precio) || 0,
+                montoPagado: parseFloat(t.montoPagado) || 0,
+                metodoPago: t.metodoPago || null,
+                deuda: parseFloat(t.deuda) || 0
+              };
+            })
         } : undefined,
         procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
           create: procedimientos.map((p: any) => {
