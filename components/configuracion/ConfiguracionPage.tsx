@@ -801,6 +801,7 @@ const ServiciosSection: FC<{
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={serviceCategories}
+                    categoryField="categoria"
                 />
             )}
 

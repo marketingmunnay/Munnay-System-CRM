@@ -1,98 +1,95 @@
 import { Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Configuración de Google Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
-const MODEL_NAME = "gemini-2.0-flash";
-
-// Cache simple del tipo de cambio
+// Cache simple del tipo de cambio (actualizado cada 4 horas)
 let tipoCambioCache: { data: any; timestamp: number } | null = null;
-const CACHE_DURATION = 1000 * 60 * 30; // 30 minutos
+const CACHE_DURATION = 1000 * 60 * 60 * 4; // 4 horas
 
 export const getTipoCambio = async (req: Request, res: Response) => {
   try {
     // Verificar cache
     const now = Date.now();
     if (tipoCambioCache && (now - tipoCambioCache.timestamp) < CACHE_DURATION) {
+      console.log('Returning cached tipo de cambio');
       return res.status(200).json(tipoCambioCache.data);
     }
 
     const fecha = new Date().toISOString().split('T')[0];
 
-    // Verificar que la API key esté configurada
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      console.error('API de Gemini no configurada');
-      const noDisponible = {
-        fecha,
-        compra: null,
-        venta: null,
-        disponible: false,
-        mensaje: 'API de Gemini no configurada',
-      };
-      return res.status(200).json(noDisponible);
-    }
-
-    // Consultar a Gemini AI el tipo de cambio actual
+    // Usar exchangerate-api.com (gratuito, sin API key, actualizado diariamente)
     try {
-      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const response = await fetch('https://open.er-api.com/v6/latest/USD');
       
-      const prompt = `What is the current exchange rate from US Dollar (USD) to Peruvian Sol (PEN)? 
-      Please provide ONLY the numeric values in this exact format:
-      Compra: [buy rate number]
-      Venta: [sell rate number]
+      if (!response.ok) {
+        throw new Error(`Exchange rate API error: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      Example format:
-      Compra: 3.75
-      Venta: 3.77
-      
-      Provide only these two lines with numeric values, no additional text or explanation.`;
+      if (data.result === 'success' && data.rates && data.rates.PEN) {
+        const rateBase = data.rates.PEN;
+        
+        // Calcular spread típico bancario (0.3% aproximado)
+        const spread = rateBase * 0.003;
+        const compra = rateBase - spread; // Tipo de cambio de compra (banco compra dólares)
+        const venta = rateBase + spread;  // Tipo de cambio de venta (banco vende dólares)
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+        const tipoCambio = {
+          fecha,
+          compra: parseFloat(compra.toFixed(4)),
+          venta: parseFloat(venta.toFixed(4)),
+          disponible: true,
+          fuente: 'exchangerate-api.com',
+          actualizadoEn: data.time_last_update_utc || fecha,
+        };
 
-      console.log('Gemini AI response for tipo de cambio:', text);
+        console.log('Tipo de cambio USD-PEN obtenido:', tipoCambio);
+        
+        // Guardar en cache
+        tipoCambioCache = { data: tipoCambio, timestamp: now };
+        
+        return res.status(200).json(tipoCambio);
+      }
 
-      // Parsear la respuesta de Gemini
-      const compraMatch = text.match(/Compra:\s*(\d+\.?\d*)/i);
-      const ventaMatch = text.match(/Venta:\s*(\d+\.?\d*)/i);
+      throw new Error('Invalid response format from exchange rate API');
 
-      if (compraMatch && ventaMatch) {
-        const compra = parseFloat(compraMatch[1]);
-        const venta = parseFloat(ventaMatch[1]);
+    } catch (apiError) {
+      console.error('Error consultando exchange rate API:', apiError);
 
-        if (!isNaN(compra) && !isNaN(venta) && compra > 0 && venta > 0) {
+      // Fallback: Intentar con una segunda API (fixer.io alternativo)
+      try {
+        const fallbackResponse = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=PEN');
+        const fallbackData = await fallbackResponse.json();
+
+        if (fallbackData.success && fallbackData.rates && fallbackData.rates.PEN) {
+          const rateBase = fallbackData.rates.PEN;
+          const spread = rateBase * 0.003;
+          const compra = rateBase - spread;
+          const venta = rateBase + spread;
+
           const tipoCambio = {
             fecha,
             compra: parseFloat(compra.toFixed(4)),
             venta: parseFloat(venta.toFixed(4)),
             disponible: true,
+            fuente: 'exchangerate.host',
+            actualizadoEn: fallbackData.date || fecha,
           };
-          console.log('Tipo de cambio obtenido de Gemini AI:', tipoCambio);
+
+          console.log('Tipo de cambio USD-PEN obtenido (fallback):', tipoCambio);
           tipoCambioCache = { data: tipoCambio, timestamp: now };
           return res.status(200).json(tipoCambio);
         }
+      } catch (fallbackError) {
+        console.error('Error con fallback API:', fallbackError);
       }
 
-      // Si no se pudo parsear correctamente
-      console.error('No se pudo parsear la respuesta de Gemini:', text);
-      const noDisponible = {
-        fecha,
-        compra: null,
-        venta: null,
-        disponible: false,
-        mensaje: 'No se pudo obtener el tipo de cambio',
-      };
-      return res.status(200).json(noDisponible);
-
-    } catch (error) {
-      console.error('Error consultando a Gemini AI:', error);
+      // Si todo falla, retornar error
       const errorResponse = {
         fecha,
         compra: null,
         venta: null,
         disponible: false,
-        mensaje: 'No se pudo calcular el tipo de cambio',
+        mensaje: 'No se pudo obtener el tipo de cambio actual',
       };
       return res.status(200).json(errorResponse);
     }
@@ -105,7 +102,7 @@ export const getTipoCambio = async (req: Request, res: Response) => {
       compra: null,
       venta: null,
       disponible: false,
-      mensaje: 'No se pudo calcular el tipo de cambio',
+      mensaje: 'Error al consultar tipo de cambio',
     };
     
     res.status(200).json(errorResponse);
