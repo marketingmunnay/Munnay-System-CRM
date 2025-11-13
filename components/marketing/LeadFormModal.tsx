@@ -123,8 +123,51 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-3 border p-4 rounded-md">
                     <legend className="text-md font-bold px-2 text-black">Agenda</legend>
                     <div>
-                        <label className="text-sm font-medium">Fecha y Hora de Agenda</label>
-                        <input type="datetime-local" name="fechaHoraAgenda" value={formData.fechaHoraAgenda?.substring(0,16) || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} />
+                        <label className="text-sm font-medium">Fecha de Agenda</label>
+                        <input 
+                            type="date" 
+                            name="fechaAgenda" 
+                            value={formData.fechaHoraAgenda?.split('T')[0] || ''} 
+                            onChange={(e) => {
+                                const fecha = e.target.value;
+                                const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
+                                handleChange({ 
+                                    target: { 
+                                        name: 'fechaHoraAgenda', 
+                                        value: `${fecha}T${horaActual}` 
+                                    } 
+                                } as any);
+                            }} 
+                            className="w-full bg-[#f9f9fa] p-2" 
+                            style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Hora de Agenda</label>
+                        <select 
+                            name="horaAgenda" 
+                            value={formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || ''} 
+                            onChange={(e) => {
+                                const hora = e.target.value;
+                                const fechaActual = formData.fechaHoraAgenda?.split('T')[0] || new Date().toISOString().split('T')[0];
+                                handleChange({ 
+                                    target: { 
+                                        name: 'fechaHoraAgenda', 
+                                        value: `${fechaActual}T${hora}` 
+                                    } 
+                                } as any);
+                            }}
+                            className="w-full bg-[#f9f9fa] p-2" 
+                            style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                        >
+                            <option value="">Seleccionar hora...</option>
+                            {Array.from({ length: 48 }, (_, i) => {
+                                const hour = Math.floor(i / 4);
+                                const minute = (i % 4) * 15;
+                                const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                                return <option key={time} value={time}>{time}</option>;
+                            })}
+                        </select>
                     </div>
                     <div>
                         <label className="text-sm font-medium">Recurso Asignado</label>
@@ -418,7 +461,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     };
 
     const handleAddMembership = () => {
-        const newMembership: Membership = {
+        // TODO: Implement new membership system with catalog selection
+        const newMembership: any = {
             id: Date.now(),
             servicioNombre: '',
             precio: 0,
@@ -871,7 +915,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                 </tr>
                             </thead>
                             <tbody>
-                                {(editingMemberships ? tempMemberships : (formData.membresiasAdquiridas || [])).map((membership: Membership) => (
+                                {(editingMemberships ? tempMemberships : (formData.membresiasAdquiridas || [])).map((membership: any) => (
                                     <tr key={membership.id} className="border-b">
                                         <td className="p-2">
                                             {editingMemberships ? (

@@ -9,6 +9,7 @@ import ProveedorFormModal from '../finanzas/ProveedorFormModal';
 import MetasPage from './MetasPage';
 import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
+import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
 import { usePagination } from '../../utils/usePagination';
 
@@ -1034,6 +1035,119 @@ const ProductosSection: FC<{
     );
 };
 
+const MembresiasSection: FC<{
+    memberships: Membership[];
+    services: Service[];
+    onSaveMembership: (membership: Membership) => void;
+    onDeleteMembership: (id: number) => void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}> = ({ memberships, services, onSaveMembership, onDeleteMembership, requestConfirmation }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingMembership, setEditingMembership] = useState<Membership | null>(null);
+
+    const handleOpenModal = (membership?: Membership) => {
+        setEditingMembership(membership || null);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingMembership(null);
+    };
+
+    const handleSave = (membership: Membership) => {
+        onSaveMembership(membership);
+        handleCloseModal();
+    };
+
+    const handleDelete = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar esta membresía?', () => {
+            onDeleteMembership(id);
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Membresías</h2>
+                <button
+                    onClick={() => handleOpenModal()}
+                    className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined">add</span>
+                    Añadir Membresía
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="text-left p-2">Nombre</th>
+                            <th className="text-left p-2">Descripción</th>
+                            <th className="text-left p-2">Servicios</th>
+                            <th className="text-left p-2">Precio Total</th>
+                            <th className="text-left p-2">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {memberships.map((membership) => (
+                            <tr key={membership.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2 font-medium">{membership.nombre}</td>
+                                <td className="p-2 text-sm text-gray-600">{membership.descripcion}</td>
+                                <td className="p-2 text-sm">
+                                    {membership.servicios && membership.servicios.length > 0 ? (
+                                        <div className="space-y-1">
+                                            {membership.servicios.map((s, idx) => (
+                                                <div key={idx} className="text-xs">
+                                                    • {s.servicioNombre} ({s.numeroSesiones} sesiones)
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-400">Sin servicios</span>
+                                    )}
+                                </td>
+                                <td className="p-2 font-medium text-green-600">
+                                    S/ {membership.servicios?.reduce((sum, s) => sum + (s.precio || 0), 0).toFixed(2) || '0.00'}
+                                </td>
+                                <td className="p-2">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleOpenModal(membership)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                            title="Editar"
+                                        >
+                                            <span className="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(membership.id)}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Eliminar"
+                                        >
+                                            <span className="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {isModalOpen && (
+                <MembershipFormModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSave={handleSave}
+                    membership={editingMembership}
+                    services={services}
+                />
+            )}
+        </div>
+    );
+};
+
 const MiembrosEquipoSection: FC<{
     users: User[];
     roles: Role[];
@@ -1064,9 +1178,17 @@ const MiembrosEquipoSection: FC<{
         setEditingUser(null);
     };
 
-    const handleSaveUser = (user: Partial<User>) => {
-        onSaveUser(user);
-        handleCloseModal();
+    const handleSaveUser = async (user: Partial<User>) => {
+        console.log('=== ConfiguracionPage handleSaveUser ===');
+        console.log('Usuario recibido:', user);
+        try {
+            await onSaveUser(user);
+            console.log('Usuario guardado, cerrando modal...');
+            handleCloseModal();
+        } catch (error) {
+            console.error('Error en ConfiguracionPage handleSaveUser:', error);
+            alert('Error al guardar el usuario: ' + error);
+        }
     };
 
     const handleDeleteUser = (id: number) => {
@@ -1272,6 +1394,7 @@ const MiembrosEquipoSection: FC<{
                     isOpen={isModalOpen}
                     user={editingUser}
                     roles={roles}
+                    jobPositions={jobPositions}
                     onClose={handleCloseModal}
                     onSave={handleSaveUser}
                     onDelete={onDeleteUser}
@@ -1381,16 +1504,12 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'membresias':
-                return <CatalogManager
-                    title="Membresías"
-                    items={props.memberships}
-                    onSave={props.onSaveMembership}
-                    onDelete={props.onDeleteMembership}
+                return <MembresiasSection
+                    memberships={props.memberships}
+                    services={props.services}
+                    onSaveMembership={props.onSaveMembership}
+                    onDeleteMembership={props.onDeleteMembership}
                     requestConfirmation={props.requestConfirmation}
-                    fields={[
-                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
-                        { name: 'descripcion', label: 'Descripción', type: 'textarea', required: true },
-                    ]}
                 />;
             case 'metas':
                 return <MetasPage goals={props.goals} onSaveGoal={props.onSaveGoal} onDeleteGoal={props.onDeleteGoal} requestConfirmation={props.requestConfirmation} />;

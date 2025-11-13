@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { User, Role, DocumentType, Address, EmergencyContact } from '../../types.ts';
+import type { User, Role, JobPosition, DocumentType, Address, EmergencyContact } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon } from '../shared/Icons.tsx';
 
@@ -10,10 +10,11 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 interface MiembroEquipoFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (user: User) => void;
+    onSave: (user: User) => Promise<void>;
     onDelete?: (userId: number) => void;
     user: User | null;
     roles: Role[];
+    jobPositions: JobPosition[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
@@ -24,6 +25,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
     onDelete, 
     user, 
     roles,
+    jobPositions,
     requestConfirmation 
 }) => {
     const [activeTab, setActiveTab] = useState<'personal' | 'laboral' | 'salarial' | 'emergencia'>('personal');
@@ -118,20 +120,26 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        console.log('=== INICIO GUARDADO MIEMBRO ===');
+        console.log('1. Datos del formulario:', formData);
+        
         if (!formData.nombres || !formData.apellidos || !formData.usuario) {
+            console.error('Validación fallida: Faltan campos requeridos');
             alert('Los campos Nombres, Apellidos y Usuario son requeridos.');
             return;
         }
-        console.log('Guardando miembro del equipo:', formData);
+        
+        console.log('2. Validación exitosa, llamando a onSave...');
         try {
-            onSave(formData as User);
-            console.log('Miembro guardado exitosamente');
-            onClose();
+            await onSave(formData as User);
+            console.log('3. onSave completado exitosamente');
+            console.log('=== FIN GUARDADO MIEMBRO ===');
+            // Don't close here - let parent handle it
         } catch (error) {
             console.error('Error al guardar miembro:', error);
-            alert('Error al guardar el miembro. Por favor revisa la consola.');
+            alert('Error al guardar el miembro. Por favor revisa la consola: ' + error);
         }
     };
 
@@ -449,13 +457,17 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Cargo / Puesto</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         name="position"
                                         value={formData.position || ''}
                                         onChange={handleChange}
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    />
+                                    >
+                                        <option value="">Seleccionar puesto...</option>
+                                        {jobPositions.map(position => (
+                                            <option key={position.id} value={position.nombre}>{position.nombre}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Rol / Departamento *</label>
@@ -466,6 +478,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                         required
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     >
+                                        <option value="">Seleccionar rol...</option>
                                         {roles.map(role => (
                                             <option key={role.id} value={role.id}>{role.nombre}</option>
                                         ))}

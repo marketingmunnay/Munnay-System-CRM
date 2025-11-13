@@ -206,7 +206,21 @@ const App: React.FC = () => {
     const handleDeleteProveedor = async (proveedorId: number) => { await api.deleteProveedor(proveedorId); await loadData(); };
     const handleSaveTipoProveedor = async (tipo: TipoProveedor) => { await api.saveTipoProveedor(tipo); await loadData(); };
     const handleDeleteTipoProveedor = async (id: number) => { await api.deleteTipoProveedor(id); await loadData(); };
-    const handleSaveUser = async (user: User) => { await api.saveUser(user); await loadData(); };
+    const handleSaveUser = async (user: User) => { 
+        console.log('=== APP.TSX handleSaveUser ===');
+        console.log('Usuario recibido:', user);
+        try {
+            console.log('Llamando a api.saveUser...');
+            const result = await api.saveUser(user);
+            console.log('Respuesta de api.saveUser:', result);
+            console.log('Recargando datos...');
+            await loadData();
+            console.log('Datos recargados exitosamente');
+        } catch (error) {
+            console.error('ERROR en handleSaveUser:', error);
+            throw error;
+        }
+    };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
