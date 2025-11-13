@@ -62,6 +62,7 @@ interface ConfiguracionPageProps {
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     comprobantes: ComprobanteElectronico[];
     onImportCampaigns?: (campaigns: any[]) => Promise<void>;
+    onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
 }
 
 const SETTINGS_SECTIONS = [
@@ -1518,6 +1519,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                 return <ImportExportPage 
                     comprobantes={props.comprobantes} 
                     onImportCampaigns={props.onImportCampaigns}
+                    onImportMetaCampaigns={props.onImportMetaCampaigns}
                 />;
             default:
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;

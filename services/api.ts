@@ -63,6 +63,8 @@ export const saveMetaCampaign = (campaign: MetaCampaign): Promise<MetaCampaign> 
     : apiRequest<MetaCampaign>('/campaigns/meta', 'POST', campaign);
 export const deleteMetaCampaign = (id: number): Promise<void> =>
   apiRequest<void>(`/campaigns/meta/${id}`, 'DELETE');
+export const bulkImportMetaCampaigns = (metaCampaigns: any[]): Promise<{ message: string; metaCampaigns: MetaCampaign[] }> =>
+  apiRequest<{ message: string; metaCampaigns: MetaCampaign[] }>('/campaigns/meta/bulk', 'POST', metaCampaigns);
 
 // ====== VENTAS EXTRA ======
 export const getVentasExtra = (): Promise<VentaExtra[]> => 

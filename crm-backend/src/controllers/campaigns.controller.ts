@@ -161,3 +161,32 @@ export const deleteMetaCampaign = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting meta campaign', error: (error as Error).message });
   }
 };
+
+export const bulkCreateMetaCampaigns = async (req: Request, res: Response) => {
+  const metaCampaigns = req.body;
+  try {
+    if (!Array.isArray(metaCampaigns)) {
+      return res.status(400).json({ message: 'Expected an array of meta campaigns' });
+    }
+    
+    const createdMetaCampaigns = await Promise.all(
+      metaCampaigns.map(async (metaCampaign) => {
+        const { id, fechaInicio, fechaFin, ...data } = metaCampaign;
+        return await prisma.metaCampaign.create({
+          data: {
+            ...data,
+            fechaInicio: new Date(fechaInicio),
+            fechaFin: new Date(fechaFin),
+          },
+        });
+      })
+    );
+    
+    res.status(201).json({ 
+      message: `${createdMetaCampaigns.length} meta campaigns imported successfully`,
+      metaCampaigns: createdMetaCampaigns 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error importing meta campaigns', error: (error as Error).message });
+  }
+};

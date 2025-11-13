@@ -80,9 +80,10 @@ const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templ
 interface ImportExportPageProps {
     comprobantes: ComprobanteElectronico[];
     onImportCampaigns?: (campaigns: any[]) => Promise<void>;
+    onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
 }
 
-const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImportCampaigns }) => {
+const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImportCampaigns, onImportMetaCampaigns }) => {
 
     const handleFileImport = async (file: File, type: string) => {
         const reader = new FileReader();
@@ -125,6 +126,35 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImp
                     console.error('Error al importar campañas:', error);
                     alert('Error al importar las campañas. Verifica el formato del archivo.');
                 }
+            } else if (type === 'Meta Campañas' && onImportMetaCampaigns) {
+                try {
+                    // Parse CSV for Meta Campaigns
+                    const lines = text.split('\n').filter(line => line.trim() !== '');
+                    if (lines.length < 2) {
+                        alert('El archivo CSV está vacío o no tiene datos.');
+                        return;
+                    }
+                    
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const metaCampaigns = [];
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.trim());
+                        const metaCampaign: any = {};
+                        
+                        headers.forEach((header, index) => {
+                            metaCampaign[header] = values[index];
+                        });
+                        
+                        metaCampaigns.push(metaCampaign);
+                    }
+                    
+                    await onImportMetaCampaigns(metaCampaigns);
+                    alert(`Se importaron ${metaCampaigns.length} meta campañas exitosamente.`);
+                } catch (error) {
+                    console.error('Error al importar meta campañas:', error);
+                    alert('Error al importar las meta campañas. Verifica el formato del archivo.');
+                }
             } else {
                 // For other types, show basic alert
                 const rowCount = text.split('\n').filter(line => line.trim() !== '').length - 1;
@@ -160,6 +190,14 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImp
                 templateFilename="plantilla_campaigns.csv"
                 headers={["id", "nombreAnuncio", "categoria", "alcance", "resultados", "costoPorResultado", "importeGastado", "fecha"]}
                 onImport={(file) => handleFileImport(file, 'Campañas')}
+            />
+
+            <ImportSection
+                title="Meta Campañas"
+                description="Importa campañas de Meta (Facebook/Instagram) con fechas de inicio y fin."
+                templateFilename="plantilla_meta_campaigns.csv"
+                headers={["id", "nombre", "fechaInicio", "fechaFin", "categoria"]}
+                onImport={(file) => handleFileImport(file, 'Meta Campañas')}
             />
 
             <ImportSection

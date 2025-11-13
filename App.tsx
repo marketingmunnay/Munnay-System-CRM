@@ -193,6 +193,7 @@ const App: React.FC = () => {
     const handleImportCampaigns = async (campaigns: any[]) => { await api.bulkImportCampaigns(campaigns); await loadData(); };
     const handleSaveMetaCampaign = async (campaign: MetaCampaign) => { await api.saveMetaCampaign(campaign); await loadData(); };
     const handleDeleteMetaCampaign = async (campaignId: number) => { await api.deleteMetaCampaign(campaignId); await loadData(); };
+    const handleImportMetaCampaigns = async (metaCampaigns: any[]) => { await api.bulkImportMetaCampaigns(metaCampaigns); await loadData(); };
     const handleSavePublicacion = async (publicacion: Publicacion) => { await api.savePublicacion(publicacion); await loadData(); };
     const handleDeletePublicacion = async (publicacionId: number) => { await api.deletePublicacion(publicacionId); await loadData(); };
     const handleSaveSeguidor = async (seguidor: Seguidor) => { await api.saveSeguidor(seguidor); await loadData(); };
@@ -455,6 +456,7 @@ const App: React.FC = () => {
                     requestConfirmation={requestConfirmation}
                     comprobantes={comprobantes}
                     onImportCampaigns={handleImportCampaigns}
+                    onImportMetaCampaigns={handleImportMetaCampaigns}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 
