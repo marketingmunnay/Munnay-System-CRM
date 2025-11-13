@@ -533,7 +533,7 @@ export interface LeadMembership {
     precioTotal: number;
 }
 
-export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima';
+export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima' | 'recordatorio_llamada';
 
 export interface Notification {
     id: number;
