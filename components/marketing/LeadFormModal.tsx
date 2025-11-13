@@ -309,6 +309,30 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                          style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                      />
                  </div>
+                 <div className="grid grid-cols-2 gap-4">
+                     <div>
+                         <label className="text-sm font-medium">Fecha de Volver a Llamar</label>
+                         <input
+                             type="date"
+                             name="fechaVolverLlamar"
+                             value={formData.fechaVolverLlamar || ''}
+                             onChange={handleChange}
+                             className="w-full bg-[#f9f9fa] p-2"
+                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
+                         />
+                     </div>
+                     <div>
+                         <label className="text-sm font-medium">Hora de Volver a Llamar</label>
+                         <input
+                             type="time"
+                             name="horaVolverLlamar"
+                             value={formData.horaVolverLlamar || ''}
+                             onChange={handleChange}
+                             className="w-full bg-[#f9f9fa] p-2"
+                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                         />
+                     </div>
+                 </div>
              </fieldset>
             
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
