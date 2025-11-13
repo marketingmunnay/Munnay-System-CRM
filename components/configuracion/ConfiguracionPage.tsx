@@ -1512,7 +1512,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'metas':
-                return <MetasPage goals={props.goals} onSaveGoal={props.onSaveGoal} onDeleteGoal={props.onDeleteGoal} requestConfirmation={props.requestConfirmation} />;
+                return <MetasPage goals={props.goals} onSaveGoal={props.onSaveGoal} onDeleteGoal={props.onDeleteGoal} requestConfirmation={props.requestConfirmation} users={props.users} />;
             case 'importar-exportar':
                 return <ImportExportPage comprobantes={props.comprobantes} />;
             default:

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import type { Goal } from '../../types.ts';
+import type { Goal, User } from '../../types.ts';
 import { GoalArea } from '../../types.ts';
 import GoalFormModal from './GoalFormModal.tsx';
 import { PlusIcon } from '../shared/Icons.tsx';
@@ -11,12 +11,13 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 
 interface MetasPageProps {
     goals: Goal[];
+    users: User[];
     onSaveGoal: (goal: Goal) => void;
     onDeleteGoal: (goalId: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
-const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, requestConfirmation }) => {
+const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDeleteGoal, requestConfirmation }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
@@ -129,6 +130,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, 
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveAndClose}
                 goal={editingGoal}
+                users={users}
             />
         </div>
     );

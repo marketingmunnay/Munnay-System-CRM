@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Goal, Personal } from '../../types.ts';
+import type { Goal, Personal, User } from '../../types.ts';
 import { GoalArea, GoalUnit, GoalObjective } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 
@@ -9,31 +9,47 @@ interface GoalFormModalProps {
     onClose: () => void;
     onSave: (goal: Goal) => void;
     goal: Goal | null;
+    users: User[];
 }
-
-const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, goal }) => {
+// Helper function to convert Date to YYYY-MM-DD string for input[type="date"]
+const formatDateForInput = (date: string | Date | undefined): string => {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().split('T')[0];
+};
+
+const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, goal, users }) => {
     const [formData, setFormData] = useState<Partial<Goal>>({});
 
     useEffect(() => {
         if (isOpen) {
             const today = new Date().toISOString().split('T')[0];
-            setFormData(goal ? { ...goal } : {
-                id: Date.now(),
-                name: '',
-                area: GoalArea.Comercial,
-                objective: GoalObjective.Leads,
-                value: 0,
-                unit: GoalUnit.Cantidad,
-                personal: undefined,
-                startDate: today,
-                endDate: today,
-            });
+            if (goal) {
+                // Convert dates properly when editing
+                setFormData({
+                    ...goal,
+                    startDate: formatDateForInput(goal.startDate),
+                    endDate: formatDateForInput(goal.endDate),
+                });
+            } else {
+                // New goal
+                setFormData({
+                    id: Date.now(),
+                    name: '',
+                    area: GoalArea.Comercial,
+                    objective: GoalObjective.Leads,
+                    value: 0,
+                    unit: GoalUnit.Cantidad,
+                    personal: undefined,
+                    startDate: today,
+                    endDate: today,
+                });
+            }
         }
     }, [goal, isOpen]);
 
@@ -144,8 +160,10 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
                             <option value="">General</option>
-                            {PERSONAL_OPTIONS.map(p => (
-                                <option key={p} value={p}>{p}</option>
+                            {users.map(user => (
+                                <option key={user.id} value={`${user.nombres} ${user.apellidos}`}>
+                                    {user.nombres} {user.apellidos}
+                                </option>
                             ))}
                         </select>
                     </div>
