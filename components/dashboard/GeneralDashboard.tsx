@@ -271,7 +271,7 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
                     iconBgClass="bg-blue-100"
                 />
                  <StatCard 
-                    title="Recuperados (Recepción)" 
+                    title="Ventas Recepción" 
                     value={`S/ ${stats.ventasExtraRecepcion.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
                     icon={<GoogleIcon name="point_of_sale" className="text-cyan-600" />}
                     iconBgClass="bg-cyan-100"

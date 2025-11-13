@@ -39,13 +39,22 @@ export const createRole = async (req: Request, res: Response) => {
 export const updateRole = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { id: _, ...roleData } = req.body; // Exclude id from update data
+  
+  console.log('=== UPDATE ROLE REQUEST ===');
+  console.log('Role ID:', id);
+  console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+  console.log('roleData a actualizar:', JSON.stringify(roleData, null, 2));
+  
   try {
     const updatedRole = await prisma.role.update({
       where: { id: id },
       data: roleData,
     });
+    console.log('✅ Rol actualizado exitosamente:', updatedRole.id);
     res.status(200).json(updatedRole);
   } catch (error) {
+    console.error('❌ Error updating role:', error);
+    console.error('Error stack:', (error as Error).stack);
     res.status(500).json({ message: 'Error updating role', error: (error as Error).message });
   }
 };

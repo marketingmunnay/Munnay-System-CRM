@@ -59,14 +59,25 @@ export function parseDate(dateStr: string | Date | null | undefined, isDateOnly 
 
 // Función para formatear fecha como YYYY-MM-DD para formularios
 export function formatDateForInput(date: string | Date | null | undefined): string {
-  const parsedDate = parseDate(date);
+  if (!date) return '';
+  
+  // Si es string y ya tiene el formato YYYY-MM-DD, devolverlo directamente
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return date;
+  }
+  
+  // Si es string ISO completo, extraer solo la fecha
+  if (typeof date === 'string' && date.includes('T')) {
+    return date.split('T')[0];
+  }
+  
+  const parsedDate = parseDate(date, true); // true = isDateOnly
   if (!parsedDate) return '';
   
-  // Usar zona horaria de Perú para obtener la fecha local
-  const localDate = new Date(parsedDate.toLocaleString("en-US", {timeZone: PERU_TIMEZONE}));
-  const year = localDate.getFullYear();
-  const month = String(localDate.getMonth() + 1).padStart(2, '0');
-  const day = String(localDate.getDate()).padStart(2, '0');
+  // Extraer directamente año, mes y día de la fecha parseada
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+  const day = String(parsedDate.getDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 }

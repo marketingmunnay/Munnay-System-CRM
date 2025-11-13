@@ -14,6 +14,7 @@ let tipoCambioCache: { data: TipoCambio | null; timestamp: number } = {
 };
 
 const CACHE_DURATION = 1000 * 60 * 30; // 30 minutos
+const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
   // Verificar si hay cache válido
@@ -23,8 +24,8 @@ export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
   }
 
   try {
-    // Intentar obtener del backend
-    const response = await fetch('/api/tipo-cambio');
+    // Intentar obtener del backend usando la URL completa
+    const response = await fetch(`${API_URL}/tipo-cambio`);
     if (response.ok) {
       const data = await response.json();
       tipoCambioCache = { data, timestamp: now };
@@ -40,7 +41,7 @@ export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
     compra: null,
     venta: null,
     disponible: false,
-    mensaje: 'No se pudo calcular el tipo de cambio',
+    mensaje: 'No se pudo obtener el tipo de cambio',
   };
   
   tipoCambioCache = { data: noDisponible, timestamp: now };
