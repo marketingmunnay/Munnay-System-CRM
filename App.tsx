@@ -190,6 +190,7 @@ const App: React.FC = () => {
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };
+    const handleImportCampaigns = async (campaigns: any[]) => { await api.bulkImportCampaigns(campaigns); await loadData(); };
     const handleSaveMetaCampaign = async (campaign: MetaCampaign) => { await api.saveMetaCampaign(campaign); await loadData(); };
     const handleDeleteMetaCampaign = async (campaignId: number) => { await api.deleteMetaCampaign(campaignId); await loadData(); };
     const handleSavePublicacion = async (publicacion: Publicacion) => { await api.savePublicacion(publicacion); await loadData(); };
@@ -453,6 +454,7 @@ const App: React.FC = () => {
                     onDeleteEgresoCategory={handleDeleteEgresoCategory}
                     requestConfirmation={requestConfirmation}
                     comprobantes={comprobantes}
+                    onImportCampaigns={handleImportCampaigns}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 

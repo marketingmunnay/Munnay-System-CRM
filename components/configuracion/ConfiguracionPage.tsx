@@ -61,6 +61,7 @@ interface ConfiguracionPageProps {
     onDeleteEgresoCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     comprobantes: ComprobanteElectronico[];
+    onImportCampaigns?: (campaigns: any[]) => Promise<void>;
 }
 
 const SETTINGS_SECTIONS = [
@@ -1514,7 +1515,10 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
             case 'metas':
                 return <MetasPage goals={props.goals} onSaveGoal={props.onSaveGoal} onDeleteGoal={props.onDeleteGoal} requestConfirmation={props.requestConfirmation} users={props.users} />;
             case 'importar-exportar':
-                return <ImportExportPage comprobantes={props.comprobantes} />;
+                return <ImportExportPage 
+                    comprobantes={props.comprobantes} 
+                    onImportCampaigns={props.onImportCampaigns}
+                />;
             default:
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;
         }

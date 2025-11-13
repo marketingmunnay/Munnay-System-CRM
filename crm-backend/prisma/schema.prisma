@@ -150,6 +150,7 @@ model Lead {
   nombres                String
   apellidos              String
   numero                 String
+  email                  String?
   sexo                   String
   redSocial              String
   anuncio                String

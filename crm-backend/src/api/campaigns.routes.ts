@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { 
-    getCampaigns, createCampaign, getCampaignById, updateCampaign, deleteCampaign,
+    getCampaigns, createCampaign, getCampaignById, updateCampaign, deleteCampaign, bulkCreateCampaigns,
     getMetaCampaigns, createMetaCampaign, getMetaCampaignById, updateMetaCampaign, deleteMetaCampaign
 } from '../controllers/campaigns.controller';
 
@@ -16,6 +16,7 @@ router.delete('/meta/:id', deleteMetaCampaign);
 // Campaigns (Anuncios) routes
 router.get('/', getCampaigns);
 router.post('/', createCampaign);
+router.post('/bulk', bulkCreateCampaigns);
 router.get('/:id', getCampaignById);
 router.put('/:id', updateCampaign);
 router.delete('/:id', deleteCampaign);

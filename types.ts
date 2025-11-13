@@ -139,6 +139,7 @@ export interface Lead {
     nombres: string;
     apellidos: string;
     numero: string;
+    email?: string;
     sexo: 'M' | 'F';
     redSocial: string;
     anuncio: string;

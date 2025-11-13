@@ -76,6 +76,21 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     {!formData.numero?.trim() && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
                  <div>
+                    <label className="text-sm font-medium">Correo Electrónico</label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        value={formData.email || ''} 
+                        onChange={handleChange} 
+                        placeholder="ejemplo@correo.com"
+                        className="w-full bg-[#f9f9fa] p-2" 
+                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
+                    />
+                    {formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                        <span className="text-red-500 text-xs">Formato de correo inválido</span>
+                    )}
+                </div>
+                 <div>
                     <label className="text-sm font-medium">Sexo</label>
                     <select name="sexo" value={formData.sexo || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                         <option value="F">Femenino</option>
