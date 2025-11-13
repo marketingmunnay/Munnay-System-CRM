@@ -81,6 +81,7 @@ export interface RegistroLlamada {
 export interface Treatment {
     id: number;
     nombre: string;
+    tipo?: 'Servicio' | 'Membresía';
     cantidadSesiones: number;
     precio: number;
     montoPagado: number;

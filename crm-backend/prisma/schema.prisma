@@ -218,6 +218,7 @@ model RegistroLlamada {
 model Treatment {
   id               Int        @id @default(autoincrement())
   nombre           String
+  tipo             String?    @default("Servicio")
   cantidadSesiones Int
   precio           Float
   montoPagado      Float
