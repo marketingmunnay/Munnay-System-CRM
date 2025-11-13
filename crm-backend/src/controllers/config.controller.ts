@@ -127,13 +127,108 @@ export const createProduct = productHandlers.create;
 export const updateProduct = productHandlers.update;
 export const deleteProduct = productHandlers.delete;
 
-// Memberships
-const membershipHandlers = createCrudHandlers('membership');
-export const getMemberships = membershipHandlers.getAll;
-export const createMembership = membershipHandlers.create;
-export const updateMembership = membershipHandlers.update;
-// FIX: Corrected typo 'deleteMemberships' to match the route and standard naming (plural for all)
-export const deleteMembership = membershipHandlers.delete;
+// Memberships - Custom handlers to support nested MembershipService creation
+export const getMemberships = async (req: Request, res: Response) => {
+    try {
+        const memberships = await prisma.membership.findMany({
+            include: {
+                servicios: true, // Include related services
+            } as any,
+        });
+        res.status(200).json(memberships);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching memberships', error: (error as Error).message });
+    }
+};
+
+export const createMembership = async (req: Request, res: Response) => {
+    const { id, servicios, ...data } = req.body;
+    
+    console.log('=== CREATE MEMBERSHIP REQUEST ===');
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        const newMembership = await prisma.membership.create({
+            data: {
+                ...data,
+                servicios: {
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía creada exitosamente:', newMembership.id);
+        res.status(201).json(newMembership);
+    } catch (error) {
+        console.error('Error creating membership:', error);
+        console.error('Error stack:', (error as Error).stack);
+        res.status(500).json({ 
+            message: 'Error creating membership', 
+            error: (error as Error).message,
+            details: error instanceof Error ? error.stack : 'Unknown error'
+        });
+    }
+};
+
+export const updateMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { id: _, servicios, ...data } = req.body;
+    
+    console.log('=== UPDATE MEMBERSHIP REQUEST ===');
+    console.log('ID:', id);
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        // Delete existing services and create new ones (simpler than selective update)
+        const updatedMembership = await prisma.membership.update({
+            where: { id: id },
+            data: {
+                ...data,
+                servicios: {
+                    deleteMany: {}, // Delete all existing services
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía actualizada exitosamente:', updatedMembership.id);
+        res.status(200).json(updatedMembership);
+    } catch (error) {
+        console.error('Error updating membership:', error);
+        res.status(500).json({ 
+            message: 'Error updating membership', 
+            error: (error as Error).message 
+        });
+    }
+};
+
+export const deleteMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    try {
+        // Cascade delete will automatically delete related MembershipService records
+        await prisma.membership.delete({ where: { id: id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Error deleting membership', 
+            error: (error as Error).message 
+        });
+    }
+};
 
 // Service Categories
 const serviceCategoryHandlers = createCrudHandlers('serviceCategory');
