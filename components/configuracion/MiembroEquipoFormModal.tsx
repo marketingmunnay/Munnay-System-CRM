@@ -542,45 +542,11 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Horario de Trabajo</label>
-                                    <input
-                                        type="text"
-                                        name="workSchedule"
-                                        value={formData.workSchedule || ''}
-                                        onChange={handleChange}
-                                        placeholder="Ej: 9:00 AM - 6:00 PM"
-                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Jefe Directo</label>
                                     <input
                                         type="text"
                                         name="directBoss"
                                         value={formData.directBoss || ''}
-                                        onChange={handleChange}
-                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Centro de Trabajo</label>
-                                    <input
-                                        type="text"
-                                        name="workCenter"
-                                        value={formData.workCenter || ''}
-                                        onChange={handleChange}
-                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Código de Empleado</label>
-                                    <input
-                                        type="text"
-                                        name="employeeCode"
-                                        value={formData.employeeCode || ''}
                                         onChange={handleChange}
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     />

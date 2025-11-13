@@ -91,6 +91,9 @@ export const createUser = async (req: Request, res: Response) => {
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
         endDate: userData.endDate ? new Date(userData.endDate) : null,
+        salary: userData.salary ? parseFloat(userData.salary) : null,
+        bonuses: userData.bonuses ? parseFloat(userData.bonuses) : null,
+        afpPercentage: userData.afpPercentage ? parseFloat(userData.afpPercentage) : null,
         addresses: {
           create: (addresses as any[])?.map(addr => ({
             direccion: addr.direccion,
@@ -136,6 +139,10 @@ export const updateUser = async (req: Request, res: Response) => {
         ...userData,
         birthDate: userData.birthDate ? new Date(userData.birthDate) : (userData.birthDate === null ? null : undefined),
         startDate: userData.startDate ? new Date(userData.startDate) : (userData.startDate === null ? null : undefined),
+        endDate: userData.endDate ? new Date(userData.endDate) : (userData.endDate === null ? null : undefined),
+        salary: userData.salary ? parseFloat(userData.salary) : (userData.salary === null ? null : undefined),
+        bonuses: userData.bonuses ? parseFloat(userData.bonuses) : (userData.bonuses === null ? null : undefined),
+        afpPercentage: userData.afpPercentage ? parseFloat(userData.afpPercentage) : (userData.afpPercentage === null ? null : undefined),
     };
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
