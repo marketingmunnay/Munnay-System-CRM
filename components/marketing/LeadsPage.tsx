@@ -6,7 +6,7 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { formatDateForDisplay } from '../../utils/time.ts';
-import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign } from '../../types.ts';
+import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
 interface LeadsPageProps {
@@ -17,6 +17,7 @@ interface LeadsPageProps {
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
     services: Service[];
+    memberships?: Membership[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
@@ -85,7 +86,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, memberships, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -244,6 +245,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
             campaigns={campaigns}
             clientSources={clientSources}
             services={services}
+            memberships={memberships}
             requestConfirmation={requestConfirmation}
             onSaveComprobante={onSaveComprobante}
             comprobantes={comprobantes}

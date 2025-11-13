@@ -17,6 +17,7 @@ interface LeadFormModalProps {
     campaigns?: Campaign[];
   clientSources: ClientSource[];
   services: Service[];
+  memberships?: Membership[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
@@ -30,7 +31,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships }) => {
     return (
         <div className="space-y-6">
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
@@ -191,15 +192,29 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                    <label className="text-sm font-medium">Servicio de Interés</label>
                    <select name="servicioInteres" value={formData.servicios?.[0] || ''} onChange={(e) => {
                        const selected = e.target.value;
-                       const found = services?.find(s => s.nombre === selected);
-                       setFormData(prev => {
-                           const precio = found ? found.precio : (prev.precioCita || 0);
-                           const montoPagado = prev.montoPagado || 0;
-                           return { ...prev, servicios: selected ? [selected] : [], precioCita: precio, deudaCita: precio - montoPagado };
-                       });
+                       // Si la categoría es "Membresías", buscar en memberships
+                       if (formData.categoria === 'Membresías') {
+                           const found = memberships?.find(m => m.nombre === selected);
+                           setFormData(prev => {
+                               const precio = found ? found.precioTotal : (prev.precioCita || 0);
+                               const montoPagado = prev.montoPagado || 0;
+                               return { ...prev, servicios: selected ? [selected] : [], precioCita: precio, deudaCita: precio - montoPagado };
+                           });
+                       } else {
+                           // Búsqueda normal en services
+                           const found = services?.find(s => s.nombre === selected);
+                           setFormData(prev => {
+                               const precio = found ? found.precio : (prev.precioCita || 0);
+                               const montoPagado = prev.montoPagado || 0;
+                               return { ...prev, servicios: selected ? [selected] : [], precioCita: precio, deudaCita: precio - montoPagado };
+                           });
+                       }
                    }} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                        <option value="">Seleccionar servicio...</option>
-                       {SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)}
+                       {formData.categoria === 'Membresías' 
+                           ? memberships?.map((memb) => <option key={memb.id} value={memb.nombre}>{memb.nombre}</option>)
+                           : SERVICE_CATEGORIES[formData.categoria]?.map((serv: string) => <option key={serv} value={serv}>{serv}</option>)
+                       }
                    </select>
                </div>
                <div>
@@ -2115,6 +2130,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   metaCampaigns,
   clientSources,
   services,
+  memberships = [],
   requestConfirmation,
   onSaveComprobante,
   comprobantes
@@ -2127,14 +2143,21 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
 
     const SERVICE_CATEGORIES = useMemo(() => {
-        return services.reduce((acc, service) => {
+        const categories = services.reduce((acc, service) => {
             if (!acc[service.categoria]) {
                 acc[service.categoria] = [];
             }
             acc[service.categoria].push(service.nombre);
             return acc;
         }, {} as Record<string, string[]>);
-    }, [services]);
+        
+        // Agregar categoría "Membresías" si hay membresías disponibles
+        if (memberships.length > 0) {
+            categories['Membresías'] = memberships.map(m => m.nombre);
+        }
+        
+        return categories;
+    }, [services, memberships]);
 
     const CATEGORY_OPTIONS = useMemo(() => Object.keys(SERVICE_CATEGORIES), [SERVICE_CATEGORIES]);
     
@@ -2397,6 +2420,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             CATEGORY_OPTIONS={CATEGORY_OPTIONS}
                             SERVICE_CATEGORIES={SERVICE_CATEGORIES}
                             services={services}
+                            memberships={memberships}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
