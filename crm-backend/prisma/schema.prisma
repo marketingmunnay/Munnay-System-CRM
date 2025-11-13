@@ -588,6 +588,7 @@ model MembershipService {
   membership     Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
   servicioNombre String
   precio         Float
+  precioCita     Float?
   numeroSesiones Int
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

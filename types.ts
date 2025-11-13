@@ -520,6 +520,7 @@ export interface MembershipService {
     membershipId: number;
     servicioNombre: string;
     precio: number;
+    precioCita?: number;
     numeroSesiones: number;
 }
 

@@ -505,6 +505,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
             id: Date.now(),
             servicioNombre: '',
             precio: 0,
+            precioCita: 0,
             numeroSesiones: 1,
         };
         setTempMemberships(prev => [...prev, newMembership]);
@@ -949,6 +950,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                 <tr>
                                     <th className="p-2">Servicio</th>
                                     <th className="p-2">Precio</th>
+                                    <th className="p-2">Precio Cita</th>
                                     <th className="p-2">N° Sesiones</th>
                                     {editingMemberships && <th className="p-2">Acciones</th>}
                                 </tr>
@@ -985,6 +987,20 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                 />
                                             ) : (
                                                 `S/ ${membership.precio.toFixed(2)}`
+                                            )}
+                                        </td>
+                                        <td className="p-2">
+                                            {editingMemberships ? (
+                                                <input 
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={membership.precioCita || 0}
+                                                    onChange={(e) => handleMembershipChange(membership.id, 'precioCita', Number(e.target.value))}
+                                                    className="w-24 p-1"
+                                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                                />
+                                            ) : (
+                                                `S/ ${(membership.precioCita || 0).toFixed(2)}`
                                             )}
                                         </td>
                                         <td className="p-2">
