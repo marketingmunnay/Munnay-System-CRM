@@ -70,7 +70,12 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        // Special handling for rolId - convert to number
+        if (name === 'rolId') {
+            setFormData(prev => ({ ...prev, [name]: value ? parseInt(value) : undefined }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {

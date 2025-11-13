@@ -52,17 +52,45 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   const { id, password, addresses, emergencyContacts, ...userData } = req.body;
-  if (!password) {
-    return res.status(400).json({ message: 'Password is required' });
+  
+  console.log('=== CREATE USER REQUEST ===');
+  console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+  
+  // Validar campos requeridos
+  if (!userData.nombres) {
+    return res.status(400).json({ message: 'Field "nombres" is required' });
   }
+  if (!userData.apellidos) {
+    return res.status(400).json({ message: 'Field "apellidos" is required' });
+  }
+  if (!userData.usuario) {
+    return res.status(400).json({ message: 'Field "usuario" is required' });
+  }
+  if (!password) {
+    return res.status(400).json({ message: 'Field "password" is required' });
+  }
+  if (!userData.rolId) {
+    return res.status(400).json({ message: 'Field "rolId" is required' });
+  }
+  
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    console.log('Datos a crear:', {
+      ...userData,
+      password: '[HASHED]',
+      addresses: addresses,
+      emergencyContacts: emergencyContacts
+    });
+    
     const newUser = await prisma.user.create({
       data: {
         ...userData,
         password: hashedPassword, // Store hashed password
+        rolId: parseInt(userData.rolId), // Ensure rolId is an integer
         birthDate: userData.birthDate ? new Date(userData.birthDate) : null,
         startDate: userData.startDate ? new Date(userData.startDate) : null,
+        endDate: userData.endDate ? new Date(userData.endDate) : null,
         addresses: {
           create: (addresses as any[])?.map(addr => ({
             direccion: addr.direccion,
@@ -85,11 +113,18 @@ export const createUser = async (req: Request, res: Response) => {
         reconocimientosRecibidos: true,
       }
     });
+    
+    console.log('Usuario creado exitosamente:', newUser.id);
     const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
+    console.error("Error stack:", (error as Error).stack);
+    res.status(500).json({ 
+      message: 'Error creating user', 
+      error: (error as Error).message,
+      details: error instanceof Error ? error.stack : 'Unknown error'
+    });
   }
 };
 
