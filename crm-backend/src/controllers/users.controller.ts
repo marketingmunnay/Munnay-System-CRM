@@ -134,19 +134,52 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { id: _, password, addresses, emergencyContacts, ...userData } = req.body; // Exclude id from update data
+  
+  console.log('=== UPDATE USER REQUEST ===');
+  console.log('User ID:', id);
+  console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+  
   try {
+    // Helper function to clean numeric fields
+    const parseNumericField = (value: any) => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? undefined : parsed;
+    };
+    
+    // Helper function to clean date fields
+    const parseDateField = (value: any) => {
+      if (!value) return undefined;
+      try {
+        return new Date(value);
+      } catch {
+        return undefined;
+      }
+    };
+    
     let updateData: any = {
         ...userData,
-        birthDate: userData.birthDate ? new Date(userData.birthDate) : (userData.birthDate === null ? null : undefined),
-        startDate: userData.startDate ? new Date(userData.startDate) : (userData.startDate === null ? null : undefined),
-        endDate: userData.endDate ? new Date(userData.endDate) : (userData.endDate === null ? null : undefined),
-        salary: userData.salary ? parseFloat(userData.salary) : (userData.salary === null ? null : undefined),
-        bonuses: userData.bonuses ? parseFloat(userData.bonuses) : (userData.bonuses === null ? null : undefined),
-        afpPercentage: userData.afpPercentage ? parseFloat(userData.afpPercentage) : (userData.afpPercentage === null ? null : undefined),
+        rolId: userData.rolId ? parseInt(userData.rolId) : undefined, // Ensure rolId is integer
+        birthDate: parseDateField(userData.birthDate),
+        startDate: parseDateField(userData.startDate),
+        endDate: parseDateField(userData.endDate),
+        salary: parseNumericField(userData.salary),
+        bonuses: parseNumericField(userData.bonuses),
+        afpPercentage: parseNumericField(userData.afpPercentage),
     };
+    
+    // Remove undefined values to avoid Prisma errors
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+    
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }
+    
+    console.log('Update data procesado:', JSON.stringify(updateData, null, 2));
 
     // Handle nested updates for addresses and emergency contacts
     // For simplicity, we'll delete existing and create new ones.
@@ -174,6 +207,7 @@ export const updateUser = async (req: Request, res: Response) => {
       };
     }
 
+    console.log('Ejecutando prisma.user.update...');
     const updatedUser = await prisma.user.update({
       where: { id: id },
       data: updateData,
@@ -183,11 +217,18 @@ export const updateUser = async (req: Request, res: Response) => {
         reconocimientosRecibidos: true,
       }
     });
+    console.log('Usuario actualizado exitosamente:', updatedUser.id);
     const { password: _, ...userWithoutPassword } = updatedUser;
     res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
-    res.status(500).json({ message: 'Error updating user', error: (error as Error).message });
+    console.error('Error stack:', (error as Error).stack);
+    console.error('Error details:', error);
+    res.status(500).json({ 
+      message: 'Error updating user', 
+      error: (error as Error).message,
+      details: error instanceof Error ? error.stack : 'Unknown error'
+    });
   }
 };
 
