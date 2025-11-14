@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                     businessInfo?.logoUrl && <img src={businessInfo.logoUrl} alt="Logo" className="h-10" />
                 )}
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            <nav className="flex-1 overflow-y-auto p-4 pb-20 space-y-2">
                 {filteredNavItems.map(item => (
                     <React.Fragment key={item.id}>
                         {item.id === 'informes' && <hr className="!my-4 border-gray-200" />}
@@ -232,6 +232,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                     </React.Fragment>
                 ))}
             </nav>
+            
+            {/* Version info at bottom */}
+            {!isCollapsed && (
+                <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
+                    <div className="text-xs text-gray-500 text-center">
+                        <div className="font-mono">
+                            v: {import.meta.env.VITE_GIT_COMMIT_HASH || '8809475'}
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                            {new Date().toLocaleDateString('es-PE')}
+                        </div>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 };
