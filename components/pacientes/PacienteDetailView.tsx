@@ -62,8 +62,8 @@ const AlergiaItem: React.FC<{ alergia: Alergia }> = ({ alergia }) => {
 
 const StatCard: React.FC<{ title: string; value: string; icon: string; iconBgClass?: string; iconColorClass?: string }> = ({ title, value, icon, iconBgClass, iconColorClass }) => (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center space-x-4">
-        <div className={`p-3 rounded-full ${iconBgClass || 'bg-gray-100'}`}>
-            <GoogleIcon name={icon} className={`text-lg ${iconColorClass || 'text-gray-600'}`}/>
+        <div className={`w-12 h-12 flex items-center justify-center rounded-full ${iconBgClass || 'bg-gray-100'}`} style={{ borderRadius: '50%' }}>
+            <GoogleIcon name={icon} className={`text-xl ${iconColorClass || 'text-gray-600'}`}/>
         </div>
         <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
@@ -74,6 +74,9 @@ const StatCard: React.FC<{ title: string; value: string; icon: string; iconBgCla
 
 
 const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, paciente: Lead | null }> = ({ isOpen, onClose, paciente }) => {
+    const [filterMode, setFilterMode] = React.useState<'fecha' | 'afeccion' | 'tipo'>('fecha');
+    const [dateRange, setDateRange] = React.useState<{ start: string; end: string }>({ start: '', end: '' });
+    const [expandedYear, setExpandedYear] = React.useState<string | null>(null);
     
     const timelineEvents = useMemo((): TimelineEvent[] => {
         if (!paciente) return [];
@@ -154,7 +157,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
         if (!paciente) return { totalPagado: 0, totalTratamientos: 0, totalMembresias: 0 };
         
         const pagoInicial = paciente.montoPagado || 0;
-        const pagoTratamientos = (paciente.tratamientos || []).reduce((sum, t) => sum + t.montoPagado, 0);
+        const pagoTratamientos = (paciente.tratamientos || []).reduce((sum, t) => sum + (t.montoPagado || 0), 0);
         
         return {
             totalPagado: pagoInicial + pagoTratamientos,
@@ -186,7 +189,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                             </div>
                              <div className="flex items-center text-gray-700">
                                 <GoogleIcon name="calendar_month" className="text-lg mr-3 text-gray-400"/> 
-                                <span>{paciente.birthDate ? new Date(paciente.birthDate+'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}</span>
+                                <span>{paciente.birthDate ? new Date(paciente.birthDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}</span>
                             </div>
                             <div className="flex items-center text-gray-700">
                                 <GoogleIcon name={paciente.sexo === 'F' ? 'female' : 'male'} className="text-lg mr-3 text-gray-400"/> 
@@ -203,7 +206,10 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                             {(paciente.alergias && paciente.alergias.length > 0) ? (
                                 paciente.alergias.map(alergia => <AlergiaItem key={alergia.id} alergia={alergia} />)
                             ) : (
-                                <p className="text-sm text-gray-500 text-center py-4">No se han registrado alergias.</p>
+                                <div className="text-sm text-gray-500 text-center py-4">
+                                    <p>No se han registrado alergias.</p>
+                                    <p className="text-xs mt-1 text-gray-400">(Agregar en Formulario de Lead → Recepción)</p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -214,21 +220,51 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                     <div className="sticky top-0 bg-gray-50 pt-1 pb-4 z-10">
                          <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-2">
-                                <button className="flex items-center px-3 py-1.5 text-sm bg-gray-200 text-gray-800 rounded-md font-semibold">
+                                <button 
+                                    onClick={() => setFilterMode('fecha')}
+                                    className={`flex items-center px-3 py-1.5 text-sm rounded-md font-semibold transition ${
+                                        filterMode === 'fecha' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
                                     <GoogleIcon name="calendar_today" className="mr-1.5 text-sm"/>
                                     Por fecha
                                 </button>
-                                <button className="flex items-center px-3 py-1.5 text-sm bg-white border rounded-md text-gray-600 hover:bg-gray-100">
+                                <button 
+                                    onClick={() => setFilterMode('afeccion')}
+                                    className={`flex items-center px-3 py-1.5 text-sm rounded-md font-semibold transition ${
+                                        filterMode === 'afeccion' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
                                     <GoogleIcon name="healing" className="mr-1.5 text-sm"/>
                                     Por afección
                                 </button>
-                                <button className="flex items-center px-3 py-1.5 text-sm bg-white border rounded-md text-gray-600 hover:bg-gray-100">
+                                <button 
+                                    onClick={() => setFilterMode('tipo')}
+                                    className={`flex items-center px-3 py-1.5 text-sm rounded-md font-semibold transition ${
+                                        filterMode === 'tipo' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
                                     <GoogleIcon name="category" className="mr-1.5 text-sm"/>
                                     Por tipo
                                 </button>
                             </div>
-                            {/* Placeholder for date range selector */}
-                            <div className="text-sm text-gray-500">Rango de fechas...</div>
+                            <div className="flex items-center space-x-2">
+                                <input 
+                                    type="date" 
+                                    value={dateRange.start} 
+                                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})} 
+                                    className="text-xs border rounded px-2 py-1"
+                                    style={{ colorScheme: 'light' }}
+                                />
+                                <span className="text-gray-500">-</span>
+                                <input 
+                                    type="date" 
+                                    value={dateRange.end} 
+                                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})} 
+                                    className="text-xs border rounded px-2 py-1"
+                                    style={{ colorScheme: 'light' }}
+                                />
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <StatCard title="Total Pagado" value={`S/ ${stats.totalPagado.toLocaleString('es-PE')}`} icon="payments" iconBgClass="bg-green-100" iconColorClass="text-green-600"/>
@@ -245,13 +281,17 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                                     <span className="absolute left-0 w-8 text-right text-sm font-semibold text-gray-600">{year}</span>
                                     <div className="absolute left-[30px] w-4 h-4 bg-purple-600 rounded-full border-4 border-gray-50 z-10"></div>
                                     <div className="pl-[70px]">
-                                        <button className="bg-purple-600 text-white text-sm font-semibold px-4 py-1.5 rounded-md shadow-sm hover:bg-purple-700 transition-colors flex items-center">
-                                            <GoogleIcon name="visibility" className="mr-2 text-base"/>
-                                            Vista de progreso anual
+                                        <button 
+                                            onClick={() => setExpandedYear(expandedYear === year ? null : year)}
+                                            className="bg-purple-600 text-white text-sm font-semibold px-4 py-1.5 rounded-md shadow-sm hover:bg-purple-700 transition-colors flex items-center"
+                                        >
+                                            <GoogleIcon name={expandedYear === year ? "visibility_off" : "visibility"} className="mr-2 text-base"/>
+                                            {expandedYear === year ? 'Ocultar progreso' : 'Vista de progreso anual'}
                                         </button>
                                     </div>
                                 </div>
                                 
+                                {expandedYear === year && (
                                 <div className="pl-[70px] space-y-8">
                                      {groupedEventsByYear[year].map((event, index) => {
                                          const config = eventTypeConfig[event.type];
@@ -279,6 +319,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                                          )
                                      })}
                                 </div>
+                                )}
                              </div>
                          ))}
                     </div>
