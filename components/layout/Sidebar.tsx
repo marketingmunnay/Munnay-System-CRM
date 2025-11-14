@@ -28,49 +28,41 @@ const navItems: NavItem[] = [
         id: 'marketing', label: 'Comercial', icon: <GoogleIcon name="campaign" className="text-xl" />, subItems: [
             { id: 'marketing-campanas', label: 'Campañas', page: 'marketing-campanas' },
             { id: 'marketing-leads', label: 'Leads', page: 'marketing-leads' },
-            {
-                id: 'redes-sociales',
-                label: 'Redes Sociales',
-                subItems: [
-                    { id: 'redes-sociales-publicaciones', label: 'Publicaciones', page: 'redes-sociales-publicaciones' },
-                    { id: 'redes-sociales-seguidores', label: 'Seguidores', page: 'redes-sociales-seguidores' },
-                ]
-            },
             { id: 'procedimientos-ventas-extra', label: 'Ventas', page: 'procedimientos-ventas-extra' },
+            { id: 'redes-sociales-publicaciones', label: 'Publicaciones', page: 'redes-sociales-publicaciones' },
+            { id: 'redes-sociales-seguidores', label: 'Seguidores', page: 'redes-sociales-seguidores' },
+        ]
+    },
+    { 
+        id: 'recepcion', 
+        label: 'Recepción',
+        icon: <GoogleIcon name="meeting_room" className="text-xl" />,
+        subItems: [
+            { id: 'recepcion-agendados', label: 'Asistidos', page: 'recepcion-agendados' },
+            { id: 'recepcion-ventas-extra', label: 'Ventas Recepción', page: 'recepcion-ventas-extra' },
+            { id: 'recepcion-incidencias', label: 'Incidencias', page: 'recepcion-incidencias' },
         ]
     },
     {
-        id: 'administracion', label: 'Administración', icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />, subItems: [
-            { 
-                id: 'recepcion', 
-                label: 'Recepción', 
-                subItems: [
-                    { id: 'recepcion-agendados', label: 'Asistidos', page: 'recepcion-agendados' },
-                    { id: 'recepcion-ventas-extra', label: 'Ventas Recepción', page: 'recepcion-ventas-extra' },
-                    { id: 'recepcion-incidencias', label: 'Incidencias', page: 'recepcion-incidencias' },
-                ]
-            },
-            {
-                id: 'contabilidad',
-                label: 'Contabilidad',
-                subItems: [
-                     { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
-                     { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
-                ]
-            },
-        ]
-    },
-     {
-        id: 'rrhh', label: 'Recursos Humanos', icon: <GoogleIcon name="manage_accounts" className="text-xl" />, subItems: [
-            { id: 'rrhh-perfiles', label: 'Perfiles de Equipo', page: 'rrhh-perfiles' },
+        id: 'administracion',
+        label: 'Administración',
+        icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />,
+        subItems: [
+             { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
+             { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
         ]
     },
     {
-        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="digital_wellbeing" className="text-xl" />, subItems: [
+        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
             { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
             { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
             { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
-            { id: 'pacientes-historia', label: 'Historia Pacientes', page: 'pacientes-historia' },
+            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
+        ]
+    },
+    {
+        id: 'rrhh', label: 'Recursos Humanos', icon: <GoogleIcon name="groups" className="text-xl" />, subItems: [
+            { id: 'rrhh-perfiles', label: 'Perfil de Equipo', page: 'rrhh-perfiles' },
         ]
     },
     { id: 'informes', label: 'Informes', icon: <GoogleIcon name="bar_chart_4_bars" className="text-xl" />, page: 'informes' },
