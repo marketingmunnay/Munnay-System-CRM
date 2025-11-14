@@ -61,7 +61,8 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
 
     const userGoals = useMemo(() => {
         if (!user) return [];
-        return goals.filter(g => g.personal === user.nombres);
+        const fullName = `${user.nombres} ${user.apellidos}`;
+        return goals.filter(g => g.personal === fullName);
     }, [user, goals]);
     
     const sortedRecognitions = useMemo(() => {
