@@ -211,12 +211,17 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        const selected = e.target.value;
                        // Si la categoría es "Membresías", buscar en memberships
                        if (formData.categoria === 'Membresías') {
+                           console.log('Categoría Membresías detectada');
+                           console.log('Memberships disponibles:', memberships);
+                           console.log('Buscando membresía:', selected);
                            const found = memberships?.find(m => m.nombre === selected);
+                           console.log('Membresía encontrada:', found);
+                           console.log('Precio total:', found?.precioTotal);
                            setFormData(prev => {
                                // Usar precioTotal de la membresía
                                const precioCita = found ? found.precioTotal : 0;
                                const montoPagado = prev.montoPagado || 0;
-                               console.log('Membresía seleccionada:', found?.nombre, 'Precio:', precioCita);
+                               console.log('Estableciendo precio cita a:', precioCita);
                                return { ...prev, servicios: selected ? [selected] : [], precioCita: precioCita, deudaCita: precioCita - montoPagado };
                            });
                        } else {
