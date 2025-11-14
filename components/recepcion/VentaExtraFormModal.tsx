@@ -93,9 +93,16 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             setSearchTerm(venta.nHistoria);
             setPacienteEncontrado(paciente || null);
         } else {
+            // Generar código único: VEN-YYYYMMDD-HHMMSS-RAND
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '');
+            const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const codigoUnico = `VEN-${dateStr}-${timeStr}-${randomStr}`;
+            
             setFormData({
                 id: Date.now(),
-                codigoVenta: '',
+                codigoVenta: codigoUnico,
                 fechaVenta: new Date().toISOString().split('T')[0],
                 precio: 0,
                 montoPagado: 0,
@@ -326,7 +333,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                     <div>
                         <label htmlFor="codigoVenta" className="mb-1 text-sm font-medium text-gray-700">Código de Venta</label>
-                        <input type="text" id="codigoVenta" name="codigoVenta" value={formData.codigoVenta || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" />
+                        <input type="text" id="codigoVenta" name="codigoVenta" value={formData.codigoVenta || ''} readOnly className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm p-2 text-gray-900 cursor-not-allowed" />
                     </div>
                      <div>
                         <label htmlFor="fechaVenta" className="mb-1 text-sm font-medium text-gray-700">Fecha de Venta</label>
