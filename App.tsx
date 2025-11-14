@@ -24,6 +24,7 @@ import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
 import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPage';
+import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
@@ -491,6 +492,7 @@ const App: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-gray-100">
+            <BirthdayAnimation users={users} />
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={handleSetCurrentPage}

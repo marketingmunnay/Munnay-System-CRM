@@ -33,6 +33,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
         addresses: [],
         emergencyContacts: []
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -455,15 +456,24 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Contraseña {!user && '*'}{user && ' (dejar vacío para no cambiar)'}
                                     </label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password || ''}
-                                        onChange={handleChange}
-                                        required={!user}
-                                        placeholder={user ? 'Nueva contraseña (opcional)' : ''}
-                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            value={formData.password || ''}
+                                            onChange={handleChange}
+                                            required={!user}
+                                            placeholder={user ? 'Nueva contraseña (opcional)' : ''}
+                                            className="w-full border border-gray-300 rounded-md p-2 pr-10 text-sm"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        >
+                                            <GoogleIcon name={showPassword ? "visibility_off" : "visibility"} className="text-xl" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
