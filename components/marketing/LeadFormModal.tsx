@@ -33,7 +33,9 @@ const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
 const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships }) => {
     return (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
+            <div className="lg:col-span-2 space-y-4">
              <fieldset className="grid grid-cols-1 gap-6 md:grid-cols-4 border p-4 rounded-md">
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
@@ -312,7 +314,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                    </select>
                </div>
            </fieldset>
+           </div>
 
+            {/* Columna derecha: col-span-1 con Observaciones y Registro de Llamadas */}
+            <div className="lg:col-span-1 flex flex-col space-y-4">
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Observaciones Generales</legend>
                  <div>
@@ -397,7 +402,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <button type="button" onClick={handleShowAddLlamadaForm} className="text-sm text-blue-600 flex items-center"><GoogleIcon name="add_call"/> Añadir Registro de Llamada</button>
                 )}
             </fieldset>
-
+            </div>
+            {/* Fin columna derecha */}
         </div>
     );
 };
