@@ -34,7 +34,10 @@ const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 // Puestos permitidos para el campo Profesional
 const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería'];
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS }) => {
+// Puestos permitidos para el campo Vendedor
+const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
+
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
@@ -127,7 +130,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <label className="text-sm font-medium">Vendedor(a) <span className="text-red-500">*</span></label>
                     <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar...</option>
-                        {Object.values(Seller).map(s => <option key={s} value={s}>{s}</option>)}
+                        {VENDEDOR_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                     {!formData.vendedor && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
@@ -1003,7 +1006,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     );
 };
 
-const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
@@ -1618,7 +1621,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData }
     );
 };
 
-const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData }) => {
+const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS }) => {
     const [currentSeguimiento, setCurrentSeguimiento] = useState<Partial<Seguimiento> | null>(null);
     const [editingSeguimientoId, setEditingSeguimientoId] = useState<number | null>(null);
 
@@ -2115,6 +2118,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             .map((user: any) => `${user.nombres} ${user.apellidos}`);
     }, [users]);
 
+    // Filtrar vendedores por puesto
+    const VENDEDOR_OPTIONS = useMemo(() => {
+        return users
+            .filter((user: any) => user.position && PUESTOS_VENDEDOR.includes(user.position))
+            .map((user: any) => `${user.nombres} ${user.apellidos}`);
+    }, [users]);
+
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
 
     const SERVICE_CATEGORIES = useMemo(() => {
@@ -2402,6 +2412,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             services={services}
                             memberships={memberships}
                             PERSONAL_OPTIONS={PERSONAL_OPTIONS}
+                            VENDEDOR_OPTIONS={VENDEDOR_OPTIONS}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
@@ -2417,9 +2428,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 return <ProcedimientosTabContent 
                     formData={formData} 
                     handleSetFormData={setFormData}
+                    PERSONAL_OPTIONS={PERSONAL_OPTIONS}
                 />;
             case 'seguimiento':
-                return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} />;
+                return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} PERSONAL_OPTIONS={PERSONAL_OPTIONS} />;
             default:
                 return null;
         }
