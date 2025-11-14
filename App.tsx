@@ -366,7 +366,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                return <LeadsPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <LeadsPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} memberships={memberships} users={users} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
                     campaigns={campaigns} 

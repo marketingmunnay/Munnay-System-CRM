@@ -168,14 +168,15 @@ export const updateUser = async (req: Request, res: Response) => {
         afpPercentage: parseNumericField(userData.afpPercentage),
     };
     
-    // Remove undefined values to avoid Prisma errors
+    // Remove undefined, null, and empty string values to avoid Prisma errors
     Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) {
+      if (updateData[key] === undefined || updateData[key] === null || updateData[key] === '') {
         delete updateData[key];
       }
     });
     
-    if (password) {
+    // Only update password if provided
+    if (password && password.trim() !== '') {
       updateData.password = await bcrypt.hash(password, 10);
     }
     

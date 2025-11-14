@@ -18,6 +18,7 @@ interface LeadFormModalProps {
   clientSources: ClientSource[];
   services: Service[];
   memberships?: Membership[];
+  users?: User[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
@@ -27,9 +28,11 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-// Constantes para tipos de Personal y Medico
-const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
+// Constantes para tipos de Medico
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
+
+// Puestos permitidos para el campo Profesional
+const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería'];
 
 const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships }) => {
     return (
@@ -2053,6 +2056,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   clientSources,
   services,
   memberships = [],
+  users = [],
   requestConfirmation,
   onSaveComprobante,
   comprobantes
@@ -2061,6 +2065,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [activeTab, setActiveTab] = useState('ficha');
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
     const [showSaveMessage, setShowSaveMessage] = useState(false);
+
+    // Filtrar profesionales por puesto
+    const PERSONAL_OPTIONS = useMemo(() => {
+        return users
+            .filter((user: any) => user.position && PUESTOS_PROFESIONAL.includes(user.position))
+            .map((user: any) => `${user.nombres} ${user.apellidos}`);
+    }, [users]);
 
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
 

@@ -18,6 +18,7 @@ interface LeadsPageProps {
     clientSources: ClientSource[];
     services: Service[];
     memberships?: Membership[];
+    users?: any[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
@@ -86,7 +87,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, memberships, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, memberships, users, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -246,6 +247,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
             clientSources={clientSources}
             services={services}
             memberships={memberships}
+            users={users}
             requestConfirmation={requestConfirmation}
             onSaveComprobante={onSaveComprobante}
             comprobantes={comprobantes}
