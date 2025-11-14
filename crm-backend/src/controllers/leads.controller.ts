@@ -230,7 +230,9 @@ export const updateLead = async (req: Request, res: Response) => {
     if (tratamientos !== undefined && Array.isArray(tratamientos)) {
       console.log('🔄 Processing treatments:', tratamientos.length);
       for (const tratamiento of tratamientos) {
-        if (tratamiento.id) {
+        // Only update if ID is positive (existing records)
+        // Negative IDs are temporary and should be created as new
+        if (tratamiento.id && tratamiento.id > 0) {
           // Update existing treatment
           console.log('✏️ Updating existing treatment:', tratamiento.id);
           await prisma.treatment.update({
@@ -244,6 +246,8 @@ export const updateLead = async (req: Request, res: Response) => {
               deuda: parseFloat(tratamiento.deuda) || 0
             }
           });
+        } else if (tratamiento.id && tratamiento.id < 0) {
+          console.log('⏭️ Skipping temporary ID (will be created):', tratamiento.id);
         }
         // Note: New treatments will be created below in the prisma.lead.update call
       }
@@ -279,7 +283,7 @@ export const updateLead = async (req: Request, res: Response) => {
         // Create only NEW treatments (those without an id)
         tratamientos: (tratamientos && Array.isArray(tratamientos) && tratamientos.length > 0) ? {
           create: tratamientos
-            .filter((t: any) => !t.id) // Only create treatments that don't have an ID yet
+            .filter((t: any) => !t.id || t.id < 0) // Create treatments without ID or with negative (temporary) IDs
             .map((t: any) => {
               console.log('✨ Creating NEW treatment:', t.nombre);
               return {
@@ -295,12 +299,15 @@ export const updateLead = async (req: Request, res: Response) => {
         procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
           create: procedimientos.map((p: any) => {
             console.log('✨ Creating procedimiento:', p);
+            // If tratamientoId is negative (temporary), use 0 as placeholder
+            const tratamientoIdValue = parseInt(p.tratamientoId) || 0;
+            const finalTratamientoId = tratamientoIdValue < 0 ? 0 : tratamientoIdValue;
             return {
               fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
               personal: p.personal || '',
               horaInicio: p.horaInicio || '',
               horaFin: p.horaFin || '',
-              tratamientoId: parseInt(p.tratamientoId) || 0,
+              tratamientoId: finalTratamientoId,
               nombreTratamiento: p.nombreTratamiento || '',
               sesionNumero: parseInt(p.sesionNumero) || 1,
               asistenciaMedica: Boolean(p.asistenciaMedica),

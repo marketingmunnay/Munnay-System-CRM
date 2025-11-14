@@ -188,13 +188,17 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
     
     // Si es un servicio, crear un Procedure en el lead
     if (saleType === 'Servicio' && pacienteEncontrado && !venta) {
+      // Generar IDs temporales negativos para evitar conflictos con autoincrement
+      const tempId = -Math.floor(Math.random() * 1000000);
+      const tempTratamientoId = -Math.floor(Math.random() * 1000000);
+      
       const newProcedure: any = {
-        id: Date.now(),
+        id: tempId,
         fechaAtencion: formData.fechaVenta || new Date().toISOString().split('T')[0],
         personal: 'Por asignar',
         horaInicio: '09:00',
         horaFin: '10:00',
-        tratamientoId: Date.now(),
+        tratamientoId: tempTratamientoId,
         nombreTratamiento: formData.servicio || '',
         sesionNumero: 1,
         asistenciaMedica: false,
