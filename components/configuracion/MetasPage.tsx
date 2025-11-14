@@ -77,37 +77,37 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
                              <GoogleIcon name={areaIcons[area]} className="mr-2 text-gray-500" />
                              {area}
                         </h3>
-                        <div className="bg-white p-4 rounded-lg shadow">
-                            <table className="w-full text-sm">
+                        <div className="bg-white p-3 rounded-lg shadow">
+                            <table className="w-full text-xs">
                                 <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
                                     <tr>
-                                        <th className="p-2">Nombre de la Meta</th>
-                                        <th className="p-2">Objetivo Medido</th>
-                                        <th className="p-2">Personal Asignado</th>
-                                        <th className="p-2">Periodo</th>
-                                        <th className="p-2">Valor</th>
-                                        <th className="p-2 w-28">Acciones</th>
+                                        <th className="px-2 py-1.5">Nombre de la Meta</th>
+                                        <th className="px-2 py-1.5">Objetivo Medido</th>
+                                        <th className="px-2 py-1.5">Personal Asignado</th>
+                                        <th className="px-2 py-1.5">Periodo</th>
+                                        <th className="px-2 py-1.5">Valor</th>
+                                        <th className="px-2 py-1.5 w-20">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {(groupedGoals[area] || []).map(goal => (
                                         <tr key={goal.id} className="border-b last:border-b-0">
-                                            <td className="p-2 font-medium text-black">{goal.name}</td>
-                                            <td className="p-2 text-gray-600">{goal.objective}</td>
-                                            <td className="p-2 text-gray-600">{goal.personal || 'General'}</td>
-                                            <td className="p-2 text-gray-600">
-                                                {new Date(goal.startDate + 'T00:00:00').toLocaleDateString('es-PE')} - {new Date(goal.endDate + 'T00:00:00').toLocaleDateString('es-PE')}
+                                            <td className="px-2 py-1.5 font-medium text-black">{goal.name}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">{goal.objective}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">{goal.personal || 'General'}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">
+                                                {goal.startDate ? new Date(goal.startDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A'} - {goal.endDate ? new Date(goal.endDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A'}
                                             </td>
-                                            <td className="p-2 text-black font-semibold">
+                                            <td className="px-2 py-1.5 text-black font-semibold">
                                                 {goal.value.toLocaleString('es-PE')} {goal.unit === 'porcentaje' ? '%' : ''}
                                             </td>
-                                            <td className="p-2">
-                                                <div className="flex items-center space-x-2">
-                                                    <button onClick={() => handleEditGoal(goal)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
-                                                        <GoogleIcon name="edit" className="text-lg" />
+                                            <td className="px-2 py-1.5">
+                                                <div className="flex items-center space-x-1">
+                                                    <button onClick={() => handleEditGoal(goal)} className="text-blue-600 hover:text-blue-800 p-0.5" title="Editar">
+                                                        <GoogleIcon name="edit" className="text-base" />
                                                     </button>
-                                                    <button onClick={() => handleDeleteGoalWithConfirmation(goal)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
-                                                        <GoogleIcon name="delete" className="text-lg" />
+                                                    <button onClick={() => handleDeleteGoalWithConfirmation(goal)} className="text-red-600 hover:text-red-800 p-0.5" title="Eliminar">
+                                                        <GoogleIcon name="delete" className="text-base" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -115,7 +115,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
                                     ))}
                                      {(!groupedGoals[area] || groupedGoals[area].length === 0) && (
                                         <tr>
-                                            <td colSpan={6} className="text-center p-4 text-gray-500">No hay metas definidas para esta área.</td>
+                                            <td colSpan={6} className="text-center py-3 text-gray-500">No hay metas definidas para esta área.</td>
                                         </tr>
                                     )}
                                 </tbody>
