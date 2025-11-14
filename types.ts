@@ -501,11 +501,37 @@ export interface Service {
     precio: number;
 }
 
+export enum TipoProducto {
+    Venta = 'venta',
+    Insumo = 'insumo',
+}
+
 export interface Product {
     id: number;
     nombre: string;
     categoria: string;
-    precio: number;
+    precio: number; // Mantiene compatibilidad
+    tipo: TipoProducto;
+    costoCompra: number;
+    precioVenta: number;
+    stockActual: number;
+    stockMinimo: number;
+    stockCritico: number;
+    movimientos?: MovimientoStock[];
+}
+
+export interface MovimientoStock {
+    id: number;
+    productoId: number;
+    tipoMovimiento: 'entrada' | 'salida';
+    cantidad: number;
+    costoUnitario: number;
+    precioUnitario: number;
+    motivo: string;
+    fecha: string;
+    creadoPor?: string;
+    ventaExtraId?: number;
+    procedimientoId?: number;
 }
 
 // Catálogo de membresías (configuración global)

@@ -565,11 +565,42 @@ model Service {
   precio    Float
 }
 
+enum TipoProducto {
+  venta
+  insumo
+}
+
 model Product {
-  id        Int    @id @default(autoincrement())
-  nombre    String @unique
-  categoria String
-  precio    Float
+  id             Int            @id @default(autoincrement())
+  nombre         String         @unique
+  categoria      String
+  precio         Float          // Precio de venta (mantiene compatibilidad)
+  tipo           TipoProducto   @default(venta)
+  costoCompra    Float          @default(0)
+  precioVenta    Float          @default(0)
+  stockActual    Int            @default(0)
+  stockMinimo    Int            @default(5)
+  stockCritico   Int            @default(3)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  movimientos    MovimientoStock[]
+}
+
+model MovimientoStock {
+  id              Int      @id @default(autoincrement())
+  productoId      Int
+  producto        Product  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  tipoMovimiento  String   // "entrada" o "salida"
+  cantidad        Int
+  costoUnitario   Float    @default(0)
+  precioUnitario  Float    @default(0)
+  motivo          String   @db.Text
+  fecha           DateTime @default(now())
+  creadoPor       String?  // Usuario que registró el movimiento
+  ventaExtraId    Int?     // Referencia opcional a venta
+  procedimientoId Int?     // Referencia opcional a procedimiento
+  createdAt       DateTime @default(now())
 }
 
 // Catálogo de membresías disponibles (configuración global)
