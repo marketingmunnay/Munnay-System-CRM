@@ -102,7 +102,10 @@ const MembershipFormModal: React.FC<MembershipFormModalProps> = ({
             }
         }
 
-        onSave(formData as Membership);
+        // Calcular el precio total de la membresía
+        const precioTotal = formData.servicios.reduce((sum, s) => sum + (s.precio || 0), 0);
+
+        onSave({ ...formData, precioTotal } as Membership);
         onClose();
     };
 
