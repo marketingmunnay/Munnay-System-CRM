@@ -15,8 +15,11 @@ interface PerfilEmpleadoDetalleProps {
 
 const KPICard: React.FC<{ title: string, value: string, icon: string, color: string }> = ({ title, value, icon, color }) => (
     <div className="bg-white p-4 rounded-lg border flex items-start space-x-3">
-        <div className={`p-2 rounded-full ${color}`}>
-            <GoogleIcon name={icon} className="text-white"/>
+        <div 
+            className={`${color} text-white flex items-center justify-center`}
+            style={{ padding: '0.75rem', width: '50px', height: '50px', borderRadius: '50%' }}
+        >
+            <GoogleIcon name={icon} />
         </div>
         <div>
             <p className="text-sm text-gray-500">{title}</p>
