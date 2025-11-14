@@ -2175,6 +2175,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 newState.deudaCita = precio - montoPagado;
             }
             
+            // Automatically set estadoRecepcion to "Agendado por llegar" when estado changes to "Agendado"
+            if (name === 'estado' && value === 'Agendado') {
+                newState.estadoRecepcion = 'Agendado por llegar';
+            }
+            
             return newState;
         });
     };
