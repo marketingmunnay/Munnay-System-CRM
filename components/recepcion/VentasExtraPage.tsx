@@ -38,6 +38,7 @@ interface VentasExtraPageProps {
     ventas: VentaExtra[];
     pacientes: Lead[];
     onSaveVenta: (venta: VentaExtra) => void;
+    onSaveLead: (lead: Lead) => void;
     onDeleteVenta: (ventaId: number) => void;
     services: Service[];
     products: Product[];
@@ -46,7 +47,7 @@ interface VentasExtraPageProps {
     comprobantes: ComprobanteElectronico[];
 }
 
-const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacientes, onSaveVenta, onDeleteVenta, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSaveVenta, onDeleteVenta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
     const [activeTab, setActiveTab] = useState<'ventas' | 'llamadas'>('ventas');
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
@@ -474,6 +475,7 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, pacien
                 requestConfirmation={requestConfirmation}
                 onSaveComprobante={onSaveComprobante}
                 comprobantes={comprobantes}
+                onSaveLead={onSaveLead}
             />
         </div>
     );

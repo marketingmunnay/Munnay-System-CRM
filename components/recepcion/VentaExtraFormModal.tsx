@@ -17,13 +17,14 @@ interface VentaExtraFormModalProps {
   requestConfirmation: (message: string, onConfirm: () => void) => void;
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
+  onSaveLead: (lead: Lead) => void;
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes }) => {
+export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);
@@ -181,7 +182,32 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
         alert('Por favor, seleccione un servicio o producto.');
         return;
     }
+    
+    // Guardar la venta
     onSave(formData as VentaExtra);
+    
+    // Si es un servicio, crear un Procedure en el lead
+    if (saleType === 'Servicio' && pacienteEncontrado && !venta) {
+      const newProcedure: any = {
+        id: Date.now(),
+        fechaAtencion: formData.fechaVenta || new Date().toISOString().split('T')[0],
+        personal: 'Por asignar',
+        horaInicio: '09:00',
+        horaFin: '10:00',
+        tratamientoId: Date.now(),
+        nombreTratamiento: formData.servicio || '',
+        sesionNumero: 1,
+        asistenciaMedica: false,
+        observacion: `Venta registrada - Código: ${formData.codigoVenta}`
+      };
+      
+      const updatedLead: Lead = {
+        ...pacienteEncontrado,
+        procedimientos: [...(pacienteEncontrado.procedimientos || []), newProcedure]
+      };
+      
+      onSaveLead(updatedLead);
+    }
   };
 
   const handleDelete = () => {
