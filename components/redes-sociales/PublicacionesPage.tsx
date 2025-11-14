@@ -228,7 +228,7 @@ const PublicacionesPage: React.FC<PublicacionesPageProps> = ({ publicaciones, on
                 </div>
                 <div className="flex-shrink-0 lg:pl-8 lg:border-l border-gray-200 mt-8 lg:mt-0 w-full lg:w-auto">
                     <h4 className="text-lg font-semibold text-gray-500 mb-4">Interacciones Totales</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <InteractionTypeCard title="Vistas" amount={stats.totalVistas.toLocaleString('es-PE')} color="bg-blue-50" iconName="visibility" />
                         <InteractionTypeCard title="Comentarios" amount={stats.totalComentarios.toLocaleString('es-PE')} color="bg-green-50" iconName="comment" />
                         <InteractionTypeCard title="Reacciones" amount={stats.totalReacciones.toLocaleString('es-PE')} color="bg-purple-50" iconName="favorite" />
