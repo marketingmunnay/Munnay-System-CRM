@@ -136,9 +136,16 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
             return;
         }
         
+        // Prepare data to send - remove empty password for existing users
+        const dataToSave = { ...formData };
+        if (user && (!dataToSave.password || dataToSave.password.trim() === '')) {
+            delete dataToSave.password;
+        }
+        
         console.log('2. Validación exitosa, llamando a onSave...');
+        console.log('Datos a enviar:', dataToSave);
         try {
-            await onSave(formData as User);
+            await onSave(dataToSave as User);
             console.log('3. onSave completado exitosamente');
             console.log('=== FIN GUARDADO MIEMBRO ===');
             // Don't close here - let parent handle it
@@ -444,19 +451,20 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     />
                                 </div>
-                                {!user && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            value={formData.password || ''}
-                                            onChange={handleChange}
-                                            required={!user}
-                                            className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                        />
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Contraseña {!user && '*'}{user && ' (dejar vacío para no cambiar)'}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password || ''}
+                                        onChange={handleChange}
+                                        required={!user}
+                                        placeholder={user ? 'Nueva contraseña (opcional)' : ''}
+                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
