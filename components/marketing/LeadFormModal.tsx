@@ -363,46 +363,88 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
             
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Registro de Llamadas</legend>
-                {/* Call log table */}
-                <div className="overflow-x-auto">
-                     <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="p-2">N°</th>
-                                <th className="p-2">Duración</th>
-                                <th className="p-2">Estado</th>
-                                <th className="p-2">Observación</th>
-                                <th className="p-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {formData.registrosLlamada?.map((llamada: any) => (
-                                <tr key={llamada.id} className="border-b">
-                                    <td className="p-2">{llamada.numeroLlamada}</td>
-                                    <td className="p-2">{llamada.duracionLlamada}</td>
-                                    <td className="p-2">{llamada.estadoLlamada}</td>
-                                    <td className="p-2 truncate max-w-xs">{llamada.observacion}</td>
-                                    <td className="p-2"><button type="button" onClick={() => handleRemoveLlamada(llamada.id)} className="text-red-500"><GoogleIcon name="delete"/></button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                {/* Form to add a new call log */}
+                
+                {/* Form fields to add a new call log */}
                 {currentLlamada ? (
-                    <div className="grid grid-cols-4 gap-4 p-4 bg-gray-100 rounded-md">
-                        <input type="time" step="1" value={currentLlamada.duracionLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} className="bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} />
-                        <select value={currentLlamada.estadoLlamada} onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} className="bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
-                            {Object.values(EstadoLlamada).map(e => <option key={e} value={e}>{e}</option>)}
-                        </select>
-                        <input type="text" placeholder="Observación" value={currentLlamada.observacion || ''} onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} className="col-span-2 bg-white p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} />
-                        <div className="col-span-4 flex justify-end space-x-2">
-                            <button type="button" onClick={() => setCurrentLlamada(null)} className="px-3 py-1 bg-gray-300 rounded">Cancelar</button>
-                            <button type="button" onClick={handleSaveCurrentLlamada} className="px-3 py-1 bg-green-500 text-white rounded">Guardar Llamada</button>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-sm font-medium block mb-1">Duración</label>
+                                <input 
+                                    type="time" 
+                                    step="1" 
+                                    value={currentLlamada.duracionLlamada} 
+                                    onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} 
+                                    className="w-full bg-white p-2" 
+                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium block mb-1">Estado</label>
+                                <select 
+                                    value={currentLlamada.estadoLlamada} 
+                                    onChange={(e) => setCurrentLlamada({...currentLlamada, estadoLlamada: e.target.value})} 
+                                    className="w-full bg-white p-2" 
+                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                >
+                                    {Object.values(EstadoLlamada).map(e => <option key={e} value={e}>{e}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium block mb-1">Observación</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Observación de la llamada" 
+                                    value={currentLlamada.observacion || ''} 
+                                    onChange={(e) => setCurrentLlamada({...currentLlamada, observacion: e.target.value})} 
+                                    className="w-full bg-white p-2" 
+                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                            <button type="button" onClick={() => setCurrentLlamada(null)} className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-md transition">Cancelar</button>
+                            <button type="button" onClick={handleSaveCurrentLlamada} className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition">
+                                <GoogleIcon name="save" className="inline mr-1" /> Guardar Llamada
+                            </button>
                         </div>
                     </div>
                 ) : (
-                    <button type="button" onClick={handleShowAddLlamadaForm} className="text-sm text-blue-600 flex items-center"><GoogleIcon name="add_call"/> Añadir Registro de Llamada</button>
+                    <button type="button" onClick={handleShowAddLlamadaForm} className="text-sm text-blue-600 hover:text-blue-800 flex items-center transition">
+                        <GoogleIcon name="add_call"/> <span className="ml-1">Añadir Registro de Llamada</span>
+                    </button>
+                )}
+
+                {/* Table of saved call logs */}
+                {formData.registrosLlamada && formData.registrosLlamada.length > 0 && (
+                    <div className="overflow-x-auto mt-4">
+                        <table className="w-full text-sm border">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 text-left">N°</th>
+                                    <th className="p-2 text-left">Duración</th>
+                                    <th className="p-2 text-left">Estado</th>
+                                    <th className="p-2 text-left">Observación</th>
+                                    <th className="p-2 text-center w-16">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {formData.registrosLlamada.map((llamada: any) => (
+                                    <tr key={llamada.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-2">{llamada.numeroLlamada}</td>
+                                        <td className="p-2">{llamada.duracionLlamada}</td>
+                                        <td className="p-2">{llamada.estadoLlamada}</td>
+                                        <td className="p-2 truncate max-w-xs">{llamada.observacion}</td>
+                                        <td className="p-2 text-center">
+                                            <button type="button" onClick={() => handleRemoveLlamada(llamada.id)} className="text-red-500 hover:text-red-700 transition" title="Eliminar">
+                                                <GoogleIcon name="delete"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </fieldset>
             </div>
