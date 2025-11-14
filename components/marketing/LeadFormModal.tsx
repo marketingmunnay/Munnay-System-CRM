@@ -408,7 +408,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
     );
 };
 
-const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGenerateHistoryNumber, handleSetFormData, totales, services }) => {
+const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGenerateHistoryNumber, handleSetFormData, totales, services, memberships }) => {
     const [editingPayments, setEditingPayments] = useState(false);
     const [tempPagosRecepcion, setTempPagosRecepcion] = useState<any[]>([]);
     const [newPago, setNewPago] = useState<any>(null);
@@ -481,12 +481,22 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
             if (t.id === id) {
                 const updated = { ...t, [field]: value };
                 
-                // Si cambió el nombre (servicio), buscar precio automático
-                if (field === 'nombre') {
-                    const service = services?.find((s: Service) => s.nombre === value);
-                    if (service) {
-                        updated.precio = service.precio;
-                        updated.deuda = service.precio - (updated.montoPagado || 0);
+                // Si cambió el nombre (servicio/membresía), buscar precio y sesiones automáticos
+                if (field === 'nombre' && value) {
+                    if (updated.tipo === 'Membresía') {
+                        const membership = memberships?.find((m: Membership) => m.nombre === value);
+                        if (membership) {
+                            updated.precio = membership.precioTotal || 0;
+                            updated.cantidadSesiones = membership.servicios?.reduce((sum: number, s: any) => sum + (s.cantidadSesiones || 0), 0) || 1;
+                            updated.deuda = (membership.precioTotal || 0) - (updated.montoPagado || 0);
+                        }
+                    } else {
+                        const service = services?.find((s: Service) => s.nombre === value);
+                        if (service) {
+                            updated.precio = service.precio;
+                            updated.cantidadSesiones = 1;
+                            updated.deuda = service.precio - (updated.montoPagado || 0);
+                        }
                     }
                 }
                 
@@ -777,8 +787,8 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                             <table className="w-full text-sm border">
                                 <thead className="bg-gray-100">
                                     <tr>
-                                        <th className="p-2">Servicio</th>
                                         <th className="p-2">Tipo</th>
+                                        <th className="p-2">Servicio</th>
                                         <th className="p-2">Sesiones</th>
                                         <th className="p-2">Precio</th>
                                         <th className="p-2">Monto Pagado</th>
@@ -792,25 +802,12 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                             <td className="p-2">
                                                 {editingTreatments ? (
                                                     <select 
-                                                        value={treatment.nombre}
-                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'nombre', e.target.value)}
-                                                        className="w-full p-1"
-                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
-                                                    >
-                                                        <option value="">Seleccionar...</option>
-                                                        {services?.map((s: Service) => (
-                                                            <option key={s.id} value={s.nombre}>{s.nombre}</option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    treatment.nombre
-                                                )}
-                                            </td>
-                                            <td className="p-2">
-                                                {editingTreatments ? (
-                                                    <select 
                                                         value={treatment.tipo || 'Servicio'}
-                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'tipo', e.target.value)}
+                                                        onChange={(e) => {
+                                                            handleTreatmentChange(treatment.id, 'tipo', e.target.value);
+                                                            // Limpiar el nombre cuando cambie el tipo
+                                                            handleTreatmentChange(treatment.id, 'nombre', '');
+                                                        }}
                                                         className="w-full p-1"
                                                         style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                                                     >
@@ -825,6 +822,28 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
                                                     }`}>
                                                         {treatment.tipo || 'Servicio'}
                                                     </span>
+                                                )}
+                                            </td>
+                                            <td className="p-2">
+                                                {editingTreatments ? (
+                                                    <select 
+                                                        value={treatment.nombre}
+                                                        onChange={(e) => handleTreatmentChange(treatment.id, 'nombre', e.target.value)}
+                                                        className="w-full p-1"
+                                                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                                                    >
+                                                        <option value="">Seleccionar...</option>
+                                                        {treatment.tipo === 'Membresía' 
+                                                            ? memberships?.map((m: Membership) => (
+                                                                <option key={m.id} value={m.nombre}>{m.nombre}</option>
+                                                            ))
+                                                            : services?.map((s: Service) => (
+                                                                <option key={s.id} value={s.nombre}>{s.nombre}</option>
+                                                            ))
+                                                        }
+                                                    </select>
+                                                ) : (
+                                                    treatment.nombre
                                                 )}
                                             </td>
                                             <td className="p-2">
@@ -2333,6 +2352,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             handleSetFormData={setFormData}
                             totales={totalesTratamientos}
                             services={services}
+                            memberships={memberships}
                         />;
             case 'procedimientos':
                 return <ProcedimientosTabContent 
