@@ -34,7 +34,7 @@ const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 // Puestos permitidos para el campo Profesional
 const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería'];
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
@@ -2354,6 +2354,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             SERVICE_CATEGORIES={SERVICE_CATEGORIES}
                             services={services}
                             memberships={memberships}
+                            PERSONAL_OPTIONS={PERSONAL_OPTIONS}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
