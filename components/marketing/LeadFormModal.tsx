@@ -112,7 +112,9 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <label className="text-sm font-medium">Campaña / Anuncio <span className="text-red-500">*</span></label>
                     <select name="anuncio" value={formData.anuncio || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar anuncio...</option>
-                        {campaigns?.map(c => <option key={c.id} value={c.nombreAnuncio}>{c.nombreAnuncio}</option>)}
+                        {campaigns?.filter((c, i, arr) => arr.findIndex(x => x.nombreAnuncio === c.nombreAnuncio) === i).map(c => (
+                            <option key={c.id} value={c.nombreAnuncio}>{c.nombreAnuncio}</option>
+                        ))}
                     </select>
                     {!formData.anuncio && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
