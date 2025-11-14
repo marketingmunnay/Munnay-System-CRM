@@ -19,6 +19,7 @@ export const getUsers = async (req: Request, res: Response) => {
         documentType: true,
         documentNumber: true,
         phone: true,
+        email: true,
         birthDate: true,
         startDate: true,
         addresses: true,
