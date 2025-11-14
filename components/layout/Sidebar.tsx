@@ -236,12 +236,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
             {/* Version info at bottom */}
             {!isCollapsed && (
                 <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
-                    <div className="text-xs text-gray-500 text-center">
-                        <div className="font-mono">
-                            v: {import.meta.env.VITE_GIT_COMMIT_HASH || '8809475'}
+                    <div className="text-xs text-gray-500">
+                        <div className="font-normal">
+                            Versión: {import.meta.env.VITE_GIT_COMMIT_HASH || '24a5a4'}
                         </div>
                         <div className="text-[10px] text-gray-400 mt-0.5">
-                            {new Date().toLocaleDateString('es-PE')}
+                            {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' - ')}
                         </div>
                     </div>
                 </div>
