@@ -7,6 +7,14 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+// Helper function to get default avatar based on sex
+const getDefaultAvatar = (sex?: string): string => {
+    if (sex === 'F') {
+        return 'https://i.pinimg.com/736x/a9/75/93/a975934bb378afc4ca8c133df451f56e.jpg';
+    }
+    return 'https://cdn1.iconfinder.com/data/icons/user-pictures/100/male3-512.png';
+};
+
 interface MiembroEquipoFormModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -51,7 +59,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                     usuario: '',
                     password: '',
                     rolId: roles[0]?.id || 1,
-                    avatarUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+                    avatarUrl: getDefaultAvatar('M'),
                     addresses: [],
                     emergencyContacts: [],
                     currency: 'Soles',
@@ -74,6 +82,9 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
         // Special handling for rolId - convert to number
         if (name === 'rolId') {
             setFormData(prev => ({ ...prev, [name]: value ? parseInt(value) : undefined }));
+        } else if (name === 'sex') {
+            // Update avatar when sex changes
+            setFormData(prev => ({ ...prev, [name]: value, avatarUrl: getDefaultAvatar(value) }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }

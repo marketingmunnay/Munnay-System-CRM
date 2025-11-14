@@ -4,9 +4,17 @@ import React, { useMemo } from 'react';
 import type { Lead, Alergia } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 
-const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
+const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
+
+// Helper function to get default avatar based on sex
+const getDefaultAvatar = (sex?: 'M' | 'F'): string => {
+    if (sex === 'F') {
+        return 'https://i.pinimg.com/736x/a9/75/93/a975934bb378afc4ca8c133df451f56e.jpg';
+    }
+    return 'https://cdn1.iconfinder.com/data/icons/user-pictures/100/male3-512.png';
+};
 
 const calculateAge = (birthDate?: string): string => {
     if (!birthDate) return 'N/A';
@@ -164,7 +172,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                 {/* Left Column */}
                 <aside className="w-full md:w-[350px] flex-shrink-0 border-r bg-white p-6 space-y-8 overflow-y-auto">
                     <div className="text-center">
-                        <img src="https://picsum.photos/id/237/100/100" alt="Foto del paciente" className="w-28 h-28 rounded-full mx-auto shadow-lg ring-4 ring-white" />
+                        <img src={getDefaultAvatar(paciente.sexo)} alt="Foto del paciente" className="w-28 h-28 rounded-full mx-auto shadow-lg ring-4 ring-white" />
                         <h2 className="mt-4 text-2xl font-bold text-gray-900">{paciente.nombres} {paciente.apellidos}</h2>
                         <p className="text-sm text-gray-500 font-mono">{paciente.nHistoria}</p>
                     </div>
