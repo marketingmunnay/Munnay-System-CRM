@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership } from '../../types';
 import { Seller } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { formatDateForDisplay } from '../../utils/time';
@@ -42,12 +42,13 @@ interface VentasExtraPageProps {
     onDeleteVenta: (ventaId: number) => void;
     services: Service[];
     products: Product[];
+    memberships: Membership[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
 }
 
-const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSaveVenta, onDeleteVenta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
+const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSaveVenta, onDeleteVenta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
     const [activeTab, setActiveTab] = useState<'ventas' | 'llamadas'>('ventas');
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
@@ -472,6 +473,7 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSave
                 pacientes={pacientes}
                 services={services}
                 products={products}
+                memberships={memberships}
                 requestConfirmation={requestConfirmation}
                 onSaveComprobante={onSaveComprobante}
                 comprobantes={comprobantes}

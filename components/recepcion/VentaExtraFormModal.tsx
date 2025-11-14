@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership } from '../../types';
 import { MetodoPago } from '../../types';
 import Modal from '../shared/Modal.tsx';
 import FacturacionModal from '../finanzas/FacturacionModal.tsx';
@@ -14,6 +14,7 @@ interface VentaExtraFormModalProps {
   pacientes: Lead[];
   services: Service[];
   products: Product[];
+  memberships: Membership[];
   requestConfirmation: (message: string, onConfirm: () => void) => void;
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
@@ -24,11 +25,11 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
+export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);
-  const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | ''>('');
+  const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | 'Membresía' | ''>('');
   const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
 
   const serviceCategoriesAndItems = useMemo(() => {
@@ -47,18 +48,28 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
     }, {} as Record<string, string[]>);
   }, [products]);
 
+  const membershipCategoriesAndItems = useMemo(() => {
+    return memberships.reduce((acc, m) => {
+        if (!acc[m.categoria]) acc[m.categoria] = [];
+        acc[m.categoria].push(m.nombre);
+        return acc;
+    }, {} as Record<string, string[]>);
+  }, [memberships]);
+
   const categoryOptions = useMemo(() => {
     if (saleType === 'Servicio') return Object.keys(serviceCategoriesAndItems);
     if (saleType === 'Productos') return Object.keys(productCategoriesAndItems);
+    if (saleType === 'Membresía') return Object.keys(membershipCategoriesAndItems);
     return [];
-  }, [saleType, serviceCategoriesAndItems, productCategoriesAndItems]);
+  }, [saleType, serviceCategoriesAndItems, productCategoriesAndItems, membershipCategoriesAndItems]);
 
   const itemOptions = useMemo(() => {
       if (!formData.categoria) return [];
       if (saleType === 'Servicio') return serviceCategoriesAndItems[formData.categoria] || [];
       if (saleType === 'Productos') return productCategoriesAndItems[formData.categoria] || [];
+      if (saleType === 'Membresía') return membershipCategoriesAndItems[formData.categoria] || [];
       return [];
-  }, [formData.categoria, saleType, serviceCategoriesAndItems, productCategoriesAndItems]);
+  }, [formData.categoria, saleType, serviceCategoriesAndItems, productCategoriesAndItems, membershipCategoriesAndItems]);
 
 
   useEffect(() => {
@@ -69,7 +80,12 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                 setSaleType('Servicio');
             } else {
                 const isProduct = products.some(p => p.categoria === venta.categoria);
-                setSaleType(isProduct ? 'Productos' : '');
+                if (isProduct) {
+                    setSaleType('Productos');
+                } else {
+                    const isMembership = memberships.some(m => m.categoria === venta.categoria);
+                    setSaleType(isMembership ? 'Membresía' : '');
+                }
             }
             
             const paciente = pacientes.find(p => p.id === venta.pacienteId);
@@ -128,7 +144,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
   }
   
   const handleSaleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newType = e.target.value as 'Servicio' | 'Productos' | '';
+      const newType = e.target.value as 'Servicio' | 'Productos' | 'Membresía' | '';
       setSaleType(newType);
       setFormData(prev => ({
           ...prev,
@@ -154,9 +170,14 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
         }
 
         if (name === 'servicio') {
-            const selectedItem = saleType === 'Servicio' 
-                ? services.find(s => s.nombre === value)
-                : products.find(p => p.nombre === value);
+            let selectedItem;
+            if (saleType === 'Servicio') {
+                selectedItem = services.find(s => s.nombre === value);
+            } else if (saleType === 'Productos') {
+                selectedItem = products.find(p => p.nombre === value);
+            } else if (saleType === 'Membresía') {
+                selectedItem = memberships.find(m => m.nombre === value);
+            }
             newState.precio = selectedItem ? selectedItem.precio : 0;
         }
 
@@ -317,6 +338,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                             <option value="">Seleccionar...</option>
                             <option value="Servicio">Servicio</option>
                             <option value="Productos">Producto</option>
+                            <option value="Membresía">Membresía</option>
                         </select>
                     </div>
                  </div>
