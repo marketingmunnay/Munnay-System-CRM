@@ -211,16 +211,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        if (formData.categoria === 'Membresías') {
                            const found = memberships?.find(m => m.nombre === selected);
                            setFormData(prev => {
-                               // Calcular precio de cita sumando los precioCita de los servicios de la membresía
-                               let precioCita = 0;
-                               if (found && found.servicios && found.servicios.length > 0) {
-                                   precioCita = found.servicios.reduce((sum, servicio) => sum + (servicio.precioCita || 0), 0);
-                               }
-                               // Si no hay servicios con precioCita, usar precioTotal como fallback
-                               if (precioCita === 0 && found) {
-                                   precioCita = found.precioTotal;
-                               }
+                               // Usar precioTotal de la membresía
+                               const precioCita = found ? found.precioTotal : 0;
                                const montoPagado = prev.montoPagado || 0;
+                               console.log('Membresía seleccionada:', found?.nombre, 'Precio:', precioCita);
                                return { ...prev, servicios: selected ? [selected] : [], precioCita: precioCita, deudaCita: precioCita - montoPagado };
                            });
                        } else {

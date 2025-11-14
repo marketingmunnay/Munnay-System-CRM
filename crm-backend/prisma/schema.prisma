@@ -577,6 +577,7 @@ model Membership {
   id              Int                      @id @default(autoincrement())
   nombre          String                   @unique
   descripcion     String                   @db.Text
+  precioTotal     Float                    @default(0)
   servicios       MembershipService[]      // Servicios incluidos en la membresía
   leadMemberships LeadMembership[]         // Membresías adquiridas por leads
   createdAt       DateTime                 @default(now())

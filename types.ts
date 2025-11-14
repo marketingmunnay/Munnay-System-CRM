@@ -513,6 +513,7 @@ export interface Membership {
     id: number;
     nombre: string;
     descripcion: string;
+    precioTotal: number;
     servicios?: MembershipService[];
 }
 
