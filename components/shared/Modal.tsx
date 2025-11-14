@@ -10,10 +10,13 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidthClass?: string;
+  customMaxWidth?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, maxWidthClass = 'max-w-5xl' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, maxWidthClass = 'max-w-5xl', customMaxWidth }) => {
   if (!isOpen) return null;
+
+  const modalStyle = customMaxWidth ? { maxWidth: customMaxWidth } : {};
 
   return (
     <div 
@@ -23,7 +26,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
       aria-labelledby="modal-title"
     >
       <div 
-        className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col`}
+        className={`bg-white rounded-lg shadow-xl w-full ${customMaxWidth ? '' : maxWidthClass} max-h-[90vh] flex flex-col`}
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b">

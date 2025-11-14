@@ -320,18 +320,6 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
             <div className="lg:col-span-1 flex flex-col space-y-4">
              <fieldset className="grid grid-cols-1 gap-6 border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Observaciones Generales</legend>
-                 <div>
-                     <label className="text-sm font-medium">Observaciones</label>
-                     <textarea
-                         name="observacionesGenerales"
-                         value={formData.observacionesGenerales || ''}
-                         onChange={handleChange}
-                         rows={3}
-                         placeholder="Observaciones sobre el paciente o tratamiento..."
-                         className="w-full bg-[#f9f9fa] p-2"
-                         style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
-                     />
-                 </div>
                  <div className="grid grid-cols-2 gap-4">
                      <div>
                          <label className="text-sm font-medium">Fecha de Volver a Llamar</label>
@@ -355,6 +343,18 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                              style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                          />
                      </div>
+                 </div>
+                 <div>
+                     <label className="text-sm font-medium">Observaciones</label>
+                     <textarea
+                         name="observacionesGenerales"
+                         value={formData.observacionesGenerales || ''}
+                         onChange={handleChange}
+                         rows={3}
+                         placeholder="Observaciones sobre el paciente o tratamiento..."
+                         className="w-full bg-[#f9f9fa] p-2"
+                         style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
+                     />
                  </div>
              </fieldset>
             
@@ -2352,7 +2352,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             isOpen={isOpen}
             onClose={onClose}
             title={isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
-            maxWidthClass="max-w-7xl"
+            customMaxWidth="95rem"
             footer={
                 <div className="w-full flex justify-between items-center">
                     <div>

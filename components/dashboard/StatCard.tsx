@@ -32,7 +32,7 @@ const StatCard: React.FC<CustomStatCardData> = ({ title, value, change, changeTy
           </div>
         )}
       </div>
-      <div className={`p-3 ${iconBgClass || ''}`}>
+      <div className={`flex items-center justify-center ${iconBgClass || ''}`} style={{ padding: '0.75rem', width: '50px', height: '50px', borderRadius: '50%' }}>
         {typeof icon === 'string' ? <GoogleIcon name={icon} className={iconColorClass} /> : icon}
       </div>
     </div>
