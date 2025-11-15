@@ -3,22 +3,18 @@
 ## 📋 Deployment Summary
 
 **Date:** 15 de noviembre de 2025  
-**Commit:** 0940670  
+**Commit:** 5e39985  
 **Branch:** copilot/disable-login-open-dashboard  
 
 ### ✅ GitHub Deployment - COMPLETED
 - **Status:** ✅ SUCCESS
-- **Commit Message:** "fix: Crear handlers personalizados para productos con campos opcionales"
+- **Commit Message:** "fix: Remover completamente campos de inventario del sistema"
 - **Files Changed:** 
-  - `crm-backend/src/controllers/config.controller.ts` (handlers personalizados)
-  - `crm-backend/prisma/schema.prisma` (MovimientoStock comentado)
-  - `crm-backend/package.json` (sin migrate deploy en build)
-  - `crm-backend/src/controllers/movimientosStock.controller.ts` (fix TypeScript errors)
-  - `types.ts` (interfaces actualizadas)
-  - `components/informes/InformeComercial.tsx`
-  - `components/pacientes/PacienteDetailView.tsx`
+  - `crm-backend/src/controllers/config.controller.ts` (solo campos básicos)
+  - `crm-backend/prisma/schema.prisma` (TipoProducto y campos comentados)
+  - `types.ts` (Product simplificado)
 - **Push Successful:** Yes
-- **Build:** ✅ Debe compilar y funcionar correctamente
+- **Build:** ✅ Compilará exitosamente con campos básicos solamente
 
 ### 🔄 Render Deployment - IN PROGRESS
 - **Auto-deployment:** Triggered by GitHub push
