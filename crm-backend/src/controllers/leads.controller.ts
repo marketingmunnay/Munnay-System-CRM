@@ -214,7 +214,7 @@ export const updateLead = async (req: Request, res: Response) => {
 
     // Helper function to normalize enum values (remove spaces)
     const normalizeEnum = (value: string | undefined | null): string | undefined | null => {
-      if (!value) return value;
+      if (!value) return '';
       // Normaliza variantes de estadoRecepcion
       const map: Record<string, string> = {
         'Agendadoporllegar': 'Agendado por llegar',
@@ -224,7 +224,7 @@ export const updateLead = async (req: Request, res: Response) => {
         'NoAsistio': 'No Asistió',
         'Reprogramado': 'Reprogramado',
         'EnEspera': 'En Espera',
-        '': undefined
+        '': ''
       };
       const sinEspacios = value.replace(/\s+/g, '');
       return map[sinEspacios] || value;
