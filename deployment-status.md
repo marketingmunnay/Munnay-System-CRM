@@ -3,18 +3,20 @@
 ## 📋 Deployment Summary
 
 **Date:** 14 de noviembre de 2025  
-**Commit:** b667b08  
+**Commit:** 4d0fbca  
 **Branch:** copilot/disable-login-open-dashboard  
 
 ### ✅ GitHub Deployment - COMPLETED
 - **Status:** ✅ SUCCESS
-- **Commit Message:** "fix: Hacer campos de inventario opcionales temporalmente"
+- **Commit Message:** "fix: Corregir errores TypeScript en movimientosStock controller"
 - **Files Changed:** 
+  - `crm-backend/src/controllers/movimientosStock.controller.ts` (fix TypeScript errors)
   - `crm-backend/prisma/schema.prisma` (campos opcionales)
   - `types.ts` (interfaces actualizadas)
   - `components/informes/InformeComercial.tsx`
   - `components/pacientes/PacienteDetailView.tsx`
 - **Push Successful:** Yes
+- **Build:** Should compile successfully now
 
 ### 🔄 Render Deployment - IN PROGRESS
 - **Auto-deployment:** Triggered by GitHub push
