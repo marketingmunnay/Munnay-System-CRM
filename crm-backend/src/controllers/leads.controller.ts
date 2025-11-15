@@ -248,7 +248,7 @@ export const updateLead = async (req: Request, res: Response) => {
           // Update existing treatment
           console.log('✏️ Updating existing treatment:', tratamiento.id);
           await prisma.treatment.update({
-            where: { id: tratamiento.id },
+            where: { id: BigInt(String(tratamiento.id)) },
             data: {
               nombre: tratamiento.nombre || '',
               cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
@@ -325,13 +325,13 @@ export const updateLead = async (req: Request, res: Response) => {
             })
             .map((p: any) => {
               console.log('✨ Creating procedimiento:', p);
-              const tratamientoIdValue = parseInt(p.tratamientoId);
+                const tratamientoIdValue = BigInt(String(p.tratamientoId));
               return {
                 fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
                 personal: p.personal || '',
                 horaInicio: p.horaInicio || '',
                 horaFin: p.horaFin || '',
-                tratamientoId: tratamientoIdValue,
+                    tratamientoId: tratamientoIdValue,
                 nombreTratamiento: p.nombreTratamiento || '',
                 sesionNumero: parseInt(p.sesionNumero) || 1,
                 asistenciaMedica: Boolean(p.asistenciaMedica),

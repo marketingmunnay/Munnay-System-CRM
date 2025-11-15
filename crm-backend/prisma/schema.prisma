@@ -217,7 +217,7 @@ model RegistroLlamada {
 }
 
 model Treatment {
-  id               Int        @id @default(autoincrement())
+  id               BigInt     @id @default(autoincrement())
   nombre           String
   tipo             String?    @default("Servicio")
   cantidadSesiones Int
@@ -235,7 +235,7 @@ model Procedure {
   personal          String
   horaInicio        String
   horaFin           String
-  tratamientoId     Int
+  tratamientoId     BigInt
   nombreTratamiento String
   sesionNumero      Int
   asistenciaMedica  Boolean
