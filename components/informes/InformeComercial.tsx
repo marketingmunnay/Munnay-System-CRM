@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 import StatCard from '../dashboard/StatCard.tsx';
@@ -208,6 +208,76 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         }));
     }, [filteredLeads]);
 
+    // Weekly Income Comparison Data
+    const weeklyComparisonData = useMemo(() => {
+        const getWeekNumber = (dateStr: string): number => {
+            const date = new Date(dateStr.split('T')[0]);
+            const startOfYear = new Date(date.getFullYear(), 0, 1);
+            const daysDiff = Math.floor((date.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+            return Math.ceil((daysDiff + startOfYear.getDay() + 1) / 7);
+        };
+
+        const getMonthName = (dateStr: string): string => {
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const date = new Date(dateStr.split('T')[0]);
+            return months[date.getMonth()];
+        };
+
+        // Group data by week
+        const weeklyData: Record<string, { ingresos: number, egresos: number, month: string }> = {};
+
+        // Process leads income
+        filteredLeads.forEach(lead => {
+            if (lead.fechaHoraAgenda) {
+                const weekKey = `${getWeekNumber(lead.fechaHoraAgenda)}-${new Date(lead.fechaHoraAgenda).getFullYear()}`;
+                const month = getMonthName(lead.fechaHoraAgenda);
+                if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
+                weeklyData[weekKey].ingresos += (lead.montoPagado || 0) + (lead.tratamientos?.reduce((s, t) => s + t.montoPagado, 0) || 0);
+            }
+        });
+
+        // Process extra sales income
+        filteredVentasExtra.forEach(venta => {
+            if (venta.fechaVenta) {
+                const weekKey = `${getWeekNumber(venta.fechaVenta)}-${new Date(venta.fechaVenta).getFullYear()}`;
+                const month = getMonthName(venta.fechaVenta);
+                if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
+                weeklyData[weekKey].ingresos += venta.montoPagado;
+            }
+        });
+
+        // Process campaign expenses
+        filteredCampaigns.forEach(campaign => {
+            if (campaign.fecha) {
+                const weekKey = `${getWeekNumber(campaign.fecha)}-${new Date(campaign.fecha).getFullYear()}`;
+                const month = getMonthName(campaign.fecha);
+                if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
+                weeklyData[weekKey].egresos += campaign.importeGastado;
+            }
+        });
+
+        // Convert to array and sort by week
+        const sortedData = Object.entries(weeklyData)
+            .map(([key, data]) => {
+                const [week, year] = key.split('-');
+                return {
+                    week: `Sem ${week}`,
+                    month: data.month,
+                    Ingresos: data.ingresos,
+                    Egresos: data.egresos,
+                    weekNum: parseInt(week),
+                    year: parseInt(year)
+                };
+            })
+            .sort((a, b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                return a.weekNum - b.weekNum;
+            });
+
+        // Get last 8 weeks for better visualization
+        return sortedData.slice(-8);
+    }, [filteredLeads, filteredVentasExtra, filteredCampaigns]);
+
     const handleGenerateAnalysis = async () => {
         setIsGenerating(true);
         setAiAnalysis('');
@@ -335,48 +405,124 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
                 <StatCard title="ROI (Retorno de Inversión)" value={`${stats.roi.toFixed(1)}%`} icon="show_chart" iconBgClass="bg-purple-100" iconColorClass="text-purple-500"/>
             </div>
 
+            {/* Weekly Income vs Expenses Comparison */}
+            <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-xl font-bold text-black mb-4">Comparación Semanal: Ingresos vs Egresos</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={weeklyComparisonData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis 
+                            dataKey="week" 
+                            stroke="#6b7280"
+                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                        />
+                        <YAxis 
+                            stroke="#6b7280"
+                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tickFormatter={(value) => `S/ ${(value / 1000).toFixed(0)}k`}
+                        />
+                        <Tooltip 
+                            formatter={(value: number) => formatCurrency(value)}
+                            contentStyle={{ 
+                                backgroundColor: 'white', 
+                                border: '1px solid #e5e7eb', 
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                            labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+                        />
+                        <Legend 
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            iconType="line"
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="Ingresos" 
+                            stroke="#10b981" 
+                            strokeWidth={3}
+                            dot={{ fill: '#10b981', r: 5 }}
+                            activeDot={{ r: 7 }}
+                            name="Ingresos"
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="Egresos" 
+                            stroke="#f59e0b" 
+                            strokeWidth={3}
+                            dot={{ fill: '#f59e0b', r: 5 }}
+                            activeDot={{ r: 7 }}
+                            name="Egresos"
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lead Source Performance */}
                 <div className="bg-white p-6 rounded-lg shadow h-[400px]">
                     <h3 className="text-xl font-bold text-black mb-4">Rendimiento por Origen de Lead</h3>
                     <ResponsiveContainer width="100%" height="85%">
-                        <BarChart data={leadSourceData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                        <BarChart data={leadSourceData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-15} textAnchor="end" height={50} />
-                            <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Leads', angle: -90, position: 'insideLeft' }} />
-                            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Tasa de Conversión (%)', angle: 90, position: 'insideRight' }} />
-                            <Tooltip formatter={(value: number, name: string) => {
-                                if (name === 'Tasa de Conversión') return [`${value.toFixed(1)}%`, name];
-                                return [value.toLocaleString('es-PE'), name];
-                            }}/>
-                            <Legend />
-                            <Bar yAxisId="left" dataKey="Leads" fill="#8884d8" name="Leads" />
-                            <Bar yAxisId="right" dataKey="Tasa de Conversión" fill="#82ca9d" name="Tasa de Conversión" />
+                            <XAxis type="number" />
+                            <YAxis type="category" dataKey="name" width={90} />
+                            <Tooltip 
+                                formatter={(value: number, name: string) => {
+                                    if (name === 'Tasa de Conversión') return [`${value.toFixed(1)}%`, name];
+                                    return [value.toLocaleString('es-PE'), name];
+                                }}
+                                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: 'white' }}
+                                labelStyle={{ color: 'white', fontWeight: 'bold' }}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                            <Bar dataKey="Leads" fill="#3b82f6" name="Leads" radius={[0, 8, 8, 0]} />
+                            <Bar dataKey="Tasa de Conversión" fill="#10b981" name="Conversión (%)" radius={[0, 8, 8, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
 
                 {/* Sales Funnel */}
-                <div className="bg-white p-6 rounded-lg shadow h-[400px] flex flex-col items-center justify-center">
-                    <h3 className="text-xl font-bold text-black mb-4">Embudo de Ventas</h3>
-                    <ResponsiveContainer width="100%" height="85%">
-                        <FunnelChart>
-                            <Tooltip formatter={(value: number, name: string) => [`${value.toLocaleString('es-PE')}`, name]}/>
-                            <Funnel
-                                dataKey="value"
-                                data={funnelData}
-                                isAnimationActive
-                                // Removed nameProperty as it's not a valid prop for Funnel
-                                label
-                                fill="#8884d8"
-                            >
-                                {funnelData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} />
-                                ))}
-                                <LabelList dataKey="name" position="right" fill="#000" stroke="none" />
-                            </Funnel>
-                        </FunnelChart>
-                    </ResponsiveContainer>
+                <div className="bg-white p-6 rounded-lg shadow h-[400px] flex flex-col">
+                    <h3 className="text-xl font-bold text-black mb-6">Embudo de Ventas</h3>
+                    <div className="flex-1 flex flex-col justify-center items-center space-y-1">
+                        {funnelData.map((stage, index) => {
+                            const colors = [
+                                { bg: 'bg-purple-500', text: 'text-white', from: 'from-purple-500', to: 'to-purple-600' },
+                                { bg: 'bg-purple-400', text: 'text-white', from: 'from-purple-400', to: 'to-purple-500' },
+                                { bg: 'bg-blue-400', text: 'text-white', from: 'from-blue-400', to: 'to-blue-500' },
+                                { bg: 'bg-teal-400', text: 'text-white', from: 'from-teal-400', to: 'to-teal-500' }
+                            ];
+                            const color = colors[index] || colors[0];
+                            const widthPercent = 100 - (index * 15);
+                            const percentage = index > 0 ? ((stage.value / funnelData[0].value) * 100).toFixed(0) : 100;
+                            
+                            return (
+                                <div 
+                                    key={stage.name}
+                                    className={`relative flex flex-col items-center justify-center bg-gradient-to-br ${color.from} ${color.to} rounded-lg shadow-md transition-all hover:shadow-lg hover:scale-105 cursor-pointer`}
+                                    style={{ 
+                                        width: `${widthPercent}%`,
+                                        minHeight: '80px',
+                                        clipPath: index < funnelData.length - 1 
+                                            ? 'polygon(5% 0%, 95% 0%, 90% 100%, 10% 100%)'
+                                            : 'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)'
+                                    }}
+                                >
+                                    <div className={`text-3xl font-bold ${color.text}`}>
+                                        {stage.value.toLocaleString('es-PE')}
+                                    </div>
+                                    <div className={`text-sm ${color.text} opacity-90 font-medium`}>
+                                        {stage.name}
+                                    </div>
+                                    {index > 0 && (
+                                        <div className={`text-xs ${color.text} opacity-75 mt-1`}>
+                                            {percentage}% del total
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 

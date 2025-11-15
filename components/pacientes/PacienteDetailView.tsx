@@ -82,8 +82,20 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
         if (!paciente) return [];
         const events: TimelineEvent[] = [];
         
+        // Validar y crear fecha segura
+        const createSafeDate = (dateStr: string, timeStr?: string): Date => {
+            try {
+                const cleanDate = dateStr.split('T')[0];
+                const fullDateStr = timeStr ? `${cleanDate}T${timeStr}` : `${cleanDate}T00:00:00`;
+                const date = new Date(fullDateStr);
+                return isNaN(date.getTime()) ? new Date() : date;
+            } catch {
+                return new Date();
+            }
+        };
+        
         events.push({
-            date: new Date(paciente.fechaLead + 'T00:00:00'),
+            date: createSafeDate(paciente.fechaLead),
             type: 'Lead',
             title: 'Paciente Registrado',
             details: `Origen: ${paciente.redSocial}, Vendedor: ${paciente.vendedor}.`
@@ -91,7 +103,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
 
         paciente.procedimientos?.forEach(p => {
             events.push({
-                date: new Date(p.fechaAtencion + 'T' + p.horaInicio),
+                date: createSafeDate(p.fechaAtencion, p.horaInicio),
                 type: 'Procedimiento',
                 title: `${p.nombreTratamiento} (Sesión ${p.sesionNumero})`,
                 details: `Atendido por ${p.personal}. ${p.asistenciaMedica ? `Con ${p.medico}.` : ''}`
@@ -106,7 +118,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
             ].filter(Boolean).join(', ');
 
             events.push({
-                date: new Date(s.fechaSeguimiento + 'T09:00:00'),
+                date: createSafeDate(s.fechaSeguimiento, '09:00:00'),
                 type: 'Seguimiento',
                 title: 'Seguimiento de Procedimiento',
                 details: `Realizado por ${s.personal}.`,
@@ -126,7 +138,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
 
         paciente.registrosLlamada?.forEach(l => {
             events.push({
-                date: new Date(paciente.fechaLead + 'T10:00:00'), // Placeholder date
+                date: createSafeDate(paciente.fechaLead, '10:00:00'),
                 type: 'Llamada',
                 title: `Llamada ${l.numeroLlamada} (${l.estadoLlamada})`,
                 details: `Duración: ${l.duracionLlamada}.`,
