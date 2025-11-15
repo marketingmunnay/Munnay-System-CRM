@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 import StatCard from '../dashboard/StatCard.tsx';
@@ -527,23 +527,74 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
             </div>
 
             {/* Seller Performance */}
-            <div className="bg-white p-6 rounded-lg shadow h-[400px]">
-                <h3 className="text-xl font-bold text-black mb-4">Rendimiento por Vendedor</h3>
-                <ResponsiveContainer width="100%" height="85%">
-                    <BarChart data={sellerPerformanceData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Leads', angle: -90, position: 'insideLeft' }} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Ventas (S/)', angle: 90, position: 'insideRight' }} />
-                        <Tooltip formatter={(value: number, name: string) => {
-                            if (name === 'Ventas') return [formatCurrency(value), name];
-                            return [value.toLocaleString('es-PE'), name];
-                        }}/>
-                        <Legend />
-                        <Bar yAxisId="left" dataKey="Leads" fill="#8884d8" name="Leads Generados" />
-                        <Bar yAxisId="right" dataKey="Ventas" fill="#82ca9d" name="Ventas Generadas" />
-                    </BarChart>
-                </ResponsiveContainer>
+            <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-black">Rendimiento por Vendedor</h3>
+                    <div className="text-sm text-gray-500">Este Periodo</div>
+                </div>
+                
+                <div className="flex flex-col lg:flex-row items-center gap-8">
+                    {/* Donut Chart */}
+                    <div className="w-full lg:w-1/2 flex justify-center">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={sellerPerformanceData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={80}
+                                    outerRadius={120}
+                                    dataKey="Ventas"
+                                    paddingAngle={2}
+                                >
+                                    {sellerPerformanceData.map((entry, index) => {
+                                        const colors = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
+                                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                    })}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                {/* Center text */}
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute" style={{ marginTop: '120px' }}>
+                            <div className="text-center">
+                                <div className="text-sm text-gray-500">Total Ventas</div>
+                                <div className="text-2xl font-bold text-gray-900">
+                                    {formatCurrency(sellerPerformanceData.reduce((sum, s) => sum + s.Ventas, 0))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Breakdown List */}
+                    <div className="w-full lg:w-1/2 space-y-3">
+                        {sellerPerformanceData.map((seller, index) => {
+                            const colors = ['#1e3a5f', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
+                            const totalVentas = sellerPerformanceData.reduce((sum, s) => sum + s.Ventas, 0);
+                            const percentage = totalVentas > 0 ? ((seller.Ventas / totalVentas) * 100).toFixed(0) : 0;
+                            
+                            return (
+                                <div key={seller.name} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <div 
+                                            className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                                            style={{ backgroundColor: colors[index % colors.length] }}
+                                        >
+                                            {percentage}%
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-gray-900">{seller.name}</div>
+                                            <div className="text-xs text-gray-500">{seller.Leads} leads generados</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-bold text-gray-900">{formatCurrency(seller.Ventas)}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
     );
