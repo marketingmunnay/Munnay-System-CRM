@@ -74,12 +74,22 @@ export const createLead = async (req: Request, res: Response) => {
       }
     };
 
-    // Helper function to normalize enum values (remove spaces)
-    const normalizeEnum = (value: any): any => {
-      if (typeof value === 'string') {
-        return value.replace(/\s+/g, '');
-      }
-      return value;
+    // Helper function to normalize ReceptionStatus values to valid enum tokens or undefined
+    const normalizeEnum = (value: any): string | undefined => {
+      if (!value && value !== 0) return undefined;
+      if (typeof value !== 'string') return undefined;
+      const cleaned = value.replace(/\s+/g, '').toLowerCase();
+      const map: Record<string, string> = {
+        'agendado': 'Agendado',
+        'poratender': 'PorAtender',
+        'atendido': 'Atendido',
+        'reprogramado': 'Reprogramado',
+        'cancelado': 'Cancelado',
+        'noasistio': 'NoAsistio',
+        'agendadoporllegar': 'Agendado',
+        'enespera': 'PorAtender'
+      };
+      return map[cleaned] ?? undefined;
     };
 
     const newLead = await prisma.lead.create({
@@ -112,7 +122,7 @@ export const createLead = async (req: Request, res: Response) => {
             personal: p.personal || '',
             horaInicio: p.horaInicio || '',
             horaFin: p.horaFin || '',
-            tratamientoId: parseInt(p.tratamientoId) || 0,
+            tratamientoId: (p.tratamientoId ? BigInt(String(p.tratamientoId)) : BigInt(0)) as any,
             nombreTratamiento: p.nombreTratamiento || '',
             sesionNumero: parseInt(p.sesionNumero) || 1,
             asistenciaMedica: Boolean(p.asistenciaMedica),
@@ -213,21 +223,20 @@ export const updateLead = async (req: Request, res: Response) => {
     };
 
     // Helper function to normalize enum values (remove spaces)
-    const normalizeEnum = (value: string | undefined | null): string | undefined | null => {
-      if (!value) return '';
-      // Normaliza variantes de estadoRecepcion
+    const normalizeEnum = (value: string | undefined | null): string | undefined => {
+      if (!value) return undefined;
+      const cleaned = String(value).replace(/\s+/g, '').toLowerCase();
       const map: Record<string, string> = {
-        'Agendadoporllegar': 'Agendado por llegar',
-        'PorAtender': 'Por Atender',
-        'Atendido': 'Atendido',
-        'Cancelado': 'Cancelado',
-        'NoAsistio': 'No Asistió',
-        'Reprogramado': 'Reprogramado',
-        'EnEspera': 'En Espera',
-        '': ''
+        'agendado': 'Agendado',
+        'poratender': 'PorAtender',
+        'atendido': 'Atendido',
+        'cancelado': 'Cancelado',
+        'noasistio': 'NoAsistio',
+        'reprogramado': 'Reprogramado',
+        'agendadoporllegar': 'Agendado',
+        'enespera': 'PorAtender'
       };
-      const sinEspacios = value.replace(/\s+/g, '');
-      return map[sinEspacios] || value;
+      return map[cleaned] ?? undefined;
     };
 
     // Get existing lead to preserve fechaLead if not provided
@@ -248,7 +257,7 @@ export const updateLead = async (req: Request, res: Response) => {
           // Update existing treatment
           console.log('✏️ Updating existing treatment:', tratamiento.id);
           await prisma.treatment.update({
-            where: { id: BigInt(String(tratamiento.id)) },
+            where: { id: (BigInt(String(tratamiento.id)) as any) },
             data: {
               nombre: tratamiento.nombre || '',
               cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
@@ -325,7 +334,7 @@ export const updateLead = async (req: Request, res: Response) => {
             })
             .map((p: any) => {
               console.log('✨ Creating procedimiento:', p);
-                const tratamientoIdValue = BigInt(String(p.tratamientoId));
+                const tratamientoIdValue = BigInt(String(p.tratamientoId)) as any;
               return {
                 fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
                 personal: p.personal || '',
