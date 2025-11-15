@@ -35,8 +35,9 @@ const createCrudHandlers = (modelName: string) => {
         },
         update: async (req: Request, res: Response) => {
             const id = parseInt(req.params.id);
+            const { id: _, ...data } = req.body; // Exclude id from update data
             try {
-                const updatedItem = await typedModel.update({ where: { id: id }, data: req.body });
+                const updatedItem = await typedModel.update({ where: { id: id }, data });
                 res.status(200).json(updatedItem);
             } catch (error) {
                 res.status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message });
@@ -81,21 +82,22 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
 };
 
 export const updateBusinessInfo = async (req: Request, res: Response) => {
+    const { id: _, ...data } = req.body; // Exclude id from update data
     try {
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
         const updatedInfo = await prisma.businessInfo.upsert({
             where: { id: 1 },
-            update: req.body,
+            update: data,
             create: { // Provide default values for create if it doesn't exist
                 id: 1,
-                nombre: req.body.nombre || 'Munnay System',
-                ruc: req.body.ruc || '12345678901',
-                direccion: req.body.direccion || 'Av. Principal 123',
-                telefono: req.body.telefono || '987654321',
-                email: req.body.email || 'info@munnay.com',
-                logoUrl: req.body.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
-                loginImageUrl: req.body.loginImageUrl || '',
+                nombre: data.nombre || 'Munnay System',
+                ruc: data.ruc || '12345678901',
+                direccion: data.direccion || 'Av. Principal 123',
+                telefono: data.telefono || '987654321',
+                email: data.email || 'info@munnay.com',
+                logoUrl: data.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
+                loginImageUrl: data.loginImageUrl || '',
             },
         });
         res.status(200).json(updatedInfo);
@@ -118,20 +120,160 @@ export const createService = serviceHandlers.create;
 export const updateService = serviceHandlers.update;
 export const deleteService = serviceHandlers.delete;
 
-// Products
-const productHandlers = createCrudHandlers('product');
-export const getProducts = productHandlers.getAll;
-export const createProduct = productHandlers.create;
-export const updateProduct = productHandlers.update;
-export const deleteProduct = productHandlers.delete;
+// Products - Custom handlers para campos opcionales
+export const getProducts = async (req: Request, res: Response) => {
+    try {
+        const products = await prisma.product.findMany();
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });
+    }
+};
 
-// Memberships
-const membershipHandlers = createCrudHandlers('membership');
-export const getMemberships = membershipHandlers.getAll;
-export const createMembership = membershipHandlers.create;
-export const updateMembership = membershipHandlers.update;
-// FIX: Corrected typo 'deleteMemberships' to match the route and standard naming (plural for all)
-export const deleteMembership = membershipHandlers.delete;
+export const createProduct = async (req: Request, res: Response) => {
+    try {
+        // Remover ID y campos de inventario deshabilitados
+        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
+        
+        // Solo usar campos básicos (nombre, categoria, precio)
+        const newProduct = await prisma.product.create({ data });
+        res.status(201).json(newProduct);
+    } catch (error) {
+        console.error('Error creating product:', error);
+        res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
+    }
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        // Remover ID y campos de inventario deshabilitados
+        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
+        
+        // Solo usar campos básicos (nombre, categoria, precio)
+        const updatedProduct = await prisma.product.update({ 
+            where: { id }, 
+            data 
+        });
+        res.status(200).json(updatedProduct);
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
+    }
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        await prisma.product.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting product', error: (error as Error).message });
+    }
+};
+
+// Memberships - Custom handlers to support nested MembershipService creation
+export const getMemberships = async (req: Request, res: Response) => {
+    try {
+        const memberships = await prisma.membership.findMany({
+            include: {
+                servicios: true, // Include related services
+            } as any,
+        });
+        res.status(200).json(memberships);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching memberships', error: (error as Error).message });
+    }
+};
+
+export const createMembership = async (req: Request, res: Response) => {
+    const { id, servicios, ...data } = req.body;
+    
+    console.log('=== CREATE MEMBERSHIP REQUEST ===');
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        const newMembership = await prisma.membership.create({
+            data: {
+                ...data,
+                servicios: {
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía creada exitosamente:', newMembership.id);
+        res.status(201).json(newMembership);
+    } catch (error) {
+        console.error('Error creating membership:', error);
+        console.error('Error stack:', (error as Error).stack);
+        res.status(500).json({ 
+            message: 'Error creating membership', 
+            error: (error as Error).message,
+            details: error instanceof Error ? error.stack : 'Unknown error'
+        });
+    }
+};
+
+export const updateMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { id: _, servicios, ...data } = req.body;
+    
+    console.log('=== UPDATE MEMBERSHIP REQUEST ===');
+    console.log('ID:', id);
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        // Delete existing services and create new ones (simpler than selective update)
+        const updatedMembership = await prisma.membership.update({
+            where: { id: id },
+            data: {
+                ...data,
+                servicios: {
+                    deleteMany: {}, // Delete all existing services
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía actualizada exitosamente:', updatedMembership.id);
+        res.status(200).json(updatedMembership);
+    } catch (error) {
+        console.error('Error updating membership:', error);
+        res.status(500).json({ 
+            message: 'Error updating membership', 
+            error: (error as Error).message 
+        });
+    }
+};
+
+export const deleteMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    try {
+        // Cascade delete will automatically delete related MembershipService records
+        await prisma.membership.delete({ where: { id: id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Error deleting membership', 
+            error: (error as Error).message 
+        });
+    }
+};
 
 // Service Categories
 const serviceCategoryHandlers = createCrudHandlers('serviceCategory');

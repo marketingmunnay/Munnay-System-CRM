@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import type { ComprobanteElectronico } from '../../types.ts';
-import { SunatStatus, TipoComprobanteElectronico } from '../../types.ts';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
+import type { ComprobanteElectronico } from '../../types';
+import { SunatStatus, TipoComprobante } from '../../types';
+import { formatDateForDisplay } from '../../utils/time';
+import DateRangeFilter from '../shared/DateRangeFilter';
+import { MagnifyingGlassIcon } from '../shared/Icons';
 
 interface FacturacionPageProps {
     comprobantes: ComprobanteElectronico[];
@@ -108,7 +109,7 @@ const FacturacionPage: React.FC<FacturacionPageProps> = ({ comprobantes }) => {
                                         <p>{c.tipoDocumento === 'Boleta' ? 'Boleta de Venta' : 'Factura'}</p>
                                         <p className="font-mono text-xs text-gray-600">{c.serie}-{c.correlativo.toString().padStart(6, '0')}</p>
                                     </td>
-                                    <td className="px-6 py-4">{new Date(c.fechaEmision + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                    <td className="px-6 py-4">{formatDateForDisplay(c.fechaEmision)}</td>
                                     <td className="px-6 py-4">
                                         <p className="font-medium text-gray-800">{c.clienteDenominacion}</p>
                                         <p className="text-xs text-gray-500">{c.clienteTipoDocumento}: {c.clienteNumeroDocumento}</p>

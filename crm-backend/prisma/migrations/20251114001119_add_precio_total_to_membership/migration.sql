@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Membership" ADD COLUMN     "precioTotal" DOUBLE PRECISION NOT NULL DEFAULT 0;

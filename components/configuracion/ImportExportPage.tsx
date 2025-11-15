@@ -79,19 +79,87 @@ const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templ
 
 interface ImportExportPageProps {
     comprobantes: ComprobanteElectronico[];
+    onImportCampaigns?: (campaigns: any[]) => Promise<void>;
+    onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
 }
 
-const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes }) => {
+const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImportCampaigns, onImportMetaCampaigns }) => {
 
-    const handleFileImport = (file: File, type: string) => {
-        // In a real app, you would parse the CSV and send it to the backend.
-        // For this demo, we'll just show an alert.
+    const handleFileImport = async (file: File, type: string) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             const text = e.target?.result as string;
-            // A very basic way to count rows, ignoring complexities of CSV format
-            const rowCount = text.split('\n').filter(line => line.trim() !== '').length - 1; // -1 for header
-            alert(`Archivo "${file.name}" cargado.\nSe importarán ${rowCount > 0 ? rowCount : 0} registros de ${type}.`);
+            
+            if (type === 'Campañas' && onImportCampaigns) {
+                try {
+                    // Parse CSV
+                    const lines = text.split('\n').filter(line => line.trim() !== '');
+                    if (lines.length < 2) {
+                        alert('El archivo CSV está vacío o no tiene datos.');
+                        return;
+                    }
+                    
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const campaigns = [];
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.trim());
+                        const campaign: any = {};
+                        
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (header === 'alcance' || header === 'resultados') {
+                                campaign[header] = parseInt(value) || 0;
+                            } else if (header === 'costoPorResultado' || header === 'importeGastado') {
+                                campaign[header] = parseFloat(value) || 0;
+                            } else {
+                                campaign[header] = value;
+                            }
+                        });
+                        
+                        campaigns.push(campaign);
+                    }
+                    
+                    await onImportCampaigns(campaigns);
+                    alert(`Se importaron ${campaigns.length} campañas exitosamente.`);
+                } catch (error) {
+                    console.error('Error al importar campañas:', error);
+                    alert('Error al importar las campañas. Verifica el formato del archivo.');
+                }
+            } else if (type === 'Meta Campañas' && onImportMetaCampaigns) {
+                try {
+                    // Parse CSV for Meta Campaigns
+                    const lines = text.split('\n').filter(line => line.trim() !== '');
+                    if (lines.length < 2) {
+                        alert('El archivo CSV está vacío o no tiene datos.');
+                        return;
+                    }
+                    
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const metaCampaigns = [];
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.trim());
+                        const metaCampaign: any = {};
+                        
+                        headers.forEach((header, index) => {
+                            metaCampaign[header] = values[index];
+                        });
+                        
+                        metaCampaigns.push(metaCampaign);
+                    }
+                    
+                    await onImportMetaCampaigns(metaCampaigns);
+                    alert(`Se importaron ${metaCampaigns.length} meta campañas exitosamente.`);
+                } catch (error) {
+                    console.error('Error al importar meta campañas:', error);
+                    alert('Error al importar las meta campañas. Verifica el formato del archivo.');
+                }
+            } else {
+                // For other types, show basic alert
+                const rowCount = text.split('\n').filter(line => line.trim() !== '').length - 1;
+                alert(`Archivo "${file.name}" cargado.\nSe importarán ${rowCount > 0 ? rowCount : 0} registros de ${type}.`);
+            }
         };
         reader.readAsText(file);
     };
@@ -116,6 +184,22 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes }) => 
                 onImport={(file) => handleFileImport(file, 'Pacientes')}
             />
             
+            <ImportSection
+                title="Campañas (Campaigns)"
+                description="Importa registros de campañas publicitarias con sus métricas."
+                templateFilename="plantilla_campaigns.csv"
+                headers={["id", "nombreAnuncio", "categoria", "alcance", "resultados", "costoPorResultado", "importeGastado", "fecha"]}
+                onImport={(file) => handleFileImport(file, 'Campañas')}
+            />
+
+            <ImportSection
+                title="Meta Campañas"
+                description="Importa campañas de Meta (Facebook/Instagram) con fechas de inicio y fin."
+                templateFilename="plantilla_meta_campaigns.csv"
+                headers={["id", "nombre", "fechaInicio", "fechaFin", "categoria"]}
+                onImport={(file) => handleFileImport(file, 'Meta Campañas')}
+            />
+
             <ImportSection
                 title="Servicios"
                 description="Importa tu catálogo de servicios."

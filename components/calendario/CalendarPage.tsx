@@ -8,6 +8,7 @@ import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, Fu
 interface CalendarPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
     onSaveLead: (lead: Lead) => void;
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
@@ -65,7 +66,7 @@ const durationToHeight = (startStr: string, endStr: string) => {
 };
 
 
-const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -132,10 +133,20 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
         setIsModalOpen(true);
     };
     
-    const handleSaveAndClose = (lead: Lead) => {
-        onSaveLead(lead);
-        setIsModalOpen(false);
-    }
+    const handleSaveAndClose = async (lead: Lead) => {
+        await onSaveLead(lead);
+        // Update editingLead with the latest data after save
+        if (lead.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === lead.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
+    };
 
     const { appointments, blocked } = useMemo(() => {
         const selectedDateStr = currentDate.toISOString().split('T')[0];
@@ -291,7 +302,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
                 onSave={handleSaveAndClose}
                 onDelete={onDeleteLead}
                 lead={editingLead}
-                metaCampaigns={metaCampaigns}
+                     metaCampaigns={metaCampaigns}
+                     campaigns={campaigns}
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}

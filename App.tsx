@@ -24,6 +24,7 @@ import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
 import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPage';
+import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
@@ -38,8 +39,8 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Auth states - Authentication disabled, default user with full permissions
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // Data states
@@ -104,13 +105,13 @@ const App: React.FC = () => {
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
-                api.getLeads(), api.getCampaigns(), api.getVentasExtra(),
-                api.getIncidencias(), api.getEgresos(), api.getProveedores(),
-                api.getUsers(), api.getRoles(), api.getBusinessInfo(),
-                api.getClientSources(), api.getServices(), api.getProducts(), api.getMemberships(),
-                api.getServiceCategories(), api.getProductCategories(), api.getJobPositions(),
-                api.getPublicaciones(), api.getSeguidores(), api.getMetaCampaigns(), api.getEgresoCategories(),
-                api.getTiposProveedor(), api.getGoals(), api.getComprobantes()
+                api.getLeads?.() || Promise.resolve([]), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
+                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
+                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
+                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
+                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
@@ -120,7 +121,7 @@ const App: React.FC = () => {
             setProveedores(proveedoresData);
             setUsers(usersData);
             setRoles(rolesData);
-            setBusinessInfo(businessInfoData);
+            setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
             setClientSources(clientSourcesData);
             setServices(servicesData);
             setProducts(productsData);
@@ -140,7 +141,43 @@ const App: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to load data", error);
+            // Set minimal business info on error
+            if (!businessInfo) {
+                setBusinessInfo({ nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            }
         } finally {
+            // Always set up a default admin user with full permissions (authentication disabled)
+            if (!currentUser) {
+                const allPermissions: Page[] = [
+                    'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                    'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
+                    'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
+                    'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
+                    'finanzas-facturacion', 'rrhh-perfiles', 'informes', 'configuracion'
+                ];
+                
+                const defaultUser: User = {
+                    id: 0,
+                    nombres: 'Usuario',
+                    apellidos: 'Administrador',
+                    usuario: 'admin',
+                    rolId: 1,
+                    avatarUrl: '',
+                    permissions: [
+                        'calendario', 'marketing-campanas', 'marketing-leads', 
+                        'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                        'procedimientos-ventas-extra', 'recepcion-agendados', 
+                        'recepcion-ventas-extra', 'recepcion-incidencias',
+                        'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
+                        'procedimientos-atenciones', 'procedimientos-seguimiento',
+                        'procedimientos-incidencias', 'pacientes-historia', 
+                        'informes', 'configuracion'
+                    ],
+                };
+                
+                setCurrentUser(defaultUser);
+            }
             setLoading(false);
         }
     };
@@ -154,8 +191,10 @@ const App: React.FC = () => {
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };
+    const handleImportCampaigns = async (campaigns: any[]) => { await api.bulkImportCampaigns(campaigns); await loadData(); };
     const handleSaveMetaCampaign = async (campaign: MetaCampaign) => { await api.saveMetaCampaign(campaign); await loadData(); };
     const handleDeleteMetaCampaign = async (campaignId: number) => { await api.deleteMetaCampaign(campaignId); await loadData(); };
+    const handleImportMetaCampaigns = async (metaCampaigns: any[]) => { await api.bulkImportMetaCampaigns(metaCampaigns); await loadData(); };
     const handleSavePublicacion = async (publicacion: Publicacion) => { await api.savePublicacion(publicacion); await loadData(); };
     const handleDeletePublicacion = async (publicacionId: number) => { await api.deletePublicacion(publicacionId); await loadData(); };
     const handleSaveSeguidor = async (seguidor: Seguidor) => { await api.saveSeguidor(seguidor); await loadData(); };
@@ -170,7 +209,21 @@ const App: React.FC = () => {
     const handleDeleteProveedor = async (proveedorId: number) => { await api.deleteProveedor(proveedorId); await loadData(); };
     const handleSaveTipoProveedor = async (tipo: TipoProveedor) => { await api.saveTipoProveedor(tipo); await loadData(); };
     const handleDeleteTipoProveedor = async (id: number) => { await api.deleteTipoProveedor(id); await loadData(); };
-    const handleSaveUser = async (user: User) => { await api.saveUser(user); await loadData(); };
+    const handleSaveUser = async (user: User) => { 
+        console.log('=== APP.TSX handleSaveUser ===');
+        console.log('Usuario recibido:', user);
+        try {
+            console.log('Llamando a api.saveUser...');
+            const result = await api.saveUser(user);
+            console.log('Respuesta de api.saveUser:', result);
+            console.log('Recargando datos...');
+            await loadData();
+            console.log('Datos recargados exitosamente');
+        } catch (error) {
+            console.error('ERROR en handleSaveUser:', error);
+            throw error;
+        }
+    };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
@@ -221,16 +274,52 @@ const App: React.FC = () => {
     };
 
     const currentUserPermissions = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.permissions : [];
+        if (!currentUser) return [];
+        // If user has permissions directly (our default user), use those
+        if (currentUser.permissions && currentUser.permissions.length > 0) {
+            return currentUser.permissions;
+        }
+        // Otherwise try to find from roles
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.permissions : [];
+        }
+        return [];
     }, [currentUser, roles]);
 
     const currentUserDashboardMetrics = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.dashboardMetrics || [] : [];
+        if (!currentUser) return [];
+        // Return all metrics by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+        }
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.dashboardMetrics || [] : [];
+        }
+        return [];
     }, [currentUser, roles]);
+
+    // Map user permissions to dashboard tabs
+    const currentUserDashboardTabs = useMemo(() => {
+        if (!currentUser) return [];
+        // Return all tabs by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh'];
+        }
+        const tabs: string[] = [];
+        const perms = currentUserPermissions;
+        
+        // Map permissions to tabs
+        if (perms.some(p => p === 'dashboard')) tabs.push('general');
+        if (perms.some(p => p.startsWith('marketing-') || p.startsWith('redes-sociales-'))) tabs.push('marketing');
+        if (perms.some(p => p.startsWith('recepcion-'))) tabs.push('recepcion');
+        if (perms.some(p => p.startsWith('procedimientos-'))) tabs.push('procedimientos');
+        if (perms.some(p => p.startsWith('finanzas-'))) tabs.push('finanzas');
+        if (perms.some(p => p.startsWith('rrhh-'))) tabs.push('rrhh');
+        
+        return tabs;
+    }, [currentUser, currentUserPermissions]);
     
     const handleSetCurrentPage = (page: Page) => {
         if (currentUserPermissions.includes(page)) {
@@ -261,7 +350,7 @@ const App: React.FC = () => {
             ventasExtra, 
             incidencias, 
             egresos, 
-            permissions: currentUserDashboardMetrics,
+            permissions: currentUserDashboardTabs,
             goals,
             seguidores,
             publicaciones,
@@ -277,7 +366,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <LeadsPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} memberships={memberships} users={users} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
                     campaigns={campaigns} 
@@ -294,21 +383,21 @@ const App: React.FC = () => {
             case 'redes-sociales-seguidores':
                 return <SeguidoresPage seguidores={seguidores} onSave={handleSaveSeguidor} onDelete={handleDeleteSeguidor} requestConfirmation={requestConfirmation} />;
             case 'recepcion-agendados':
-                return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AgendadosPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
-                return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <VentasExtraPage title="Ventas Recepción" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
-                return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AtencionesDiariasPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-seguimiento':
                 return <AnalisisSeguimientoPage leads={leads} />;
             case 'pacientes-historia':
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
-                return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
@@ -367,6 +456,8 @@ const App: React.FC = () => {
                     onDeleteEgresoCategory={handleDeleteEgresoCategory}
                     requestConfirmation={requestConfirmation}
                     comprobantes={comprobantes}
+                    onImportCampaigns={handleImportCampaigns}
+                    onImportMetaCampaigns={handleImportMetaCampaigns}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 
@@ -394,12 +485,14 @@ const App: React.FC = () => {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
 
-    if (!isAuthenticated) {
-        return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
-    }
+    // Authentication disabled - go directly to dashboard
+    // if (!isAuthenticated) {
+    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
+    // }
 
     return (
         <div className="flex h-screen bg-gray-100">
+            <BirthdayAnimation users={users} />
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={handleSetCurrentPage}

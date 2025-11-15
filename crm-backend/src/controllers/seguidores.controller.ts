@@ -45,7 +45,7 @@ export const createSeguidor = async (req: Request, res: Response) => {
 
 export const updateSeguidor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fecha, ...data } = req.body;
+  const { id: _, fecha, ...data } = req.body; // Exclude id from update data
   try {
     const updatedSeguidor = await prisma.seguidor.update({
       where: { id: id },

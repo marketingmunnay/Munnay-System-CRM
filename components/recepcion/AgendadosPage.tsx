@@ -10,6 +10,7 @@ import StatCard from '../dashboard/StatCard';
 interface AgendadosPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   onSaveLead: (lead: Lead) => void;
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
@@ -157,7 +158,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 };
 
 
-const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -167,13 +168,14 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
     let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
 
     if (dateRange.from || dateRange.to) {
-      const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-      const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
       baseLeads = baseLeads.filter(lead => {
-        const agendaDate = new Date(lead.fechaHoraAgenda!);
-        if (fromDate && agendaDate < fromDate) return false;
-        if (toDate && agendaDate > toDate) return false;
+        if (!lead.fechaHoraAgenda) return false;
+        
+        // Extract date part from datetime (YYYY-MM-DD)
+        const agendaDate = lead.fechaHoraAgenda.split('T')[0];
+        
+        if (dateRange.from && agendaDate < dateRange.from) return false;
+        if (dateRange.to && agendaDate > dateRange.to) return false;
         return true;
       });
     }
@@ -216,9 +218,19 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
     setIsModalOpen(true);
   };
   
-  const handleSaveAndClose = (lead: Lead) => {
-    onSaveLead(lead);
-    setIsModalOpen(false);
+  const handleSaveAndClose = async (lead: Lead) => {
+    await onSaveLead(lead);
+    // Update editingLead with the latest data after save
+    if (lead.id && editingLead) {
+      // Find the updated lead from the leads array after the save operation
+      // This ensures the modal shows the latest data
+      setTimeout(() => {
+        const updatedLead = leads.find(l => l.id === lead.id);
+        if (updatedLead) {
+          setEditingLead(updatedLead);
+        }
+      }, 100); // Small delay to ensure the parent data is updated
+    }
   };
 
   const statusConfig: Record<string, { title: string; color: string; textColor: string; }> = {
@@ -311,6 +323,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
             onDelete={onDeleteLead}
             lead={editingLead}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}

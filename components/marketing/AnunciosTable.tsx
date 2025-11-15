@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Campaign } from '../../types.ts';
 import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 interface AnunciosTableProps {
   campaigns: Campaign[];
@@ -54,7 +55,9 @@ const AnunciosTable: React.FC<AnunciosTableProps> = ({ campaigns, onEdit }) => {
                                     {campaign.nombreAnuncio}
                                 </th>
                                 <td className="px-6 py-4">
-                                    {new Date(campaign.fecha + 'T00:00:00').toLocaleDateString('es-PE', {day: '2-digit', month: '2-digit', year: 'numeric'})}
+                                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    {formatDateForDisplay(campaign.fecha)}
+                                </td>
                                 </td>
                                 <td className="px-6 py-4">{campaign.categoria}</td>
                                 <td className="px-6 py-4">{campaign.alcance.toLocaleString('es-PE')}</td>

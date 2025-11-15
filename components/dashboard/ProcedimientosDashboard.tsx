@@ -10,9 +10,10 @@ interface ProcedimientosDashboardProps {
     leads: Lead[];
     ventasExtra: VentaExtra[];
     incidencias: Incidencia[];
+    dateRange: { from: string; to: string };
 }
 
-const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads, ventasExtra, incidencias }) => {
+const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads, ventasExtra, incidencias, dateRange }) => {
     const stats = useMemo(() => {
         const totalIncidencias = incidencias.length;
 

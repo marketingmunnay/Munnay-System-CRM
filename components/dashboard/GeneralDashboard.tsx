@@ -265,13 +265,13 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-6">
                  <StatCard 
-                    title="Total Generado por Marketing" 
+                    title="Ventas Call Center" 
                     value={`S/ ${stats.totalVentasMarketing.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`} 
                     icon={<GoogleIcon name="campaign" className="text-blue-600" />}
                     iconBgClass="bg-blue-100"
                 />
                  <StatCard 
-                    title="Recuperados (Recepción)" 
+                    title="Ventas Recepción" 
                     value={`S/ ${stats.ventasExtraRecepcion.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
                     icon={<GoogleIcon name="point_of_sale" className="text-cyan-600" />}
                     iconBgClass="bg-cyan-100"

@@ -1,20 +1,68 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Munnay System CRM
 
-# Run and deploy your AI Studio app
+Sistema de gestión de relaciones con clientes (CRM) para Munnay Medicina Estética.
 
-This contains everything you need to run your app locally.
+## 🚀 Deployment
 
-View your app in AI Studio: https://ai.studio/apps/drive/1QNcUmZdPjS5HIwjoqinXlY5NShuSnBSl
+### Render.com (Recomendado)
 
-## Run Locally
+1. Fork este repositorio en GitHub
+2. Conecta tu repositorio a Render.com
+3. Usa el archivo `render.yaml` para configuración automática
+4. Configura las variables de entorno necesarias (ver `.env.example`)
 
-**Prerequisites:**  Node.js
+### Docker
 
+```bash
+docker build -t munnay-crm .
+docker run -p 4000:4000 munnay-crm
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Script Manual
+
+```bash
+chmod +x build_and_run.sh
+./build_and_run.sh
+```
+
+## 🛠 Desarrollo Local
+
+**Prerequisites:** Node.js 18+
+
+### Frontend
+```bash
+npm install
+npm run dev
+```
+
+### Backend
+```bash
+cd crm-backend
+npm install  
+npm run dev
+```
+
+## 📁 Estructura del Proyecto
+
+```
+├── components/          # Componentes React
+├── crm-backend/        # Servidor Node.js/Express
+├── hooks/              # Custom React Hooks
+├── pages/              # Páginas de la aplicación
+├── services/           # Servicios API
+└── utils/              # Utilidades compartidas
+```
+
+## 🔧 Variables de Entorno
+
+Ver `.env.example` para configuración completa.
+
+## 📋 Funcionalidades
+
+- ✅ Gestión de Leads y Pacientes
+- ✅ Sistema de Procedimientos
+- ✅ Dashboard con Métricas
+- ✅ Calendario de Citas
+- ✅ Sistema de Facturación
+- ✅ Gestión de Marketing
+- ✅ Reportes e Informes

@@ -14,6 +14,9 @@ const allowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
   'https://munnay-system.vercel.app',
+  'https://munnay-crm-frontend.onrender.com',
+  'http://localhost:4173',
+  'http://localhost:3000'
 ];
 
 // ✅ Regex para permitir previews de Vercel

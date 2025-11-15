@@ -77,12 +77,12 @@ const SeguidoresPage: React.FC<SeguidoresPageProps> = ({ seguidores, onSave, onD
         let results = seguidores;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(s => {
-                const segDate = new Date(`${s.fecha}T00:00:00`);
-                if (fromDate && segDate < fromDate) return false;
-                if (toDate && segDate > toDate) return false;
+                if (!s.fecha) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && s.fecha < dateRange.from) return false;
+                if (dateRange.to && s.fecha > dateRange.to) return false;
                 return true;
             });
         }

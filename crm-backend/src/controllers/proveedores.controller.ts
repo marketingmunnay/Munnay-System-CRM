@@ -26,19 +26,42 @@ export const getProveedorById = async (req: Request, res: Response) => {
 };
 
 export const createProveedor = async (req: Request, res: Response) => {
-  const data = req.body;
+  const { id: _, diasCredito, ...data } = req.body; // Exclude id from create data
+  console.log('Creating Proveedor with data:', { diasCredito, ...data });
+  
+  // Convertir diasCredito a número o null
+  const parsedDiasCredito = diasCredito && diasCredito !== '' ? parseInt(diasCredito) : null;
+  
   try {
-    const newProveedor = await prisma.proveedor.create({ data });
+    const newProveedor = await prisma.proveedor.create({ 
+      data: {
+        ...data,
+        ...(parsedDiasCredito !== null && { diasCredito: parsedDiasCredito })
+      }
+    });
+    console.log('Proveedor created successfully:', newProveedor);
     res.status(201).json(newProveedor);
   } catch (error) {
+    console.error('Error creating proveedor:', error);
     res.status(500).json({ message: 'Error creating proveedor', error: (error as Error).message });
   }
 };
 
 export const updateProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+  const { id: _, diasCredito, ...data } = req.body; // Exclude id from update data
+  
+  // Convertir diasCredito a número o null
+  const parsedDiasCredito = diasCredito && diasCredito !== '' ? parseInt(diasCredito) : null;
+  
   try {
-    const updatedProveedor = await prisma.proveedor.update({ where: { id: id }, data: req.body });
+    const updatedProveedor = await prisma.proveedor.update({ 
+      where: { id: id }, 
+      data: {
+        ...data,
+        ...(parsedDiasCredito !== null && { diasCredito: parsedDiasCredito })
+      }
+    });
     res.status(200).json(updatedProveedor);
   } catch (error) {
     res.status(500).json({ message: 'Error updating proveedor', error: (error as Error).message });
@@ -67,19 +90,23 @@ export const getTiposProveedor = async (req: Request, res: Response) => {
 };
 
 export const createTipoProveedor = async (req: Request, res: Response) => {
-  const data = req.body;
+  const { id: _, ...data } = req.body; // Exclude id from create data
+  console.log('Creating TipoProveedor with data:', data);
   try {
     const newTipo = await prisma.tipoProveedor.create({ data });
+    console.log('TipoProveedor created successfully:', newTipo);
     res.status(201).json(newTipo);
   } catch (error) {
+    console.error('Error creating tipo de proveedor:', error);
     res.status(500).json({ message: 'Error creating tipo de proveedor', error: (error as Error).message });
   }
 };
 
 export const updateTipoProveedor = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+  const { id: _, ...data } = req.body; // Exclude id from update data
   try {
-    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data: req.body });
+    const updatedTipo = await prisma.tipoProveedor.update({ where: { id: id }, data });
     res.status(200).json(updatedTipo);
   } catch (error) {
     res.status(500).json({ message: 'Error updating tipo de proveedor', error: (error as Error).message });

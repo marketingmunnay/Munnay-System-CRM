@@ -100,6 +100,32 @@ export const generateNotifications = (data: NotificationData): Notification[] =>
         }
     });
 
+    // 5. Recordatorios de Llamadas
+    data.leads.forEach(lead => {
+        if (lead.fechaVolverLlamar && lead.horaVolverLlamar) {
+            const fechaLlamada = new Date(lead.fechaVolverLlamar + 'T' + lead.horaVolverLlamar);
+            const diffMinutes = Math.floor((fechaLlamada.getTime() - now.getTime()) / (1000 * 60));
+            
+            // Notificar si la llamada es en los próximos 30 minutos o ya pasó (hasta 2 horas atrás)
+            if (diffMinutes >= -120 && diffMinutes <= 30) {
+                const mensaje = diffMinutes > 0 
+                    ? `Llamar a ${lead.nombres} ${lead.apellidos} en ${diffMinutes} minutos`
+                    : `Llamar a ${lead.nombres} ${lead.apellidos} (pendiente desde hace ${Math.abs(diffMinutes)} minutos)`;
+                
+                notifications.push({
+                    id: Date.now() + lead.id + 2000,
+                    type: 'recordatorio_llamada',
+                    message: `Recordatorio de Llamada`,
+                    details: mensaje,
+                    relatedId: lead.id,
+                    relatedPage: 'marketing-leads',
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                });
+            }
+        }
+    });
+
 
     return notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
