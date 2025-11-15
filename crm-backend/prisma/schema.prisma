@@ -572,20 +572,20 @@ model Service {
 // }
 
 model Product {
-  id             Int            @id @default(autoincrement())
-  nombre         String         @unique
+  id             Int      @id @default(autoincrement())
+  nombre         String   @unique
   categoria      String
-  precio         Float          // Precio de venta (mantiene compatibilidad)
-  // tipo           TipoProducto?  // Desactivado hasta migración
-  costoCompra    Float?         // Opcional temporalmente
-  precioVenta    Float?         // Opcional temporalmente
-  stockActual    Int?           // Opcional temporalmente
-  stockMinimo    Int?           // Opcional temporalmente
-  stockCritico   Int?           // Opcional temporalmente
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  precio         Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
-  // DESACTIVADO HASTA APLICAR MIGRACIÓN
+  // CAMPOS DE INVENTARIO DESACTIVADOS HASTA APLICAR MIGRACIÓN
+  // tipo           TipoProducto?
+  // costoCompra    Float?
+  // precioVenta    Float?
+  // stockActual    Int?
+  // stockMinimo    Int?
+  // stockCritico   Int?
   // movimientos    MovimientoStock[]
 }
 
