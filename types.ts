@@ -511,12 +511,12 @@ export interface Product {
     nombre: string;
     categoria: string;
     precio: number; // Mantiene compatibilidad
-    tipo: TipoProducto;
-    costoCompra: number;
-    precioVenta: number;
-    stockActual: number;
-    stockMinimo: number;
-    stockCritico: number;
+    tipo?: TipoProducto; // Opcional hasta aplicar migración
+    costoCompra?: number; // Opcional hasta aplicar migración
+    precioVenta?: number; // Opcional hasta aplicar migración
+    stockActual?: number; // Opcional hasta aplicar migración
+    stockMinimo?: number; // Opcional hasta aplicar migración
+    stockCritico?: number; // Opcional hasta aplicar migración
     movimientos?: MovimientoStock[];
 }
 
