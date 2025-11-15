@@ -575,12 +575,12 @@ model Product {
   nombre         String         @unique
   categoria      String
   precio         Float          // Precio de venta (mantiene compatibilidad)
-  tipo           TipoProducto   @default(venta)
-  costoCompra    Float          @default(0)
-  precioVenta    Float          @default(0)
-  stockActual    Int            @default(0)
-  stockMinimo    Int            @default(5)
-  stockCritico   Int            @default(3)
+  tipo           TipoProducto?  // Opcional temporalmente
+  costoCompra    Float?         // Opcional temporalmente
+  precioVenta    Float?         // Opcional temporalmente
+  stockActual    Int?           // Opcional temporalmente
+  stockMinimo    Int?           // Opcional temporalmente
+  stockCritico   Int?           // Opcional temporalmente
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   
