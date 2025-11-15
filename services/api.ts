@@ -33,6 +33,7 @@ const apiRequest = async <T>(
 
 // ====== LEADS ======
 export const getLeads = (): Promise<Lead[]> => apiRequest<Lead[]>('/leads', 'GET');
+export const getLead = (id: number): Promise<Lead> => apiRequest<Lead>(`/leads/${id}`, 'GET');
 export const saveLead = (lead: Lead): Promise<Lead> =>
   // Database IDs are small autoincrement values (< 1000000), timestamps are much larger
   lead.id && lead.id < 1000000

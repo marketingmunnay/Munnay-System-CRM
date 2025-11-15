@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
+import * as api from '../../services/api';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { RESOURCES } from '../../constants';
@@ -215,10 +216,21 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
     setIsModalOpen(true);
   };
 
-  const handleEditCita = (lead: Lead) => {
-    setEditingLead(lead);
-    setIsModalOpen(true);
-  };
+    const handleEditCita = async (lead: Lead) => {
+        // Try to fetch full lead details from backend before opening modal.
+        if (lead && lead.id) {
+            try {
+                const full = await api.getLead(lead.id);
+                setEditingLead(full as Lead);
+            } catch (err) {
+                console.warn('Warning: failed to fetch full lead, opening with partial data', err);
+                setEditingLead(lead);
+            }
+        } else {
+            setEditingLead(lead);
+        }
+        setIsModalOpen(true);
+    };
   
   const handleSaveAndClose = async (lead: Lead) => {
     await onSaveLead(lead);
@@ -245,9 +257,17 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
     [ReceptionStatus.NoAsistio]: { title: 'No Asistió', color: 'bg-red-200', textColor: 'text-red-800' },
   };
 
-  const kanbanColumns = Object.values(ReceptionStatus);
+    // Define column groups to avoid duplicate columns with same title
+    const kanbanColumnGroups: Array<{ key: string; statuses: string[]; config: { title: string; color: string; textColor: string } }> = [
+        { key: 'agendados', statuses: [ReceptionStatus.AgendadoPorLlegar, ReceptionStatus.Agendado], config: statusConfig[ReceptionStatus.AgendadoPorLlegar] },
+        { key: 'porAtender', statuses: [ReceptionStatus.PorAtender], config: statusConfig[ReceptionStatus.PorAtender] },
+        { key: 'atendido', statuses: [ReceptionStatus.Atendido], config: statusConfig[ReceptionStatus.Atendido] },
+        { key: 'reprogramado', statuses: [ReceptionStatus.Reprogramado], config: statusConfig[ReceptionStatus.Reprogramado] },
+        { key: 'cancelado', statuses: [ReceptionStatus.Cancelado], config: statusConfig[ReceptionStatus.Cancelado] },
+        { key: 'noAsistio', statuses: [ReceptionStatus.NoAsistio], config: statusConfig[ReceptionStatus.NoAsistio] },
+    ];
 
-  return (
+    return (
     <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Gestión de Agendados</h1>
@@ -296,12 +316,15 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
         
          {viewMode === 'kanban' ? (
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
-                {kanbanColumns.map(status => {
-                    const leadsInColumn = filteredLeads.filter(lead => (lead.estadoRecepcion || ReceptionStatus.Agendado) === status);
-                    const config = statusConfig[status];
+                {kanbanColumnGroups.map(group => {
+                    const leadsInColumn = filteredLeads.filter(lead => {
+                        const leadStatus = lead.estadoRecepcion || ReceptionStatus.Agendado;
+                        return group.statuses.includes(leadStatus);
+                    });
+                    const config = group.config;
                     return (
                         <KanbanColumn
-                            key={status}
+                            key={group.key}
                             title={config.title}
                             color={config.color}
                             textColor={config.textColor}

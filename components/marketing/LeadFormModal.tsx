@@ -2183,6 +2183,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (isOpen) {
             setFormData(lead ? { ...lead } : initialFormData);
             setActiveTab('ficha');
+            console.debug('LeadFormModal opened', { lead, isOpen, initialFormData });
         }
     }, [lead, isOpen, initialFormData]);
 
@@ -2393,7 +2394,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     };
 
 
-    const isNewLead = !lead;
+    const isNewLead = !lead || (lead && ((lead as any).id === undefined || (lead as any).id === null));
     const tabs = [
         { id: 'ficha', label: 'Ficha de Paciente' },
         { id: 'recepcion', label: 'Recepción' },

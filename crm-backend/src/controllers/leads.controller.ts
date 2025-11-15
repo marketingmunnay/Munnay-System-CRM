@@ -109,11 +109,14 @@ export const createLead = async (req: Request, res: Response) => {
       return map[cleaned] ?? undefined;
     };
 
+    // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido' (so procedures move to En Seguimiento)
+    const finalEstadoRecepcionCreate = normalizeEnum(leadData.estadoRecepcion) ?? ((procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? 'Atendido' : undefined);
+
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
         vendedor: mapSeller(leadData.vendedor),
-        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
+        estadoRecepcion: finalEstadoRecepcionCreate,
         fechaLead: parseDate(leadData.fechaLead, true, new Date()),
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
@@ -306,6 +309,11 @@ export const updateLead = async (req: Request, res: Response) => {
       await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
     }
 
+    // Decide final estadoRecepcion for update: prefer provided value, otherwise if procedimientos being created treat as 'Atendido'
+    const normalizedProvidedEstado = normalizeEnum(leadData.estadoRecepcion as any);
+    const willCreateProcedimientos = procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0;
+    const finalEstadoRecepcionUpdate = normalizedProvidedEstado ?? (willCreateProcedimientos ? 'Atendido' : existingLead?.estadoRecepcion);
+
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
@@ -316,7 +324,7 @@ export const updateLead = async (req: Request, res: Response) => {
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
         birthDate: parseDate(leadData.birthDate, true),
-        estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
+        estadoRecepcion: finalEstadoRecepcionUpdate,
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
