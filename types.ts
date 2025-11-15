@@ -31,6 +31,7 @@ export enum LeadStatus {
 
 export enum ReceptionStatus {
     Agendado = 'Agendado',
+    AgendadoPorLlegar = 'Agendado por llegar',
     PorAtender = 'Por Atender',
     Atendido = 'Atendido',
     Reprogramado = 'Reprogramado',

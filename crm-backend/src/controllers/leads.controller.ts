@@ -215,7 +215,19 @@ export const updateLead = async (req: Request, res: Response) => {
     // Helper function to normalize enum values (remove spaces)
     const normalizeEnum = (value: string | undefined | null): string | undefined | null => {
       if (!value) return value;
-      return value.replace(/\s+/g, ''); // Remove all spaces
+      // Normaliza variantes de estadoRecepcion
+      const map: Record<string, string> = {
+        'Agendadoporllegar': 'Agendado por llegar',
+        'PorAtender': 'Por Atender',
+        'Atendido': 'Atendido',
+        'Cancelado': 'Cancelado',
+        'NoAsistio': 'No Asistió',
+        'Reprogramado': 'Reprogramado',
+        'EnEspera': 'En Espera',
+        '': undefined
+      };
+      const sinEspacios = value.replace(/\s+/g, '');
+      return map[sinEspacios] || value;
     };
 
     // Get existing lead to preserve fechaLead if not provided
