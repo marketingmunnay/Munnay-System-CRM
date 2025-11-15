@@ -1985,7 +1985,22 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                                                 <div className="grid grid-cols-3 gap-3 text-sm">
                                                     <div>
                                                         <span className="text-gray-500">Fecha:</span>
-                                                        <p className="text-gray-800 font-medium">{seg.fechaSeguimiento}</p>
+                                                        <p className="text-gray-800 font-medium">{formatFechaHora(seg.fechaSeguimiento)}</p>
+                                                    // Formatea fecha ISO a DD/MM/AAAA y hora 12h AM/PM
+                                                    function formatFechaHora(fechaIso: string) {
+                                                        if (!fechaIso) return '';
+                                                        const date = new Date(fechaIso);
+                                                        if (isNaN(date.getTime())) return fechaIso;
+                                                        const dia = String(date.getDate()).padStart(2, '0');
+                                                        const mes = String(date.getMonth() + 1).padStart(2, '0');
+                                                        const anio = date.getFullYear();
+                                                        let horas = date.getHours();
+                                                        const minutos = String(date.getMinutes()).padStart(2, '0');
+                                                        const ampm = horas >= 12 ? 'PM' : 'AM';
+                                                        horas = horas % 12;
+                                                        if (horas === 0) horas = 12;
+                                                        return `${dia}/${mes}/${anio} ${horas}:${minutos} ${ampm}`;
+                                                    }
                                                     </div>
                                                     <div>
                                                         <span className="text-gray-500">Personal:</span>
