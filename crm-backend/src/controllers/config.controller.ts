@@ -120,12 +120,69 @@ export const createService = serviceHandlers.create;
 export const updateService = serviceHandlers.update;
 export const deleteService = serviceHandlers.delete;
 
-// Products
-const productHandlers = createCrudHandlers('product');
-export const getProducts = productHandlers.getAll;
-export const createProduct = productHandlers.create;
-export const updateProduct = productHandlers.update;
-export const deleteProduct = productHandlers.delete;
+// Products - Custom handlers para campos opcionales
+export const getProducts = async (req: Request, res: Response) => {
+    try {
+        const products = await prisma.product.findMany();
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });
+    }
+};
+
+export const createProduct = async (req: Request, res: Response) => {
+    try {
+        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, ...data } = req.body;
+        
+        // Solo incluir campos de inventario si están definidos
+        const productData: any = { ...data };
+        if (tipo !== undefined) productData.tipo = tipo;
+        if (costoCompra !== undefined) productData.costoCompra = costoCompra;
+        if (precioVenta !== undefined) productData.precioVenta = precioVenta;
+        if (stockActual !== undefined) productData.stockActual = stockActual;
+        if (stockMinimo !== undefined) productData.stockMinimo = stockMinimo;
+        if (stockCritico !== undefined) productData.stockCritico = stockCritico;
+        
+        const newProduct = await prisma.product.create({ data: productData });
+        res.status(201).json(newProduct);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
+    }
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, ...data } = req.body;
+        
+        // Solo incluir campos de inventario si están definidos
+        const productData: any = { ...data };
+        if (tipo !== undefined) productData.tipo = tipo;
+        if (costoCompra !== undefined) productData.costoCompra = costoCompra;
+        if (precioVenta !== undefined) productData.precioVenta = precioVenta;
+        if (stockActual !== undefined) productData.stockActual = stockActual;
+        if (stockMinimo !== undefined) productData.stockMinimo = stockMinimo;
+        if (stockCritico !== undefined) productData.stockCritico = stockCritico;
+        
+        const updatedProduct = await prisma.product.update({ 
+            where: { id }, 
+            data: productData 
+        });
+        res.status(200).json(updatedProduct);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
+    }
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        await prisma.product.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting product', error: (error as Error).message });
+    }
+};
 
 // Memberships - Custom handlers to support nested MembershipService creation
 export const getMemberships = async (req: Request, res: Response) => {
