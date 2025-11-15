@@ -25,6 +25,8 @@ interface LeadFormModalProps {
   requestConfirmation: (message: string, onConfirm: () => void) => void;
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
+    initialTab?: 'ficha' | 'recepcion' | 'procedimientos' | 'seguimiento';
+    disableFicha?: boolean;
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -2114,9 +2116,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   requestConfirmation,
   onSaveComprobante,
   comprobantes
+    , initialTab, disableFicha
 }) => {
     const [formData, setFormData] = useState<Partial<Lead>>({});
-    const [activeTab, setActiveTab] = useState('ficha');
+        const [activeTab, setActiveTab] = useState('ficha');
+        const prevIsOpenRef = React.useRef<boolean>(false);
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
     const [showSaveMessage, setShowSaveMessage] = useState(false);
 
@@ -2180,12 +2184,14 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
 
     useEffect(() => {
-        if (isOpen) {
+        // Only run when modal transitions from closed -> open
+        if (!prevIsOpenRef.current && isOpen) {
             setFormData(lead ? { ...lead } : initialFormData);
-            setActiveTab('ficha');
-            console.debug('LeadFormModal opened', { lead, isOpen, initialFormData });
+            setActiveTab(initialTab || 'ficha');
+            console.debug('LeadFormModal opened', { lead, isOpen, initialFormData, initialTab, disableFicha });
         }
-    }, [lead, isOpen, initialFormData]);
+        prevIsOpenRef.current = isOpen;
+    }, [lead, isOpen, initialFormData, initialTab, disableFicha]);
 
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
@@ -2506,7 +2512,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                disabled={isNewLead && tab.id !== 'ficha'}
+                                disabled={
+                                    (disableFicha && tab.id === 'ficha') || (isNewLead && tab.id !== 'ficha')
+                                }
                                 className={`${
                                     activeTab === tab.id
                                     ? 'border-[#aa632d] text-[#aa632d]'
