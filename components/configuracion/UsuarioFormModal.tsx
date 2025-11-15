@@ -210,6 +210,16 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                             <input type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nacionalidad</label>
+                            <input type="text" name="nationality" value={formData.nationality || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
                     <hr className="my-6"/>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -254,6 +264,34 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio Laboral</label>
                             <input type="date" name="startDate" value={formData.startDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                            <input type="date" name="endDate" value={formData.endDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Jefe Directo</label>
+                            <input type="text" name="directBoss" value={formData.directBoss || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+                            <input type="text" name="bankName" value={formData.bankName || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de AFP/ONP</label>
+                            <select name="afpType" value={formData.afpType || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2">
+                                <option value="">Seleccionar...</option>
+                                <option value="AFP">AFP</option>
+                                <option value="ONP">ONP</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">% de Aporte AFP</label>
+                            <input type="number" name="afpPercentage" value={formData.afpPercentage || ''} onChange={handleChange} step="0.01" min="0" max="100" className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
                 </div>
