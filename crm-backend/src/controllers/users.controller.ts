@@ -134,7 +134,8 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { id: _, password, addresses, emergencyContacts, ...userData } = req.body; // Exclude id from update data
+  // Exclude id, password, addresses, emergencyContacts, createdAt, updatedAt, reconocimientosRecibidos
+  const { id: _, password, addresses, emergencyContacts, createdAt, updatedAt, reconocimientosRecibidos, ...userData } = req.body;
   
   console.log('=== UPDATE USER REQUEST ===');
   console.log('User ID:', id);
@@ -217,15 +218,22 @@ export const updateUser = async (req: Request, res: Response) => {
         addresses: true,
         emergencyContacts: true,
         reconocimientosRecibidos: true,
-      }
+      } as any
     });
     console.log('Usuario actualizado exitosamente:', updatedUser.id);
-    const { password: _, ...userWithoutPassword } = updatedUser;
+    const { password: _, ...userWithoutPassword } = updatedUser as any;
     res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
     console.error('Error stack:', (error as Error).stack);
-    console.error('Error details:', error);
+    console.error('Error message:', (error as Error).message);
+    
+    // Detalles específicos para debugging
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Prisma error code:', (error as any).code);
+      console.error('Prisma error meta:', (error as any).meta);
+    }
+    
     res.status(500).json({ 
       message: 'Error updating user', 
       error: (error as Error).message,
