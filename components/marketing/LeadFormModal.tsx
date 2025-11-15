@@ -1212,12 +1212,18 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
     };
 
     const handleDeleteProcedure = (procedureId: number) => {
-        handleSetFormData((prev: Partial<Lead>) => ({
-            ...prev,
-            procedimientos: (prev.procedimientos || []).filter((p: Procedure) => p.id !== procedureId),
-            // Eliminar todos los seguimientos asociados a este procedimiento
-            seguimientos: (prev.seguimientos || []).filter((s: Seguimiento) => s.procedimientoId !== procedureId)
-        }));
+        handleSetFormData((prev: Partial<Lead>) => {
+            // Verificar si hay seguimientos asociados
+            const tieneSeguimientos = (prev.seguimientos || []).some((s: Seguimiento) => s.procedimientoId === procedureId);
+            if (tieneSeguimientos) {
+                alert('Primero debes eliminar los seguimientos asociados a este procedimiento.');
+                return prev;
+            }
+            return {
+                ...prev,
+                procedimientos: (prev.procedimientos || []).filter((p: Procedure) => p.id !== procedureId)
+            };
+        });
     };
 
     const handleProcedureFieldChange = (field: string, value: any) => {
@@ -1582,9 +1588,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                if (window.confirm('¿Está seguro de eliminar este procedimiento? También se eliminarán todos los seguimientos asociados.')) {
-                                                    handleDeleteProcedure(proc.id);
-                                                }
+                                                handleDeleteProcedure(proc.id);
                                             }}
                                             className="text-red-600 hover:text-red-800"
                                             title="Eliminar procedimiento"
