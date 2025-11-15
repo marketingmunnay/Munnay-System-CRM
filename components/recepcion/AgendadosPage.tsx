@@ -93,6 +93,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
     
     const statusText: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'Por Llegar',
+        [ReceptionStatus.AgendadoPorLlegar]: 'Por Llegar',
         [ReceptionStatus.PorAtender]: 'En Espera',
         [ReceptionStatus.Atendido]: 'Atendido',
         [ReceptionStatus.NoAsistio]: 'No Asistió'
@@ -100,6 +101,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
     
     const statusColor: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'text-blue-600 bg-blue-100',
+        [ReceptionStatus.AgendadoPorLlegar]: 'text-blue-600 bg-blue-100',
         [ReceptionStatus.PorAtender]: 'text-yellow-600 bg-yellow-100',
         [ReceptionStatus.Atendido]: 'text-green-600 bg-green-100',
         [ReceptionStatus.NoAsistio]: 'text-red-600 bg-red-100'
@@ -235,6 +237,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
 
   const statusConfig: Record<string, { title: string; color: string; textColor: string; }> = {
     [ReceptionStatus.Agendado]: { title: 'Agendados (Por Llegar)', color: 'bg-sky-200', textColor: 'text-sky-800' },
+        [ReceptionStatus.AgendadoPorLlegar]: { title: 'Agendados (Por Llegar)', color: 'bg-sky-200', textColor: 'text-sky-800' },
     [ReceptionStatus.PorAtender]: { title: 'Por Atender (En Espera)', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
     [ReceptionStatus.Atendido]: { title: 'Atendido', color: 'bg-green-200', textColor: 'text-green-800' },
     [ReceptionStatus.Reprogramado]: { title: 'Reprogramado', color: 'bg-blue-200', textColor: 'text-blue-800' },
