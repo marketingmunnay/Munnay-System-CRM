@@ -584,24 +584,27 @@ model Product {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   
-  movimientos    MovimientoStock[]
+  // DESACTIVADO HASTA APLICAR MIGRACIÓN
+  // movimientos    MovimientoStock[]
 }
 
-model MovimientoStock {
-  id              Int      @id @default(autoincrement())
-  productoId      Int
-  producto        Product  @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  tipoMovimiento  String   // "entrada" o "salida"
-  cantidad        Int
-  costoUnitario   Float    @default(0)
-  precioUnitario  Float    @default(0)
-  motivo          String   @db.Text
-  fecha           DateTime @default(now())
-  creadoPor       String?  // Usuario que registró el movimiento
-  ventaExtraId    Int?     // Referencia opcional a venta
-  procedimientoId Int?     // Referencia opcional a procedimiento
-  createdAt       DateTime @default(now())
-}
+// MODELO DESACTIVADO HASTA APLICAR MIGRACIÓN EN PRODUCCIÓN
+// Descomentar cuando se aplique: npx prisma migrate deploy
+// model MovimientoStock {
+//   id              Int      @id @default(autoincrement())
+//   productoId      Int
+//   producto        Product  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+//   tipoMovimiento  String   // "entrada" o "salida"
+//   cantidad        Int
+//   costoUnitario   Float    @default(0)
+//   precioUnitario  Float    @default(0)
+//   motivo          String   @db.Text
+//   fecha           DateTime @default(now())
+//   creadoPor       String?  // Usuario que registró el movimiento
+//   ventaExtraId    Int?     // Referencia opcional a venta
+//   procedimientoId Int?     // Referencia opcional a procedimiento
+//   createdAt       DateTime @default(now())
+// }
 
 // Catálogo de membresías disponibles (configuración global)
 model Membership {
