@@ -3,12 +3,12 @@
 ## 📋 Deployment Summary
 
 **Date:** 15 de noviembre de 2025  
-**Commit:** 5e39985  
+**Commit:** 80389c3  
 **Branch:** copilot/disable-login-open-dashboard  
 
 ### ✅ GitHub Deployment - COMPLETED
 - **Status:** ✅ SUCCESS
-- **Commit Message:** "fix: Remover completamente campos de inventario del sistema"
+- **Commit Message:** "fix: Remover campos de inventario del schema completamente"
 - **Files Changed:** 
   - `crm-backend/src/controllers/config.controller.ts` (solo campos básicos)
   - `crm-backend/prisma/schema.prisma` (TipoProducto y campos comentados)
