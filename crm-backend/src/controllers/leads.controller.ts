@@ -297,24 +297,36 @@ export const updateLead = async (req: Request, res: Response) => {
             })
         } : undefined,
         procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
-          create: procedimientos.map((p: any) => {
-            console.log('✨ Creating procedimiento:', p);
-            // If tratamientoId is negative (temporary), use 0 as placeholder
-            const tratamientoIdValue = parseInt(p.tratamientoId) || 0;
-            const finalTratamientoId = tratamientoIdValue < 0 ? 0 : tratamientoIdValue;
-            return {
-              fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-              personal: p.personal || '',
-              horaInicio: p.horaInicio || '',
-              horaFin: p.horaFin || '',
-              tratamientoId: finalTratamientoId,
-              nombreTratamiento: p.nombreTratamiento || '',
-              sesionNumero: parseInt(p.sesionNumero) || 1,
-              asistenciaMedica: Boolean(p.asistenciaMedica),
-              medico: p.medico || null,
-              observacion: p.observacion || null
-            };
-          })
+          create: procedimientos
+            .filter((p: any) => {
+              // Skip procedimientos with invalid tratamientoId
+              const tratamientoIdValue = parseInt(p.tratamientoId) || 0;
+              if (tratamientoIdValue <= 0) {
+                console.warn('⚠️ Skipping procedimiento with invalid tratamientoId:', {
+                  nombreTratamiento: p.nombreTratamiento,
+                  tratamientoId: tratamientoIdValue,
+                  original: p.tratamientoId
+                });
+                return false;
+              }
+              return true;
+            })
+            .map((p: any) => {
+              console.log('✨ Creating procedimiento:', p);
+              const tratamientoIdValue = parseInt(p.tratamientoId);
+              return {
+                fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+                personal: p.personal || '',
+                horaInicio: p.horaInicio || '',
+                horaFin: p.horaFin || '',
+                tratamientoId: tratamientoIdValue,
+                nombreTratamiento: p.nombreTratamiento || '',
+                sesionNumero: parseInt(p.sesionNumero) || 1,
+                asistenciaMedica: Boolean(p.asistenciaMedica),
+                medico: p.medico || null,
+                observacion: p.observacion || null
+              };
+            })
         } : (() => {
           console.log('❌ NOT creating procedimientos - array empty or invalid:', {
             procedimientos,
@@ -360,9 +372,19 @@ export const updateLead = async (req: Request, res: Response) => {
       }
     });
     res.status(200).json(updatedLead);
-  } catch (error) {
-    console.error(`Error updating lead ${id}:`, error);
-    res.status(500).json({ message: 'Error updating lead', error: (error as Error).message });
+  } catch (error: any) {
+    console.error(`❌ Error updating lead ${id}:`, {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      message: 'Error updating lead', 
+      error: error.message,
+      code: error.code,
+      details: error.meta
+    });
   }
 };
 
