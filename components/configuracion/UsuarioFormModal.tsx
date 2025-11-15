@@ -35,7 +35,16 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
   useEffect(() => {
     if (isOpen) {
       setFormData(user
-          ? { ...user, password: '', addresses: user.addresses || [], emergencyContacts: user.emergencyContacts || [] } // Ensure arrays are initialized
+          ? { 
+              ...user, 
+              password: '', 
+              addresses: user.addresses || [], 
+              emergencyContacts: user.emergencyContacts || [],
+              // Convertir fechas ISO a formato YYYY-MM-DD para inputs tipo date
+              birthDate: user.birthDate ? user.birthDate.split('T')[0] : '',
+              startDate: user.startDate ? user.startDate.split('T')[0] : '',
+              endDate: user.endDate ? user.endDate.split('T')[0] : '',
+            }
           : {
               id: Date.now(),
               rolId: roles[0]?.id,
