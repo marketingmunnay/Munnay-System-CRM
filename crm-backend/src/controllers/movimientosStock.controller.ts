@@ -18,7 +18,7 @@ export const getMovimientosStock = async (req: Request, res: Response) => {
             if (hasta) where.fecha.lte = new Date(hasta as string);
         }
         
-        const movimientos = await prisma.movimientoStock.findMany({
+        const movimientos = await (prisma as any).movimientoStock.findMany({
             where,
             include: {
                 producto: true,
@@ -57,8 +57,8 @@ export const createMovimientoStock = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
         
-        // Calcular nuevo stock
-        let nuevoStock = producto.stockActual;
+        // Calcular nuevo stock (con valores por defecto si son opcionales)
+        let nuevoStock = (producto as any).stockActual ?? 0;
         if (tipoMovimiento === 'entrada') {
             nuevoStock += cantidad;
         } else if (tipoMovimiento === 'salida') {
@@ -70,7 +70,7 @@ export const createMovimientoStock = async (req: Request, res: Response) => {
         
         // Crear movimiento y actualizar stock en transacción
         const [movimiento] = await prisma.$transaction([
-            prisma.movimientoStock.create({
+            (prisma as any).movimientoStock.create({
                 data: {
                     productoId,
                     tipoMovimiento,
@@ -92,7 +92,7 @@ export const createMovimientoStock = async (req: Request, res: Response) => {
                     stockActual: nuevoStock,
                     // Actualizar costo de compra si es entrada
                     ...(tipoMovimiento === 'entrada' && costoUnitario > 0 ? { costoCompra: costoUnitario } : {}),
-                },
+                } as any,
             }),
         ]);
         
@@ -106,28 +106,32 @@ export const createMovimientoStock = async (req: Request, res: Response) => {
 // Obtener alertas de stock (productos en stock mínimo o crítico)
 export const getAlertasStock = async (req: Request, res: Response) => {
     try {
-        const productosCriticos = await prisma.product.findMany({
-            where: {
-                stockActual: {
-                    lte: prisma.product.fields.stockCritico,
-                },
-            },
-            orderBy: { stockActual: 'asc' },
-        });
+        // Obtener todos los productos
+        const productos = await prisma.product.findMany() as any[];
         
-        const productosMinimos = await prisma.product.findMany({
-            where: {
-                AND: [
-                    { stockActual: { lte: prisma.product.fields.stockMinimo } },
-                    { stockActual: { gt: prisma.product.fields.stockCritico } },
-                ],
-            },
-            orderBy: { stockActual: 'asc' },
-        });
+        // Filtrar en memoria por niveles de stock
+        const productosCriticos = productos.filter((p: any) => 
+            p.stockActual !== null && 
+            p.stockActual !== undefined &&
+            p.stockCritico !== null && 
+            p.stockCritico !== undefined &&
+            p.stockActual <= p.stockCritico
+        );
+        
+        const productosMinimos = productos.filter((p: any) => 
+            p.stockActual !== null && 
+            p.stockActual !== undefined &&
+            p.stockMinimo !== null && 
+            p.stockMinimo !== undefined &&
+            p.stockCritico !== null &&
+            p.stockCritico !== undefined &&
+            p.stockActual <= p.stockMinimo && 
+            p.stockActual > p.stockCritico
+        );
         
         res.json({
-            criticos: productosCriticos,
-            minimos: productosMinimos,
+            criticos: productosCriticos.sort((a: any, b: any) => (a.stockActual ?? 0) - (b.stockActual ?? 0)),
+            minimos: productosMinimos.sort((a: any, b: any) => (a.stockActual ?? 0) - (b.stockActual ?? 0)),
         });
     } catch (error) {
         console.error('Error fetching alertas stock:', error);
@@ -140,7 +144,7 @@ export const getMovimientosProducto = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         
-        const movimientos = await prisma.movimientoStock.findMany({
+        const movimientos = await (prisma as any).movimientoStock.findMany({
             where: { productoId: Number(id) },
             orderBy: { fecha: 'desc' },
         });
