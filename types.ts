@@ -501,23 +501,25 @@ export interface Service {
     precio: number;
 }
 
-export enum TipoProducto {
-    Venta = 'venta',
-    Insumo = 'insumo',
-}
+// DESACTIVADO HASTA APLICAR MIGRACIÓN
+// export enum TipoProducto {
+//     Venta = 'venta',
+//     Insumo = 'insumo',
+// }
 
 export interface Product {
     id: number;
     nombre: string;
     categoria: string;
-    precio: number; // Mantiene compatibilidad
-    tipo?: TipoProducto; // Opcional hasta aplicar migración
-    costoCompra?: number; // Opcional hasta aplicar migración
-    precioVenta?: number; // Opcional hasta aplicar migración
-    stockActual?: number; // Opcional hasta aplicar migración
-    stockMinimo?: number; // Opcional hasta aplicar migración
-    stockCritico?: number; // Opcional hasta aplicar migración
-    movimientos?: MovimientoStock[];
+    precio: number;
+    // Campos de inventario desactivados hasta aplicar migración
+    // tipo?: TipoProducto;
+    // costoCompra?: number;
+    // precioVenta?: number;
+    // stockActual?: number;
+    // stockMinimo?: number;
+    // stockCritico?: number;
+    // movimientos?: MovimientoStock[];
 }
 
 export interface MovimientoStock {

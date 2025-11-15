@@ -565,17 +565,18 @@ model Service {
   precio    Float
 }
 
-enum TipoProducto {
-  venta
-  insumo
-}
+// ENUM DESACTIVADO HASTA APLICAR MIGRACIÓN
+// enum TipoProducto {
+//   venta
+//   insumo
+// }
 
 model Product {
   id             Int            @id @default(autoincrement())
   nombre         String         @unique
   categoria      String
   precio         Float          // Precio de venta (mantiene compatibilidad)
-  tipo           TipoProducto?  // Opcional temporalmente
+  // tipo           TipoProducto?  // Desactivado hasta migración
   costoCompra    Float?         // Opcional temporalmente
   precioVenta    Float?         // Opcional temporalmente
   stockActual    Int?           // Opcional temporalmente

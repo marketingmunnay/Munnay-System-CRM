@@ -132,20 +132,14 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, ...data } = req.body;
+        // Remover ID y campos de inventario deshabilitados
+        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
         
-        // Solo incluir campos de inventario si están definidos
-        const productData: any = { ...data };
-        if (tipo !== undefined) productData.tipo = tipo;
-        if (costoCompra !== undefined) productData.costoCompra = costoCompra;
-        if (precioVenta !== undefined) productData.precioVenta = precioVenta;
-        if (stockActual !== undefined) productData.stockActual = stockActual;
-        if (stockMinimo !== undefined) productData.stockMinimo = stockMinimo;
-        if (stockCritico !== undefined) productData.stockCritico = stockCritico;
-        
-        const newProduct = await prisma.product.create({ data: productData });
+        // Solo usar campos básicos (nombre, categoria, precio)
+        const newProduct = await prisma.product.create({ data });
         res.status(201).json(newProduct);
     } catch (error) {
+        console.error('Error creating product:', error);
         res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
     }
 };
@@ -153,23 +147,17 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
-        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, ...data } = req.body;
+        // Remover ID y campos de inventario deshabilitados
+        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
         
-        // Solo incluir campos de inventario si están definidos
-        const productData: any = { ...data };
-        if (tipo !== undefined) productData.tipo = tipo;
-        if (costoCompra !== undefined) productData.costoCompra = costoCompra;
-        if (precioVenta !== undefined) productData.precioVenta = precioVenta;
-        if (stockActual !== undefined) productData.stockActual = stockActual;
-        if (stockMinimo !== undefined) productData.stockMinimo = stockMinimo;
-        if (stockCritico !== undefined) productData.stockCritico = stockCritico;
-        
+        // Solo usar campos básicos (nombre, categoria, precio)
         const updatedProduct = await prisma.product.update({ 
             where: { id }, 
-            data: productData 
+            data 
         });
         res.status(200).json(updatedProduct);
     } catch (error) {
+        console.error('Error updating product:', error);
         res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
     }
 };
