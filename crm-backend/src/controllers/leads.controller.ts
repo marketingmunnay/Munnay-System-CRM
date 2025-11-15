@@ -1,10 +1,27 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+
+// Helper to map vendor strings to Seller enum values
+const mapSeller = (value: any): string => {
+  if (!value) return 'Vanesa';
+  const s = String(value).toLowerCase();
+  if (s.includes('vanesa')) return 'Vanesa';
+  if (s.includes('liz')) return 'Liz';
+  if (s.includes('elvira')) return 'Elvira';
+  // Try simple name match: first name
+  const first = s.split(' ')[0];
+  if (first === 'vanesa' || first === 'vanessa') return 'Vanesa';
+  if (first === 'liz' || first === 'liza') return 'Liz';
+  if (first === 'elvira') return 'Elvira';
+  // Default fallback
+  return 'Vanesa';
+};
 // FIX: Removed unused model imports that were causing errors.
 // import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
 export const getLeads = async (req: Request, res: Response) => {
   try {
+    
     const leads = await prisma.lead.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -95,6 +112,7 @@ export const createLead = async (req: Request, res: Response) => {
     const newLead = await prisma.lead.create({
       data: {
         ...leadData,
+        vendedor: mapSeller(leadData.vendedor),
         estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
         fechaLead: parseDate(leadData.fechaLead, true, new Date()),
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
@@ -293,6 +311,7 @@ export const updateLead = async (req: Request, res: Response) => {
       where: { id: id },
       data: {
         ...leadData,
+        vendedor: leadData.vendedor ? mapSeller(leadData.vendedor) : existingLead?.vendedor,
         fechaLead: finalFechaLead,
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
