@@ -135,7 +135,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <label className="text-sm font-medium">Vendedor(a) <span className="text-red-500">*</span></label>
                     <select name="vendedor" value={formData.vendedor || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar...</option>
-                        {VENDEDOR_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                        {VENDEDOR_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
                     {!formData.vendedor && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
@@ -2131,14 +2131,47 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             .map((user: any) => `${user.nombres} ${user.apellidos}`);
     }, [users]);
 
-    // Filtrar vendedores por puesto
+    // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
     const VENDEDOR_OPTIONS = useMemo(() => {
-        return users
-            .filter((user: any) => user.position && PUESTOS_VENDEDOR.includes(user.position))
-            .map((user: any) => `${user.nombres} ${user.apellidos}`);
+        const list: { value: string, label: string }[] = [];
+        if (users && Array.isArray(users)) {
+            users
+                .filter((user: any) => user.position && PUESTOS_VENDEDOR.includes(user.position))
+                .forEach((user: any) => {
+                    const fullName = `${user.nombres} ${user.apellidos}`;
+                    // Determine token value by simple first-name matching
+                    const first = (user.nombres || '').toLowerCase();
+                    let token = 'Vanesa';
+                    if (first.includes('vanesa') || first.includes('vanessa')) token = 'Vanesa';
+                    else if (first.includes('liz') || first.includes('liza')) token = 'Liz';
+                    else if (first.includes('elvira')) token = 'Elvira';
+                    list.push({ value: token, label: fullName });
+                });
+        }
+        // Ensure default tokens exist even if users not provided
+        const defaultTokens = ['Vanesa', 'Liz', 'Elvira'];
+        for (const t of defaultTokens) {
+            if (!list.find(l => l.value === t)) {
+                list.push({ value: t, label: t });
+            }
+        }
+        return list;
     }, [users]);
 
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
+
+    // Frontend mapping helper: normalize any incoming vendedor string to Seller token
+    const mapSellerFront = (value: any): string => {
+        if (!value) return 'Vanesa';
+        const s = String(value).toLowerCase();
+        if (s.includes('vanesa') || s.includes('vanessa')) return 'Vanesa';
+        if (s.includes('liz') || s.includes('liza')) return 'Liz';
+        if (s.includes('elvira')) return 'Elvira';
+        // If already a token-like value, capitalize first letter
+        const capitalized = String(value).charAt(0).toUpperCase() + String(value).slice(1);
+        if (['Vanesa','Liz','Elvira'].includes(capitalized)) return capitalized;
+        return 'Vanesa';
+    };
 
     const SERVICE_CATEGORIES = useMemo(() => {
         const categories = services.reduce((acc, service) => {
@@ -2186,7 +2219,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     useEffect(() => {
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
-            setFormData(lead ? { ...lead } : initialFormData);
+            if (lead) {
+                // Normalize vendedor to enum token so select shows correctly
+                const normalized = { ...lead, vendedor: mapSellerFront(lead.vendedor) } as any;
+                setFormData(normalized);
+            } else {
+                setFormData(initialFormData);
+            }
             setActiveTab(initialTab || 'ficha');
             console.debug('LeadFormModal opened', { lead, isOpen, initialFormData, initialTab, disableFicha });
         }
@@ -2196,7 +2235,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
         if (lead && isOpen) {
-            setFormData({ ...lead });
+            setFormData({ ...lead, vendedor: mapSellerFront(lead.vendedor) } as any);
         }
     }, [lead]);
 
