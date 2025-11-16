@@ -16,6 +16,29 @@ const mapSeller = (value: any): string => {
   // Default fallback
   return 'Vanesa';
 };
+// Helper to map various payment labels to Prisma MetodoPago enum tokens
+const mapMetodoPago = (value: any): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  const s = String(value).trim();
+  // If already a valid token, return it
+  const valid = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape', 'Plin'];
+  if (valid.includes(s)) return s;
+  const cleaned = s.replace(/\s+/g, '').toLowerCase();
+  const map: Record<string, string> = {
+    'efectivo': 'Efectivo',
+    'cash': 'Efectivo',
+    'tarjeta': 'Tarjeta',
+    'card': 'Tarjeta',
+    'transferencia': 'Transferencia',
+    'transferenciabcp': 'Transferencia',
+    'transferenciabcp.': 'Transferencia',
+    'transferenciabcp ': 'Transferencia',
+    'deposito': 'Transferencia',
+    'yape': 'Yape',
+    'plin': 'Plin'
+  };
+  return map[cleaned] ?? undefined;
+};
 // FIX: Removed unused model imports that were causing errors.
 // import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
@@ -125,6 +148,7 @@ export const createLead = async (req: Request, res: Response) => {
       data: {
         ...leadData,
         vendedor: mapSeller(leadData.vendedor),
+        metodoPago: mapMetodoPago(leadData.metodoPago) as any,
         estadoRecepcion: finalEstadoRecepcionCreate,
         fechaLead: parseDate(leadData.fechaLead, true, new Date()),
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
@@ -136,12 +160,12 @@ export const createLead = async (req: Request, res: Response) => {
         },
         // Create tratamientos if provided
         tratamientos: tratamientos && tratamientos.length > 0 ? {
-          create: tratamientos.map((t: any) => ({
+            create: tratamientos.map((t: any) => ({
             nombre: t.nombre || '',
             cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
             precio: parseFloat(t.precio) || 0,
             montoPagado: parseFloat(t.montoPagado) || 0,
-            metodoPago: t.metodoPago || null,
+              metodoPago: (mapMetodoPago(t.metodoPago) as any) ?? null,
             deuda: parseFloat(t.deuda) || 0
           }))
         } : undefined,
@@ -195,7 +219,7 @@ export const createLead = async (req: Request, res: Response) => {
         pagosRecepcion: pagosRecepcion && pagosRecepcion.length > 0 ? {
           create: pagosRecepcion.map((p: any) => ({
             monto: p.monto,
-            metodoPago: p.metodoPago,
+            metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
             fechaPago: parseDate(p.fechaPago) || new Date(),
             observacion: p.observacion,
           }))
@@ -297,7 +321,7 @@ export const updateLead = async (req: Request, res: Response) => {
                 cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
                 precio: parseFloat(tratamiento.precio) || 0,
                 montoPagado: parseFloat(tratamiento.montoPagado) || 0,
-                metodoPago: tratamiento.metodoPago || null,
+                  metodoPago: (mapMetodoPago(tratamiento.metodoPago) as any) ?? null,
                 deuda: parseFloat(tratamiento.deuda) || 0
               }
             });
@@ -314,7 +338,7 @@ export const updateLead = async (req: Request, res: Response) => {
                 cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
                 precio: parseFloat(tratamiento.precio) || 0,
                 montoPagado: parseFloat(tratamiento.montoPagado) || 0,
-                metodoPago: tratamiento.metodoPago || null,
+                metodoPago: (mapMetodoPago(tratamiento.metodoPago) as any) ?? null,
                 deuda: parseFloat(tratamiento.deuda) || 0
               }
             });
@@ -332,7 +356,7 @@ export const updateLead = async (req: Request, res: Response) => {
                 cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
                 precio: parseFloat(tratamiento.precio) || 0,
                 montoPagado: parseFloat(tratamiento.montoPagado) || 0,
-                metodoPago: tratamiento.metodoPago || null,
+                metodoPago: (mapMetodoPago(tratamiento.metodoPago) as any) ?? null,
                 deuda: parseFloat(tratamiento.deuda) || 0
               }
             });
@@ -482,7 +506,7 @@ export const updateLead = async (req: Request, res: Response) => {
             data: {
               leadId: id,
               monto: p.monto,
-              metodoPago: p.metodoPago,
+              metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
               fechaPago: parseDate(p.fechaPago) || new Date(),
               observacion: p.observacion,
             }
