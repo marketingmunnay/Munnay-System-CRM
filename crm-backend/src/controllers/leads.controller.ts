@@ -268,34 +268,74 @@ export const updateLead = async (req: Request, res: Response) => {
     const parsedFechaLead = parseDate(leadData.fechaLead, true);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
-    // Handle treatments: Update existing or create new, but NEVER delete to preserve tratamientoId
+    // Handle treatments: Try to update existing treatments; if update fails because the record
+    // does not exist (P2025), create it and remember the new id mapping so procedimientos
+    // referencing the original id can be mapped to the newly created treatment.
+    const tratamientoIdMap: Record<string, any> = {}; // maps originalId -> prisma id (BigInt)
     if (tratamientos !== undefined && Array.isArray(tratamientos)) {
       console.log('🔄 Processing treatments:', tratamientos.length);
       for (const tratamiento of tratamientos) {
-        // Only update if ID is positive (existing records)
-        // Negative IDs are temporary and should be created as new
-        if (tratamiento.id && tratamiento.id > 0) {
-          // Update existing treatment
-          console.log('✏️ Updating existing treatment:', tratamiento.id);
-          await prisma.treatment.update({
-            where: { id: (BigInt(String(tratamiento.id)) as any) },
-            data: {
-              nombre: tratamiento.nombre || '',
-              cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
-              precio: parseFloat(tratamiento.precio) || 0,
-              montoPagado: parseFloat(tratamiento.montoPagado) || 0,
-              metodoPago: tratamiento.metodoPago || null,
-              deuda: parseFloat(tratamiento.deuda) || 0
-            }
-          });
-        } else if (tratamiento.id && tratamiento.id < 0) {
-          console.log('⏭️ Skipping temporary ID (will be created):', tratamiento.id);
+        const originalId = tratamiento.id;
+        try {
+          if (originalId && originalId > 0) {
+            // Attempt to update existing treatment
+            console.log('✏️ Attempting update treatment:', originalId);
+            const updated = await prisma.treatment.update({
+              where: { id: (BigInt(String(originalId)) as any) },
+              data: {
+                nombre: tratamiento.nombre || '',
+                cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
+                precio: parseFloat(tratamiento.precio) || 0,
+                montoPagado: parseFloat(tratamiento.montoPagado) || 0,
+                metodoPago: tratamiento.metodoPago || null,
+                deuda: parseFloat(tratamiento.deuda) || 0
+              }
+            });
+            tratamientoIdMap[String(originalId)] = updated.id;
+            continue;
+          }
+          // If ID is negative or falsy, create a new treatment
+          if (!originalId || originalId < 0) {
+            console.log('✨ Creating treatment for temp id:', originalId);
+            const created = await prisma.treatment.create({
+              data: {
+                leadId: id,
+                nombre: tratamiento.nombre || '',
+                cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
+                precio: parseFloat(tratamiento.precio) || 0,
+                montoPagado: parseFloat(tratamiento.montoPagado) || 0,
+                metodoPago: tratamiento.metodoPago || null,
+                deuda: parseFloat(tratamiento.deuda) || 0
+              }
+            });
+            tratamientoIdMap[String(originalId ?? created.id)] = created.id;
+            continue;
+          }
+        } catch (tErr: any) {
+          // If the update failed because record not found (P2025), create it instead
+          if (tErr && tErr.code === 'P2025') {
+            console.warn('⚠️ Treatment update not found, creating instead for id:', originalId);
+            const created = await prisma.treatment.create({
+              data: {
+                leadId: id,
+                nombre: tratamiento.nombre || '',
+                cantidadSesiones: parseInt(tratamiento.cantidadSesiones) || 0,
+                precio: parseFloat(tratamiento.precio) || 0,
+                montoPagado: parseFloat(tratamiento.montoPagado) || 0,
+                metodoPago: tratamiento.metodoPago || null,
+                deuda: parseFloat(tratamiento.deuda) || 0
+              }
+            });
+            tratamientoIdMap[String(originalId)] = created.id;
+            continue;
+          }
+          // Re-throw unexpected errors
+          throw tErr;
         }
-        // Note: New treatments will be created below in the prisma.lead.update call
       }
     }
-    
-    // Handle procedimientos: Delete and recreate only procedimientos (safe because they reference tratamientoId)
+
+    // Handle procedimientos: Delete existing procedimientos so we can recreate them with correct tratamientoId mappings
     if (procedimientos !== undefined && Array.isArray(procedimientos)) {
       console.log('🔄 Deleting existing procedimientos, will recreate:', procedimientos.length);
       await prisma.procedure.deleteMany({ where: { leadId: id } });
@@ -328,86 +368,10 @@ export const updateLead = async (req: Request, res: Response) => {
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
-        // Create only NEW treatments (those without an id)
-        tratamientos: (tratamientos && Array.isArray(tratamientos) && tratamientos.length > 0) ? {
-          create: tratamientos
-            .filter((t: any) => !t.id || t.id < 0) // Create treatments without ID or with negative (temporary) IDs
-            .map((t: any) => {
-              console.log('✨ Creating NEW treatment:', t.nombre);
-              return {
-                nombre: t.nombre || '',
-                cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
-                precio: parseFloat(t.precio) || 0,
-                montoPagado: parseFloat(t.montoPagado) || 0,
-                metodoPago: t.metodoPago || null,
-                deuda: parseFloat(t.deuda) || 0
-              };
-            })
-        } : undefined,
-        procedimientos: (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? {
-          create: procedimientos
-            .filter((p: any) => {
-              // Skip procedimientos with invalid tratamientoId
-              const tratamientoIdValue = parseInt(p.tratamientoId) || 0;
-              if (tratamientoIdValue <= 0) {
-                console.warn('⚠️ Skipping procedimiento with invalid tratamientoId:', {
-                  nombreTratamiento: p.nombreTratamiento,
-                  tratamientoId: tratamientoIdValue,
-                  original: p.tratamientoId
-                });
-                return false;
-              }
-              return true;
-            })
-            .map((p: any) => {
-              console.log('✨ Creating procedimiento:', p);
-                const tratamientoIdValue = BigInt(String(p.tratamientoId)) as any;
-              return {
-                fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-                personal: p.personal || '',
-                horaInicio: p.horaInicio || '',
-                horaFin: p.horaFin || '',
-                    tratamientoId: tratamientoIdValue,
-                nombreTratamiento: p.nombreTratamiento || '',
-                sesionNumero: parseInt(p.sesionNumero) || 1,
-                asistenciaMedica: Boolean(p.asistenciaMedica),
-                medico: p.medico || null,
-                observacion: p.observacion || null
-              };
-            })
-        } : (() => {
-          console.log('❌ NOT creating procedimientos - array empty or invalid:', {
-            procedimientos,
-            isArray: Array.isArray(procedimientos),
-            length: procedimientos?.length
-          });
-          return undefined;
-        })(),
-        seguimientos: (seguimientos && Array.isArray(seguimientos) && seguimientos.length > 0) ? {
-          create: seguimientos.map((s: any) => ({
-            procedimientoId: s.procedimientoId,
-            nombreProcedimiento: s.nombreProcedimiento,
-            fechaSeguimiento: parseDate(s.fechaSeguimiento, true) || new Date(),
-            personal: s.personal,
-            inflamacion: s.inflamacion,
-            ampollas: s.ampollas,
-            alergias: s.alergias,
-            malestarGeneral: s.malestarGeneral,
-            brote: s.brote,
-            dolorDeCabeza: s.dolorDeCabeza,
-            moretones: s.moretones,
-            observacion: s.observacion
-          }))
-        } : undefined,
-        // Create pagos de recepción if provided
-        pagosRecepcion: (pagosRecepcion && Array.isArray(pagosRecepcion) && pagosRecepcion.length > 0) ? {
-          create: pagosRecepcion.map((p: any) => ({
-            monto: p.monto,
-            metodoPago: p.metodoPago,
-            fechaPago: parseDate(p.fechaPago) || new Date(),
-            observacion: p.observacion,
-          }))
-        } : undefined
+        // Note: tratamientos and procedimientos are handled outside this nested update
+        // to allow more robust update/create logic and mapping of IDs.
+        // seguimientos and pagosRecepcion are handled after the lead update to ensure
+        // procedimiento ids and treatment mappings are available.
       },
       include: {
         tratamientos: true,
@@ -419,7 +383,110 @@ export const updateLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(200).json(updatedLead);
+    // Create procedimientos now that tratamientos have been updated/created and we have a mapping
+    const procedimientoIdMap: Record<string, any> = {};
+    if (procedimientos !== undefined && Array.isArray(procedimientos) && procedimientos.length > 0) {
+      for (const p of procedimientos) {
+        try {
+          // Determine tratamientoId to use: prefer mapped id from tratamientoIdMap
+          let tratamientoIdToUse: any = undefined;
+          if (p.tratamientoId !== undefined && tratamientoIdMap[String(p.tratamientoId)]) {
+            tratamientoIdToUse = tratamientoIdMap[String(p.tratamientoId)];
+          } else if (p.tratamientoId) {
+            tratamientoIdToUse = (BigInt(String(p.tratamientoId)) as any);
+          } else {
+            console.warn('⚠️ Skipping procedimiento with missing tratamientoId:', p);
+            continue;
+          }
+
+          const createdProc = await prisma.procedure.create({
+            data: {
+              leadId: id,
+              fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+              personal: p.personal || '',
+              horaInicio: p.horaInicio || '',
+              horaFin: p.horaFin || '',
+              tratamientoId: tratamientoIdToUse,
+              nombreTratamiento: p.nombreTratamiento || '',
+              sesionNumero: parseInt(p.sesionNumero) || 1,
+              asistenciaMedica: Boolean(p.asistenciaMedica),
+              medico: p.medico || null,
+              observacion: p.observacion || null
+            }
+          });
+          procedimientoIdMap[String(p.id ?? createdProc.id)] = createdProc.id;
+        } catch (pErr) {
+          console.error('Error creating procedimiento for lead', id, pErr);
+        }
+      }
+    }
+
+    // Create seguimientos, mapping procedimientoId when possible
+    if (seguimientos !== undefined && Array.isArray(seguimientos) && seguimientos.length > 0) {
+      for (const s of seguimientos) {
+        try {
+          let mappedProcId = undefined as any;
+          if (s.procedimientoId !== undefined && procedimientoIdMap[String(s.procedimientoId)]) {
+            mappedProcId = procedimientoIdMap[String(s.procedimientoId)];
+          } else if (s.procedimientoId) {
+            mappedProcId = (BigInt(String(s.procedimientoId)) as any);
+          }
+          await prisma.seguimiento.create({
+            data: {
+              leadId: id,
+              procedimientoId: mappedProcId,
+              nombreProcedimiento: s.nombreProcedimiento,
+              fechaSeguimiento: parseDate(s.fechaSeguimiento, true) || new Date(),
+              personal: s.personal,
+              inflamacion: s.inflamacion,
+              ampollas: s.ampollas,
+              alergias: s.alergias,
+              malestarGeneral: s.malestarGeneral,
+              brote: s.brote,
+              dolorDeCabeza: s.dolorDeCabeza,
+              moretones: s.moretones,
+              observacion: s.observacion
+            }
+          });
+        } catch (sErr) {
+          console.error('Error creating seguimiento for lead', id, sErr);
+        }
+      }
+    }
+
+    // Create pagosRecepcion if provided
+    if (pagosRecepcion !== undefined && Array.isArray(pagosRecepcion) && pagosRecepcion.length > 0) {
+      for (const p of pagosRecepcion) {
+        try {
+          await prisma.pagoRecepcion.create({
+            data: {
+              leadId: id,
+              monto: p.monto,
+              metodoPago: p.metodoPago,
+              fechaPago: parseDate(p.fechaPago) || new Date(),
+              observacion: p.observacion,
+            }
+          });
+        } catch (payErr) {
+          console.error('Error creating pagoRecepcion for lead', id, payErr);
+        }
+      }
+    }
+
+    // Re-fetch the lead with relations to return fresh data
+    const refreshedLead = await prisma.lead.findUnique({
+      where: { id: id },
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+        pagosRecepcion: true,
+        comprobantes: true,
+      }
+    });
+    res.status(200).json(refreshedLead);
   } catch (error: any) {
     console.error(`❌ Error updating lead ${id}:`, {
       message: error.message,
