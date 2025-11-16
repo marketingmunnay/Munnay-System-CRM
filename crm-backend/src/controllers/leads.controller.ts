@@ -103,14 +103,24 @@ export const createLead = async (req: Request, res: Response) => {
         'reprogramado': 'Reprogramado',
         'cancelado': 'Cancelado',
         'noasistio': 'NoAsistio',
-        'agendadoporllegar': 'Agendado',
+        // Accept explicit 'AgendadoPorLlegar' token or the spaced form
+        'agendadoporllegar': 'AgendadoPorLlegar',
         'enespera': 'PorAtender'
       };
       return map[cleaned] ?? undefined;
     };
 
     // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido' (so procedures move to En Seguimiento)
-    const finalEstadoRecepcionCreate = normalizeEnum(leadData.estadoRecepcion) ?? ((procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0) ? 'Atendido' : undefined);
+    // If estadoRecepcion explicitly provided, prefer it. If it's 'Agendado' and fechaHoraAgenda exists,
+    // treat it as 'AgendadoPorLlegar'. Otherwise, if procedimientos are present assume 'Atendido'.
+    let finalEstadoRecepcionCreate = normalizeEnum(leadData.estadoRecepcion);
+    const hasFechaHoraAgendaCreate = !!(leadData.fechaHoraAgenda);
+    if (!finalEstadoRecepcionCreate && (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0)) {
+      finalEstadoRecepcionCreate = 'Atendido';
+    }
+    if (finalEstadoRecepcionCreate === 'Agendado' && hasFechaHoraAgendaCreate) {
+      finalEstadoRecepcionCreate = 'AgendadoPorLlegar';
+    }
 
     const newLead = await prisma.lead.create({
       data: {
@@ -254,7 +264,8 @@ export const updateLead = async (req: Request, res: Response) => {
         'cancelado': 'Cancelado',
         'noasistio': 'NoAsistio',
         'reprogramado': 'Reprogramado',
-        'agendadoporllegar': 'Agendado',
+        // Map agendado por llegar to explicit token
+        'agendadoporllegar': 'AgendadoPorLlegar',
         'enespera': 'PorAtender'
       };
       return map[cleaned] ?? undefined;
@@ -350,9 +361,19 @@ export const updateLead = async (req: Request, res: Response) => {
     }
 
     // Decide final estadoRecepcion for update: prefer provided value, otherwise if procedimientos being created treat as 'Atendido'
+    // Determine final estadoRecepcion for update.
+    // Prefer explicitly provided normalized value. If not provided and procedimientos will be created, set 'Atendido'.
+    // If the result is 'Agendado' but there is a fechaHoraAgenda (existing or provided), map to 'AgendadoPorLlegar'.
     const normalizedProvidedEstado = normalizeEnum(leadData.estadoRecepcion as any);
     const willCreateProcedimientos = procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0;
-    const finalEstadoRecepcionUpdate = normalizedProvidedEstado ?? (willCreateProcedimientos ? 'Atendido' : existingLead?.estadoRecepcion);
+    let finalEstadoRecepcionUpdate = normalizedProvidedEstado;
+    const hasFechaHoraAgendaUpdate = leadData.fechaHoraAgenda !== undefined ? !!leadData.fechaHoraAgenda : !!existingLead?.fechaHoraAgenda;
+    if (!finalEstadoRecepcionUpdate && willCreateProcedimientos) {
+      finalEstadoRecepcionUpdate = 'Atendido';
+    }
+    if (finalEstadoRecepcionUpdate === 'Agendado' && hasFechaHoraAgendaUpdate) {
+      finalEstadoRecepcionUpdate = 'AgendadoPorLlegar';
+    }
 
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
