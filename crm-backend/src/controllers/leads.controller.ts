@@ -103,8 +103,8 @@ export const createLead = async (req: Request, res: Response) => {
         'reprogramado': 'Reprogramado',
         'cancelado': 'Cancelado',
         'noasistio': 'NoAsistio',
-        // Accept explicit 'AgendadoPorLlegar' token or the spaced form
-        'agendadoporllegar': 'AgendadoPorLlegar',
+        // Map 'agendado por llegar' to the existing 'Agendado' enum token
+        'agendadoporllegar': 'Agendado',
         'enespera': 'PorAtender'
       };
       return map[cleaned] ?? undefined;
@@ -118,9 +118,8 @@ export const createLead = async (req: Request, res: Response) => {
     if (!finalEstadoRecepcionCreate && (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0)) {
       finalEstadoRecepcionCreate = 'Atendido';
     }
-    if (finalEstadoRecepcionCreate === 'Agendado' && hasFechaHoraAgendaCreate) {
-      finalEstadoRecepcionCreate = 'AgendadoPorLlegar';
-    }
+    // Keep DB token as 'Agendado' even if fechaHoraAgenda exists. The frontend will display
+    // 'Agendado por llegar' when appropriate (estadoRecepcion === 'Agendado' && fechaHoraAgenda present).
 
     const newLead = await prisma.lead.create({
       data: {
@@ -264,8 +263,8 @@ export const updateLead = async (req: Request, res: Response) => {
         'cancelado': 'Cancelado',
         'noasistio': 'NoAsistio',
         'reprogramado': 'Reprogramado',
-        // Map agendado por llegar to explicit token
-        'agendadoporllegar': 'AgendadoPorLlegar',
+        // Map 'agendado por llegar' to the existing 'Agendado' enum token
+        'agendadoporllegar': 'Agendado',
         'enespera': 'PorAtender'
       };
       return map[cleaned] ?? undefined;
