@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User } from '../../types';
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import * as api from '../../services/api';
@@ -166,6 +166,18 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+    const [users, setUsers] = useState<User[]>([]);
+
+    useEffect(() => {
+        let mounted = true;
+        api.getUsers()
+            .then(res => {
+                if (!mounted) return;
+                if (Array.isArray(res)) setUsers(res as User[]);
+            })
+            .catch(err => console.warn('Failed to load users for AgendadosPage', err));
+        return () => { mounted = false; };
+    }, []);
 
   const filteredLeads = useMemo(() => {
     let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
@@ -348,6 +360,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
             onSave={handleSaveAndClose}
             onDelete={onDeleteLead}
             lead={editingLead}
+            users={users}
             initialTab={'recepcion'}
             disableFicha={true}
             metaCampaigns={metaCampaigns}
