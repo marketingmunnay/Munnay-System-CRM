@@ -394,16 +394,20 @@ export const updateLead = async (req: Request, res: Response) => {
     if (!finalEstadoRecepcionUpdate && willCreateProcedimientos) {
       finalEstadoRecepcionUpdate = 'Atendido';
     }
+    // Do not write a non-existent enum token to the DB. Keep 'Agendado' in DB and
+    // let the frontend display "Agendado por llegar" when appropriate.
     if (finalEstadoRecepcionUpdate === 'Agendado' && hasFechaHoraAgendaUpdate) {
-      finalEstadoRecepcionUpdate = 'AgendadoPorLlegar';
+      finalEstadoRecepcionUpdate = 'Agendado';
     }
 
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
       data: {
+        // Spread incoming data but override fields that must be normalized/mapped
         ...leadData,
         vendedor: leadData.vendedor ? mapSeller(leadData.vendedor) : existingLead?.vendedor,
+        metodoPago: leadData.metodoPago !== undefined ? (mapMetodoPago(leadData.metodoPago) as any) : existingLead?.metodoPago,
         fechaLead: finalFechaLead,
         fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
