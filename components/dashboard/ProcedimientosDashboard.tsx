@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { Lead, VentaExtra, Incidencia } from '../../types';
 import StatCard from './StatCard.tsx';
 import MonthlySalesChart from './MonthlySalesChart';
@@ -7,98 +7,43 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-interface ProcedimientosDashboardProps {
+interface Props {
     leads: Lead[];
     ventasExtra: VentaExtra[];
     incidencias: Incidencia[];
-    dateRange: { from: string; to: string };
 }
 
-const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads, ventasExtra, incidencias }) => {
-    const stats = useMemo(() => {
+const ProcedimientosDashboard: React.FC<Props> = ({ leads, ventasExtra, incidencias }) => {
+    const stats = React.useMemo(() => {
         const totalIncidencias = incidencias.length;
-
         const patientsWithInflamacion = new Set<number>();
-        leads.forEach(lead => {
-            if (lead.seguimientos?.some(s => s.inflamacion)) {
-                patientsWithInflamacion.add(lead.id);
-            }
-        });
-        
-        const totalVentasExtraProcedimientos = ventasExtra
-            .filter(v => v.categoria !== 'Productos')
-            .reduce((sum, v) => sum + v.montoPagado, 0);
-
-        return {
-            totalIncidencias,
-            totalConInflamacion: patientsWithInflamacion.size,
-            totalVentasExtraProcedimientos,
-        };
+        leads.forEach(lead => { if (lead.seguimientos?.some(s => s.inflamacion)) patientsWithInflamacion.add(lead.id); });
+        const totalVentasExtraProcedimientos = ventasExtra.filter(v => v.categoria !== 'Productos').reduce((s, v) => s + v.montoPagado, 0);
+        return { totalIncidencias, totalConInflamacion: patientsWithInflamacion.size, totalVentasExtraProcedimientos };
     }, [leads, ventasExtra, incidencias]);
 
-    const salesSummary = useMemo(() => {
+    const salesSummary = React.useMemo(() => {
         type SaleEntry = { servicio: string; montoPagado: number; deuda: number; vendedor?: string; fecha?: string };
         const entries: SaleEntry[] = [];
-
-        leads.forEach(l => {
-            (l.tratamientos || []).forEach(t => {
-                entries.push({
-                    servicio: t.nombre,
-                    montoPagado: t.montoPagado || 0,
-                    deuda: t.deuda || 0,
-                    vendedor: String(l.vendedor || 'Sin Vendedor'),
-                    fecha: l.fechaHoraAgenda || l.fechaLead,
-                });
-            });
-        });
-
-        ventasExtra.forEach(v => {
-            entries.push({ servicio: v.servicio, montoPagado: v.montoPagado || 0, deuda: v.deuda || 0, fecha: v.fechaVenta });
-        });
-
+        leads.forEach(l => (l.tratamientos || []).forEach(t => entries.push({ servicio: t.nombre, montoPagado: t.montoPagado || 0, deuda: t.deuda || 0, vendedor: String(l.vendedor || 'Sin Vendedor'), fecha: l.fechaHoraAgenda || l.fechaLead })));
+        ventasExtra.forEach(v => entries.push({ servicio: v.servicio, montoPagado: v.montoPagado || 0, deuda: v.deuda || 0, fecha: v.fechaVenta }));
         const totalCount = entries.length;
         const totalVentas = entries.reduce((s, e) => s + (e.montoPagado || 0), 0);
         const totalDeuda = entries.reduce((s, e) => s + (e.deuda || 0), 0);
-
         const byService: Record<string, { count: number; monto: number }> = {};
-        entries.forEach(e => {
-            const key = e.servicio || 'Sin Nombre';
-            if (!byService[key]) byService[key] = { count: 0, monto: 0 };
-            byService[key].count += 1;
-            byService[key].monto += e.montoPagado || 0;
-        });
-
-        const serviceList = Object.entries(byService)
-            .map(([servicio, data]) => ({ servicio, cantidad: data.count, monto: data.monto, porcentaje: totalCount > 0 ? (data.count / totalCount) * 100 : 0 }))
-            .sort((a, b) => b.cantidad - a.cantidad);
-
+        entries.forEach(e => { const key = e.servicio || 'Sin Nombre'; if (!byService[key]) byService[key] = { count: 0, monto: 0 }; byService[key].count += 1; byService[key].monto += e.montoPagado || 0; });
+        const serviceList = Object.entries(byService).map(([servicio, data]) => ({ servicio, cantidad: data.count, monto: data.monto, porcentaje: totalCount > 0 ? (data.count / totalCount) * 100 : 0 })).sort((a, b) => b.cantidad - a.cantidad);
         const sellerMap: Record<string, Record<string, number>> = {};
-        entries.forEach(e => {
-            const seller = e.vendedor || 'Sin Vendedor';
-            sellerMap[seller] = sellerMap[seller] || {};
-            sellerMap[seller][e.servicio] = (sellerMap[seller][e.servicio] || 0) + 1;
-        });
-
+        entries.forEach(e => { const seller = e.vendedor || 'Sin Vendedor'; sellerMap[seller] = sellerMap[seller] || {}; sellerMap[seller][e.servicio] = (sellerMap[seller][e.servicio] || 0) + 1; });
         return { totalCount, totalVentas, totalDeuda, serviceList, sellerMap };
     }, [leads, ventasExtra]);
 
-    const patientLists = useMemo(() => {
+    const patientLists = React.useMemo(() => {
         const patientsWithProcedures = leads.filter(l => l.procedimientos && l.procedimientos.length > 0);
-
         const masDe10 = patientsWithProcedures.filter(p => p.procedimientos!.length > 10);
         const menosDe3 = patientsWithProcedures.filter(p => p.procedimientos!.length < 3);
         const entre4y9 = patientsWithProcedures.filter(p => p.procedimientos!.length >= 4 && p.procedimientos!.length <= 9);
-
-        const conComplicaciones = leads.map(lead => {
-            const complications = (lead.seguimientos || []).reduce((count, seg) => {
-                return count + (seg.inflamacion ? 1 : 0) + (seg.ampollas ? 1 : 0) + (seg.alergias ? 1 : 0) + (seg.malestarGeneral ? 1 : 0) + (seg.brote ? 1 : 0) + (seg.dolorDeCabeza ? 1 : 0) + (seg.moretones ? 1 : 0);
-            }, 0);
-            return { lead, complications };
-        })
-        .filter(item => item.complications > 0)
-        .sort((a, b) => b.complications - a.complications)
-        .slice(0, 5);
-
+        const conComplicaciones = leads.map(lead => { const complications = (lead.seguimientos || []).reduce((count, seg) => count + (seg.inflamacion ? 1 : 0) + (seg.ampollas ? 1 : 0) + (seg.alergias ? 1 : 0) + (seg.malestarGeneral ? 1 : 0) + (seg.brote ? 1 : 0) + (seg.dolorDeCabeza ? 1 : 0) + (seg.moretones ? 1 : 0), 0); return { lead, complications }; }).filter(item => item.complications > 0).sort((a, b) => b.complications - a.complications).slice(0, 5);
         return { masDe10, menosDe3, entre4y9, conComplicaciones };
     }, [leads]);
 
