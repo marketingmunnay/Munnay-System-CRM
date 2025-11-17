@@ -35,15 +35,32 @@ const statusConfig: Record<AtencionStatus, { title: string; color: string; textC
     [AtencionStatus.SeguimientoHecho]: { title: 'Seguimiento Hecho', color: 'bg-green-200', textColor: 'text-green-800' },
 };
 
+// Normalize reception status tokens (backend) or display values into the UI enum values
+const normalizeReception = (value?: string) => {
+    if (!value) return ReceptionStatus.Agendado;
+    const s = String(value).trim();
+    const map: Record<string, string> = {
+        'Agendado': ReceptionStatus.Agendado,
+        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
+        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
+        'PorAtender': ReceptionStatus.PorAtender,
+        'Por Atender': ReceptionStatus.PorAtender,
+        'Atendido': ReceptionStatus.Atendido,
+        'Reprogramado': ReceptionStatus.Reprogramado,
+        'Cancelado': ReceptionStatus.Cancelado,
+        'NoAsistio': ReceptionStatus.NoAsistio,
+        'No Asistió': ReceptionStatus.NoAsistio
+    };
+    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
+    return map[s] ?? ReceptionStatus.Agendado;
+};
+
 const getProcedimientoStatus = (lead: Lead, procedure: Procedure): AtencionStatus => {
     const hasSeguimiento = lead.seguimientos?.some(s => s.procedimientoId === procedure.id);
-    if (hasSeguimiento) {
-        return AtencionStatus.SeguimientoHecho;
-    }
-    
-    if (lead.estadoRecepcion === ReceptionStatus.Atendido) {
-        return AtencionStatus.EnSeguimiento;
-    }
+    if (hasSeguimiento) return AtencionStatus.SeguimientoHecho;
+
+    const estado = normalizeReception(lead.estadoRecepcion);
+    if (estado === ReceptionStatus.Atendido) return AtencionStatus.EnSeguimiento;
 
     return AtencionStatus.PorAtender;
 };

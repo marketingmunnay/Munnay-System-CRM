@@ -25,6 +25,26 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+// Normalize reception status returned from backend (token or display) to UI display value
+const normalizeReception = (value?: string) => {
+    if (!value) return ReceptionStatus.Agendado;
+    const s = String(value).trim();
+    const map: Record<string, string> = {
+        'Agendado': ReceptionStatus.Agendado,
+        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
+        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
+        'PorAtender': ReceptionStatus.PorAtender,
+        'Por Atender': ReceptionStatus.PorAtender,
+        'Atendido': ReceptionStatus.Atendido,
+        'Reprogramado': ReceptionStatus.Reprogramado,
+        'Cancelado': ReceptionStatus.Cancelado,
+        'NoAsistio': ReceptionStatus.NoAsistio,
+        'No Asistió': ReceptionStatus.NoAsistio
+    };
+    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
+    return map[s] ?? ReceptionStatus.Agendado;
+};
+
 const getResourceName = (resourceId?: string) => {
     if (!resourceId) return 'N/A';
     const resource = RESOURCES.find(r => r.id === resourceId);
@@ -125,7 +145,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
                     </thead>
                     <tbody>
                         {leads.map(lead => {
-                            const status = lead.estadoRecepcion || ReceptionStatus.Agendado;
+                            const status = normalizeReception(lead.estadoRecepcion);
                             return (
                                 <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
@@ -330,7 +350,7 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
                 {kanbanColumnGroups.map(group => {
                     const leadsInColumn = filteredLeads.filter(lead => {
-                        const leadStatus = lead.estadoRecepcion || ReceptionStatus.Agendado;
+                        const leadStatus = normalizeReception(lead.estadoRecepcion);
                         return group.statuses.includes(leadStatus);
                     });
                     const config = group.config;
