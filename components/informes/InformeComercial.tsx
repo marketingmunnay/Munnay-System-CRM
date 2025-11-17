@@ -4,6 +4,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianG
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 import StatCard from '../dashboard/StatCard.tsx';
+import { formatDateForInput, parseDate } from '../../utils/time';
 import * as api from '../../services/api.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -42,11 +43,10 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         const checkDate = (itemDateStr?: string) => {
             if (!from && !to) return true;
             if (!itemDateStr) return false;
-            
-            // Extract date part if it's a datetime (YYYY-MM-DD)
-            const dateOnly = itemDateStr.split('T')[0];
-            
-            // Simple string comparison for YYYY-MM-DD format
+
+            const dateOnly = formatDateForInput(itemDateStr);
+            if (!dateOnly) return false;
+
             if (from && dateOnly < from) return false;
             if (to && dateOnly > to) return false;
             return true;
@@ -210,17 +210,20 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
 
     // Weekly Income Comparison Data
     const weeklyComparisonData = useMemo(() => {
-        const getWeekNumber = (dateStr: string): number => {
-            const date = new Date(dateStr.split('T')[0]);
+        const getWeekNumber = (dateStr: string): number | null => {
+            const parsed = parseDate(dateStr);
+            if (!parsed) return null;
+            const date = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
             const startOfYear = new Date(date.getFullYear(), 0, 1);
             const daysDiff = Math.floor((date.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
             return Math.ceil((daysDiff + startOfYear.getDay() + 1) / 7);
         };
 
-        const getMonthName = (dateStr: string): string => {
+        const getMonthName = (dateStr: string): string | null => {
+            const parsed = parseDate(dateStr);
+            if (!parsed) return null;
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            const date = new Date(dateStr.split('T')[0]);
-            return months[date.getMonth()];
+            return months[parsed.getMonth()];
         };
 
         // Group data by week
@@ -229,8 +232,11 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         // Process leads income
         filteredLeads.forEach(lead => {
             if (lead.fechaHoraAgenda) {
-                const weekKey = `${getWeekNumber(lead.fechaHoraAgenda)}-${new Date(lead.fechaHoraAgenda).getFullYear()}`;
-                const month = getMonthName(lead.fechaHoraAgenda);
+                const weekNum = getWeekNumber(lead.fechaHoraAgenda);
+                const parsed = parseDate(lead.fechaHoraAgenda);
+                if (!weekNum || !parsed) return;
+                const weekKey = `${weekNum}-${parsed.getFullYear()}`;
+                const month = getMonthName(lead.fechaHoraAgenda) || '';
                 if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
                 weeklyData[weekKey].ingresos += (lead.montoPagado || 0) + (lead.tratamientos?.reduce((s, t) => s + t.montoPagado, 0) || 0);
             }
@@ -239,8 +245,11 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         // Process extra sales income
         filteredVentasExtra.forEach(venta => {
             if (venta.fechaVenta) {
-                const weekKey = `${getWeekNumber(venta.fechaVenta)}-${new Date(venta.fechaVenta).getFullYear()}`;
-                const month = getMonthName(venta.fechaVenta);
+                const weekNum = getWeekNumber(venta.fechaVenta);
+                const parsed = parseDate(venta.fechaVenta);
+                if (!weekNum || !parsed) return;
+                const weekKey = `${weekNum}-${parsed.getFullYear()}`;
+                const month = getMonthName(venta.fechaVenta) || '';
                 if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
                 weeklyData[weekKey].ingresos += venta.montoPagado;
             }
@@ -249,8 +258,11 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
         // Process campaign expenses
         filteredCampaigns.forEach(campaign => {
             if (campaign.fecha) {
-                const weekKey = `${getWeekNumber(campaign.fecha)}-${new Date(campaign.fecha).getFullYear()}`;
-                const month = getMonthName(campaign.fecha);
+                const weekNum = getWeekNumber(campaign.fecha);
+                const parsed = parseDate(campaign.fecha);
+                if (!weekNum || !parsed) return;
+                const weekKey = `${weekNum}-${parsed.getFullYear()}`;
+                const month = getMonthName(campaign.fecha) || '';
                 if (!weeklyData[weekKey]) weeklyData[weekKey] = { ingresos: 0, egresos: 0, month };
                 weeklyData[weekKey].egresos += campaign.importeGastado;
             }

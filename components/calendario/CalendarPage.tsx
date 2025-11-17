@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
@@ -149,12 +150,13 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
     };
 
     const { appointments, blocked } = useMemo(() => {
-        const selectedDateStr = currentDate.toISOString().split('T')[0];
-        const appointments = leads.filter(lead =>
-            lead.estado === LeadStatus.Agendado &&
-            lead.fechaHoraAgenda &&
-            lead.fechaHoraAgenda.startsWith(selectedDateStr)
-        );
+        const selectedDateStr = formatDateForInput(currentDate);
+        const appointments = (leads || []).filter(lead => {
+            if (lead.estado !== LeadStatus.Agendado) return false;
+            if (!lead.fechaHoraAgenda) return false;
+            const leadDate = formatDateForInput(lead.fechaHoraAgenda);
+            return leadDate === selectedDateStr;
+        });
         const blocked = BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr);
         return { appointments, blocked };
     }, [leads, currentDate]);
@@ -178,13 +180,16 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
 
     const AppointmentCard: React.FC<{ appointment: Lead }> = ({ appointment }) => {
         if (!appointment.fechaHoraAgenda) return null;
-    
-        const startTime = appointment.fechaHoraAgenda.split('T')[1].substring(0, 5);
-        const appDate = new Date(appointment.fechaHoraAgenda);
+
+        const parsed = parseDate(appointment.fechaHoraAgenda);
+        if (!parsed) return null;
+
+        const startTime = `${parsed.getHours().toString().padStart(2, '0')}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+        const appDate = new Date(parsed.getTime());
         // Assuming 1 hour duration for all appointments as there is no end time in the model
         appDate.setHours(appDate.getHours() + 1);
         const endTime = `${appDate.getHours().toString().padStart(2, '0')}:${appDate.getMinutes().toString().padStart(2, '0')}`;
-        
+
         const top = timeToPosition(startTime);
         const height = durationToHeight(startTime, endTime);
     

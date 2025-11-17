@@ -5,7 +5,7 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay, formatDateForInput } from '../../utils/time.ts';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
@@ -100,12 +100,10 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         if (dateRange.from || dateRange.to) {
             results = results.filter(lead => {
                 if (!lead.fechaLead) return false;
-                
-                // Convert to date strings for comparison (YYYY-MM-DD)
-                const leadDate = typeof lead.fechaLead === 'string' 
-                    ? lead.fechaLead.split('T')[0] 
-                    : new Date(lead.fechaLead).toISOString().split('T')[0];
-                
+
+                const leadDate = formatDateForInput(lead.fechaLead);
+
+                if (!leadDate) return false;
                 if (dateRange.from && leadDate < dateRange.from) {
                     return false;
                 }
