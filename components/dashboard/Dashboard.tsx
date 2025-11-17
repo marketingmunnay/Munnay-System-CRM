@@ -4,7 +4,7 @@ import type { Lead, Campaign, VentaExtra, Incidencia, Egreso, Goal, Seguidor, Pu
 import GeneralDashboard from './GeneralDashboard.tsx';
 import MarketingDashboard from './MarketingDashboard.tsx';
 import RecepcionDashboard from './RecepcionDashboard.tsx';
-import ProcedimientosDashboard from './ProcedimientosDashboard.tsx';
+import ProcedimientosDashboard from './ProcedimientosDashboardClean.tsx';
 import FinanzasDashboard from './FinanzasDashboard.tsx';
 import RecursosHumanosDashboard from './RecursosHumanosDashboard.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
