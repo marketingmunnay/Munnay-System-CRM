@@ -31,6 +31,7 @@ interface Atencion {
 
 const statusConfig: Record<AtencionStatus, { title: string; color: string; textColor: string; }> = {
     [AtencionStatus.PorAtender]: { title: 'Por Atender', color: 'bg-sky-200', textColor: 'text-sky-800' },
+    [AtencionStatus.Atendido]: { title: 'Atendido', color: 'bg-blue-200', textColor: 'text-blue-800' },
     [AtencionStatus.EnSeguimiento]: { title: 'En Seguimiento', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
     [AtencionStatus.SeguimientoHecho]: { title: 'Seguimiento Hecho', color: 'bg-green-200', textColor: 'text-green-800' },
 };
@@ -57,12 +58,15 @@ const normalizeReception = (value?: string) => {
 
 const getProcedimientoStatus = (lead: Lead, procedure: Procedure): AtencionStatus => {
     const hasSeguimiento = lead.seguimientos?.some(s => s.procedimientoId === procedure.id);
+    // If there's already a seguimiento, it's done
     if (hasSeguimiento) return AtencionStatus.SeguimientoHecho;
 
+    // If reception says 'Atendido' show it in Atendido column (no seguimiento yet)
     const estado = normalizeReception(lead.estadoRecepcion);
-    if (estado === ReceptionStatus.Atendido) return AtencionStatus.EnSeguimiento;
+    if (estado === ReceptionStatus.Atendido) return AtencionStatus.Atendido;
 
-    return AtencionStatus.PorAtender;
+    // If procedure exists but reception not 'Atendido', consider it En Seguimiento
+    return AtencionStatus.EnSeguimiento;
 };
 
 

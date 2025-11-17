@@ -41,6 +41,7 @@ export enum ReceptionStatus {
 
 export enum AtencionStatus {
     PorAtender = 'Por Atender',
+    Atendido = 'Atendido',
     EnSeguimiento = 'En Seguimiento',
     SeguimientoHecho = 'Seguimiento Hecho',
 }
