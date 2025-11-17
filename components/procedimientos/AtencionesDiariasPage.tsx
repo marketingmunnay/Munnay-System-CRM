@@ -168,13 +168,14 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
         let allAtenciones: Atencion[] = [];
 
         // Filter leads that have accepted treatments and procedures
-        const relevantLeads = leads.filter(lead => 
-            lead.aceptoTratamiento === 'Si' && 
-            lead.tratamientos && 
-            lead.tratamientos.length > 0 &&
-            lead.procedimientos &&
-            lead.procedimientos.length > 0
-        );
+        const relevantLeads = leads.filter(lead => {
+            const estado = normalizeReception(lead.estadoRecepcion);
+            const hasTreatments = lead.tratamientos && lead.tratamientos.length > 0;
+            const hasProcedures = lead.procedimientos && lead.procedimientos.length > 0;
+            // Include leads that accepted treatment OR leads that are in Por Atender reception status
+            return (lead.aceptoTratamiento === 'Si' || estado === ReceptionStatus.PorAtender)
+                && hasTreatments && hasProcedures;
+        });
 
         // Flatten procedures into individual 'Atencion' objects
         relevantLeads.forEach(lead => {
