@@ -1,6 +1,24 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
+// Convert BigInt values (returned by Prisma for BigInt columns) into JSON-serializable
+// values. If the BigInt fits into a safe JS number we convert to Number, otherwise to string.
+const convertBigInts = (value: any): any => {
+  if (typeof value === 'bigint') {
+    const num = Number(value);
+    return Number.isSafeInteger(num) ? num : String(value);
+  }
+  if (Array.isArray(value)) return value.map(v => convertBigInts(v));
+  if (value && typeof value === 'object') {
+    const out: any = {};
+    for (const k of Object.keys(value)) {
+      out[k] = convertBigInts((value as any)[k]);
+    }
+    return out;
+  }
+  return value;
+};
+
 // Helper to map vendor strings to Seller enum values
 const mapSeller = (value: any): string => {
   if (!value) return 'Vanesa';
@@ -60,7 +78,7 @@ export const getLeads = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(200).json(leads);
+    res.status(200).json(convertBigInts(leads));
   } catch (error) {
     console.error("Error fetching leads:", error);
     res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
@@ -86,7 +104,7 @@ export const getLeadById = async (req: Request, res: Response) => {
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
-    res.status(200).json(lead);
+    res.status(200).json(convertBigInts(lead));
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
     res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
@@ -235,7 +253,7 @@ export const createLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(201).json(newLead);
+    res.status(201).json(convertBigInts(newLead));
   } catch (error) {
     console.error("Error creating lead:", error);
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
@@ -534,7 +552,7 @@ export const updateLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(200).json(refreshedLead);
+    res.status(200).json(convertBigInts(refreshedLead));
   } catch (error: any) {
     console.error(`❌ Error updating lead ${id}:`, {
       message: error.message,
