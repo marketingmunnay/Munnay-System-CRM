@@ -2173,6 +2173,24 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         return 'Vanesa';
     };
 
+    // Map backend ReceptionStatus tokens (e.g. 'PorAtender', 'Agendado') to frontend display values
+    const mapReceptionFront = (value: any): string | undefined => {
+        if (value === null || value === undefined) return undefined;
+        const s = String(value).trim();
+        const map: Record<string, string> = {
+            'Agendado': 'Agendado',
+            'AgendadoPorLlegar': 'Agendado por llegar',
+            'PorAtender': 'Por Atender',
+            'Atendido': 'Atendido',
+            'Reprogramado': 'Reprogramado',
+            'Cancelado': 'Cancelado',
+            'NoAsistio': 'No Asistió'
+        };
+        // If it's already a display value (contains space or lowercase), try to return it
+        if (Object.values(map).includes(s)) return s;
+        return map[s] ?? undefined;
+    };
+
     const SERVICE_CATEGORIES = useMemo(() => {
         const categories = services.reduce((acc, service) => {
             if (!acc[service.categoria]) {
@@ -2220,8 +2238,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
             if (lead) {
-                // Normalize vendedor to enum token so select shows correctly
-                const normalized = { ...lead, vendedor: mapSellerFront(lead.vendedor) } as any;
+                // Normalize vendedor and reception status so selects show correctly
+                const normalized = { 
+                    ...lead, 
+                    vendedor: mapSellerFront(lead.vendedor),
+                    estadoRecepcion: mapReceptionFront(lead.estadoRecepcion)
+                } as any;
                 setFormData(normalized);
             } else {
                 setFormData(initialFormData);
@@ -2235,7 +2257,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
         if (lead && isOpen) {
-            setFormData({ ...lead, vendedor: mapSellerFront(lead.vendedor) } as any);
+            setFormData({ ...lead, vendedor: mapSellerFront(lead.vendedor), estadoRecepcion: mapReceptionFront(lead.estadoRecepcion) } as any);
         }
     }, [lead]);
 
