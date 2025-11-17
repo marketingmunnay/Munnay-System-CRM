@@ -111,31 +111,21 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
             }, 0);
             return { lead, complications };
         })
-        .filter(item => item.complications > 0)
-        .sort((a, b) => b.complications - a.complications)
-        .slice(0, 5);
-
-        return { masDe10, menosDe3, entre4y9, conComplicaciones };
-    }, [leads]);
-
-    const ListCard: React.FC<{title: string, items: {name: string, value: string}[], bgColor: string}> = ({title, items, bgColor}) => (
-        <div className={`${bgColor} p-4 rounded-lg shadow h-full`}>
-            <h4 className="font-semibold text-gray-700 text-base mb-3">{title}</h4>
-            {items.length > 0 ? (
-                <ul className="space-y-2">
-                    {items.map((item, index) => (
-                         <li key={index} className="flex justify-between items-center text-sm bg-white/50 p-2 rounded-md">
-                            <span className="text-gray-600">{item.name}</span>
-                            <span className="font-semibold text-gray-800">{item.value}</span>
-                        </li>
-                    ))}
+                     <StatCard
+                         title="Total Incidencias"
+                         value={stats.totalIncidencias.toString()}
+                         icon={<GoogleIcon name="report" className="text-red-600" />}
+                         iconBgClass="bg-red-100"
+                     />
+                     <StatCard
+                         title="Total Pacientes con Inflamación"
+                         value={stats.totalConInflamacion.toString()}
+                         icon={<GoogleIcon name="local_fire_department" className="text-orange-600" />}
+                         iconBgClass="bg-orange-100"
+                     />
                 </ul>
             ) : <p className="text-sm text-gray-500 text-center pt-4">No hay datos.</p>}
-        </div>
-    );
-
-    return (
-        <div className="space-y-6">
+                 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <StatCard
                     title="Total Ventas Extra Procedimientos"
@@ -154,12 +144,7 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
                     value={stats.totalConInflamacion.toString()}
                     icon={<GoogleIcon name="local_fire_department" className="text-orange-600" />}
                     iconBgClass="bg-orange-100"
-                />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 <ListCard 
-                    title="Top 5 Servicios Más Vendidos" 
-                    items={serviceStats.map(([name, count]) => ({name, value: `${count} vendidos`}))}
+                 
                     bgColor="bg-indigo-50"
                  />
                  <ListCard 
