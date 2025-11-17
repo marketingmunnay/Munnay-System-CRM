@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { Lead, VentaExtra, Incidencia } from '../../types';
 import StatCard from './StatCard.tsx';
+import MonthlySalesChart from './MonthlySalesChart';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -46,6 +47,56 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
             .sort(([, countA], [, countB]) => countB - countA)
             .slice(0, 5);
     }, [leads]);
+
+    const salesSummary = useMemo(() => {
+        // Build a unified list of sales from treatments and ventasExtra
+        type SaleEntry = { servicio: string; montoPagado: number; deuda: number; vendedor?: string; fecha?: string };
+        const entries: SaleEntry[] = [];
+
+        // Treatments from leads
+        leads.forEach(l => {
+            (l.tratamientos || []).forEach(t => {
+                entries.push({
+                    servicio: t.nombre,
+                    montoPagado: t.montoPagado || 0,
+                    deuda: t.deuda || 0,
+                    vendedor: l.vendedor as unknown as string,
+                    fecha: l.fechaHoraAgenda || l.fechaLead,
+                });
+            });
+        });
+
+        // ventasExtra provided separately
+        ventasExtra.forEach(v => {
+            entries.push({ servicio: v.servicio, montoPagado: v.montoPagado || 0, deuda: v.deuda || 0, fecha: v.fechaVenta });
+        });
+
+        const totalCount = entries.length;
+        const totalVentas = entries.reduce((s, e) => s + (e.montoPagado || 0), 0);
+        const totalDeuda = entries.reduce((s, e) => s + (e.deuda || 0), 0);
+
+        const byService: Record<string, { count: number; monto: number }> = {};
+        entries.forEach(e => {
+            const key = e.servicio || 'Sin Nombre';
+            if (!byService[key]) byService[key] = { count: 0, monto: 0 };
+            byService[key].count += 1;
+            byService[key].monto += e.montoPagado || 0;
+        });
+
+        const serviceList = Object.entries(byService)
+            .map(([servicio, data]) => ({ servicio, cantidad: data.count, monto: data.monto, porcentaje: totalCount > 0 ? (data.count / totalCount) * 100 : 0 }))
+            .sort((a, b) => b.cantidad - a.cantidad);
+
+        // Attentions per service by seller
+        const sellerMap: Record<string, Record<string, number>> = {};
+        entries.forEach(e => {
+            const seller = e.vendedor || 'Sin Vendedor';
+            sellerMap[seller] = sellerMap[seller] || {};
+            sellerMap[seller][e.servicio] = (sellerMap[seller][e.servicio] || 0) + 1;
+        });
+
+        return { totalCount, totalVentas, totalDeuda, serviceList, sellerMap };
+    }, [leads, ventasExtra]);
     
     const patientLists = useMemo(() => {
         const patientsWithProcedures = leads.filter(l => l.procedimientos && l.procedimientos.length > 0);
@@ -126,6 +177,82 @@ const ProcedimientosDashboard: React.FC<ProcedimientosDashboardProps> = ({ leads
                         ]}
                         bgColor="bg-yellow-50"
                     />
+                </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard
+                    title="Total Ventas"
+                    value={`S/ ${salesSummary.totalVentas.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
+                    icon={<GoogleIcon name="paid" className="text-green-600" />}
+                    iconBgClass="bg-green-100"
+                />
+                <StatCard
+                    title="Total Deuda"
+                    value={`S/ ${salesSummary.totalDeuda.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
+                    icon={<GoogleIcon name="account_balance_wallet" className="text-red-600" />}
+                    iconBgClass="bg-red-100"
+                />
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h4 className="font-semibold text-gray-700 text-base mb-3">Ventas por Servicio (Top)</h4>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-600">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2">Servicio</th>
+                                    <th className="px-3 py-2">Cantidad</th>
+                                    <th className="px-3 py-2">%</th>
+                                    <th className="px-3 py-2">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {salesSummary.serviceList.slice(0,10).map((s, i) => (
+                                    <tr key={i} className="border-b bg-white">
+                                        <td className="px-3 py-2">{s.servicio}</td>
+                                        <td className="px-3 py-2 font-semibold">{s.cantidad}</td>
+                                        <td className="px-3 py-2">{s.porcentaje.toFixed(1)}%</td>
+                                        <td className="px-3 py-2">S/ {s.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <MonthlySalesChart leads={leads} ventasExtra={ventasExtra} />
+                </div>
+
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h4 className="font-semibold text-gray-700 text-base mb-3">Atenciones por Servicio por Vendedor</h4>
+                    <div className="overflow-x-auto">
+                        {Object.keys(salesSummary.sellerMap).length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay datos disponibles.</p>
+                        ) : (
+                            Object.entries(salesSummary.sellerMap).map(([seller, services]) => (
+                                <div key={seller} className="mb-4">
+                                    <h5 className="font-medium text-gray-800 mb-2">{seller}</h5>
+                                    <table className="w-full text-sm text-left text-gray-600 mb-2">
+                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                            <tr>
+                                                <th className="px-3 py-2">Servicio</th>
+                                                <th className="px-3 py-2">Cantidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {Object.entries(services).map(([serv, cnt]) => (
+                                                <tr key={serv} className="border-b bg-white">
+                                                    <td className="px-3 py-2">{serv}</td>
+                                                    <td className="px-3 py-2 font-semibold">{cnt}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

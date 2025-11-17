@@ -199,24 +199,36 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
         return () => { mounted = false; };
     }, []);
 
-  const filteredLeads = useMemo(() => {
-    let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
+    const filteredLeads = useMemo(() => {
+        let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
 
-    if (dateRange.from || dateRange.to) {
-      baseLeads = baseLeads.filter(lead => {
-        if (!lead.fechaHoraAgenda) return false;
-        
-        // Extract date part from datetime (YYYY-MM-DD)
-        const agendaDate = lead.fechaHoraAgenda.split('T')[0];
-        
-        if (dateRange.from && agendaDate < dateRange.from) return false;
-        if (dateRange.to && agendaDate > dateRange.to) return false;
-        return true;
-      });
-    }
+        if (dateRange.from || dateRange.to) {
+            baseLeads = baseLeads.filter(lead => {
+                if (!lead.fechaHoraAgenda) return false;
 
-    return baseLeads.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
-  }, [leads, dateRange]);
+                // fechaHoraAgenda might be a string or a Date object depending on the source
+                let agendaDate: string | null = null;
+                try {
+                    if (typeof lead.fechaHoraAgenda === 'string') {
+                        agendaDate = lead.fechaHoraAgenda.split('T')[0];
+                    } else {
+                        const d = new Date(lead.fechaHoraAgenda as any);
+                        if (!isNaN(d.getTime())) agendaDate = d.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    agendaDate = null;
+                }
+
+                if (!agendaDate) return false;
+
+                if (dateRange.from && agendaDate < dateRange.from) return false;
+                if (dateRange.to && agendaDate > dateRange.to) return false;
+                return true;
+            });
+        }
+
+        return baseLeads.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
+    }, [leads, dateRange]);
 
   const stats = useMemo(() => {
     const totalAgendados = filteredLeads.length;
