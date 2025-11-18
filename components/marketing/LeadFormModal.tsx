@@ -51,7 +51,15 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
                     <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
-                    <input type="date" name="fechaLead" value={formData.fechaLead ? formData.fechaLead.split('T')[0] : ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} required />
+                    <input 
+                        type="date" 
+                        name="fechaLead" 
+                        value={typeof formData.fechaLead === 'string' && formData.fechaLead.includes('T') ? formData.fechaLead.split('T')[0] : (typeof formData.fechaLead === 'string' ? formData.fechaLead : '')} 
+                        onChange={handleChange} 
+                        className="w-full bg-[#f9f9fa] p-2" 
+                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
+                        required 
+                    />
                 </div>
                 <div>
                     <label className="text-sm font-medium">Tipo Documento</label>
@@ -158,7 +166,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaAgenda" 
-                            value={formData.fechaHoraAgenda?.split('T')[0] || ''} 
+                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? formData.fechaHoraAgenda.split('T')[0] : (typeof formData.fechaHoraAgenda === 'string' ? formData.fechaHoraAgenda : '')} 
                             onChange={(e) => {
                                 const fecha = e.target.value;
                                 const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
@@ -177,10 +185,17 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <label className="text-sm font-medium">Hora de Agenda</label>
                         <select 
                             name="horaAgenda" 
-                            value={formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || ''} 
+                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? (formData.fechaHoraAgenda.split('T')[1]?.substring(0,5) || '') : ''} 
                             onChange={(e) => {
                                 const hora = e.target.value;
-                                const fechaActual = formData.fechaHoraAgenda?.split('T')[0] || new Date().toISOString().split('T')[0];
+                                let fechaActual = '';
+                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
+                                    fechaActual = formData.fechaHoraAgenda.split('T')[0];
+                                } else if (typeof formData.fechaHoraAgenda === 'string') {
+                                    fechaActual = formData.fechaHoraAgenda;
+                                } else {
+                                    fechaActual = new Date().toISOString().split('T')[0];
+                                }
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
