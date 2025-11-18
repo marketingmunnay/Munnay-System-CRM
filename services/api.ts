@@ -43,6 +43,8 @@ export const deleteLead = (id: number): Promise<void> =>
   apiRequest<void>(`/leads/${id}`, 'DELETE');
 export const getNextHistoryNumber = (): Promise<string> =>
   apiRequest<string>('/leads/next-history-number', 'GET');
+export const bulkImportLeads = (leads: any[]): Promise<{ message: string; leads: Lead[] }> =>
+  apiRequest<{ message: string; leads: Lead[] }>('/leads/bulk', 'POST', leads);
 
 // ====== CAMPAIGNS ======
 export const getCampaigns = (): Promise<Campaign[]> => apiRequest<Campaign[]>('/campaigns', 'GET');
@@ -76,6 +78,8 @@ export const saveVentaExtra = (venta: VentaExtra): Promise<VentaExtra> =>
     : apiRequest<VentaExtra>('/ventas-extra', 'POST', venta);
 export const deleteVentaExtra = (id: number): Promise<void> =>
   apiRequest<void>(`/ventas-extra/${id}`, 'DELETE');
+export const bulkImportVentasExtra = (ventas: any[]): Promise<{ message: string; ventas: VentaExtra[] }> =>
+  apiRequest<{ message: string; ventas: VentaExtra[] }>('/ventas-extra/bulk', 'POST', ventas);
 
 // ====== INCIDENCIAS ======
 export const getIncidencias = (): Promise<Incidencia[]> => 
@@ -86,6 +90,8 @@ export const saveIncidencia = (incidencia: Incidencia): Promise<Incidencia> =>
     : apiRequest<Incidencia>('/incidencias', 'POST', incidencia);
 export const deleteIncidencia = (id: number): Promise<void> =>
   apiRequest<void>(`/incidencias/${id}`, 'DELETE');
+export const bulkImportIncidencias = (incidencias: any[]): Promise<{ message: string; incidencias: Incidencia[] }> =>
+  apiRequest<{ message: string; incidencias: Incidencia[] }>('/incidencias/bulk', 'POST', incidencias);
 
 // ====== EGRESOS ======
 export const getEgresos = (): Promise<Egreso[]> => 
@@ -96,6 +102,8 @@ export const saveEgreso = (egreso: Egreso): Promise<Egreso> =>
     : apiRequest<Egreso>('/expenses', 'POST', egreso);
 export const deleteEgreso = (id: number): Promise<void> =>
   apiRequest<void>(`/expenses/${id}`, 'DELETE');
+export const bulkImportEgresos = (egresos: any[]): Promise<{ message: string; egresos: Egreso[] }> =>
+  apiRequest<{ message: string; egresos: Egreso[] }>('/expenses/bulk', 'POST', egresos);
 
 // ====== PROVEEDORES ======
 export const getProveedores = (): Promise<Proveedor[]> => 
@@ -106,6 +114,8 @@ export const saveProveedor = (proveedor: Proveedor): Promise<Proveedor> =>
     : apiRequest<Proveedor>('/proveedores', 'POST', { ...proveedor, id: undefined });
 export const deleteProveedor = (id: number): Promise<void> =>
   apiRequest<void>(`/proveedores/${id}`, 'DELETE');
+export const bulkImportProveedores = (proveedores: any[]): Promise<{ message: string; proveedores: Proveedor[] }> =>
+  apiRequest<{ message: string; proveedores: Proveedor[] }>('/proveedores/bulk', 'POST', proveedores);
 
 // ====== TIPOS DE PROVEEDOR ======
 export const getTiposProveedor = (): Promise<TipoProveedor[]> => 
@@ -126,6 +136,8 @@ export const savePublicacion = (publicacion: Publicacion): Promise<Publicacion> 
     : apiRequest<Publicacion>('/publicaciones', 'POST', publicacion);
 export const deletePublicacion = (id: number): Promise<void> =>
   apiRequest<void>(`/publicaciones/${id}`, 'DELETE');
+export const bulkImportPublicaciones = (publicaciones: any[]): Promise<{ message: string; publicaciones: Publicacion[] }> =>
+  apiRequest<{ message: string; publicaciones: Publicacion[] }>('/publicaciones/bulk', 'POST', publicaciones);
 
 // ====== SEGUIDORES ======
 export const getSeguidores = (): Promise<Seguidor[]> => 
@@ -136,6 +148,8 @@ export const saveSeguidor = (seguidor: Seguidor): Promise<Seguidor> =>
     : apiRequest<Seguidor>('/seguidores', 'POST', seguidor);
 export const deleteSeguidor = (id: number): Promise<void> =>
   apiRequest<void>(`/seguidores/${id}`, 'DELETE');
+export const bulkImportSeguidores = (seguidores: any[]): Promise<{ message: string; seguidores: Seguidor[] }> =>
+  apiRequest<{ message: string; seguidores: Seguidor[] }>('/seguidores/bulk', 'POST', seguidores);
 
 // ====== USERS ======
 export const getUsers = (): Promise<User[]> => 
@@ -192,6 +206,8 @@ export const saveService = (service: Service): Promise<Service> =>
     : apiRequest<Service>('/config/services', 'POST', service);
 export const deleteService = (id: number): Promise<void> =>
   apiRequest<void>(`/config/services/${id}`, 'DELETE');
+export const bulkImportServices = (services: any[]): Promise<{ message: string; services: Service[] }> =>
+  apiRequest<{ message: string; services: Service[] }>('/config/services/bulk', 'POST', services);
 
 // ====== PRODUCTS ======
 export const getProducts = (): Promise<Product[]> => 
@@ -202,6 +218,8 @@ export const saveProduct = (product: Product): Promise<Product> =>
     : apiRequest<Product>('/config/products', 'POST', product);
 export const deleteProduct = (id: number): Promise<void> =>
   apiRequest<void>(`/config/products/${id}`, 'DELETE');
+export const bulkImportProducts = (products: any[]): Promise<{ message: string; products: Product[] }> =>
+  apiRequest<{ message: string; products: Product[] }>('/config/products/bulk', 'POST', products);
 
 // ====== MEMBERSHIPS ======
 export const getMemberships = (): Promise<Membership[]> => 
@@ -212,6 +230,8 @@ export const saveMembership = (membership: Membership): Promise<Membership> =>
     : apiRequest<Membership>('/config/memberships', 'POST', membership);
 export const deleteMembership = (id: number): Promise<void> =>
   apiRequest<void>(`/config/memberships/${id}`, 'DELETE');
+export const bulkImportMemberships = (memberships: any[]): Promise<{ message: string; memberships: Membership[] }> =>
+  apiRequest<{ message: string; memberships: Membership[] }>('/config/memberships/bulk', 'POST', memberships);
 
 // ====== SERVICE CATEGORIES ======
 export const getServiceCategories = (): Promise<ServiceCategory[]> => 
@@ -222,6 +242,8 @@ export const saveServiceCategory = (category: ServiceCategory): Promise<ServiceC
     : apiRequest<ServiceCategory>('/config/service-categories', 'POST', category);
 export const deleteServiceCategory = (id: number): Promise<void> =>
   apiRequest<void>(`/config/service-categories/${id}`, 'DELETE');
+export const bulkImportServiceCategories = (categories: any[]): Promise<{ message: string; categories: ServiceCategory[] }> =>
+  apiRequest<{ message: string; categories: ServiceCategory[] }>('/config/service-categories/bulk', 'POST', categories);
 
 // ====== PRODUCT CATEGORIES ======
 export const getProductCategories = (): Promise<ProductCategory[]> => 
@@ -232,6 +254,8 @@ export const saveProductCategory = (category: ProductCategory): Promise<ProductC
     : apiRequest<ProductCategory>('/config/product-categories', 'POST', category);
 export const deleteProductCategory = (id: number): Promise<void> =>
   apiRequest<void>(`/config/product-categories/${id}`, 'DELETE');
+export const bulkImportProductCategories = (categories: any[]): Promise<{ message: string; categories: ProductCategory[] }> =>
+  apiRequest<{ message: string; categories: ProductCategory[] }>('/config/product-categories/bulk', 'POST', categories);
 
 // ====== EGRESO CATEGORIES ======
 export const getEgresoCategories = (): Promise<EgresoCategory[]> => 
@@ -242,6 +266,8 @@ export const saveEgresoCategory = (category: EgresoCategory): Promise<EgresoCate
     : apiRequest<EgresoCategory>('/config/egreso-categories', 'POST', category);
 export const deleteEgresoCategory = (id: number): Promise<void> =>
   apiRequest<void>(`/config/egreso-categories/${id}`, 'DELETE');
+export const bulkImportEgresoCategories = (categories: any[]): Promise<{ message: string; categories: EgresoCategory[] }> =>
+  apiRequest<{ message: string; categories: EgresoCategory[] }>('/config/egreso-categories/bulk', 'POST', categories);
 
 // ====== JOB POSITIONS ======
 export const getJobPositions = (): Promise<JobPosition[]> => 
@@ -252,6 +278,8 @@ export const saveJobPosition = (position: JobPosition): Promise<JobPosition> =>
     : apiRequest<JobPosition>('/config/job-positions', 'POST', position);
 export const deleteJobPosition = (id: number): Promise<void> =>
   apiRequest<void>(`/config/job-positions/${id}`, 'DELETE');
+export const bulkImportJobPositions = (positions: any[]): Promise<{ message: string; positions: JobPosition[] }> =>
+  apiRequest<{ message: string; positions: JobPosition[] }>('/config/job-positions/bulk', 'POST', positions);
 
 // ====== COMPROBANTES ======
 export const getComprobantes = (): Promise<ComprobanteElectronico[]> => 
@@ -262,6 +290,8 @@ export const saveComprobante = (comprobante: ComprobanteElectronico): Promise<Co
     : apiRequest<ComprobanteElectronico>('/config/comprobantes', 'POST', comprobante);
 export const deleteComprobante = (id: number): Promise<void> =>
   apiRequest<void>(`/config/comprobantes/${id}`, 'DELETE');
+export const bulkImportComprobantes = (comprobantes: any[]): Promise<{ message: string; comprobantes: ComprobanteElectronico[] }> =>
+  apiRequest<{ message: string; comprobantes: ComprobanteElectronico[] }>('/config/comprobantes/bulk', 'POST', comprobantes);
 
 // ====== AI CONTENT GENERATION ======
 export const generateAiContent = async (prompt: string): Promise<string> => {

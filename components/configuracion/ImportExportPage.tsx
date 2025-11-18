@@ -82,9 +82,43 @@ interface ImportExportPageProps {
     comprobantes: ComprobanteElectronico[];
     onImportCampaigns?: (campaigns: any[]) => Promise<void>;
     onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
+    onImportLeads?: (leads: any[]) => Promise<void>;
+    onImportVentasExtra?: (ventas: any[]) => Promise<void>;
+    onImportIncidencias?: (incidencias: any[]) => Promise<void>;
+    onImportEgresos?: (egresos: any[]) => Promise<void>;
+    onImportProveedores?: (proveedores: any[]) => Promise<void>;
+    onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
+    onImportSeguidores?: (seguidores: any[]) => Promise<void>;
+    onImportComprobantes?: (comprobantes: any[]) => Promise<void>;
+    onImportServices?: (services: any[]) => Promise<void>;
+    onImportProducts?: (products: any[]) => Promise<void>;
+    onImportMemberships?: (memberships: any[]) => Promise<void>;
+    onImportServiceCategories?: (categories: any[]) => Promise<void>;
+    onImportProductCategories?: (categories: any[]) => Promise<void>;
+    onImportEgresoCategories?: (categories: any[]) => Promise<void>;
+    onImportJobPositions?: (positions: any[]) => Promise<void>;
 }
 
-const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImportCampaigns, onImportMetaCampaigns }) => {
+const ImportExportPage: React.FC<ImportExportPageProps> = ({ 
+    comprobantes, 
+    onImportCampaigns, 
+    onImportMetaCampaigns,
+    onImportLeads,
+    onImportVentasExtra,
+    onImportIncidencias,
+    onImportEgresos,
+    onImportProveedores,
+    onImportPublicaciones,
+    onImportSeguidores,
+    onImportComprobantes,
+    onImportServices,
+    onImportProducts,
+    onImportMemberships,
+    onImportServiceCategories,
+    onImportProductCategories,
+    onImportEgresoCategories,
+    onImportJobPositions
+}) => {
     const [importProgress, setImportProgress] = useState({
         isOpen: false,
         title: '',
@@ -197,8 +231,231 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImp
                         successMessage: `Se importaron ${metaCampaigns.length} meta campañas exitosamente.`
                     }));
 
+                } else if (type === 'Pacientes' && onImportLeads) {
+                    const leads = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const lead: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            // Convert numeric fields
+                            if (['montoPagado'].includes(header)) {
+                                lead[header] = parseFloat(value) || 0;
+                            } else {
+                                lead[header] = value;
+                            }
+                        });
+
+                        leads.push(lead);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: `${lead.nombres} ${lead.apellidos}` || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportLeads(leads);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${leads.length} pacientes/leads exitosamente.`
+                    }));
+
+                } else if (type === 'Servicios' && onImportServices) {
+                    const services = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const service: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (header === 'precio') {
+                                service[header] = parseFloat(value) || 0;
+                            } else {
+                                service[header] = value;
+                            }
+                        });
+
+                        services.push(service);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: service.nombre || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportServices(services);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${services.length} servicios exitosamente.`
+                    }));
+
+                } else if (type === 'Productos' && onImportProducts) {
+                    const products = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const product: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (header === 'precio') {
+                                product[header] = parseFloat(value) || 0;
+                            } else {
+                                product[header] = value;
+                            }
+                        });
+
+                        products.push(product);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: product.nombre || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportProducts(products);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${products.length} productos exitosamente.`
+                    }));
+
+                } else if (type === 'Ventas' && onImportVentasExtra) {
+                    const ventas = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const venta: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (['precio', 'montoPagado', 'deuda'].includes(header)) {
+                                venta[header] = parseFloat(value) || 0;
+                            } else {
+                                venta[header] = value;
+                            }
+                        });
+
+                        ventas.push(venta);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: venta.codigoVenta || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportVentasExtra(ventas);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${ventas.length} ventas exitosamente.`
+                    }));
+
+                } else if (type === 'Incidencias' && onImportIncidencias) {
+                    const incidencias = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const incidencia: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (header === 'solucionado') {
+                                incidencia[header] = value.toLowerCase() === 'true' || value === '1';
+                            } else {
+                                incidencia[header] = value;
+                            }
+                        });
+
+                        incidencias.push(incidencia);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: incidencia.tipoIncidencia || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportIncidencias(incidencias);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${incidencias.length} incidencias exitosamente.`
+                    }));
+
+                } else if (type === 'Comprobantes Electrónicos' && onImportComprobantes) {
+                    const comprobantes = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
+                        const comprobante: any = {};
+
+                        headers.forEach((header, index) => {
+                            const value = values[index];
+                            if (['opGravadas', 'igv', 'total'].includes(header)) {
+                                comprobante[header] = parseFloat(value) || 0;
+                            } else {
+                                comprobante[header] = value;
+                            }
+                        });
+
+                        comprobantes.push(comprobante);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: `${comprobante.tipoDocumento} ${comprobante.serie}-${comprobante.correlativo}` || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+
+                    await onImportComprobantes(comprobantes);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${comprobantes.length} comprobantes electrónicos exitosamente.`
+                    }));
+
                 } else {
-                    // For other types, simulate processing
+                    // For other types, simulate processing (types without specific import functions yet)
                     for (let i = 0; i < totalItems; i++) {
                         setImportProgress(prev => ({
                             ...prev,

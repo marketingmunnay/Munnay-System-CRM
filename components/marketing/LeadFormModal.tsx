@@ -54,7 +54,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <input 
                         type="date" 
                         name="fechaLead" 
-                        value={typeof formData.fechaLead === 'string' && formData.fechaLead.includes('T') ? formData.fechaLead.split('T')[0] : (typeof formData.fechaLead === 'string' ? formData.fechaLead : '')} 
+                        value={formData.fechaLead || ''} 
                         onChange={handleChange} 
                         className="w-full bg-[#f9f9fa] p-2" 
                         style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -2175,7 +2175,37 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         return list;
     }, [users]);
 
-    const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
+    // Helper function to format date fields for input[type="date"]
+    const formatDateForInputField = (dateValue: any): string => {
+        if (!dateValue) return '';
+        
+        // If it's already a string in YYYY-MM-DD format, return as is
+        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+            return dateValue;
+        }
+        
+        // If it's a string with time (ISO format), extract date part
+        if (typeof dateValue === 'string' && dateValue.includes('T')) {
+            return dateValue.split('T')[0];
+        }
+        
+        // If it's a Date object, format it
+        if (dateValue instanceof Date) {
+            return dateValue.toISOString().split('T')[0];
+        }
+        
+        // Try to parse as date and format
+        try {
+            const date = new Date(dateValue);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+        } catch (e) {
+            // Invalid date, return empty string
+        }
+        
+        return '';
+    };
 
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
     const mapSellerFront = (value: any): string => {
@@ -2255,11 +2285,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
             if (lead) {
-                // Normalize vendedor and reception status so selects show correctly
+                // Normalize vendedor, reception status, and date fields so inputs show correctly
                 const normalized = { 
                     ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
-                    estadoRecepcion: mapReceptionFront(lead.estadoRecepcion)
+                    estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
+                    // Format date fields for input[type="date"]
+                    fechaLead: formatDateForInputField(lead.fechaLead),
+                    fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
+                    birthDate: formatDateForInputField(lead.birthDate),
+                    fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
                 } as any;
                 setFormData(normalized);
             } else {
@@ -2274,7 +2309,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
         if (lead && isOpen) {
-            setFormData({ ...lead, vendedor: mapSellerFront(lead.vendedor), estadoRecepcion: mapReceptionFront(lead.estadoRecepcion) } as any);
+            setFormData({ 
+                ...lead, 
+                vendedor: mapSellerFront(lead.vendedor), 
+                estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
+                // Format date fields for input[type="date"]
+                fechaLead: formatDateForInputField(lead.fechaLead),
+                fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
+                birthDate: formatDateForInputField(lead.birthDate),
+                fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
+            } as any);
         }
     }, [lead]);
 

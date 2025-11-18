@@ -63,6 +63,21 @@ interface ConfiguracionPageProps {
     comprobantes: ComprobanteElectronico[];
     onImportCampaigns?: (campaigns: any[]) => Promise<void>;
     onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
+    onImportLeads?: (leads: any[]) => Promise<void>;
+    onImportVentasExtra?: (ventas: any[]) => Promise<void>;
+    onImportIncidencias?: (incidencias: any[]) => Promise<void>;
+    onImportEgresos?: (egresos: any[]) => Promise<void>;
+    onImportProveedores?: (proveedores: any[]) => Promise<void>;
+    onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
+    onImportSeguidores?: (seguidores: any[]) => Promise<void>;
+    onImportComprobantes?: (comprobantes: any[]) => Promise<void>;
+    onImportServices?: (services: any[]) => Promise<void>;
+    onImportProducts?: (products: any[]) => Promise<void>;
+    onImportMemberships?: (memberships: any[]) => Promise<void>;
+    onImportServiceCategories?: (categories: any[]) => Promise<void>;
+    onImportProductCategories?: (categories: any[]) => Promise<void>;
+    onImportEgresoCategories?: (categories: any[]) => Promise<void>;
+    onImportJobPositions?: (positions: any[]) => Promise<void>;
 }
 
 const SETTINGS_SECTIONS = [
@@ -1520,6 +1535,21 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     comprobantes={props.comprobantes} 
                     onImportCampaigns={props.onImportCampaigns}
                     onImportMetaCampaigns={props.onImportMetaCampaigns}
+                    onImportLeads={props.onImportLeads}
+                    onImportVentasExtra={props.onImportVentasExtra}
+                    onImportIncidencias={props.onImportIncidencias}
+                    onImportEgresos={props.onImportEgresos}
+                    onImportProveedores={props.onImportProveedores}
+                    onImportPublicaciones={props.onImportPublicaciones}
+                    onImportSeguidores={props.onImportSeguidores}
+                    onImportComprobantes={props.onImportComprobantes}
+                    onImportServices={props.onImportServices}
+                    onImportProducts={props.onImportProducts}
+                    onImportMemberships={props.onImportMemberships}
+                    onImportServiceCategories={props.onImportServiceCategories}
+                    onImportProductCategories={props.onImportProductCategories}
+                    onImportEgresoCategories={props.onImportEgresoCategories}
+                    onImportJobPositions={props.onImportJobPositions}
                 />;
             default:
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;
