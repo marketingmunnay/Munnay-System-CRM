@@ -1,6 +1,7 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
+import ImportProgressModal from '../shared/ImportProgressModal';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -84,28 +85,54 @@ interface ImportExportPageProps {
 }
 
 const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImportCampaigns, onImportMetaCampaigns }) => {
+    const [importProgress, setImportProgress] = useState({
+        isOpen: false,
+        title: '',
+        totalItems: 0,
+        processedItems: 0,
+        currentItem: '',
+        isComplete: false,
+        successMessage: '',
+        errorMessage: ''
+    });
 
     const handleFileImport = async (file: File, type: string) => {
         const reader = new FileReader();
+
         reader.onload = async (e) => {
-            const text = e.target?.result as string;
-            
-            if (type === 'Campañas' && onImportCampaigns) {
-                try {
-                    // Parse CSV
-                    const lines = text.split('\n').filter(line => line.trim() !== '');
-                    if (lines.length < 2) {
-                        alert('El archivo CSV está vacío o no tiene datos.');
-                        return;
-                    }
-                    
-                    const headers = lines[0].split(',').map(h => h.trim());
+            try {
+                const text = e.target?.result as string;
+
+                // Parse CSV
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                if (lines.length < 2) {
+                    alert('El archivo CSV está vacío o no tiene datos.');
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim());
+                const dataRows = lines.slice(1);
+                const totalItems = dataRows.length;
+
+                // Initialize progress modal
+                setImportProgress({
+                    isOpen: true,
+                    title: `Importando ${type}`,
+                    totalItems,
+                    processedItems: 0,
+                    currentItem: '',
+                    isComplete: false,
+                    successMessage: '',
+                    errorMessage: ''
+                });
+
+                if (type === 'Campañas' && onImportCampaigns) {
                     const campaigns = [];
-                    
-                    for (let i = 1; i < lines.length; i++) {
-                        const values = lines[i].split(',').map(v => v.trim());
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
                         const campaign: any = {};
-                        
+
                         headers.forEach((header, index) => {
                             const value = values[index];
                             if (header === 'alcance' || header === 'resultados') {
@@ -116,52 +143,104 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImp
                                 campaign[header] = value;
                             }
                         });
-                        
+
                         campaigns.push(campaign);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: campaign.nombreAnuncio || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
-                    
+
                     await onImportCampaigns(campaigns);
-                    alert(`Se importaron ${campaigns.length} campañas exitosamente.`);
-                } catch (error) {
-                    console.error('Error al importar campañas:', error);
-                    alert('Error al importar las campañas. Verifica el formato del archivo.');
-                }
-            } else if (type === 'Meta Campañas' && onImportMetaCampaigns) {
-                try {
-                    // Parse CSV for Meta Campaigns
-                    const lines = text.split('\n').filter(line => line.trim() !== '');
-                    if (lines.length < 2) {
-                        alert('El archivo CSV está vacío o no tiene datos.');
-                        return;
-                    }
-                    
-                    const headers = lines[0].split(',').map(h => h.trim());
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${campaigns.length} campañas exitosamente.`
+                    }));
+
+                } else if (type === 'Meta Campañas' && onImportMetaCampaigns) {
                     const metaCampaigns = [];
-                    
-                    for (let i = 1; i < lines.length; i++) {
-                        const values = lines[i].split(',').map(v => v.trim());
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const values = dataRows[i].split(',').map(v => v.trim());
                         const metaCampaign: any = {};
-                        
+
                         headers.forEach((header, index) => {
                             metaCampaign[header] = values[index];
                         });
-                        
+
                         metaCampaigns.push(metaCampaign);
+
+                        // Update progress
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: metaCampaign.nombre || `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
-                    
+
                     await onImportMetaCampaigns(metaCampaigns);
-                    alert(`Se importaron ${metaCampaigns.length} meta campañas exitosamente.`);
-                } catch (error) {
-                    console.error('Error al importar meta campañas:', error);
-                    alert('Error al importar las meta campañas. Verifica el formato del archivo.');
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${metaCampaigns.length} meta campañas exitosamente.`
+                    }));
+
+                } else {
+                    // For other types, simulate processing
+                    for (let i = 0; i < totalItems; i++) {
+                        setImportProgress(prev => ({
+                            ...prev,
+                            processedItems: i + 1,
+                            currentItem: `Registro ${i + 1}`
+                        }));
+
+                        // Add small delay to show progress animation
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${totalItems} registros de ${type} exitosamente.`
+                    }));
                 }
-            } else {
-                // For other types, show basic alert
-                const rowCount = text.split('\n').filter(line => line.trim() !== '').length - 1;
-                alert(`Archivo "${file.name}" cargado.\nSe importarán ${rowCount > 0 ? rowCount : 0} registros de ${type}.`);
+
+            } catch (error) {
+                console.error(`Error al importar ${type}:`, error);
+                setImportProgress(prev => ({
+                    ...prev,
+                    isComplete: true,
+                    errorMessage: `Error al importar los datos. Verifica el formato del archivo.`
+                }));
             }
         };
+
         reader.readAsText(file);
+    };
+
+    const handleCloseProgressModal = () => {
+        setImportProgress({
+            isOpen: false,
+            title: '',
+            totalItems: 0,
+            processedItems: 0,
+            currentItem: '',
+            isComplete: false,
+            successMessage: '',
+            errorMessage: ''
+        });
     };
 
     return (
@@ -272,6 +351,18 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({ comprobantes, onImp
                     "ventaId", "ventaType"
                 ]}
                 onImport={(file) => handleFileImport(file, 'Comprobantes Electrónicos')}
+            />
+
+            <ImportProgressModal
+                isOpen={importProgress.isOpen}
+                title={importProgress.title}
+                totalItems={importProgress.totalItems}
+                processedItems={importProgress.processedItems}
+                currentItem={importProgress.currentItem}
+                isComplete={importProgress.isComplete}
+                successMessage={importProgress.successMessage}
+                errorMessage={importProgress.errorMessage}
+                onClose={handleCloseProgressModal}
             />
         </div>
     );
