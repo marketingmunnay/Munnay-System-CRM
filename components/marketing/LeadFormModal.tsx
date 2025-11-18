@@ -8,7 +8,7 @@ import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
-import { formatDateForInput, formatDateForDisplay } from '../../utils/time';
+import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -363,7 +363,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                          <input
                              type="time"
                              name="horaVolverLlamar"
-                             value={formData.horaVolverLlamar || ''}
+                             value={formatTimeForInput(formData.horaVolverLlamar) || ''}
                              onChange={handleChange}
                              className="w-full bg-[#f9f9fa] p-2"
                              style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
@@ -396,7 +396,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                                 <input 
                                     type="time" 
                                     step="1" 
-                                    value={currentLlamada.duracionLlamada} 
+                                    value={formatTimeForInput(currentLlamada.duracionLlamada) || ''} 
                                     onChange={(e) => setCurrentLlamada({...currentLlamada, duracionLlamada: e.target.value})} 
                                     className="w-full bg-white p-2" 
                                     style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} 
@@ -655,7 +655,9 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
             {/* Gestión de Pago de la Cita de Evaluación */}
             {mostrarSeccionPagos && (
                 <fieldset className="border p-4 rounded-md">
-                    <legend className="text-md font-bold px-2 text-black">Gestión de Pago de la Cita de Evaluación</legend>
+                    <legend className="text-md font-bold px-2 text-black">
+                        Servicio agendado: {formData.servicios?.length ? formData.servicios.join(', ') : 'Cita de Evaluación'}
+                    </legend>
                     
                     <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
                         <div className="bg-blue-50 p-3 rounded">
@@ -1455,7 +1457,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                             <label className="text-sm font-medium text-gray-700">Hora Inicio *</label>
                             <input
                                 type="time"
-                                value={currentProcedure.horaInicio || ''}
+                                value={formatTimeForInput(currentProcedure.horaInicio) || ''}
                                 onChange={(e) => handleProcedureFieldChange('horaInicio', e.target.value)}
                                 className="w-full bg-white p-2"
                                 style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
@@ -1467,7 +1469,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                             <label className="text-sm font-medium text-gray-700">Hora Fin *</label>
                             <input
                                 type="time"
-                                value={currentProcedure.horaFin || ''}
+                                value={formatTimeForInput(currentProcedure.horaFin) || ''}
                                 onChange={(e) => handleProcedureFieldChange('horaFin', e.target.value)}
                                 className="w-full bg-white p-2"
                                 style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}

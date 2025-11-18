@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { User, Role, JobPosition, DocumentType, Address, EmergencyContact } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon } from '../shared/Icons.tsx';
+import { formatDateForInput } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -299,7 +300,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                     <input
                                         type="date"
                                         name="birthDate"
-                                        value={formData.birthDate || ''}
+                                        value={formatDateForInput(formData.birthDate) || ''}
                                         onChange={handleChange}
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     />
@@ -540,7 +541,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                     <input
                                         type="date"
                                         name="startDate"
-                                        value={formData.startDate || ''}
+                                        value={formatDateForInput(formData.startDate) || ''}
                                         onChange={handleChange}
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     />
@@ -550,7 +551,7 @@ const MiembroEquipoFormModal: React.FC<MiembroEquipoFormModalProps> = ({
                                     <input
                                         type="date"
                                         name="endDate"
-                                        value={formData.endDate || ''}
+                                        value={formatDateForInput(formData.endDate) || ''}
                                         onChange={handleChange}
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                     />

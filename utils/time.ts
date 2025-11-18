@@ -134,16 +134,29 @@ export function formatDateTimeISO(date: string | Date | null | undefined): strin
   return peruDate.toISOString();
 }
 
-// Función para crear una fecha en zona horaria de Perú
-export function createPeruDate(dateStr?: string): Date {
-  const now = new Date();
-  if (!dateStr) {
-    // Crear fecha actual en zona horaria de Perú
-    return new Date(now.toLocaleString("en-US", {timeZone: PERU_TIMEZONE}));
+// Función para formatear hora para inputs de tipo time (HH:MM)
+export function formatTimeForInput(time: string | Date | null | undefined): string {
+  if (!time) return '';
+  
+  // Si ya tiene el formato HH:MM, devolverlo directamente
+  if (typeof time === 'string' && /^\d{2}:\d{2}$/.test(time)) {
+    return time;
   }
   
-  const parsedDate = parseDate(dateStr);
-  if (!parsedDate) return now;
+  // Si es string ISO completo, extraer solo la hora
+  if (typeof time === 'string' && time.includes('T')) {
+    const timePart = time.split('T')[1];
+    if (timePart) {
+      return timePart.split('.')[0].substring(0, 5); // HH:MM
+    }
+  }
   
-  return new Date(parsedDate.toLocaleString("en-US", {timeZone: PERU_TIMEZONE}));
+  const parsedDate = parseDate(time);
+  if (!parsedDate) return '';
+  
+  // Extraer hora y minutos
+  const hours = String(parsedDate.getHours()).padStart(2, '0');
+  const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+  
+  return `${hours}:${minutes}`;
 }

@@ -4,6 +4,7 @@ import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
 import { TipoComprobante, ModoPagoEgreso } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
+import { formatDateForInput } from '../../utils/time.ts';
 
 interface EgresoFormModalProps {
   isOpen: boolean;
@@ -144,7 +145,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     type={type}
                     id={name}
                     name={name}
-                    value={String(formData[name] ?? '')}
+                    value={formatDateForInput(formData[name] as string) || ''}
                     onChange={handleChange}
                     required={required}
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -210,7 +211,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                             type="date"
                             id="fechaPago"
                             name="fechaPago"
-                            value={String(formData.fechaPago ?? '')}
+                            value={formatDateForInput(formData.fechaPago) || ''}
                             onChange={handleChange}
                             className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                             style={{ colorScheme: 'light' }}
