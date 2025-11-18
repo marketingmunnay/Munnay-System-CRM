@@ -473,6 +473,7 @@ const App: React.FC = () => {
                     comprobantes={comprobantes}
                     onImportCampaigns={handleImportCampaigns}
                     onImportMetaCampaigns={handleImportMetaCampaigns}
+                    onImportLeads={handleImportLeads}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 
