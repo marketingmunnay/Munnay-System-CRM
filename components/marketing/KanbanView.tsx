@@ -45,6 +45,11 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => (
                 </div>
             )}
         </div>
+        {/* Mostrar fechaLead en la tarjeta Kanban */}
+        <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
+            <ClockIcon className="mr-1.5 h-3 w-3"/>
+            <span>{lead.fechaLead ? require('../../utils/time').formatDateForDisplay(lead.fechaLead) : '-'}</span>
+        </div>
         {lead.fechaHoraAgenda && (
              <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
                 <ClockIcon className="mr-1.5 h-3 w-3"/>
