@@ -2436,6 +2436,20 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             montoPagado: formData.montoPagado ?? 0,
         };
         
+        console.log('🔍 FRONTEND: About to save lead:', {
+            isNewLead,
+            leadId: formData.id,
+            dataToSave: {
+                id: dataToSave.id,
+                nombres: dataToSave.nombres,
+                apellidos: dataToSave.apellidos,
+                estado: dataToSave.estado,
+                tratamientos: dataToSave.tratamientos?.length || 0,
+                procedimientos: dataToSave.procedimientos?.length || 0,
+                seguimientos: dataToSave.seguimientos?.length || 0
+            }
+        });
+        
         try {
             await onSave(dataToSave as Lead);
             
@@ -2448,7 +2462,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             // NO cerrar el modal - mantener abierto después de guardar
 
         } catch (error) {
-            console.error('Error saving lead:', error);
+            console.error('❌ FRONTEND: Error saving lead:', error);
             alert('Error al guardar. Por favor, inténtalo de nuevo.');
         }
     };

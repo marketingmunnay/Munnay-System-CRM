@@ -288,7 +288,10 @@ export const updateLead = async (req: Request, res: Response) => {
     leadId: id,
     procedimientos: procedimientos ? procedimientos.length : 'undefined',
     procedimientosData: procedimientos,
-    estadoRecepcion: req.body.estadoRecepcion
+    estadoRecepcion: req.body.estadoRecepcion,
+    hasTratamientos: tratamientos ? tratamientos.length : 0,
+    hasSeguimientos: seguimientos ? seguimientos.length : 0,
+    hasPagosRecepcion: pagosRecepcion ? pagosRecepcion.length : 0
   });
 
   try {
@@ -462,6 +465,8 @@ export const updateLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
+
+    console.log('✅ Lead updated successfully:', updatedLead.id);
     // Create procedimientos now that tratamientos have been updated/created and we have a mapping
     const procedimientoIdMap: Record<string, any> = {};
     if (procedimientos !== undefined && Array.isArray(procedimientos) && procedimientos.length > 0) {
