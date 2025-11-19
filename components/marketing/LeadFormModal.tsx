@@ -2286,20 +2286,23 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
             if (lead) {
-                // Normalize vendedor, reception status, and date fields so inputs show correctly
+                // Normaliza y fuerza fechaLead a formato YYYY-MM-DD
                 const normalized = { 
                     ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                    // Format date fields for input[type="date"]
-                    fechaLead: formatDateForInputField(lead.fechaLead),
+                    fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
                     fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
                     birthDate: formatDateForInputField(lead.birthDate),
                     fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
                 } as any;
                 setFormData(normalized);
             } else {
-                setFormData(initialFormData);
+                // Nuevo lead: fuerza fechaLead a formato YYYY-MM-DD
+                setFormData({
+                    ...initialFormData,
+                    fechaLead: new Date().toISOString().split('T')[0],
+                });
             }
             setActiveTab(initialTab || 'ficha');
             console.debug('LeadFormModal opened', { lead, isOpen, initialFormData, initialTab, disableFicha });
