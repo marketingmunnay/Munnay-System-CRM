@@ -696,29 +696,91 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
           return map[cleaned] ?? undefined;
         };
 
+        // Clean leadData: only include valid fields and omit undefined values
+        const cleanLeadData = {
+          fechaLead: parseDate(leadData.fechaLead, true, new Date()),
+          nombres: leadData.nombres || '',
+          apellidos: leadData.apellidos || '',
+          numero: leadData.numero || '',
+          email: leadData.email || undefined,
+          sexo: leadData.sexo || '',
+          redSocial: leadData.redSocial || '',
+          anuncio: leadData.anuncio || '',
+          vendedor: mapSeller(leadData.vendedor),
+          estado: leadData.estado || 'Nuevo', // Default to 'Nuevo' if not provided
+          montoPagado: parseFloat(leadData.montoPagado) || 0,
+          metodoPago: mapMetodoPago(leadData.metodoPago) as any,
+          fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+          servicios: Array.isArray(leadData.servicios) ? leadData.servicios : [],
+          categoria: leadData.categoria || '',
+          profesionalAsignado: leadData.profesionalAsignado || undefined,
+          observacionesGenerales: leadData.observacionesGenerales || undefined,
+          fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+          horaVolverLlamar: leadData.horaVolverLlamar || undefined,
+          notas: leadData.notas || undefined,
+          nHistoria: leadData.nHistoria || undefined,
+          aceptoTratamiento: leadData.aceptoTratamiento || undefined,
+          motivoNoCierre: leadData.motivoNoCierre || undefined,
+          estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
+          recursoId: leadData.recursoId || undefined,
+          birthDate: parseDate(leadData.birthDate, true),
+          precioCita: leadData.precioCita ? parseFloat(leadData.precioCita) : undefined,
+          deudaCita: leadData.deudaCita ? parseFloat(leadData.deudaCita) : undefined,
+          metodoPagoDeuda: mapMetodoPago(leadData.metodoPagoDeuda) as any,
+          documentType: leadData.documentType || undefined,
+          documentNumber: leadData.documentNumber || undefined,
+          razonSocial: leadData.razonSocial || undefined,
+          direccionFiscal: leadData.direccionFiscal || undefined,
+        };
+
         // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido'
-        let finalEstadoRecepcionCreate = normalizeEnum(leadData.estadoRecepcion);
-        const hasFechaHoraAgendaCreate = !!(leadData.fechaHoraAgenda);
+        let finalEstadoRecepcionCreate = cleanLeadData.estadoRecepcion;
+        const hasFechaHoraAgendaCreate = !!(cleanLeadData.fechaHoraAgenda);
         if (!finalEstadoRecepcionCreate && (leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0)) {
           finalEstadoRecepcionCreate = 'Atendido';
         }
 
         const newLead = await prisma.lead.create({
           data: {
-            ...leadData,
-            vendedor: mapSeller(leadData.vendedor),
-            metodoPago: mapMetodoPago(leadData.metodoPago) as any,
-            estadoRecepcion: finalEstadoRecepcionCreate,
-            fechaLead: parseDate(leadData.fechaLead, true, new Date()),
-            fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
-            fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
-            birthDate: parseDate(leadData.birthDate, true),
+            fechaLead: cleanLeadData.fechaLead as Date,
+            nombres: cleanLeadData.nombres,
+            apellidos: cleanLeadData.apellidos,
+            numero: cleanLeadData.numero,
+            email: cleanLeadData.email,
+            sexo: cleanLeadData.sexo,
+            redSocial: cleanLeadData.redSocial,
+            anuncio: cleanLeadData.anuncio,
+            vendedor: cleanLeadData.vendedor as any,
+            estado: cleanLeadData.estado as any,
+            montoPagado: cleanLeadData.montoPagado,
+            metodoPago: cleanLeadData.metodoPago,
+            fechaHoraAgenda: cleanLeadData.fechaHoraAgenda,
+            servicios: cleanLeadData.servicios,
+            categoria: cleanLeadData.categoria,
+            profesionalAsignado: cleanLeadData.profesionalAsignado,
+            observacionesGenerales: cleanLeadData.observacionesGenerales,
+            fechaVolverLlamar: cleanLeadData.fechaVolverLlamar,
+            horaVolverLlamar: cleanLeadData.horaVolverLlamar,
+            notas: cleanLeadData.notas,
+            nHistoria: cleanLeadData.nHistoria,
+            aceptoTratamiento: cleanLeadData.aceptoTratamiento,
+            motivoNoCierre: cleanLeadData.motivoNoCierre,
+            estadoRecepcion: finalEstadoRecepcionCreate as any,
+            recursoId: cleanLeadData.recursoId,
+            birthDate: cleanLeadData.birthDate,
+            precioCita: cleanLeadData.precioCita,
+            deudaCita: cleanLeadData.deudaCita,
+            metodoPagoDeuda: cleanLeadData.metodoPagoDeuda,
+            documentType: cleanLeadData.documentType as any,
+            documentNumber: cleanLeadData.documentNumber,
+            razonSocial: cleanLeadData.razonSocial,
+            direccionFiscal: cleanLeadData.direccionFiscal,
             // Handle relation for memberships if needed
             membresiasAdquiridas: {
               connect: (leadData.membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
             },
             // Create tratamientos if provided
-            tratamientos: leadData.tratamientos && leadData.tratamientos.length > 0 ? {
+            tratamientos: leadData.tratamientos && Array.isArray(leadData.tratamientos) && leadData.tratamientos.length > 0 ? {
                 create: leadData.tratamientos.map((t: any) => ({
                 nombre: t.nombre || '',
                 cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
@@ -729,7 +791,7 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
               }))
             } : undefined,
             // Create procedimientos if provided
-            procedimientos: leadData.procedimientos && leadData.procedimientos.length > 0 ? {
+            procedimientos: leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0 ? {
               create: leadData.procedimientos.map((p: any) => ({
                 fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
                 personal: p.personal || '',
@@ -744,7 +806,7 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
               }))
             } : undefined,
             // Create registrosLlamada if provided
-            registrosLlamada: leadData.registrosLlamada && leadData.registrosLlamada.length > 0 ? {
+            registrosLlamada: leadData.registrosLlamada && Array.isArray(leadData.registrosLlamada) && leadData.registrosLlamada.length > 0 ? {
               create: leadData.registrosLlamada.map((r: any) => ({
                 numeroLlamada: r.numeroLlamada,
                 duracionLlamada: r.duracionLlamada,
@@ -753,7 +815,7 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
               }))
             } : undefined,
             // Create seguimientos if provided
-            seguimientos: leadData.seguimientos && leadData.seguimientos.length > 0 ? {
+            seguimientos: leadData.seguimientos && Array.isArray(leadData.seguimientos) && leadData.seguimientos.length > 0 ? {
               create: leadData.seguimientos.map((s: any) => ({
                 fecha: parseDate(s.fecha, true, new Date()),
                 procedimientoId: s.procedimientoId,
@@ -769,13 +831,13 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
               }))
             } : undefined,
             // Create alergias if provided
-            alergias: leadData.alergias && leadData.alergias.length > 0 ? {
+            alergias: leadData.alergias && Array.isArray(leadData.alergias) && leadData.alergias.length > 0 ? {
               create: leadData.alergias.map((a: any) => ({
                 nombreAlergia: a.nombreAlergia,
               }))
             } : undefined,
             // Create pagos de recepción if provided
-            pagosRecepcion: leadData.pagosRecepcion && leadData.pagosRecepcion.length > 0 ? {
+            pagosRecepcion: leadData.pagosRecepcion && Array.isArray(leadData.pagosRecepcion) && leadData.pagosRecepcion.length > 0 ? {
               create: leadData.pagosRecepcion.map((p: any) => ({
                 monto: p.monto,
                 metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
