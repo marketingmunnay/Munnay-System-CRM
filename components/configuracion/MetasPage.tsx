@@ -4,6 +4,7 @@ import type { Goal, User } from '../../types.ts';
 import { GoalArea } from '../../types.ts';
 import GoalFormModal from './GoalFormModal.tsx';
 import { PlusIcon } from '../shared/Icons.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -96,7 +97,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
                                             <td className="px-2 py-1.5 text-gray-600">{goal.objective}</td>
                                             <td className="px-2 py-1.5 text-gray-600">{goal.personal || 'General'}</td>
                                             <td className="px-2 py-1.5 text-gray-600">
-                                                {goal.startDate ? new Date(goal.startDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A'} - {goal.endDate ? new Date(goal.endDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A'}
+                                                {goal.startDate ? formatDateForDisplay(goal.startDate) : 'N/A'} - {goal.endDate ? formatDateForDisplay(goal.endDate) : 'N/A'}
                                             </td>
                                             <td className="px-2 py-1.5 text-black font-semibold">
                                                 {goal.value.toLocaleString('es-PE')} {goal.unit === 'porcentaje' ? '%' : ''}

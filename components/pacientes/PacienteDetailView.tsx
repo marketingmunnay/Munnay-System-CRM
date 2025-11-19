@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import type { Lead, Alergia } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -201,7 +202,7 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                             </div>
                              <div className="flex items-center text-gray-700">
                                 <GoogleIcon name="calendar_month" className="text-lg mr-3 text-gray-400"/> 
-                                <span>{paciente.birthDate ? new Date(paciente.birthDate.split('T')[0] + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}</span>
+                                <span>{paciente.birthDate ? formatDateForDisplay(paciente.birthDate) : 'N/A'}</span>
                             </div>
                             <div className="flex items-center text-gray-700">
                                 <GoogleIcon name={paciente.sexo === 'F' ? 'female' : 'male'} className="text-lg mr-3 text-gray-400"/> 

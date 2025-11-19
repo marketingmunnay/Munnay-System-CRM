@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { User, Role, Lead, Goal } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -118,7 +119,7 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
                         {sortedRecognitions.map(r => (
                             <div key={r.id} className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
                                 <blockquote className="italic text-gray-700">"{r.mensaje}"</blockquote>
-                                <p className="text-right text-xs font-semibold text-amber-800 mt-2">- {r.otorgadoPorNombre}, {new Date(r.fecha + 'T00:00:00').toLocaleDateString()}</p>
+                                <p className="text-right text-xs font-semibold text-amber-800 mt-2">- {r.otorgadoPorNombre}, {formatDateForDisplay(r.fecha)}</p>
                             </div>
                         ))}
                     </div>

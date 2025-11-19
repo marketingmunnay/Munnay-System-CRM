@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Lead } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -53,11 +54,7 @@ const SeguimientoDetailModal: React.FC<SeguimientoDetailModalProps> = ({ isOpen,
                     <div>
                       <p className="font-bold text-gray-800">{seguimiento.nombreProcedimiento}</p>
                       <p className="text-sm text-gray-500">
-                        {new Date(seguimiento.fechaSeguimiento + 'T00:00:00').toLocaleDateString('es-PE', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatDateForDisplay(seguimiento.fechaSeguimiento)}
                       </p>
                     </div>
                     <div className="text-sm text-right">

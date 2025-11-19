@@ -2140,6 +2140,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         const prevIsOpenRef = React.useRef<boolean>(false);
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
     const [showSaveMessage, setShowSaveMessage] = useState(false);
+    const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
