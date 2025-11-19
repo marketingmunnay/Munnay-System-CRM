@@ -645,3 +645,190 @@ export const getNextHistoryNumber = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error generating next history number', error: (error as Error).message });
   }
 };
+
+export const bulkImportLeads = async (req: Request, res: Response) => {
+  try {
+    const leads = req.body;
+
+    if (!Array.isArray(leads)) {
+      return res.status(400).json({ message: 'Los datos deben ser un array de leads' });
+    }
+
+    console.log(`📥 Iniciando importación bulk de ${leads.length} leads`);
+
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < leads.length; i++) {
+      const leadData = leads[i];
+      try {
+        // Helper function to safely parse dates for creation
+        const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
+          if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
+
+          try {
+            const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+            // Check if date is valid
+            if (isNaN(dateValue.getTime())) return defaultValue;
+            return dateValue;
+          } catch {
+            return defaultValue;
+          }
+        };
+
+        // Helper function to normalize ReceptionStatus values to valid enum tokens or undefined
+        const normalizeEnum = (value: any): string | undefined => {
+          if (!value && value !== 0) return undefined;
+          if (typeof value !== 'string') return undefined;
+          const cleaned = value.replace(/\s+/g, '').toLowerCase();
+          const map: Record<string, string> = {
+            'agendado': 'Agendado',
+            'poratender': 'PorAtender',
+            'atendido': 'Atendido',
+            'reprogramado': 'Reprogramado',
+            'cancelado': 'Cancelado',
+            'noasistio': 'NoAsistio',
+            // Map 'agendado por llegar' to the existing 'Agendado' enum token
+            'agendadoporllegar': 'Agendado',
+            'enespera': 'PorAtender'
+          };
+          return map[cleaned] ?? undefined;
+        };
+
+        // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido'
+        let finalEstadoRecepcionCreate = normalizeEnum(leadData.estadoRecepcion);
+        const hasFechaHoraAgendaCreate = !!(leadData.fechaHoraAgenda);
+        if (!finalEstadoRecepcionCreate && (leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0)) {
+          finalEstadoRecepcionCreate = 'Atendido';
+        }
+
+        const newLead = await prisma.lead.create({
+          data: {
+            ...leadData,
+            vendedor: mapSeller(leadData.vendedor),
+            metodoPago: mapMetodoPago(leadData.metodoPago) as any,
+            estadoRecepcion: finalEstadoRecepcionCreate,
+            fechaLead: parseDate(leadData.fechaLead, true, new Date()),
+            fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+            fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
+            birthDate: parseDate(leadData.birthDate, true),
+            // Handle relation for memberships if needed
+            membresiasAdquiridas: {
+              connect: (leadData.membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
+            },
+            // Create tratamientos if provided
+            tratamientos: leadData.tratamientos && leadData.tratamientos.length > 0 ? {
+                create: leadData.tratamientos.map((t: any) => ({
+                nombre: t.nombre || '',
+                cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
+                precio: parseFloat(t.precio) || 0,
+                montoPagado: parseFloat(t.montoPagado) || 0,
+                  metodoPago: (mapMetodoPago(t.metodoPago) as any) ?? null,
+                deuda: parseFloat(t.deuda) || 0
+              }))
+            } : undefined,
+            // Create procedimientos if provided
+            procedimientos: leadData.procedimientos && leadData.procedimientos.length > 0 ? {
+              create: leadData.procedimientos.map((p: any) => ({
+                fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+                personal: p.personal || '',
+                horaInicio: p.horaInicio || '',
+                horaFin: p.horaFin || '',
+                tratamientoId: (p.tratamientoId ? BigInt(String(p.tratamientoId)) : BigInt(0)) as any,
+                nombreTratamiento: p.nombreTratamiento || '',
+                sesionNumero: parseInt(p.sesionNumero) || 1,
+                asistenciaMedica: Boolean(p.asistenciaMedica),
+                medico: p.medico || null,
+                observacion: p.observacion || null
+              }))
+            } : undefined,
+            // Create registrosLlamada if provided
+            registrosLlamada: leadData.registrosLlamada && leadData.registrosLlamada.length > 0 ? {
+              create: leadData.registrosLlamada.map((r: any) => ({
+                numeroLlamada: r.numeroLlamada,
+                duracionLlamada: r.duracionLlamada,
+                estadoLlamada: r.estadoLlamada,
+                observacion: r.observacion,
+              }))
+            } : undefined,
+            // Create seguimientos if provided
+            seguimientos: leadData.seguimientos && leadData.seguimientos.length > 0 ? {
+              create: leadData.seguimientos.map((s: any) => ({
+                fecha: parseDate(s.fecha, true, new Date()),
+                procedimientoId: s.procedimientoId,
+                dolor: s.dolor || false,
+                hinchazon: s.hinchazon || false,
+                enrojecimiento: s.enrojecimiento || false,
+                picazon: s.picazon || false,
+                hematomas: s.hematomas || false,
+                sensibilidad: s.sensibilidad || false,
+                otrosSintomas: s.otrosSintomas || false,
+                descripcionOtros: s.descripcionOtros,
+                observaciones: s.observaciones,
+              }))
+            } : undefined,
+            // Create alergias if provided
+            alergias: leadData.alergias && leadData.alergias.length > 0 ? {
+              create: leadData.alergias.map((a: any) => ({
+                nombreAlergia: a.nombreAlergia,
+              }))
+            } : undefined,
+            // Create pagos de recepción if provided
+            pagosRecepcion: leadData.pagosRecepcion && leadData.pagosRecepcion.length > 0 ? {
+              create: leadData.pagosRecepcion.map((p: any) => ({
+                monto: p.monto,
+                metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
+                fechaPago: parseDate(p.fechaPago) || new Date(),
+                observacion: p.observacion,
+              }))
+            } : undefined,
+          },
+          include: {
+            tratamientos: true,
+            procedimientos: true,
+            registrosLlamada: true,
+            seguimientos: true,
+            alergias: true,
+            pagosRecepcion: true,
+            comprobantes: true,
+          }
+        });
+
+        results.push(convertBigInts(newLead));
+        successCount++;
+
+        // Log progress every 10 items
+        if ((i + 1) % 10 === 0) {
+          console.log(`✅ Procesados ${i + 1}/${leads.length} leads`);
+        }
+
+      } catch (error: any) {
+        console.error(`❌ Error procesando lead ${i + 1}:`, error.message);
+        errorCount++;
+        results.push({
+          error: true,
+          index: i,
+          data: leadData,
+          errorMessage: error.message
+        });
+      }
+    }
+
+    console.log(`📊 Importación completada: ${successCount} exitosos, ${errorCount} errores`);
+
+    res.status(200).json({
+      message: `Se importaron ${successCount} leads exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
+      leads: results,
+      successCount,
+      errorCount
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en bulk import de leads:', error);
+    res.status(500).json({
+      message: 'Error en la importación bulk de leads',
+      error: error.message
+    });
+  }
+};
