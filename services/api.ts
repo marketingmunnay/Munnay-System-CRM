@@ -5,8 +5,8 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// URL del backend en desarrollo local
-const API_URL = "http://localhost:4000/api";
+// URL del backend en producción (Render)
+const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 // Helper genérico para requests
 const apiRequest = async <T>(
