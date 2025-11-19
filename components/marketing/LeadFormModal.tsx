@@ -54,7 +54,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaLead" 
-                            value={formatDateForInput(formData.fechaLead) || ''} 
+                            value={formatDateForInput(formData.fechaLead || new Date()) || ''} 
                             onChange={handleChange} 
                             className="w-full bg-[#f9f9fa] p-2" 
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -1382,8 +1382,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
             {!hasTratamientos && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
                     <GoogleIcon name="info" className="text-yellow-600 text-2xl mb-2" />
-                    <p className="text-yellow-800 font-medium">No hay tratamientos registrados</p>
-                    <p className="text-yellow-600 text-sm">Agregue tratamientos en la pestaña "Recepción" para poder registrar procedimientos.</p>
+                    <p className="text-lg font-medium">No hay tratamientos registrados</p>
+                    <p className="text-sm">Agregue tratamientos en la pestaña "Recepción" para poder registrar procedimientos.</p>
                 </div>
             )}
 
