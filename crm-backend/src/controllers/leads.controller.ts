@@ -19,20 +19,18 @@ const convertBigInts = (value: any): any => {
   return value;
 };
 
-// Helper to map vendor strings to Seller enum values
-const mapSeller = (value: any): string => {
-  if (!value) return 'Vanesa';
-  const s = String(value).toLowerCase();
-  if (s.includes('vanesa')) return 'Vanesa';
-  if (s.includes('liz')) return 'Liz';
-  if (s.includes('elvira')) return 'Elvira';
-  // Try simple name match: first name
-  const first = s.split(' ')[0];
-  if (first === 'vanesa' || first === 'vanessa') return 'Vanesa';
-  if (first === 'liz' || first === 'liza') return 'Liz';
-  if (first === 'elvira') return 'Elvira';
+// Helper to map estado strings to LeadStatus enum values
+const mapLeadStatus = (value: any): string => {
+  if (!value) return 'Nuevo';
+  const s = String(value).toLowerCase().trim();
+  if (s.includes('nuevo')) return 'Nuevo';
+  if (s.includes('seguimiento')) return 'Seguimiento';
+  if (s.includes('por pagar') || s.includes('porpagar')) return 'PorPagar';
+  if (s.includes('agendado')) return 'Agendado';
+  if (s.includes('perdido')) return 'Perdido';
+  if (s.includes('completado') || s.includes('completadas')) return 'Seguimiento'; // Map to Seguimiento
   // Default fallback
-  return 'Vanesa';
+  return 'Nuevo';
 };
 // Helper to map various payment labels to Prisma MetodoPago enum tokens
 const mapMetodoPago = (value: any): string | undefined => {
@@ -707,7 +705,7 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
           redSocial: leadData.redSocial || '',
           anuncio: leadData.anuncio || '',
           vendedor: mapSeller(leadData.vendedor),
-          estado: leadData.estado || 'Nuevo', // Default to 'Nuevo' if not provided
+          estado: mapLeadStatus(leadData.estado), // Map to valid LeadStatus
           montoPagado: parseFloat(leadData.montoPagado) || 0,
           metodoPago: mapMetodoPago(leadData.metodoPago) as any,
           fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
@@ -732,6 +730,17 @@ export const bulkImportLeads = async (req: Request, res: Response) => {
           razonSocial: leadData.razonSocial || undefined,
           direccionFiscal: leadData.direccionFiscal || undefined,
         };
+
+        // Skip if nHistoria already exists
+        if (cleanLeadData.nHistoria) {
+          const existingLead = await prisma.lead.findUnique({
+            where: { nHistoria: cleanLeadData.nHistoria }
+          });
+          if (existingLead) {
+            console.log(`⏭️ Skipping lead ${i + 1}: nHistoria ${cleanLeadData.nHistoria} already exists`);
+            continue; // Skip this lead
+          }
+        }
 
         // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido'
         let finalEstadoRecepcionCreate = cleanLeadData.estadoRecepcion;
