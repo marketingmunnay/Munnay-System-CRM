@@ -19,6 +19,21 @@ const convertBigInts = (value: any): any => {
   return value;
 };
 
+// Helper to map vendor strings to Seller enum values
+const mapSeller = (value: any): string => {
+  if (!value) return 'Vanesa';
+  const s = String(value).toLowerCase();
+  if (s.includes('vanesa')) return 'Vanesa';
+  if (s.includes('liz')) return 'Liz';
+  if (s.includes('elvira')) return 'Elvira';
+  // Try simple name match: first name
+  const first = s.split(' ')[0];
+  if (first === 'vanesa' || first === 'vanessa') return 'Vanesa';
+  if (first === 'liz' || first === 'liza') return 'Liz';
+  if (first === 'elvira') return 'Elvira';
+  // Default fallback
+  return 'Vanesa';
+};
 // Helper to map estado strings to LeadStatus enum values
 const mapLeadStatus = (value: any): string => {
   if (!value) return 'Nuevo';
