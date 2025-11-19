@@ -55,7 +55,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
                     <tbody>
                         {leads.map(lead => (
                             <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead)}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead || new Date())}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {lead.nombres} {lead.apellidos}
                                 </th>
