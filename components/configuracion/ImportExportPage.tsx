@@ -410,7 +410,25 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                         // Convert numeric fields
                         if (['montoPagado'].includes(header)) {
                             lead[header] = parseFloat(value) || 0;
-                        } else {
+                        } 
+                        // Convert date fields to ISO format
+                        else if (['fechaLead', 'fechaHoraAgenda', 'fechaVolverLlamar', 'birthDate'].includes(header) && value) {
+                            // Try to parse common date formats
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                // Convert to YYYY-MM-DD format for date-only fields
+                                if (header === 'fechaLead' || header === 'birthDate') {
+                                    lead[header] = date.toISOString().split('T')[0];
+                                } else {
+                                    // For datetime fields, keep full ISO
+                                    lead[header] = date.toISOString();
+                                }
+                            } else {
+                                // If can't parse, keep original value
+                                lead[header] = value;
+                            }
+                        }
+                        else {
                             lead[header] = value;
                         }
                     });
