@@ -54,7 +54,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaLead" 
-                            value={formatDateForInput(formData.fechaLead || new Date()) || ''} 
+                            value={formatDateForInput(formData.fechaLead) || ''} 
                             onChange={handleChange} 
                             className="w-full bg-[#f9f9fa] p-2" 
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -360,7 +360,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                          <input
                              type="date"
                              name="fechaVolverLlamar"
-                             value={formatDateForInput(formData.fechaVolverLlamar ? formData.fechaVolverLlamar : new Date())}
+                             value={formatDateForInput(formData.fechaVolverLlamar) || ''}
                              onChange={handleChange}
                              className="w-full bg-[#f9f9fa] p-2"
                              style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
