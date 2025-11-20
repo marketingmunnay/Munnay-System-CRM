@@ -145,3 +145,29 @@ export function formatTimeForInput(time: string | Date | null | undefined): stri
   
   return `${hours}:${minutes}`;
 }
+
+// Defensive: expose helpers as default and on window to avoid runtime undefined
+const timeUtils = {
+  formatDistanceToNow,
+  parseDate,
+  formatDateForInput,
+  formatDateForDisplay,
+  formatDateTimeForDisplay,
+  formatDateWithMonthName,
+  formatDateTimeISO,
+  formatTimeForInput,
+};
+
+export default timeUtils;
+
+// Attach to window when available to provide a global fallback for bundled/minified code
+try {
+  if (typeof window !== 'undefined') {
+    (window as any).formatDateForInput = formatDateForInput;
+    (window as any).formatDateForDisplay = formatDateForDisplay;
+    (window as any).parseDate = parseDate;
+    (window as any).formatDateTimeISO = formatDateTimeISO;
+  }
+} catch (e) {
+  // ignore
+}
