@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 import type { Seguidor } from '../../types.ts';
 import { RedSocialPost } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';

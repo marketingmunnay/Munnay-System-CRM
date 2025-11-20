@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { parseDate } from '../../utils/time.ts';
+import { parseDate } from '../../utils/time';
 
 interface GoalProgressWidgetProps {
   name: string;

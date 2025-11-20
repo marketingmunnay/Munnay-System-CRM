@@ -4,7 +4,7 @@ import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
 import { TipoComprobante, ModoPagoEgreso, TipoComprobanteLabels } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 
 interface EgresoFormModalProps {
   isOpen: boolean;

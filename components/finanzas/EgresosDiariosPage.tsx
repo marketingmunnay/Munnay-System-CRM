@@ -6,7 +6,7 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay, parseDate } from '../../utils/time.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
 import { TipoComprobante, TipoComprobanteLabels } from '../../types';
 import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 

@@ -8,7 +8,7 @@ import MetaCampaignFormModal from './MetaCampaignFormModal.tsx';
 import AnunciosTable from './AnunciosTable.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Campaign, Lead, MetaCampaign } from '../../types.ts';
-import { formatDateForDisplay, parseDate } from '../../utils/time.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
 
 interface CampaignsPageProps {
     campaigns: Campaign[];

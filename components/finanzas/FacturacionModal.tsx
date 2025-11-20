@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { VentaExtra, Lead, ComprobanteElectronico, ComprobanteItem } from '../../types.ts';
 import { DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay } from '../../utils/time';
 
 interface FacturacionModalProps {
   isOpen: boolean;

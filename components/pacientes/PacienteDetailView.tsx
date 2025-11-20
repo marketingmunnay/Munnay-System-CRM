@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import type { Lead, Alergia } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay, parseDate } from '../../utils/time.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

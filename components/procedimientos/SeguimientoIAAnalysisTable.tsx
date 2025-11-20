@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Seguimiento } from '../../types.ts';
 import SeguimientoDetailModal from './SeguimientoDetailModal.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay } from '../../utils/time';
 import * as api from '../../services/api.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (

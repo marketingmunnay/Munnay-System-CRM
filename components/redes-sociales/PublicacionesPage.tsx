@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import type { Publicacion } from '../../types.ts';
 import { TipoPost, RedSocialPost } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { formatDateTimeForDisplay } from '../../utils/time.ts';
+import { formatDateTimeForDisplay } from '../../utils/time';
 import { PlusIcon, MagnifyingGlassIcon } from '../shared/Icons.tsx';
 import PublicacionFormModal from './PublicacionFormModal.tsx';
 

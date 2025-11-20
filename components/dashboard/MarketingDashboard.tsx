@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Lead, Campaign } from '../../types.ts';
-import { parseDate } from '../../utils/time.ts';
+import { parseDate } from '../../utils/time';
 import StatCard from './StatCard.tsx';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (

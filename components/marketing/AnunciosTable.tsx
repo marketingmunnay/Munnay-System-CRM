@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Campaign } from '../../types.ts';
 import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay } from '../../utils/time';
 
 interface AnunciosTableProps {
   campaigns: Campaign[];

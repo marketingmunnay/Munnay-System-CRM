@@ -1,5 +1,5 @@
 import type { Lead, Egreso, Notification, Seguimiento } from '../types.ts';
-import { parseDate } from '../utils/time.ts';
+import { parseDate } from '../utils/time';
 
 interface NotificationData {
     leads: Lead[];

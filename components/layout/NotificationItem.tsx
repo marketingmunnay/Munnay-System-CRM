@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Notification } from '../../types.ts';
-import { formatDistanceToNow } from '../../utils/time.ts';
+import { formatDistanceToNow } from '../../utils/time';
 
 interface NotificationItemProps {
     notification: Notification;

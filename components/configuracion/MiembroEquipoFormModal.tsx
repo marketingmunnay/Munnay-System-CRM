@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { User, Role, JobPosition, DocumentType, Address, EmergencyContact } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

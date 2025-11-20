@@ -3,7 +3,7 @@ import type { User, Role, Address, EmergencyContact, JobPosition } from '../../t
 import { DocumentType } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon, EyeIcon, EyeSlashIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 
 interface UsuarioFormModalProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { MetaCampaign } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 
 interface MetaCampaignFormModalProps {
   isOpen: boolean;

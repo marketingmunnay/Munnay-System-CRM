@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Lead, VentaExtra } from '../../types.ts';
-import { parseDate } from '../../utils/time.ts';
+import { parseDate } from '../../utils/time';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ServiceCategorySalesChartProps {

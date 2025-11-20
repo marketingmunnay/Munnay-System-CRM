@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import type { Lead, VentaExtra, Egreso, Goal, Publicacion, Seguidor } from '../../types.ts';
-import { parseDate } from '../../utils/time.ts';
+import { parseDate } from '../../utils/time';
 import { MetodoPago } from '../../types.ts';
 import StatCard from './StatCard.tsx';
 import MonthlySalesChart from './MonthlySalesChart.tsx';

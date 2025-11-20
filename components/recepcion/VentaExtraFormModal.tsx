@@ -4,7 +4,7 @@ import { MetodoPago } from '../../types';
 import Modal from '../shared/Modal.tsx';
 import FacturacionModal from '../finanzas/FacturacionModal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time.ts';
+import { formatDateForInput } from '../../utils/time';
 
 interface VentaExtraFormModalProps {
   isOpen: boolean;

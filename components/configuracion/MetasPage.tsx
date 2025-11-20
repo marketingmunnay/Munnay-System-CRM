@@ -4,7 +4,7 @@ import type { Goal, User } from '../../types.ts';
 import { GoalArea } from '../../types.ts';
 import GoalFormModal from './GoalFormModal.tsx';
 import { PlusIcon } from '../shared/Icons.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

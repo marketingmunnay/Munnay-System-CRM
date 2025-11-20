@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Incidencia, Lead } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { formatDateTimeForDisplay } from '../../utils/time.ts';
+import { formatDateTimeForDisplay } from '../../utils/time';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '../shared/Icons.tsx';
 import IncidenciaFormModal from './IncidenciaFormModal.tsx';
 

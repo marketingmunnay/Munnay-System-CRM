@@ -5,7 +5,7 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { formatDateForDisplay, formatDateForInput } from '../../utils/time.ts';
+import { formatDateForDisplay, formatDateForInput } from '../../utils/time';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 

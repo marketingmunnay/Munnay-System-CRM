@@ -6,7 +6,7 @@ import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, MagnifyingGlassIcon } from '../shared/Icons.tsx';
 import SeguidorFormModal from './SeguidorFormModal.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
