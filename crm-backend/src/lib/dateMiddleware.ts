@@ -10,7 +10,8 @@ function serializeDates(obj: any): any {
   }
   
   if (obj instanceof Date) {
-    return obj.toISOString().split('T')[0]; // Devolver solo la parte de la fecha YYYY-MM-DD
+    // Devolver ISO completo en UTC para que el API use siempre ISO 8601 (UTC)
+    return obj.toISOString();
   }
   
   if (Array.isArray(obj)) {

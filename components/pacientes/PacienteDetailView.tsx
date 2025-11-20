@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import type { Lead, Alergia } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -87,9 +87,9 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
         const createSafeDate = (dateStr: string, timeStr?: string): Date => {
             try {
                 const cleanDate = dateStr.split('T')[0];
-                const fullDateStr = timeStr ? `${cleanDate}T${timeStr}` : `${cleanDate}T00:00:00`;
-                const date = new Date(fullDateStr);
-                return isNaN(date.getTime()) ? new Date() : date;
+                const fullIso = timeStr ? `${cleanDate}T${timeStr}Z` : `${cleanDate}T00:00:00Z`;
+                const parsed = parseDate(fullIso) ?? parseDate(cleanDate) ?? new Date(fullIso);
+                return parsed;
             } catch {
                 return new Date();
             }

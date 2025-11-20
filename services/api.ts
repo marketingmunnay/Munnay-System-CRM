@@ -18,9 +18,47 @@ const apiRequest = async <T>(
     method,
     headers: { 'Content-Type': 'application/json' },
   };
-  if (body) options.body = JSON.stringify(body);
+  if (body) {
+    // Convertir recursivamente strings con formato YYYY-MM-DD a ISO UTC (YYYY-MM-DDT00:00:00Z)
+    const convertDatesToISO = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(obj)) {
+          return obj + 'T00:00:00Z';
+        }
+        return obj;
+      }
+      if (Array.isArray(obj)) return obj.map(convertDatesToISO);
+      if (typeof obj === 'object') {
+        const out: any = {};
+        for (const k of Object.keys(obj)) {
+          out[k] = convertDatesToISO(obj[k]);
+        }
+        return out;
+      }
+      return obj;
+    };
 
-  const response = await fetch(`${API_URL}${endpoint}`, options);
+    options.body = JSON.stringify(convertDatesToISO(body));
+  }
+
+  // Añadir timeout para evitar que fetch quede pendiente indefinidamente
+  const fetchWithTimeout = (url: string, opts: RequestInit, timeout = 10000) => {
+    return new Promise<Response>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), timeout);
+      fetch(url, opts)
+        .then(res => {
+          clearTimeout(timer);
+          resolve(res);
+        })
+        .catch(err => {
+          clearTimeout(timer);
+          reject(err);
+        });
+    });
+  };
+
+  const response = await fetchWithTimeout(`${API_URL}${endpoint}`, options, 15000);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));

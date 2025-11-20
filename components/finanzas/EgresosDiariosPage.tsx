@@ -6,7 +6,7 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time.ts';
 import { TipoComprobante, TipoComprobanteLabels } from '../../types';
 import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 
@@ -244,10 +244,15 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         let results = egresos;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+            const fromDate = dateRange.from ? parseDate(dateRange.from, true) : null;
+            const toDate = dateRange.to ? parseDate(dateRange.to, true) : null;
+            if (toDate) {
+                // mover al final del día UTC
+                toDate.setUTCHours(23, 59, 59, 999);
+            }
             results = results.filter(e => {
-                const egresoDate = new Date(`${e.fechaPago}T00:00:00`);
+                const egresoDate = parseDate(e.fechaPago);
+                if (!egresoDate) return false;
                 if (fromDate && egresoDate < fromDate) return false;
                 if (toDate && egresoDate > toDate) return false;
                 return true;
@@ -330,23 +335,20 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     }, [dateFilteredEgresos, tipoCambio]);
 
     const proximosPagos = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
+        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         return dateFilteredEgresos
             .filter(e => e.deuda > 0 && e.fechaPago)
             .map(e => {
                 try {
                     // Manejar fechas en formato ISO (YYYY-MM-DDTHH:mm:ss.sssZ) y YYYY-MM-DD
-                    let fechaPagoStr = e.fechaPago!;
-                    // Si la fecha incluye 'T', solo tomar la parte de fecha
-                    if (fechaPagoStr.includes('T')) {
-                        fechaPagoStr = fechaPagoStr.split('T')[0];
-                    }
-                    const fechaPago = new Date(fechaPagoStr + 'T00:00:00');
-                    if (isNaN(fechaPago.getTime())) {
+                    const parsed = parseDate(e.fechaPago);
+                    if (!parsed) {
                         console.warn('Fecha de pago inválida:', e.fechaPago);
                         return { ...e, diasParaVencer: 0 };
                     }
+                    // Normalizar a medianoche UTC de la fecha de pago para comparar por días completos
+                    const fechaPago = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
                     const diffTime = fechaPago.getTime() - today.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     return { ...e, diasParaVencer: diffDays };

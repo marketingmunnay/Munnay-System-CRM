@@ -97,47 +97,78 @@ const App: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [
-                leadsData, campaignsData, ventasData, incidenciasData, 
-                egresosData, proveedoresData, usersData, rolesData,
-                businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
-                serviceCategoriesData, productCategoriesData, jobPositionsData,
-                publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
-                tiposProveedorData, goalsData, comprobantesData
-            ] = await Promise.all([
-                api.getLeads?.() || Promise.resolve([]), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
-                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
-                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
-                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
-                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
-                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
-                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
-            ]);
-            setLeads(leadsData);
-            setCampaigns(campaignsData);
-            setVentasExtra(ventasData);
-            setIncidencias(incidenciasData);
-            setEgresos(egresosData);
-            setProveedores(proveedoresData);
-            setUsers(usersData);
-            setRoles(rolesData);
-            setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
-            setClientSources(clientSourcesData);
-            setServices(servicesData);
-            setProducts(productsData);
-            setMemberships(membershipsData);
-            setServiceCategories(serviceCategoriesData);
-            setProductCategories(productCategoriesData);
-            setJobPositions(jobPositionsData);
-            setPublicaciones(publicacionesData);
-            setSeguidores(seguidoresData);
-            setMetaCampaigns(metaCampaignsData);
-            setEgresoCategories(egresoCategoriesData);
-            setTiposProveedor(tiposProveedorData);
-            setGoals(goalsData);
-            setComprobantes(comprobantesData);
-            
-            setNotifications(generateNotifications({ leads: leadsData, egresos: egresosData }));
+            const calls: Array<{ key: string; fn: () => Promise<any> }> = [
+                { key: 'leads', fn: () => api.getLeads?.() || Promise.resolve([]) },
+                { key: 'campaigns', fn: () => api.getCampaigns?.() || Promise.resolve([]) },
+                { key: 'ventas', fn: () => api.getVentasExtra?.() || Promise.resolve([]) },
+                { key: 'incidencias', fn: () => api.getIncidencias?.() || Promise.resolve([]) },
+                { key: 'egresos', fn: () => api.getEgresos?.() || Promise.resolve([]) },
+                { key: 'proveedores', fn: () => api.getProveedores?.() || Promise.resolve([]) },
+                { key: 'users', fn: () => api.getUsers?.() || Promise.resolve([]) },
+                { key: 'roles', fn: () => api.getRoles?.() || Promise.resolve([]) },
+                { key: 'businessInfo', fn: () => api.getBusinessInfo?.() || Promise.resolve(null) },
+                { key: 'clientSources', fn: () => api.getClientSources?.() || Promise.resolve([]) },
+                { key: 'services', fn: () => api.getServices?.() || Promise.resolve([]) },
+                { key: 'products', fn: () => api.getProducts?.() || Promise.resolve([]) },
+                { key: 'memberships', fn: () => api.getMemberships?.() || Promise.resolve([]) },
+                { key: 'serviceCategories', fn: () => api.getServiceCategories?.() || Promise.resolve([]) },
+                { key: 'productCategories', fn: () => api.getProductCategories?.() || Promise.resolve([]) },
+                { key: 'jobPositions', fn: () => api.getJobPositions?.() || Promise.resolve([]) },
+                { key: 'publicaciones', fn: () => api.getPublicaciones?.() || Promise.resolve([]) },
+                { key: 'seguidores', fn: () => api.getSeguidores?.() || Promise.resolve([]) },
+                { key: 'metaCampaigns', fn: () => api.getMetaCampaigns?.() || Promise.resolve([]) },
+                { key: 'egresoCategories', fn: () => api.getEgresoCategories?.() || Promise.resolve([]) },
+                { key: 'tiposProveedor', fn: () => api.getTiposProveedor?.() || Promise.resolve([]) },
+                { key: 'goals', fn: () => api.getGoals?.() || Promise.resolve([]) },
+                { key: 'comprobantes', fn: () => api.getComprobantes?.() || Promise.resolve([]) },
+            ];
+
+            console.log('loadData: launching', calls.map(c => c.key));
+
+            const settled = await Promise.allSettled(calls.map(c => {
+                console.log(`loadData: starting ${c.key}`);
+                return c.fn();
+            }));
+
+            const data: Record<string, any> = {};
+            settled.forEach((r, idx) => {
+                const key = calls[idx].key;
+                if (r.status === 'fulfilled') {
+                    console.log(`loadData: fulfilled ${key}`);
+                    data[key] = r.value;
+                } else {
+                    console.error(`loadData: rejected ${key}`, r.reason);
+                    // default values
+                    data[key] = key === 'businessInfo' ? null : [];
+                }
+            });
+
+            // Apply results to state (use defaults when needed)
+            setLeads(data.leads || []);
+            setCampaigns(data.campaigns || []);
+            setVentasExtra(data.ventas || []);
+            setIncidencias(data.incidencias || []);
+            setEgresos(data.egresos || []);
+            setProveedores(data.proveedores || []);
+            setUsers(data.users || []);
+            setRoles(data.roles || []);
+            setBusinessInfo(data.businessInfo || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            setClientSources(data.clientSources || []);
+            setServices(data.services || []);
+            setProducts(data.products || []);
+            setMemberships(data.memberships || []);
+            setServiceCategories(data.serviceCategories || []);
+            setProductCategories(data.productCategories || []);
+            setJobPositions(data.jobPositions || []);
+            setPublicaciones(data.publicaciones || []);
+            setSeguidores(data.seguidores || []);
+            setMetaCampaigns(data.metaCampaigns || []);
+            setEgresoCategories(data.egresoCategories || []);
+            setTiposProveedor(data.tiposProveedor || []);
+            setGoals(data.goals || []);
+            setComprobantes(data.comprobantes || []);
+
+            setNotifications(generateNotifications({ leads: data.leads || [], egresos: data.egresos || [] }));
 
         } catch (error) {
             console.error("Failed to load data", error);

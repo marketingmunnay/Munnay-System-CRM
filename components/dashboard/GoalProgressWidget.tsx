@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { parseDate } from '../../utils/time.ts';
 
 interface GoalProgressWidgetProps {
   name: string;
@@ -18,9 +19,9 @@ const GoalProgressWidget: React.FC<GoalProgressWidgetProps> = ({
   startDate,
   endDate,
 }) => {
-  const start = new Date(startDate + 'T00:00:00').getTime();
-  const end = new Date(endDate + 'T00:00:00').getTime();
-  const now = new Date().getTime();
+  const start = (parseDate(startDate)?.getTime()) ?? new Date(startDate).getTime();
+  const end = (parseDate(endDate)?.getTime()) ?? new Date(endDate).getTime();
+  const now = Date.now();
 
   const totalDuration = end - start;
   const elapsedDuration = now - start;

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Lead, Campaign } from '../../types.ts';
+import { parseDate } from '../../utils/time.ts';
 import StatCard from './StatCard.tsx';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -20,9 +21,9 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ leads, campaign
             if (!from && !to) return true;
             if (!itemDateStr) return false;
             
-            const itemDate = new Date(itemDateStr);
-            const fromDate = from ? new Date(`${from}T00:00:00`) : null;
-            const toDate = to ? new Date(`${to}T23:59:59`) : null;
+            const itemDate = parseDate(itemDateStr) ?? new Date(itemDateStr);
+            const fromDate = from ? (parseDate(from) ?? new Date(`${from}T00:00:00`)) : null;
+            const toDate = to ? (parseDate(to) ?? new Date(`${to}T23:59:59`)) : null;
             
             if (fromDate && itemDate < fromDate) return false;
             if (toDate && itemDate > toDate) return false;

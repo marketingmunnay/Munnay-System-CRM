@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Lead, VentaExtra } from '../../types.ts';
+import { parseDate } from '../../utils/time.ts';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface MonthlySalesChartProps {
@@ -12,7 +13,10 @@ const MONTH_NAMES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Se
 const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtra }) => {
     const availableYears = useMemo(() => {
         const allYears = new Set<number>();
-        ventasExtra.forEach(v => allYears.add(new Date(v.fechaVenta + 'T00:00:00').getFullYear()));
+        ventasExtra.forEach(v => {
+            const d = parseDate(v.fechaVenta) || new Date(v.fechaVenta);
+            allYears.add(d.getUTCFullYear());
+        });
         leads.forEach(l => {
             if (l.fechaHoraAgenda) {
                 allYears.add(new Date(l.fechaHoraAgenda).getFullYear());
@@ -35,9 +39,9 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
 
         // Process Ventas Extra
         ventasExtra.forEach(v => {
-            const ventaDate = new Date(v.fechaVenta + 'T00:00:00');
-            if (ventaDate.getFullYear() === selectedYear) {
-                const month = ventaDate.getMonth();
+            const ventaDate = parseDate(v.fechaVenta) || new Date(v.fechaVenta);
+            if (ventaDate.getUTCFullYear() === selectedYear) {
+                const month = ventaDate.getUTCMonth();
                 monthlyData[month].Ventas += v.montoPagado;
             }
         });
@@ -45,9 +49,9 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ leads, ventasExtr
         // Process Lead related sales (initial payment + treatment payments)
         leads.forEach(l => {
             if (l.fechaHoraAgenda) {
-                const agendaDate = new Date(l.fechaHoraAgenda);
-                if (agendaDate.getFullYear() === selectedYear) {
-                    const month = agendaDate.getMonth();
+                const agendaDate = parseDate(l.fechaHoraAgenda) || new Date(l.fechaHoraAgenda);
+                if (agendaDate.getUTCFullYear() === selectedYear) {
+                    const month = agendaDate.getUTCMonth();
                     
                     // Add initial appointment fee
                     monthlyData[month].Ventas += l.montoPagado || 0;

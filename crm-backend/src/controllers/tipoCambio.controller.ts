@@ -13,7 +13,7 @@ export const getTipoCambio = async (req: Request, res: Response) => {
       return res.status(200).json(tipoCambioCache.data);
     }
 
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = new Date().toISOString();
 
     // Usar exchangerate-api.com (gratuito, sin API key, actualizado diariamente)
     try {
@@ -98,7 +98,7 @@ export const getTipoCambio = async (req: Request, res: Response) => {
     console.error('Error general obteniendo tipo de cambio:', error);
     
     const errorResponse = {
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: new Date().toISOString(),
       compra: null,
       venta: null,
       disponible: false,
