@@ -24,13 +24,9 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   
-  // Inicializar con la fecha de HOY por defecto
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // Always default to today if null
-  const [startDate, setStartDate] = useState<Date | null>(today);
-  const [endDate, setEndDate] = useState<Date | null>(today);
+  // Inicializar sin rango por defecto (vacío). Las páginas esperan '' para no filtrar.
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   
   const [leftCalendarDate, setLeftCalendarDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -39,10 +35,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
     return new Date(leftCalendarDate.getFullYear(), leftCalendarDate.getMonth() + 1, 1);
   }, [leftCalendarDate]);
 
-  // Aplicar fecha HOY por defecto al cargar el componente
-  useEffect(() => {
-    onApply({ from: formatDate(today), to: formatDate(today) });
-  }, []);
+  // No aplicar filtro por defecto: dejar que la vista padre controle el filtro inicial.
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -55,17 +48,22 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   }, [wrapperRef]);
 
   const handleApply = () => {
-    // Always apply valid dates
-    onApply({ from: formatDate(startDate), to: formatDate(endDate) });
+    // Apply selected dates, or empty strings if none selected
+    if (!startDate && !endDate) {
+      onApply({ from: '', to: '' });
+    } else {
+      const from = formatDate(startDate);
+      const to = formatDate(endDate || startDate);
+      onApply({ from, to });
+    }
     setIsOpen(false);
   };
   
   const handleClear = () => {
-    // Instead of clearing to null, reset to today
-    const today = new Date();
-    setStartDate(today);
-    setEndDate(today);
-    onApply({ from: formatDate(today), to: formatDate(today) });
+    // Clear selection and notify parent with empty strings
+    setStartDate(null);
+    setEndDate(null);
+    onApply({ from: '', to: '' });
   };
 
 
