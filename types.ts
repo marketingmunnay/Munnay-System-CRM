@@ -318,10 +318,17 @@ export interface ComprobanteElectronico {
 
 export enum TipoComprobante {
     Factura = 'Factura',
-    Boleta = 'Boleta de Venta',
-    ReciboHonorarios = 'Recibo por Honorarios',
-    SinComprobante = 'Sin Comprobante',
+    Boleta = 'Boleta',
+    ReciboHonorarios = 'ReciboHonorarios',
+    SinComprobante = 'SinComprobante',
 }
+
+export const TipoComprobanteLabels: Record<TipoComprobante, string> = {
+    [TipoComprobante.Factura]: 'Factura',
+    [TipoComprobante.Boleta]: 'Boleta de Venta',
+    [TipoComprobante.ReciboHonorarios]: 'Recibo por Honorarios',
+    [TipoComprobante.SinComprobante]: 'Sin Comprobante',
+};
 
 export enum ModoPagoEgreso {
     Efectivo = 'Efectivo',

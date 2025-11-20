@@ -7,6 +7,7 @@ import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon 
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
 import { formatDateForDisplay } from '../../utils/time.ts';
+import { TipoComprobante, TipoComprobanteLabels } from '../../types';
 import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 
 interface EgresosDiariosPageProps {
@@ -99,7 +100,7 @@ const EgresoDetails: FC<{ egreso: Egreso | null, onViewImage: (url: string) => v
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                    <DetailRow label="Tipo de Comprobante" value={egreso.tipoComprobante} />
+                    <DetailRow label="Tipo de Comprobante" value={TipoComprobanteLabels[egreso.tipoComprobante as TipoComprobante] || egreso.tipoComprobante} />
                     <DetailRow label="Serie" value={egreso.serieComprobante} />
                     <DetailRow label="Número" value={egreso.nComprobante} />
                  </div>

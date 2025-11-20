@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
-import { TipoComprobante, ModoPagoEgreso } from '../../types.ts';
+import { TipoComprobante, ModoPagoEgreso, TipoComprobanteLabels } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
 import { formatDateForInput } from '../../utils/time.ts';
@@ -32,13 +32,6 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   useEffect(() => {
     if (isOpen) {
         if (egreso) {
-            // Convertir fechas ISO a formato YYYY-MM-DD para inputs type="date"
-            const formatDateForInput = (dateStr?: string): string => {
-                if (!dateStr) return '';
-                // Si la fecha viene en formato ISO (2025-11-11T00:00:00.000Z), extraer solo la parte de fecha
-                return dateStr.split('T')[0];
-            };
-
             setFormData({
                 ...egreso,
                 fechaRegistro: formatDateForInput(egreso.fechaRegistro),
@@ -121,12 +114,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
       alert('Proveedor, Descripción y Monto Total son campos requeridos.');
       return;
     }
-        // Ajustar tipoComprobante si es 'Sin Comprobante' para enviar 'SinComprobante' (enum Prisma)
-        let egresoToSave = { ...formData };
-        if (egresoToSave.tipoComprobante === 'Sin Comprobante') {
-            egresoToSave.tipoComprobante = 'SinComprobante';
-        }
-        onSave(egresoToSave as Egreso);
+        onSave({ ...formData } as Egreso);
   };
 
    const handleDelete = () => {
@@ -268,8 +256,8 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
 
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                    {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', Object.values(TipoComprobante).map(v => ({ value: v, label: v})))}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                          {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', Object.values(TipoComprobante).map(v => ({ value: v, label: TipoComprobanteLabels[v as TipoComprobante] || String(v)})))}
                     {renderFormField('Serie', 'serieComprobante')}
                     {renderFormField('Número', 'nComprobante')}
                  </div>
