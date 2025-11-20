@@ -214,7 +214,16 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
-        loadData();
+        console.log('App mounted - starting loadData');
+        const safetyTimer = setTimeout(() => {
+            console.warn('loadData safety timeout reached (20s) - forcing loading=false');
+            setLoading(false);
+        }, 20000);
+
+        loadData().finally(() => {
+            clearTimeout(safetyTimer as unknown as number);
+            console.log('loadData finished (finally) - cleared safety timer');
+        });
     }, []);
 
     // Handlers for data manipulation
