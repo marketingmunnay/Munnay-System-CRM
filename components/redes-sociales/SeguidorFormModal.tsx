@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { formatDateForInput } from '../../utils/time.ts';
 import type { Seguidor } from '../../types.ts';
 import { RedSocialPost } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
@@ -63,7 +64,6 @@ const SeguidorFormModal: React.FC<SeguidorFormModalProps> = ({ isOpen, onClose, 
     }
   };
 
-    const { formatDateForInput } = require('../../utils/time');
     const renderField = (label: string, name: keyof Seguidor, type: 'text' | 'date' | 'number') => {
     if (type === 'date') {
       return (
