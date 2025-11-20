@@ -121,7 +121,12 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
       alert('Proveedor, Descripción y Monto Total son campos requeridos.');
       return;
     }
-    onSave(formData as Egreso);
+        // Ajustar tipoComprobante si es 'Sin Comprobante' para enviar 'SinComprobante' (enum Prisma)
+        let egresoToSave = { ...formData };
+        if (egresoToSave.tipoComprobante === 'Sin Comprobante') {
+            egresoToSave.tipoComprobante = 'SinComprobante';
+        }
+        onSave(egresoToSave as Egreso);
   };
 
    const handleDelete = () => {
