@@ -114,12 +114,22 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
             });
         }
 
-        if (viewMode === 'table' && searchTerm) {
-            results = results.filter(lead =>
-                `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.numero.includes(searchTerm) ||
-                lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+        if (searchTerm) {
+            const q = searchTerm.trim().toLowerCase();
+            const qDigits = q.replace(/\D/g, '');
+            results = results.filter(lead => {
+                const fullName = `${lead.nombres || ''} ${lead.apellidos || ''}`.toLowerCase();
+                const numero = String(lead.numero || '').replace(/\D/g, '');
+                const historia = String(lead.nHistoria || '').toLowerCase();
+                const anuncio = String(lead.anuncio || '').toLowerCase();
+
+                const matchName = fullName.includes(q);
+                const matchNumero = qDigits ? numero.includes(qDigits) : (String(lead.numero || '').toLowerCase().includes(q));
+                const matchHistoria = historia.includes(q);
+                const matchAnuncio = anuncio.includes(q);
+
+                return matchName || matchNumero || matchHistoria || matchAnuncio;
+            });
         }
         
         return results;
