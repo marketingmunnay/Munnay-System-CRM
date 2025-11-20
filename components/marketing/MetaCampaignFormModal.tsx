@@ -75,11 +75,11 @@ const MetaCampaignFormModal: React.FC<MetaCampaignFormModalProps> = ({ isOpen, o
                 </div>
                 <div>
                      <label htmlFor="fechaInicio" className="mb-1 text-sm font-medium text-gray-700">Fecha de Inicio</label>
-                    <input type="date" id="fechaInicio" name="fechaInicio" value={formatDateForInput(formData.fechaInicio) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
-                </div>
-                <div>
+                    <input type="date" id="fechaInicio" name="fechaInicio" value={formatDateForInput(formData.fechaInicio)} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
+                  </div>
+                  <div>
                      <label htmlFor="fechaFin" className="mb-1 text-sm font-medium text-gray-700">Fecha de Fin</label>
-                    <input type="date" id="fechaFin" name="fechaFin" value={formatDateForInput(formData.fechaFin) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
+                    <input type="date" id="fechaFin" name="fechaFin" value={formatDateForInput(formData.fechaFin)} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
                 </div>
                 <div className="md:col-span-2">
                     <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría</label>

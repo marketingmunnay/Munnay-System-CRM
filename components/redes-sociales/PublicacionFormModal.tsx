@@ -82,7 +82,35 @@ const PublicacionFormModal: React.FC<PublicacionFormModalProps> = ({ isOpen, onC
   };
 
   const renderField = (label: string, name: keyof Publicacion, type: 'text' | 'date' | 'url' | 'number' | 'time') => {
-      if (type === 'date' || type === 'time') {
+      if (type === 'date') {
+          // Always show a valid date, fallback to today
+          let value = '';
+          const fieldValue = formData[name];
+          if (fieldValue instanceof Date && !isNaN(fieldValue.getTime())) {
+              value = fieldValue.toISOString().split('T')[0];
+          } else if (typeof fieldValue === 'string' && fieldValue.length >= 8) {
+              // Try to parse string
+              const d = new Date(fieldValue);
+              value = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+          } else {
+              value = new Date().toISOString().split('T')[0];
+          }
+          return (
+              <div>
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+                <input
+                    type={type}
+                    id={name}
+                    name={name}
+                    value={value}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2 focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                    style={{ colorScheme: 'light' }}
+                />
+              </div>
+          );
+      }
+      if (type === 'time') {
           return (
               <div>
                 <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>

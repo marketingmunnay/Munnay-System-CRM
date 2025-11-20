@@ -8,8 +8,9 @@ interface DateRangeFilterProps {
 }
 
 const formatDate = (date: Date | null) => {
-    if (!date) return '';
-    return date.toISOString().split('T')[0];
+    // Always return a valid date string for input fields
+    const safeDate = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
+    return safeDate.toISOString().split('T')[0];
 }
 
 const formatDateForDisplay = (date: Date) => {
@@ -27,6 +28,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // Always default to today if null
   const [startDate, setStartDate] = useState<Date | null>(today);
   const [endDate, setEndDate] = useState<Date | null>(today);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
@@ -53,14 +55,17 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   }, [wrapperRef]);
 
   const handleApply = () => {
+    // Always apply valid dates
     onApply({ from: formatDate(startDate), to: formatDate(endDate) });
     setIsOpen(false);
   };
   
   const handleClear = () => {
-    setStartDate(null);
-    setEndDate(null);
-    onApply({ from: '', to: '' });
+    // Instead of clearing to null, reset to today
+    const today = new Date();
+    setStartDate(today);
+    setEndDate(today);
+    onApply({ from: formatDate(today), to: formatDate(today) });
   };
 
 

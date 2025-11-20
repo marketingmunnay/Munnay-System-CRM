@@ -338,7 +338,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                     </div>
                      <div>
                         <label htmlFor="fechaVenta" className="mb-1 text-sm font-medium text-gray-700">Fecha de Venta</label>
-                        <input type="date" id="fechaVenta" name="fechaVenta" value={formatDateForInput(formData.fechaVenta) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
+                        <input type="date" id="fechaVenta" name="fechaVenta" value={formatDateForInput(formData.fechaVenta)} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }}/>
                     </div>
                      <div>
                         <label htmlFor="saleType" className="mb-1 text-sm font-medium text-gray-700">Tipo de Venta</label>

@@ -188,7 +188,7 @@ const IncidenciaFormModal: React.FC<IncidenciaFormModalProps> = ({ isOpen, onClo
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
                     <div>
                         <label htmlFor="fecha" className="mb-1 text-sm font-medium text-gray-700">Fecha</label>
-                        <input type="date" id="fecha" name="fecha" value={formatDateForInput(formData.fecha) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
+                        <input type="date" id="fecha" name="fecha" value={formatDateForInput(formData.fecha)} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
                     </div>
                     <div>
                         <label htmlFor="hora" className="mb-1 text-sm font-medium text-gray-700">Hora</label>

@@ -63,23 +63,24 @@ const SeguidorFormModal: React.FC<SeguidorFormModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const renderField = (label: string, name: keyof Seguidor, type: 'text' | 'date' | 'number') => {
+    const { formatDateForInput } = require('../../utils/time');
+    const renderField = (label: string, name: keyof Seguidor, type: 'text' | 'date' | 'number') => {
     if (type === 'date') {
-        return (
-            <div>
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-                <input
-                    type={type}
-                    id={name}
-                    name={name}
-                    value={String(formData[name] ?? '')}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2 focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
-                    style={{ colorScheme: 'light' }}
-                />
-            </div>
-        );
+      return (
+        <div>
+          <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+          <input
+            type="date"
+            id={name}
+            name={name}
+            value={formatDateForInput(formData[name] ?? '')}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2 focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+            style={{ colorScheme: 'light' }}
+          />
+        </div>
+      );
     }
     return (
       <div>

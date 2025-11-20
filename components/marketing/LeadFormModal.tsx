@@ -166,7 +166,15 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaAgenda" 
-                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? formData.fechaHoraAgenda.split('T')[0] : (typeof formData.fechaHoraAgenda === 'string' ? formData.fechaHoraAgenda : '')} 
+                            value={(() => {
+                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
+                                    return formData.fechaHoraAgenda.split('T')[0];
+                                }
+                                if (typeof formData.fechaHoraAgenda === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(formData.fechaHoraAgenda)) {
+                                    return formData.fechaHoraAgenda;
+                                }
+                                return new Date().toISOString().split('T')[0];
+                            })()} 
                             onChange={(e) => {
                                 const fecha = e.target.value;
                                 const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
@@ -352,7 +360,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                          <input
                              type="date"
                              name="fechaVolverLlamar"
-                             value={formData.fechaVolverLlamar || ''}
+                             value={formatDateForInput(formData.fechaVolverLlamar ? formData.fechaVolverLlamar : new Date())}
                              onChange={handleChange}
                              className="w-full bg-[#f9f9fa] p-2"
                              style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
