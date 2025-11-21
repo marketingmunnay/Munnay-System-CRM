@@ -54,7 +54,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaLead" 
-                            value={formatDateForInput(formData.fechaLead) || ''} 
+                            value={formData.fechaLead || ''} 
                             onChange={handleChange} 
                             className="w-full bg-[#f9f9fa] p-2" 
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -2185,6 +2185,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // `formatDateForInput` which handles ISO/Date objects and YYYY-MM-DD.
     const normalizeDateStringForInput = (dateValue: any): string => {
         if (!dateValue) return '';
+
+        // If it's already a Date instance, return YYYY-MM-DD
+        if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+            return dateValue.toISOString().split('T')[0];
+        }
+
+        // If it's a string in DD/MM/YYYY format, convert to YYYY-MM-DD
         if (typeof dateValue === 'string') {
             const ddmmyyyy = dateValue.match(/^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/);
             if (ddmmyyyy) {
@@ -2193,7 +2200,19 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 const year = ddmmyyyy[3];
                 return `${year}-${month}-${day}`;
             }
+
+            // Try parsing ISO or other string representations robustly
+            try {
+                const parsed = new Date(dateValue);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed.toISOString().split('T')[0];
+                }
+            } catch (e) {
+                // fallthrough to formatDateForInputField
+            }
         }
+
+        // Fallback to the shared helper which already handles Date/ISO/strings
         return formatDateForInputField(dateValue);
     };
 
@@ -2249,7 +2268,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     
     const initialFormData = useMemo(() => ({
         id: Date.now(),
-        fechaLead: formatDateForInput(new Date()),
+        fechaLead: new Date().toISOString().split('T')[0],
         nombres: '',
         apellidos: '',
         numero: '',
