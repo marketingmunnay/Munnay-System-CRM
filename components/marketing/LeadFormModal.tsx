@@ -2216,6 +2216,51 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         return formatDateForInputField(dateValue);
     };
 
+    // Recursively normalize any property names that include 'fecha' or 'date'
+    // This will handle nested arrays/objects like `seguimientos`, `procedimientos`,
+    // `registrosLlamada`, etc. It returns a new copy and does not mutate the input.
+    const normalizeDatesInObject = (obj: any): any => {
+        if (obj == null) return obj;
+
+        if (Array.isArray(obj)) {
+            return obj.map(item => normalizeDatesInObject(item));
+        }
+
+        if (typeof obj !== 'object') return obj;
+
+        const copy: any = {};
+        for (const key of Object.keys(obj)) {
+            const val = obj[key];
+
+            if (val == null) {
+                copy[key] = val;
+                continue;
+            }
+
+            // If key looks like a date field, normalize it
+            const k = String(key).toLowerCase();
+            if (k.includes('fecha') || k.includes('date')) {
+                copy[key] = normalizeDateStringForInput(val);
+                continue;
+            }
+
+            // Recurse into arrays and objects
+            if (Array.isArray(val)) {
+                copy[key] = val.map((item: any) => normalizeDatesInObject(item));
+                continue;
+            }
+
+            if (typeof val === 'object') {
+                copy[key] = normalizeDatesInObject(val);
+                continue;
+            }
+
+            copy[key] = val;
+        }
+
+        return copy;
+    };
+
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
     const mapSellerFront = (value: any): string => {
         if (!value) return 'Vanesa';
@@ -2294,16 +2339,19 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
                 if (lead) {
-                // Normaliza y fuerza fechaLead a formato YYYY-MM-DD
-                const normalized = { 
-                    ...lead, 
+                // Build base mapped lead and recursively normalize all date-like fields
+                const baseLead = {
+                    ...lead,
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                    fechaLead: normalizeDateStringForInput(lead.fechaLead) || formatDateForInput(new Date()),
-                    fechaVolverLlamar: normalizeDateStringForInput(lead.fechaVolverLlamar),
-                    birthDate: normalizeDateStringForInput(lead.birthDate),
-                    fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
                 } as any;
+
+                const normalized = normalizeDatesInObject(baseLead);
+
+                // Preserve fechaHoraAgenda (may include time) and ensure fechaLead default
+                if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
+                if (!normalized.fechaLead) normalized.fechaLead = formatDateForInput(new Date());
+
                 setFormData(normalized);
             } else {
                 // Nuevo lead: fuerza fechaLead a formato YYYY-MM-DD
@@ -2321,16 +2369,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
         if (lead && isOpen) {
-            setFormData({ 
-                ...lead, 
-                vendedor: mapSellerFront(lead.vendedor), 
+            const baseLead = {
+                ...lead,
+                vendedor: mapSellerFront(lead.vendedor),
                 estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                // Format/normalize date fields for input[type="date"]
-                fechaLead: normalizeDateStringForInput(lead.fechaLead),
-                fechaVolverLlamar: normalizeDateStringForInput(lead.fechaVolverLlamar),
-                birthDate: normalizeDateStringForInput(lead.birthDate),
-                fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
-            } as any);
+            } as any;
+
+            const normalized = normalizeDatesInObject(baseLead);
+            if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
+
+            setFormData(normalized as any);
         }
     }, [lead]);
 
