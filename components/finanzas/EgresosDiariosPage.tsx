@@ -551,43 +551,59 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                     </div>
                 </div>
 
-                {/* New Card: Totales por Tipo de Proveedor */}
+                {/* Card: Tipo de Gastos (diseño tipo lista con barras de progreso) */}
                 <div className="bg-white p-4 rounded-lg shadow-md border col-span-1 md:col-span-1">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                            <div className="bg-green-100 p-2 rounded-lg mr-3">
-                                <GoogleIcon name="category" className="text-green-600" />
+                    <div className="mb-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-600">Tipo de Gastos</h3>
+                                <p className="text-xs text-gray-400">Distribución por tipo (Top)</p>
                             </div>
-                            <h3 className="text-sm font-medium text-gray-600">Totales por Tipo de Proveedor</h3>
+                            <div className="text-right">
+                                {/* Total general en la parte superior, preferir totalEnSoles si está disponible */}
+                                {totalsByProveedorTipo.length === 0 ? (
+                                    <span className="text-lg font-bold text-gray-900">S/ 0.00</span>
+                                ) : (() => {
+                                    const grandTotal = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0);
+                                    return <span className="text-xl font-extrabold text-gray-900">{formatCurrency(grandTotal, 'Soles')}</span>;
+                                })()}
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-2">
+
+                    <div className="space-y-3">
                         {totalsByProveedorTipo.length === 0 ? (
                             <p className="text-sm text-gray-500">No hay egresos en el rango seleccionado.</p>
                         ) : (
-                            totalsByProveedorTipo.slice(0, 6).map(item => (
-                                <div key={item.tipo} className="flex justify-between items-baseline">
-                                    <span className="text-sm text-gray-700">{item.tipo}</span>
-                                    <div className="text-right">
-                                        <div className="text-sm text-gray-500">S/ {item.totalSoles.toFixed(2)}</div>
-                                        <div className="text-sm font-semibold text-gray-900">
-                                            {item.totalEnSoles !== null ? (
-                                                <span className="text-base text-green-700">{formatCurrency(item.totalEnSoles, 'Soles')}</span>
-                                            ) : (
-                                                <span>{formatCurrency(item.totalSoles, 'Soles')}</span>
-                                            )}
+                            (() => {
+                                const top = totalsByProveedorTipo.slice(0, 6);
+                                // Use grand total across ALL tipos so bar widths are proportional to full distribution
+                                const grandTotalAll = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0) || 1;
+                                return top.map(item => {
+                                    const value = item.totalEnSoles ?? item.totalSoles;
+                                    const percent = Math.round((value / grandTotalAll) * 100);
+                                    return (
+                                        <div key={item.tipo}>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-gray-700 truncate max-w-[120px]">{item.tipo}</span>
+                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(value, 'Soles')}</span>
+                                            </div>
+                                            <div className="w-full bg-blue-100 rounded-full h-2 mt-2 overflow-hidden">
+                                                <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                        {totalsByProveedorTipo.length > 6 && (
-                            <p className="text-xs text-gray-400">Mostrando 6 de {totalsByProveedorTipo.length} tipos</p>
-                        )}
-                        {tipoCambio?.disponible && tipoCambio.venta && (
-                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                                    );
+                                });
+                            })()
                         )}
                     </div>
+
+                    {totalsByProveedorTipo.length > 6 && (
+                        <p className="text-xs text-gray-400 mt-3">Mostrando 6 de {totalsByProveedorTipo.length} tipos</p>
+                    )}
+                    {tipoCambio?.disponible && tipoCambio.venta && (
+                        <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                    )}
                 </div>
             </div>
 
