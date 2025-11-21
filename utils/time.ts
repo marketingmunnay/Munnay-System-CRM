@@ -171,3 +171,25 @@ try {
 } catch (e) {
   // ignore
 }
+
+// Some bundles/minified builds reference helpers as plain globals (e.g. `formatDateForInput(...)`).
+// As a defensive temporary measure, also create those identifiers on the global scope so
+// existing compiled code that expects globals keeps working until imports are fully normalized.
+try {
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as any).formatDateForInput = (globalThis as any).formatDateForInput || formatDateForInput;
+    (globalThis as any).formatDateForDisplay = (globalThis as any).formatDateForDisplay || formatDateForDisplay;
+    (globalThis as any).parseDate = (globalThis as any).parseDate || parseDate;
+    (globalThis as any).formatDateTimeISO = (globalThis as any).formatDateTimeISO || formatDateTimeISO;
+    // Try to create top-level identifiers (some bundles call them directly). Use eval guarded in try/catch.
+    try {
+      if (typeof (globalThis as any).eval === 'function') {
+        (globalThis as any).eval('formatDateForInput = globalThis.formatDateForInput; formatDateForDisplay = globalThis.formatDateForDisplay; parseDate = globalThis.parseDate; formatDateTimeISO = globalThis.formatDateTimeISO;');
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+} catch (e) {
+  // ignore
+}
