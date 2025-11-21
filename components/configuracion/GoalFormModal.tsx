@@ -113,7 +113,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="startDate"
                             name="startDate"
-                            value={formatDateForInput(formData.startDate instanceof Date && !isNaN(formData.startDate.getTime()) ? formData.startDate : new Date())}
+                            value={formatDateForInput(formData.startDate) || ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -126,7 +126,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="endDate"
                             name="endDate"
-                            value={formatDateForInput(formData.endDate instanceof Date && !isNaN(formData.endDate.getTime()) ? formData.endDate : new Date())}
+                            value={formatDateForInput(formData.endDate) || ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
