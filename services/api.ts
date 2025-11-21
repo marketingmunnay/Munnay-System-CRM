@@ -66,7 +66,35 @@ const apiRequest = async <T>(
   }
 
   if (response.status === 204) return {} as T;
-  return response.json();
+  // Normalize dates in the JSON response: convert common DD/MM/YYYY strings
+  // to YYYY-MM-DD so the rest of the app can bind them to <input type="date">.
+  const raw = await response.json();
+
+  const normalizeDatesInObject = (obj: any): any => {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'string') {
+      // Match DD/MM/YYYY optionally surrounded by whitespace
+      const ddmmyyyy = obj.match(/^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/);
+      if (ddmmyyyy) {
+        const day = ddmmyyyy[1];
+        const month = ddmmyyyy[2];
+        const year = ddmmyyyy[3];
+        return `${year}-${month}-${day}`;
+      }
+      return obj;
+    }
+    if (Array.isArray(obj)) return obj.map(normalizeDatesInObject);
+    if (typeof obj === 'object') {
+      const out: any = {};
+      for (const k of Object.keys(obj)) {
+        out[k] = normalizeDatesInObject(obj[k]);
+      }
+      return out;
+    }
+    return obj;
+  };
+
+  return normalizeDatesInObject(raw) as T;
 };
 
 // ====== LEADS ======

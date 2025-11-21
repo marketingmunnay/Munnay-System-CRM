@@ -2179,6 +2179,24 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
     };
 
+    // Normalizer: some backend responses use DD/MM/YYYY strings (e.g. '19/11/2025').
+    // HTML date inputs expect YYYY-MM-DD. Convert common DD/MM/YYYY format to
+    // YYYY-MM-DD before passing to input value. Otherwise fall back to
+    // `formatDateForInput` which handles ISO/Date objects and YYYY-MM-DD.
+    const normalizeDateStringForInput = (dateValue: any): string => {
+        if (!dateValue) return '';
+        if (typeof dateValue === 'string') {
+            const ddmmyyyy = dateValue.match(/^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/);
+            if (ddmmyyyy) {
+                const day = ddmmyyyy[1];
+                const month = ddmmyyyy[2];
+                const year = ddmmyyyy[3];
+                return `${year}-${month}-${day}`;
+            }
+        }
+        return formatDateForInputField(dateValue);
+    };
+
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
     const mapSellerFront = (value: any): string => {
         if (!value) return 'Vanesa';
@@ -2262,9 +2280,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                    fechaLead: formatDateForInputField(lead.fechaLead) || formatDateForInput(new Date()),
-                    fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
-                    birthDate: formatDateForInputField(lead.birthDate),
+                    fechaLead: normalizeDateStringForInput(lead.fechaLead) || formatDateForInput(new Date()),
+                    fechaVolverLlamar: normalizeDateStringForInput(lead.fechaVolverLlamar),
+                    birthDate: normalizeDateStringForInput(lead.birthDate),
                     fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
                 } as any;
                 setFormData(normalized);
@@ -2288,10 +2306,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 ...lead, 
                 vendedor: mapSellerFront(lead.vendedor), 
                 estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                // Format date fields for input[type="date"]
-                fechaLead: formatDateForInputField(lead.fechaLead),
-                fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
-                birthDate: formatDateForInputField(lead.birthDate),
+                // Format/normalize date fields for input[type="date"]
+                fechaLead: normalizeDateStringForInput(lead.fechaLead),
+                fechaVolverLlamar: normalizeDateStringForInput(lead.fechaVolverLlamar),
+                birthDate: normalizeDateStringForInput(lead.birthDate),
                 fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
             } as any);
         }
