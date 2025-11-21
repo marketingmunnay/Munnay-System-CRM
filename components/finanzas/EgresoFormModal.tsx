@@ -25,6 +25,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   const [formData, setFormData] = useState<Partial<Egreso>>({});
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
   const filteredProveedores = formData.categoria 
@@ -118,21 +119,46 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
 
             setUploading(true);
             setUploadError(null);
+            setUploadProgress(0);
 
             const fd = new FormData();
             fd.append('comprobante', file);
 
-            const res = await fetch('/api/expenses/upload', {
-                method: 'POST',
-                body: fd
+            // Use XMLHttpRequest to get progress events
+            const payload: any = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/expenses/upload');
+
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        setUploadProgress(percent);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const json = JSON.parse(xhr.responseText);
+                            resolve(json);
+                        } catch (e) {
+                            resolve({});
+                        }
+                    } else {
+                        let msg = xhr.statusText || `Upload failed (${xhr.status})`;
+                        try {
+                            const err = JSON.parse(xhr.responseText || '{}');
+                            msg = err.message || msg;
+                        } catch {}
+                        reject(new Error(msg));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.onabort = () => reject(new Error('Upload aborted'));
+
+                xhr.send(fd);
             });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({ message: res.statusText }));
-                throw new Error(err.message || 'Upload failed');
-            }
-
-            const payload = await res.json();
 
             // payload.url is the public path to the uploaded file
             setFormData(prev => ({ ...prev, fotoUrl: payload.url, fotoMimeType: payload.mimeType || file.type, fotoName: payload.name || file.name }));
@@ -142,6 +168,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
             // keep previous preview or clear fotoUrl
         } finally {
             setUploading(false);
+            setUploadProgress(null);
             // revoke temporary object URL to avoid memory leak
             try { if (tempUrl) URL.revokeObjectURL(tempUrl); } catch {}
         }
@@ -335,7 +362,13 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#aa632d] hover:file:bg-orange-100"
                     />
                     {uploading && (
-                        <p className="text-sm text-blue-600 mt-2">Subiendo comprobante...</p>
+                        <div className="mt-2">
+                            <p className="text-sm text-blue-600">Subiendo comprobante...</p>
+                            <div className="w-full bg-gray-200 rounded h-2 mt-1 overflow-hidden">
+                                <div className="h-2 bg-[#aa632d]" style={{ width: `${uploadProgress ?? 0}%` }} />
+                            </div>
+                            {uploadProgress !== null && <p className="text-xs text-gray-600 mt-1">{uploadProgress}%</p>}
+                        </div>
                     )}
                     {uploadError && (
                         <p className="text-sm text-red-600 mt-2">Error: {uploadError}</p>
