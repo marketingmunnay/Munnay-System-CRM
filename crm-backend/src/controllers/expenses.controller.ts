@@ -121,6 +121,24 @@ export const updateExpense = async (req: Request, res: Response) => {
 export const deleteExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   try {
+    // Buscar el egreso para conocer si tiene comprobante asociado
+    const expense = await prisma.egreso.findUnique({ where: { id } });
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
+
+    // Si existe fotoUrl y apunta a /uploads/egresos, intentar eliminar el archivo del disco
+    if (expense.fotoUrl) {
+      try {
+        const filename = path.basename(expense.fotoUrl);
+        const filePath = path.join(egresosUploadDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (e) {
+        // Loguear pero no impedir la eliminación del registro
+        console.warn('Could not remove comprobante file for expense', id, (e as Error).message);
+      }
+    }
+
     await prisma.egreso.delete({ where: { id: id } });
     res.status(204).send();
   } catch (error) {
@@ -144,7 +162,18 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+// Allowed MIME types: images and PDF
+const allowedMime = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+const fileFilter: multer.FileFilterCallback = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/') || allowedMime.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only images and PDF are allowed.'));
+  }
+};
+
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter }); // 10MB limit
 
 // Express middleware-ready handler to be used in routes
 export const uploadComprobanteMiddleware = upload.single('comprobante');
