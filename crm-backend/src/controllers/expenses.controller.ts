@@ -165,11 +165,11 @@ const storage = multer.diskStorage({
 // Allowed MIME types: images and PDF
 const allowedMime = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 
-const fileFilter: multer.FileFilterCallback = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/') || allowedMime.includes(file.mimetype)) {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: (error: Error | null, acceptFile?: boolean) => void): void => {
+  if (file && (String(file.mimetype).startsWith('image/') || allowedMime.includes(file.mimetype))) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only images and PDF are allowed.'));
+    cb(new Error('Invalid file type. Only images and PDF are allowed.'), false);
   }
 };
 
