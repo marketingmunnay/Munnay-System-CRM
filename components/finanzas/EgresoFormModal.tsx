@@ -26,6 +26,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const MAX_ATTACHMENTS = 12; // allow up to 12 comprobantes
 
   // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
   const filteredProveedores = formData.categoria 
@@ -33,12 +34,14 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     : proveedores;
 
   useEffect(() => {
-    if (isOpen) {
+        if (isOpen) {
         if (egreso) {
             setFormData({
                 ...egreso,
                 fechaRegistro: formatDateForInput(egreso.fechaRegistro),
-                fechaPago: formatDateForInput(egreso.fechaPago)
+                fechaPago: formatDateForInput(egreso.fechaPago),
+                // Ensure backward compatibility: if old fotoUrl exists, map to comprobantes
+                comprobantes: egreso.comprobantes || (egreso.fotoUrl ? [{ url: egreso.fotoUrl, mimeType: egreso.fotoMimeType, name: egreso.fotoName }] : [])
             });
         } else {
             setFormData({
@@ -50,7 +53,8 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                 montoTotal: 0,
                 montoPagado: 0,
                 deuda: 0,
-                tipoMoneda: 'Soles'
+                tipoMoneda: 'Soles',
+                comprobantes: []
             });
         }
     }
@@ -103,76 +107,102 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        // Show immediate preview for images while uploading
-        let tempUrl: string | undefined;
-        try {
-            if (file.type.startsWith('image/')) {
-                tempUrl = URL.createObjectURL(file);
-                setFormData(prev => ({ ...prev, fotoUrl: tempUrl, fotoMimeType: file.type, fotoName: file.name }));
-            } else {
-                // For non-image (pdf) just show filename while uploading
-                setFormData(prev => ({ ...prev, fotoUrl: '', fotoMimeType: file.type, fotoName: file.name }));
-            }
+        // Prepare list of files to upload, respecting MAX_ATTACHMENTS
+        const existing = (formData.comprobantes || []);
+        const availableSlots = Math.max(0, MAX_ATTACHMENTS - existing.length);
+        const toProcess = Array.from(files).slice(0, availableSlots);
 
-            setUploading(true);
-            setUploadError(null);
-            setUploadProgress(0);
-
-            const fd = new FormData();
-            fd.append('comprobante', file);
-
-            // Use XMLHttpRequest to get progress events
-            const payload: any = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/api/expenses/upload');
-
-                xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        const percent = Math.round((event.loaded / event.total) * 100);
-                        setUploadProgress(percent);
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const json = JSON.parse(xhr.responseText);
-                            resolve(json);
-                        } catch (e) {
-                            resolve({});
-                        }
-                    } else {
-                        let msg = xhr.statusText || `Upload failed (${xhr.status})`;
-                        try {
-                            const err = JSON.parse(xhr.responseText || '{}');
-                            msg = err.message || msg;
-                        } catch {}
-                        reject(new Error(msg));
-                    }
-                };
-
-                xhr.onerror = () => reject(new Error('Network error during upload'));
-                xhr.onabort = () => reject(new Error('Upload aborted'));
-
-                xhr.send(fd);
-            });
-
-            // payload.url is the public path to the uploaded file
-            setFormData(prev => ({ ...prev, fotoUrl: payload.url, fotoMimeType: payload.mimeType || file.type, fotoName: payload.name || file.name }));
-        } catch (error) {
-            const msg = (error as Error).message || 'Error uploading file';
-            setUploadError(msg);
-            // keep previous preview or clear fotoUrl
-        } finally {
-            setUploading(false);
-            setUploadProgress(null);
-            // revoke temporary object URL to avoid memory leak
-            try { if (tempUrl) URL.revokeObjectURL(tempUrl); } catch {}
+        if (toProcess.length === 0) {
+            setUploadError(`Ya alcanzaste el límite de ${MAX_ATTACHMENTS} comprobantes.`);
+            return;
         }
-  };
+
+        setUploading(true);
+        setUploadError(null);
+
+        for (let i = 0; i < toProcess.length; i++) {
+            const file = toProcess[i];
+            let tempUrl: string | undefined;
+            try {
+                // Show immediate preview for images while uploading (append)
+                if (file.type.startsWith('image/')) {
+                    tempUrl = URL.createObjectURL(file);
+                    setFormData(prev => ({ ...prev, comprobantes: [ ...(prev.comprobantes || []), { url: tempUrl, mimeType: file.type, name: file.name } ] }));
+                } else {
+                    setFormData(prev => ({ ...prev, comprobantes: [ ...(prev.comprobantes || []), { url: '', mimeType: file.type, name: file.name } ] }));
+                }
+
+                setUploadProgress(0);
+
+                const fd = new FormData();
+                fd.append('comprobante', file);
+
+                // Use XMLHttpRequest to get progress events per-file
+                const payload: any = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/expenses/upload');
+
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const percent = Math.round((event.loaded / event.total) * 100);
+                            setUploadProgress(percent);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const json = JSON.parse(xhr.responseText);
+                                resolve(json);
+                            } catch (e) {
+                                resolve({});
+                            }
+                        } else {
+                            let msg = xhr.statusText || `Upload failed (${xhr.status})`;
+                            try {
+                                const err = JSON.parse(xhr.responseText || '{}');
+                                msg = err.message || msg;
+                            } catch {}
+                            reject(new Error(msg));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Network error during upload'));
+                    xhr.onabort = () => reject(new Error('Upload aborted'));
+
+                    xhr.send(fd);
+                });
+
+                // Replace temporary entry (with empty url) with final payload
+                setFormData(prev => {
+                    const prevList = prev.comprobantes || [];
+                    // find first temporary entry matching name or empty url
+                    const idx = prevList.findIndex(p => p.name === file.name && (!p.url || p.url === ''));
+                    const newItem = { url: payload.url || '', mimeType: payload.mimeType || file.type, name: payload.name || file.name };
+                    if (idx !== -1) {
+                        const copy = [...prevList];
+                        copy[idx] = newItem;
+                        // also keep fotoUrl compatibility
+                        return { ...prev, comprobantes: copy, fotoUrl: copy[0]?.url, fotoMimeType: copy[0]?.mimeType, fotoName: copy[0]?.name };
+                    }
+                    const copy = [...prevList, newItem];
+                    return { ...prev, comprobantes: copy, fotoUrl: copy[0]?.url, fotoMimeType: copy[0]?.mimeType, fotoName: copy[0]?.name };
+                });
+
+            } catch (error) {
+                const msg = (error as Error).message || 'Error uploading file';
+                setUploadError(msg);
+            } finally {
+                setUploadProgress(null);
+                try { if (tempUrl) URL.revokeObjectURL(tempUrl); } catch {}
+            }
+        }
+
+        setUploading(false);
+    };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,6 +389,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         name="fotoUrl"
                         accept=".pdf,image/*,.jpg,.jpeg,.png,application/pdf"
                         onChange={handleFileChange}
+                        multiple
                         className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#aa632d] hover:file:bg-orange-100"
                     />
                     {uploading && (
@@ -373,18 +404,29 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     {uploadError && (
                         <p className="text-sm text-red-600 mt-2">Error: {uploadError}</p>
                     )}
-                     {formData.fotoUrl && (
-                        <div className="mt-2">
-                            {/* Preview image if it's an image, otherwise show embedded PDF or download link */}
-                            {formData.fotoMimeType && formData.fotoMimeType.startsWith('image/') ? (
-                                <img src={formData.fotoUrl} alt="Vista previa" className="max-h-32 rounded-md" />
-                            ) : formData.fotoMimeType === 'application/pdf' ? (
-                                <object data={formData.fotoUrl} type="application/pdf" width="100%" height={200} className="rounded-md border">
-                                    <p className="text-sm">PDF no puede ser mostrado. <a href={formData.fotoUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Abrir comprobante</a></p>
-                                </object>
-                            ) : (
-                                <a href={formData.fotoUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Abrir comprobante</a>
-                            )}
+                     {formData.comprobantes && formData.comprobantes.length > 0 && (
+                        <div className="mt-2 grid grid-cols-1 gap-2">
+                            {formData.comprobantes.map((c, idx) => (
+                                <div key={idx} className="flex items-center space-x-3">
+                                    <div className="flex-1">
+                                        {c.mimeType && c.mimeType.startsWith('image/') ? (
+                                            <img src={c.url} alt={c.name || `Comprobante ${idx+1}`} className="max-h-32 rounded-md" />
+                                        ) : c.mimeType === 'application/pdf' ? (
+                                            <object data={c.url} type="application/pdf" width="100%" height={120} className="rounded-md border">
+                                                <p className="text-sm">PDF no puede ser mostrado. <a href={c.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">Abrir comprobante</a></p>
+                                            </object>
+                                        ) : (
+                                            <a href={c.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{c.name || 'Abrir comprobante'}</a>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <button type="button" onClick={() => {
+                                            // remove attachment locally
+                                            setFormData(prev => ({ ...prev, comprobantes: (prev.comprobantes || []).filter((_, i) => i !== idx), fotoUrl: (prev.comprobantes && prev.comprobantes[0] && idx === 0 ? (prev.comprobantes[1]?.url || '') : prev.fotoUrl) }));
+                                        }} className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200">Eliminar</button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                      )}
                  </div>

@@ -354,6 +354,7 @@ export interface Egreso {
     fotoUrl?: string;
     fotoMimeType?: string;
     fotoName?: string;
+    comprobantes?: { url: string; mimeType?: string; name?: string }[];
     tipoMoneda: 'Soles' | 'Dólares';
     observaciones?: string;
 }

@@ -1,6 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
+import { getEgresos } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
 
@@ -211,6 +212,12 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 required: ['tipoDocumento', 'serie', 'correlativo', 'fechaEmision'],
                 numeric: ['opGravadas', 'igv', 'total'],
                 date: ['fechaEmision']
+            }
+            ,
+            'Egresos': {
+                required: ['fechaRegistro', 'proveedor', 'categoria', 'descripcion', 'montoTotal'],
+                numeric: ['montoTotal', 'montoPagado', 'deuda'],
+                date: ['fechaRegistro', 'fechaPago']
             }
         };
 
@@ -639,6 +646,47 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     successMessage: `Se importaron ${comprobantes.length} comprobantes electrónicos exitosamente.`
                 }));
 
+            } else if (type === 'Egresos' && onImportEgresos) {
+                const egresos: any[] = [];
+
+                for (let i = 0; i < dataRows.length; i++) {
+                    const values = dataRows[i].split(',').map(v => v.trim());
+                    const egreso: any = {};
+
+                    headers.forEach((header, index) => {
+                        const value = values[index];
+                        if (['montoTotal', 'montoPagado', 'deuda'].includes(header)) {
+                            egreso[header] = parseFloat(value) || 0;
+                        } else if (['fechaRegistro', 'fechaPago'].includes(header) && value) {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) egreso[header] = date.toISOString().split('T')[0];
+                            else egreso[header] = value;
+                        } else if (header === 'comprobantes' && value) {
+                            // split by semicolon
+                            egreso.comprobantes = value.split(';').map(s => ({ url: s.trim() })).filter((x:any) => x.url);
+                        } else {
+                            egreso[header] = value;
+                        }
+                    });
+
+                    egresos.push(egreso);
+
+                    setImportProgress(prev => ({
+                        ...prev,
+                        processedItems: i + 1,
+                        currentItem: egreso.proveedor || `Registro ${i + 1}`
+                    }));
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+
+                await onImportEgresos(egresos);
+
+                setImportProgress(prev => ({
+                    ...prev,
+                    isComplete: true,
+                    successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
+                }));
             } else {
                 // For other types, simulate processing (types without specific import functions yet)
                 for (let i = 0; i < totalItems; i++) {
@@ -857,6 +905,62 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 ]}
                 onImport={(file) => handleFileImport(file, 'Comprobantes Electrónicos')}
             />
+
+            {/* Import / Export Egresos */}
+            <ImportSection
+                title="Egresos"
+                description="Importa registros de egresos (gastos) desde un CSV. Para comprobantes múltiples use la columna 'comprobantes' separando URLs por punto y coma (;)."
+                templateFilename="plantilla_egresos.csv"
+                headers={[
+                    "id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"
+                ]}
+                onImport={(file) => handleFileImport(file, 'Egresos')}
+            />
+
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+                <h3 className="text-xl font-bold text-black flex items-center">
+                    <GoogleIcon name="download" className="mr-2 text-gray-500" /> Exportar Egresos
+                </h3>
+                <p className="text-sm text-gray-600 mt-2 mb-4">Descarga todos los egresos actuales en formato CSV.</p>
+                <div>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const data = await getEgresos();
+                                if (!data || data.length === 0) {
+                                    alert('No hay egresos para exportar.');
+                                    return;
+                                }
+                                const headers = ["id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"];
+                                const rows = data.map(e => {
+                                    const comprobantes = (e.comprobantes || []).map((c:any) => c.url).join(';');
+                                    return headers.map(h => {
+                                        const v = (e as any)[h];
+                                        if (h === 'comprobantes') return `"${comprobantes}"`;
+                                        if (v === undefined || v === null) return '';
+                                        // Escape quotes
+                                        return `"${String(v).replace(/"/g, '""')}"`;
+                                    }).join(',');
+                                });
+                                const csv = [headers.join(','), ...rows].join('\n');
+                                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = 'egresos_export.csv';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            } catch (err) {
+                                console.error('Error exporting egresos', err);
+                                alert('Error al exportar egresos. Revisa la consola.');
+                            }
+                        }}
+                        className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors text-sm font-medium"
+                    >
+                        <GoogleIcon name="download" className="mr-2" /> Exportar Egresos
+                    </button>
+                </div>
+            </div>
 
             <ImportProgressModal
                 isOpen={importProgress.isOpen}
