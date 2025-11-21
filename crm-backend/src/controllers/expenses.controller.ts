@@ -162,18 +162,11 @@ const storage = multer.diskStorage({
   }
 });
 
-// Allowed MIME types: images and PDF
+// Allowed MIME types: images and PDF (validation handled after upload to avoid multer type mismatch)
 const allowedMime = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: (error: Error | null, acceptFile?: boolean) => void): void => {
-  if (file && (String(file.mimetype).startsWith('image/') || allowedMime.includes(file.mimetype))) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only images and PDF are allowed.'), false);
-  }
-};
-
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter }); // 10MB limit
+// Create multer instance with size limit only; we'll validate MIME after upload
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 // Express middleware-ready handler to be used in routes
 export const uploadComprobanteMiddleware = upload.single('comprobante');
@@ -182,6 +175,16 @@ export const uploadComprobante = async (req: Request, res: Response) => {
   // multer should have attached file info on req.file (typed by @types/multer)
   const file = req.file as Express.Multer.File | undefined;
   if (!file) return res.status(400).json({ message: 'No file uploaded' });
+  // Validate MIME type server-side and remove file if invalid
+  if (!(String(file.mimetype).startsWith('image/') || allowedMime.includes(file.mimetype))) {
+    // Remove the saved file
+    try {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    } catch (e) {
+      console.warn('Failed to remove invalid upload:', (e as Error).message);
+    }
+    return res.status(400).json({ message: 'Invalid file type. Only images and PDF are allowed.' });
+  }
 
   // Build public URL relative to server
   const publicPath = `/uploads/egresos/${path.basename(file.path)}`;
