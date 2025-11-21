@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 // import { Egreso } from '@prisma/client';
 
 export const getExpenses = async (req: Request, res: Response) => {
@@ -123,4 +126,39 @@ export const deleteExpense = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ message: 'Error deleting expense', error: (error as Error).message });
   }
+};
+
+// --- File upload handler for comprobantes ---
+// Storage config: save under ./uploads/egresos with original filename prefixed by timestamp
+const egresosUploadDir = path.join(__dirname, '..', '..', 'uploads', 'egresos');
+try { fs.mkdirSync(egresosUploadDir, { recursive: true }); } catch (e) { /* ignore */ }
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, egresosUploadDir),
+  filename: (_req, file, cb) => {
+    const timestamp = Date.now();
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    cb(null, `${timestamp}_${safeName}`);
+  }
+});
+
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+
+// Express middleware-ready handler to be used in routes
+export const uploadComprobanteMiddleware = upload.single('comprobante');
+
+export const uploadComprobante = async (req: Request, res: Response) => {
+  // multer should have attached file info on req.file
+  const file = (req as any).file;
+  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+  // Build public URL relative to server
+  const publicPath = `/uploads/egresos/${path.basename(file.path)}`;
+
+  return res.status(201).json({
+    url: publicPath,
+    mimeType: file.mimetype,
+    name: file.originalname,
+    size: file.size,
+  });
 };
