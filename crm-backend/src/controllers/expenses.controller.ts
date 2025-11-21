@@ -213,3 +213,70 @@ export const uploadComprobante = async (req: Request, res: Response) => {
     size: file.size,
   });
 };
+
+// Bulk import for expenses (egresos)
+export const bulkImportExpenses = async (req: Request, res: Response) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ message: 'Los datos deben ser un array de egresos' });
+    }
+
+    const results: any[] = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    const parseDate = (v: any): Date | undefined => {
+      if (!v || v === 'undefined') return undefined;
+      const normalized = String(v).match(/^\d{4}-\d{2}-\d{2}$/) ? `${v}T00:00:00Z` : v;
+      const d = new Date(normalized);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+
+    for (let i = 0; i < items.length; i++) {
+      const row = items[i];
+      try {
+        const payload: any = {
+          proveedor: row.proveedor || '',
+          categoria: row.categoria || '',
+          descripcion: row.descripcion || '',
+          tipoComprobante: row.tipoComprobante || undefined,
+          serieComprobante: row.serieComprobante || undefined,
+          nComprobante: row.nComprobante || undefined,
+          montoTotal: row.montoTotal !== undefined ? parseFloat(row.montoTotal) || 0 : 0,
+          montoPagado: row.montoPagado !== undefined ? parseFloat(row.montoPagado) || 0 : 0,
+          deuda: row.deuda !== undefined ? parseFloat(row.deuda) || 0 : 0,
+          modoPago: row.modoPago || undefined,
+          tipoMoneda: row.tipoMoneda || undefined,
+          observaciones: row.observaciones || undefined,
+          fechaRegistro: parseDate(row.fechaRegistro) || new Date(),
+        };
+
+        const parsedFechaPago = parseDate(row.fechaPago);
+        if (parsedFechaPago) payload.fechaPago = parsedFechaPago;
+
+        // Map first comprobante to fotoUrl for backward compatibility
+        if (Array.isArray(row.comprobantes) && row.comprobantes.length > 0 && row.comprobantes[0].url) {
+          const first = row.comprobantes[0];
+          payload.fotoUrl = first.url;
+          payload.fotoMimeType = first.mimeType || undefined;
+          payload.fotoName = first.name || undefined;
+        }
+
+        const created = await prisma.egreso.create({ data: payload });
+
+        results.push({ success: true, item: created });
+        successCount++;
+      } catch (err: any) {
+        console.error(`Error importing expense ${i + 1}:`, err?.message || err);
+        errorCount++;
+        results.push({ success: false, index: i, error: err?.message || String(err) });
+      }
+    }
+
+    res.status(200).json({ message: `Se importaron ${successCount} egresos. ${errorCount} errores.`, egresos: results, successCount, errorCount });
+  } catch (error: any) {
+    console.error('Error en bulkImportExpenses:', error);
+    res.status(500).json({ message: 'Error en importación bulk de egresos', error: error?.message || String(error) });
+  }
+};
