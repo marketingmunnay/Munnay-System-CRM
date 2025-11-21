@@ -352,6 +352,8 @@ export interface Egreso {
     deuda: number;
     modoPago?: ModoPagoEgreso;
     fotoUrl?: string;
+    fotoMimeType?: string;
+    fotoName?: string;
     tipoMoneda: 'Soles' | 'Dólares';
     observaciones?: string;
 }

@@ -103,8 +103,8 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         // In a real app, you would upload the file and get a URL
-        const mockUrl = URL.createObjectURL(file); 
-        setFormData(prev => ({ ...prev, fotoUrl: mockUrl }));
+                const mockUrl = URL.createObjectURL(file); 
+                setFormData(prev => ({ ...prev, fotoUrl: mockUrl, fotoMimeType: file.type, fotoName: file.name }));
     }
   };
 
@@ -286,11 +286,27 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Adjunto</legend>
                  <div className="mt-2">
-                     <label htmlFor="fotoUrl" className="mb-1 text-sm font-medium text-gray-700">Cargar Foto del Comprobante</label>
-                     <input type="file" id="fotoUrl" name="fotoUrl" onChange={handleFileChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#aa632d] hover:file:bg-orange-100" />
+                    <label htmlFor="fotoUrl" className="mb-1 text-sm font-medium text-gray-700">Cargar Comprobante (PDF o imagen JPG/PNG)</label>
+                     <input
+                        type="file"
+                        id="fotoUrl"
+                        name="fotoUrl"
+                        accept=".pdf,image/*,.jpg,.jpeg,.png,application/pdf"
+                        onChange={handleFileChange}
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#aa632d] hover:file:bg-orange-100"
+                    />
                      {formData.fotoUrl && (
                         <div className="mt-2">
-                            <img src={formData.fotoUrl} alt="Vista previa" className="max-h-32 rounded-md" />
+                            {/* Preview image if it's an image, otherwise show embedded PDF or download link */}
+                            {formData.fotoMimeType && formData.fotoMimeType.startsWith('image/') ? (
+                                <img src={formData.fotoUrl} alt="Vista previa" className="max-h-32 rounded-md" />
+                            ) : formData.fotoMimeType === 'application/pdf' ? (
+                                <object data={formData.fotoUrl} type="application/pdf" width="100%" height={200} className="rounded-md border">
+                                    <p className="text-sm">PDF no puede ser mostrado. <a href={formData.fotoUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Abrir comprobante</a></p>
+                                </object>
+                            ) : (
+                                <a href={formData.fotoUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Abrir comprobante</a>
+                            )}
                         </div>
                      )}
                  </div>
