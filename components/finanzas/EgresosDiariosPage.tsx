@@ -334,6 +334,38 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         };
     }, [dateFilteredEgresos, tipoCambio]);
 
+    // Totales agrupados por tipo de proveedor (según catálogo `proveedores[].tipo`)
+    const totalsByProveedorTipo = useMemo(() => {
+        const map: Record<string, { totalSoles: number; totalDolares: number }> = {};
+
+        dateFilteredEgresos.forEach(e => {
+            const proveedor = proveedores.find(p => p.razonSocial === e.proveedor);
+            const tipo = proveedor?.tipo || 'Desconocido';
+            if (!map[tipo]) map[tipo] = { totalSoles: 0, totalDolares: 0 };
+            if (e.tipoMoneda === 'Soles') map[tipo].totalSoles += e.montoTotal;
+            else map[tipo].totalDolares += e.montoTotal;
+        });
+
+        const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
+        const tc = tcDisponible ? tipoCambio!.venta! : 0;
+
+        const result = Object.keys(map).map(tipo => ({
+            tipo,
+            totalSoles: map[tipo].totalSoles,
+            totalDolares: map[tipo].totalDolares,
+            totalEnSoles: tcDisponible ? map[tipo].totalSoles + (map[tipo].totalDolares * tc) : null
+        }));
+
+        // Sort descending by totalEnSoles (or totalSoles if tc not available)
+        result.sort((a, b) => {
+            const aval = a.totalEnSoles ?? a.totalSoles;
+            const bval = b.totalEnSoles ?? b.totalSoles;
+            return bval - aval;
+        });
+
+        return result;
+    }, [dateFilteredEgresos, proveedores, tipoCambio]);
+
     const proximosPagos = useMemo(() => {
         const now = new Date();
         const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -410,7 +442,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                  <div className="bg-white p-4 rounded-lg shadow-md border">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
@@ -446,7 +478,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                         )}
                     </div>
                 </div>
-                
+
                  <div className="bg-white p-4 rounded-lg shadow-md border">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
@@ -515,6 +547,45 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                             <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
                         ) : (
                             <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* New Card: Totales por Tipo de Proveedor */}
+                <div className="bg-white p-4 rounded-lg shadow-md border col-span-1 md:col-span-1">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-green-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="category" className="text-green-600" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Totales por Tipo de Proveedor</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        {totalsByProveedorTipo.length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay egresos en el rango seleccionado.</p>
+                        ) : (
+                            totalsByProveedorTipo.slice(0, 6).map(item => (
+                                <div key={item.tipo} className="flex justify-between items-baseline">
+                                    <span className="text-sm text-gray-700">{item.tipo}</span>
+                                    <div className="text-right">
+                                        <div className="text-sm text-gray-500">S/ {item.totalSoles.toFixed(2)}</div>
+                                        <div className="text-sm font-semibold text-gray-900">
+                                            {item.totalEnSoles !== null ? (
+                                                <span className="text-base text-green-700">{formatCurrency(item.totalEnSoles, 'Soles')}</span>
+                                            ) : (
+                                                <span>{formatCurrency(item.totalSoles, 'Soles')}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        {totalsByProveedorTipo.length > 6 && (
+                            <p className="text-xs text-gray-400">Mostrando 6 de {totalsByProveedorTipo.length} tipos</p>
+                        )}
+                        {tipoCambio?.disponible && tipoCambio.venta && (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
                         )}
                     </div>
                 </div>
