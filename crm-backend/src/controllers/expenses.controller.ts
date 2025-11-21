@@ -134,8 +134,10 @@ const egresosUploadDir = path.join(__dirname, '..', '..', 'uploads', 'egresos');
 try { fs.mkdirSync(egresosUploadDir, { recursive: true }); } catch (e) { /* ignore */ }
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, egresosUploadDir),
-  filename: (_req, file, cb) => {
+  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+    cb(null, egresosUploadDir);
+  },
+  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const timestamp = Date.now();
     const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
     cb(null, `${timestamp}_${safeName}`);
@@ -148,8 +150,8 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 export const uploadComprobanteMiddleware = upload.single('comprobante');
 
 export const uploadComprobante = async (req: Request, res: Response) => {
-  // multer should have attached file info on req.file
-  const file = (req as any).file;
+  // multer should have attached file info on req.file (typed by @types/multer)
+  const file = req.file as Express.Multer.File | undefined;
   if (!file) return res.status(400).json({ message: 'No file uploaded' });
 
   // Build public URL relative to server
