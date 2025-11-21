@@ -101,7 +101,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     setFormData(newFormData);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
 
