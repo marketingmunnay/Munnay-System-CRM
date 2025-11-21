@@ -44,7 +44,7 @@ export const getExpenseById = async (req: Request, res: Response) => {
 };
 
 export const createExpense = async (req: Request, res: Response) => {
-  const { id, fechaRegistro, fechaPago, ...data } = req.body;
+  const { id, fechaRegistro, fechaPago, comprobantes, ...data } = req.body;
   
   // Helper para parsear fechas correctamente
   const parseDate = (dateStr: string | undefined): Date | undefined => {
@@ -57,13 +57,23 @@ export const createExpense = async (req: Request, res: Response) => {
   
   try {
     const parsedFechaPago = parseDate(fechaPago);
-    const newExpense = await prisma.egreso.create({
-      data: {
-        ...data,
-        fechaRegistro: parseDate(fechaRegistro) || new Date(),
-        ...(parsedFechaPago && { fechaPago: parsedFechaPago }),
-      },
-    });
+
+    // If frontend sent comprobantes array, map first comprobante to fotoUrl fields
+    const firstComp = Array.isArray(comprobantes) && comprobantes.length > 0 ? comprobantes[0] : undefined;
+
+    const payload: any = {
+      ...data,
+      fechaRegistro: parseDate(fechaRegistro) || new Date(),
+      ...(parsedFechaPago && { fechaPago: parsedFechaPago }),
+    };
+
+    if (firstComp && firstComp.url) {
+      payload.fotoUrl = firstComp.url;
+      payload.fotoMimeType = firstComp.mimeType || undefined;
+      payload.fotoName = firstComp.name || undefined;
+    }
+
+    const newExpense = await prisma.egreso.create({ data: payload });
     
     // Formatear fechas en la respuesta
     const formattedExpense = {
@@ -81,7 +91,7 @@ export const createExpense = async (req: Request, res: Response) => {
 
 export const updateExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { id: _, fechaRegistro, fechaPago, ...data } = req.body; // Exclude id from update data
+  const { id: _, fechaRegistro, fechaPago, comprobantes, ...data } = req.body; // Exclude id from update data
   
   // Helper para parsear fechas correctamente
   const parseDate = (dateStr: string | undefined): Date | undefined => {
@@ -95,14 +105,21 @@ export const updateExpense = async (req: Request, res: Response) => {
     const parsedFechaRegistro = parseDate(fechaRegistro);
     const parsedFechaPago = parseDate(fechaPago);
     
-    const updatedExpense = await prisma.egreso.update({
-      where: { id: id },
-      data: {
-        ...data,
-        ...(parsedFechaRegistro && { fechaRegistro: parsedFechaRegistro }),
-        ...(parsedFechaPago !== undefined && { fechaPago: parsedFechaPago }),
-      },
-    });
+    const payload: any = {
+      ...data,
+      ...(parsedFechaRegistro && { fechaRegistro: parsedFechaRegistro }),
+      ...(parsedFechaPago !== undefined && { fechaPago: parsedFechaPago }),
+    };
+
+    // Map first comprobante to fotoUrl fields for backward compatibility
+    const firstComp = Array.isArray(comprobantes) && comprobantes.length > 0 ? comprobantes[0] : undefined;
+    if (firstComp && firstComp.url) {
+      payload.fotoUrl = firstComp.url;
+      payload.fotoMimeType = firstComp.mimeType || undefined;
+      payload.fotoName = firstComp.name || undefined;
+    }
+
+    const updatedExpense = await prisma.egreso.update({ where: { id: id }, data: payload });
     
     // Formatear fechas en la respuesta
     const formattedExpense = {
