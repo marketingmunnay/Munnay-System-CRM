@@ -58,15 +58,31 @@ export function formatDateForInput(date: string | Date | null | undefined): stri
     return date;
   }
   
-  // Si es string ISO completo, extraer solo la fecha
-  if (typeof date === 'string' && date.includes('T')) {
-    return date.split('T')[0];
+  // Si es string ISO completo, o cualquier otro tipo parseable, convertir
+  // a la fecha en HORA LOCAL y devolver en formato YYYY-MM-DD.
+  // Esto evita problemas de zona horaria donde la representación UTC
+  // cambia el día y deja el input vacío al editar.
+  let d: Date | null = null;
+
+  if (typeof date === 'string') {
+    // Intentar crear Date directamente (maneja ISO con zona)
+    const tmp = new Date(date);
+    if (!isNaN(tmp.getTime())) {
+      d = tmp;
+    }
+  } else if (date instanceof Date) {
+    d = date;
+  } else {
+    d = parseDate(date, true);
   }
-  
-  const parsedDate = parseDate(date, true); // true = isDateOnly
-  if (!parsedDate) return '';
-  // Usar la representación UTC ISO para ser consistente
-  return parsedDate.toISOString().split('T')[0];
+
+  if (!d) return '';
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 
 // Función para formatear fecha para mostrar en tablas (DD/MM/YYYY)

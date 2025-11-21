@@ -166,18 +166,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaAgenda" 
-                            value={(() => {
-                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
-                                    return formData.fechaHoraAgenda.split('T')[0];
-                                }
-                                if (typeof formData.fechaHoraAgenda === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(formData.fechaHoraAgenda)) {
-                                    return formData.fechaHoraAgenda;
-                                }
-                                return new Date().toISOString().split('T')[0];
-                            })()} 
+                            value={formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date())} 
                             onChange={(e) => {
                                 const fecha = e.target.value;
-                                const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
+                                const horaActual = formatTimeForInput(formData.fechaHoraAgenda) || '12:00';
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
@@ -193,17 +185,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <label className="text-sm font-medium">Hora de Agenda</label>
                         <select 
                             name="horaAgenda" 
-                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? (formData.fechaHoraAgenda.split('T')[1]?.substring(0,5) || '') : ''} 
+                            value={formatTimeForInput(formData.fechaHoraAgenda) || ''} 
                             onChange={(e) => {
                                 const hora = e.target.value;
-                                let fechaActual = '';
-                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
-                                    fechaActual = formData.fechaHoraAgenda.split('T')[0];
-                                } else if (typeof formData.fechaHoraAgenda === 'string') {
-                                    fechaActual = formData.fechaHoraAgenda;
-                                } else {
-                                    fechaActual = new Date().toISOString().split('T')[0];
-                                }
+                                const fechaActual = formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date());
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
@@ -1136,7 +1121,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
         
         setCurrentProcedure({
             id: Date.now(),
-            fechaAtencion: new Date().toISOString().split('T')[0],
+            fechaAtencion: formatDateForInput(new Date()),
             horaInicio: '',
             horaFin: '',
             tratamientoId: formData.tratamientos[0].id,
@@ -1676,7 +1661,7 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
             id: Date.now(),
             procedimientoId: primerProcedimiento.id,
             nombreProcedimiento: getProcedimientoLabel(primerProcedimiento),
-            fechaSeguimiento: new Date().toISOString().split('T')[0],
+            fechaSeguimiento: formatDateForInput(new Date()),
             personal: 'Vanesa',
             inflamacion: false,
             ampollas: false,
@@ -2185,35 +2170,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     }, [users]);
 
     // Helper function to format date fields for input[type="date"]
+    // Delegate to shared utils to keep behavior consistent across the app
     const formatDateForInputField = (dateValue: any): string => {
-        if (!dateValue) return '';
-        
-        // If it's already a string in YYYY-MM-DD format, return as is
-        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-            return dateValue;
-        }
-        
-        // If it's a string with time (ISO format), extract date part
-        if (typeof dateValue === 'string' && dateValue.includes('T')) {
-            return dateValue.split('T')[0];
-        }
-        
-        // If it's a Date object, format it
-        if (dateValue instanceof Date) {
-            return dateValue.toISOString().split('T')[0];
-        }
-        
-        // Try to parse as date and format
         try {
-            const date = new Date(dateValue);
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0];
-            }
+            return formatDateForInput(dateValue) || '';
         } catch (e) {
-            // Invalid date, return empty string
+            return '';
         }
-        
-        return '';
     };
 
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
@@ -2268,7 +2231,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     
     const initialFormData = useMemo(() => ({
         id: Date.now(),
-        fechaLead: new Date().toISOString().split('T')[0],
+        fechaLead: formatDateForInput(new Date()),
         nombres: '',
         apellidos: '',
         numero: '',
@@ -2293,13 +2256,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     useEffect(() => {
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
-            if (lead) {
+                if (lead) {
                 // Normaliza y fuerza fechaLead a formato YYYY-MM-DD
                 const normalized = { 
                     ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                    fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
+                    fechaLead: formatDateForInputField(lead.fechaLead) || formatDateForInput(new Date()),
                     fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
                     birthDate: formatDateForInputField(lead.birthDate),
                     fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
@@ -2309,7 +2272,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 // Nuevo lead: fuerza fechaLead a formato YYYY-MM-DD
                 setFormData({
                     ...initialFormData,
-                    fechaLead: new Date().toISOString().split('T')[0],
+                    fechaLead: formatDateForInput(new Date()),
                 });
             }
             setActiveTab(initialTab || 'ficha');
@@ -2685,10 +2648,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 onClose={handleCloseFacturacionModal}
                 onSave={handleFacturacionSave}
                 paciente={formData as Lead} // Patient data from the form
-                venta={{ // Create a VentaExtra-like object from lead data for the modal
+                    venta={{ // Create a VentaExtra-like object from lead data for the modal
                     id: formData.id,
                     codigoVenta: `CITA-${formData.id}`,
-                    fechaVenta: formData.fechaHoraAgenda?.split('T')[0] || new Date().toISOString().split('T')[0],
+                    fechaVenta: formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date()),
                     pacienteId: formData.id,
                     nHistoria: formData.nHistoria || '',
                     nombrePaciente: `${formData.nombres} ${formData.apellidos}`,
