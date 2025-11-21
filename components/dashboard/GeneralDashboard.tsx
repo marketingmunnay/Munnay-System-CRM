@@ -44,9 +44,15 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
             if (!from && !to) return true;
             if (!itemDateStr) return false;
 
-            const itemDate = parseDate(itemDateStr) || new Date(itemDateStr);
-            const fromDate = from ? (parseDate(from) || new Date(`${from}T00:00:00`)) : null;
-            const toDate = to ? (parseDate(to) || new Date(`${to}T23:59:59`)) : null;
+            const itemDate = parseDate(itemDateStr) ?? null;
+            const fromDate = from ? parseDate(from) : null;
+            const toDate = to ? (() => {
+                const d = parseDate(to, true);
+                if (!d) return parseDate(to);
+                const end = new Date(d.getTime());
+                end.setUTCHours(23, 59, 59, 999);
+                return end;
+            })() : null;
 
             if (fromDate && itemDate < fromDate) return false;
             if (toDate && itemDate > toDate) return false;
@@ -145,18 +151,25 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
     const activeGoals = useMemo(() => {
         const now = Date.now();
         return goals.filter(goal => {
-            const start = parseDate(goal.startDate)?.getTime() ?? new Date(goal.startDate + 'T00:00:00').getTime();
-            const end = parseDate(goal.endDate)?.getTime() ?? new Date(goal.endDate + 'T23:59:59').getTime();
+            const startDate = parseDate(goal.startDate) ?? parseDate(goal.startDate, true);
+            const endDateBase = parseDate(goal.endDate) ?? parseDate(goal.endDate, true);
+            if (!startDate || !endDateBase) return false;
+            const start = startDate.getTime();
+            const end = (() => { const d = new Date(endDateBase.getTime()); d.setUTCHours(23,59,59,999); return d.getTime(); })();
             return now >= start && now <= end;
         });
     }, [goals]);
 
     const calculateGoalProgress = (goal: Goal): number => {
-        const goalStart = parseDate(goal.startDate) ?? new Date(goal.startDate + 'T00:00:00');
-        const goalEnd = parseDate(goal.endDate) ?? new Date(goal.endDate + 'T23:59:59');
+        const goalStart = parseDate(goal.startDate) ?? parseDate(goal.startDate, true);
+        const goalEndBase = parseDate(goal.endDate) ?? parseDate(goal.endDate, true);
+        if (!goalStart || !goalEndBase) return 0;
+        const goalEnd = new Date(goalEndBase.getTime());
+        goalEnd.setUTCHours(23,59,59,999);
 
         const isWithinGoalRange = (dateStr: string) => {
-            const itemDate = parseDate(dateStr) ?? new Date(dateStr);
+            const itemDate = parseDate(dateStr) ?? null;
+            if (!itemDate) return false;
             return itemDate >= goalStart && itemDate <= goalEnd;
         };
 

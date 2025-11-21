@@ -21,9 +21,15 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ leads, campaign
             if (!from && !to) return true;
             if (!itemDateStr) return false;
             
-            const itemDate = parseDate(itemDateStr) ?? new Date(itemDateStr);
-            const fromDate = from ? (parseDate(from) ?? new Date(`${from}T00:00:00`)) : null;
-            const toDate = to ? (parseDate(to) ?? new Date(`${to}T23:59:59`)) : null;
+            const itemDate = parseDate(itemDateStr) ?? null;
+            const fromDate = from ? parseDate(from) : null;
+            const toDate = to ? (() => {
+                const d = parseDate(to, true);
+                if (!d) return parseDate(to);
+                const end = new Date(d.getTime());
+                end.setUTCHours(23, 59, 59, 999);
+                return end;
+            })() : null;
             
             if (fromDate && itemDate < fromDate) return false;
             if (toDate && itemDate > toDate) return false;

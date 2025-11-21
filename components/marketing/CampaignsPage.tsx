@@ -87,11 +87,17 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
             return campaigns;
         }
 
-        const fromDate = dateRange.from ? (parseDate(dateRange.from) ?? new Date(`${dateRange.from}T00:00:00`)) : null;
-        const toDate = dateRange.to ? (parseDate(dateRange.to) ?? new Date(`${dateRange.to}T23:59:59`)) : null;
+        const fromDate = dateRange.from ? parseDate(dateRange.from) : null;
+        const toDate = dateRange.to ? (() => {
+            const d = parseDate(dateRange.to, true);
+            if (!d) return parseDate(dateRange.to);
+            const end = new Date(d.getTime());
+            end.setUTCHours(23, 59, 59, 999);
+            return end;
+        })() : null;
 
         return campaigns.filter(campaign => {
-            const campaignDate = parseDate(campaign.fecha) ?? new Date(`${campaign.fecha}T00:00:00`);
+            const campaignDate = parseDate(campaign.fecha) ?? null;
             if (fromDate && campaignDate < fromDate) {
                 return false;
             }
