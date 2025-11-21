@@ -23,6 +23,8 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 
 export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egreso, proveedores, egresoCategories, requestConfirmation }: EgresoFormModalProps) {
   const [formData, setFormData] = useState<Partial<Egreso>>({});
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
   const filteredProveedores = formData.categoria 
@@ -100,12 +102,49 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        // In a real app, you would upload the file and get a URL
-                const mockUrl = URL.createObjectURL(file); 
-                setFormData(prev => ({ ...prev, fotoUrl: mockUrl, fotoMimeType: file.type, fotoName: file.name }));
-    }
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        // Show immediate preview for images while uploading
+        let tempUrl: string | undefined;
+        try {
+            if (file.type.startsWith('image/')) {
+                tempUrl = URL.createObjectURL(file);
+                setFormData(prev => ({ ...prev, fotoUrl: tempUrl, fotoMimeType: file.type, fotoName: file.name }));
+            } else {
+                // For non-image (pdf) just show filename while uploading
+                setFormData(prev => ({ ...prev, fotoUrl: '', fotoMimeType: file.type, fotoName: file.name }));
+            }
+
+            setUploading(true);
+            setUploadError(null);
+
+            const fd = new FormData();
+            fd.append('comprobante', file);
+
+            const res = await fetch('/api/expenses/upload', {
+                method: 'POST',
+                body: fd
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ message: res.statusText }));
+                throw new Error(err.message || 'Upload failed');
+            }
+
+            const payload = await res.json();
+
+            // payload.url is the public path to the uploaded file
+            setFormData(prev => ({ ...prev, fotoUrl: payload.url, fotoMimeType: payload.mimeType || file.type, fotoName: payload.name || file.name }));
+        } catch (error) {
+            const msg = (error as Error).message || 'Error uploading file';
+            setUploadError(msg);
+            // keep previous preview or clear fotoUrl
+        } finally {
+            setUploading(false);
+            // revoke temporary object URL to avoid memory leak
+            try { if (tempUrl) URL.revokeObjectURL(tempUrl); } catch {}
+        }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -295,6 +334,12 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         onChange={handleFileChange}
                         className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#aa632d] hover:file:bg-orange-100"
                     />
+                    {uploading && (
+                        <p className="text-sm text-blue-600 mt-2">Subiendo comprobante...</p>
+                    )}
+                    {uploadError && (
+                        <p className="text-sm text-red-600 mt-2">Error: {uploadError}</p>
+                    )}
                      {formData.fotoUrl && (
                         <div className="mt-2">
                             {/* Preview image if it's an image, otherwise show embedded PDF or download link */}
