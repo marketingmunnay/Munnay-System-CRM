@@ -2348,6 +2348,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
                 const normalized = normalizeDatesInObject(baseLead);
 
+                // DEBUG: inspect date-like fields (original vs normalized)
+                try {
+                    const dateKeys = Object.keys(baseLead).filter(k => /fecha|date/i.test(k));
+                    const debugObj: Record<string, any> = {};
+                    dateKeys.forEach(k => {
+                        debugObj[k] = { original: baseLead[k], normalized: normalized[k], typeOriginal: typeof baseLead[k] };
+                    });
+                    console.debug('🧭 LeadFormModal open normalization:', debugObj);
+                } catch (e) {
+                    console.debug('🧭 LeadFormModal normalization debug error', e);
+                }
+
                 // Preserve fechaHoraAgenda (may include time) and ensure fechaLead default
                 if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
                 if (!normalized.fechaLead) normalized.fechaLead = formatDateForInput(new Date());
@@ -2376,6 +2388,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             } as any;
 
             const normalized = normalizeDatesInObject(baseLead);
+            // DEBUG: inspect date-like fields when lead changes
+            try {
+                const dateKeys = Object.keys(baseLead).filter(k => /fecha|date/i.test(k));
+                const debugObj: Record<string, any> = {};
+                dateKeys.forEach(k => {
+                    debugObj[k] = { original: baseLead[k], normalized: normalized[k], typeOriginal: typeof baseLead[k] };
+                });
+                console.debug('🧭 LeadFormModal change normalization:', debugObj);
+            } catch (e) {
+                console.debug('🧭 LeadFormModal normalization debug error', e);
+            }
+
             if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
 
             setFormData(normalized as any);
