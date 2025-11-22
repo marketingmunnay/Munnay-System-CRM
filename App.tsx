@@ -227,7 +227,17 @@ const App: React.FC = () => {
     }, []);
 
     // Handlers for data manipulation
-    const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
+    const handleSaveLead = async (lead: Lead) => {
+        console.log('🔁 FRONTEND: Saving lead...', { id: lead?.id });
+        try {
+            const saved = await api.saveLead(lead);
+            console.log('✅ FRONTEND: Save successful', { id: saved?.id });
+        } catch (err) {
+            console.error('❌ FRONTEND: Error saving lead', err);
+            throw err;
+        }
+        await loadData();
+    };
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };

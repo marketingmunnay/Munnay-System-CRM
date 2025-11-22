@@ -52,9 +52,8 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <div>
                     <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
                                 <input
-                                    type="text"
+                                    type="date"
                                     name="fechaLead"
-                                    placeholder="AAAA-MM-DD"
                                     value={formatDateForInput(formData.fechaLead) || ''}
                                     onChange={handleChange}
                                     className="w-full bg-[#f9f9fa] p-2"
