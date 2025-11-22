@@ -12,6 +12,7 @@ import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
 import { usePagination } from '../../utils/usePagination';
+import { RESOURCES } from '../../constants';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -1469,6 +1470,41 @@ const MiembrosEquipoSection: FC<{
             )}
         </div>
     );
+};
+
+// Local hook to manage Salas stored in localStorage (key: 'config_salas')
+const useLocalRooms = () => {
+    const storageKey = 'config_salas';
+    const [rooms, setRooms] = useState<{ id: number; nombre: string }[]>(() => {
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (raw) return JSON.parse(raw);
+        } catch (e) {
+            // ignore parse errors
+        }
+        // fallback to default rooms from constants
+        return RESOURCES.filter(r => r.type === 'room').map((r, idx) => ({ id: Date.now() + idx, nombre: r.name }));
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(rooms));
+        } catch (e) {
+            // ignore storage errors
+        }
+    }, [rooms]);
+
+    const saveRoom = (room: { id: number; nombre: string }) => {
+        setRooms(prev => {
+            const exists = prev.some(r => r.id === room.id);
+            if (exists) return prev.map(r => r.id === room.id ? room : r);
+            return [...prev, room];
+        });
+    };
+
+    const deleteRoom = (id: number) => setRooms(prev => prev.filter(r => r.id !== id));
+
+    return { rooms, saveRoom, deleteRoom };
 };
 
 const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
