@@ -4,6 +4,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
+import { useSchedule } from '../shared/ScheduleContext';
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
 
 interface CalendarPageProps {
@@ -68,6 +69,7 @@ const durationToHeight = (startStr: string, endStr: string) => {
 
 
 const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+    const schedule = useSchedule();
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -129,7 +131,24 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
             categoria: '',
             anuncio: '',
         };
-        
+        // If a procedureToSchedule exists in context, use it to prefill procedure and open modal
+        try {
+            const schedule = useSchedule();
+            if (schedule.procedureToSchedule) {
+                // mark completed procedure in context with selected slot
+                const completed = {
+                    ...schedule.procedureToSchedule,
+                    fechaAtencion: formatDateForInput(clickDate),
+                    horaInicio: `${clickDate.getHours().toString().padStart(2,'0')}:${clickDate.getMinutes().toString().padStart(2,'0')}`,
+                    horaFin: undefined as any,
+                };
+                schedule.setCompletedProcedure(completed);
+                schedule.setProcedureToSchedule(null);
+            }
+        } catch (err) {
+            // ignore if schedule context not available
+        }
+
         setEditingLead(newLead as Lead);
         setIsModalOpen(true);
     };

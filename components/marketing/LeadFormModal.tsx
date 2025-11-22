@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 // Moved formatFechaHora to top-level scope
                                                     {/* formatFechaHora ahora solo se llama desde JSX, definida en el scope superior */}
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership, User } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatDateTimeForDisplay, formatTimeForInput, parseDate } from '../../utils/time';
+import { useSchedule } from '../shared/ScheduleContext';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -1026,6 +1027,25 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
+    const schedule = useSchedule();
+
+    // If a completedProcedure is returned from Calendar (slot selection), consume it here
+    useEffect(() => {
+        if (schedule.completedProcedure) {
+            const cp = schedule.completedProcedure;
+            setCurrentProcedure(prev => ({
+                ...prev,
+                ...cp,
+                // ensure date field is set for the input control
+                fechaAtencion: cp.fechaAtencion || formatDateForInput(new Date()),
+                horaInicio: cp.horaInicio || (cp.horaInicio === '' ? '' : cp.horaInicio),
+                horaFin: cp.horaFin || cp.horaFin || ''
+            }));
+            setEditingProcedureId(null);
+            // clear it so it's not re-applied
+            schedule.setCompletedProcedure(null);
+        }
+    }, [schedule.completedProcedure]);
 
     // Función para obtener el siguiente número de sesión para un tratamiento
     const getNextSessionNumber = (tratamientoId: number): number => {
@@ -2139,6 +2159,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             .filter((user: any) => user.position && PUESTOS_PROFESIONAL.includes(user.position))
             .map((user: any) => `${user.nombres} ${user.apellidos}`);
     }, [users]);
+
+    const schedule = (() => {
+        try {
+            // lazy require hook to avoid breaking tests/environments where provider missing
+            // but when app runs normally, provider is present
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const s = require('../shared/ScheduleContext').useSchedule();
+            return s;
+        } catch (e) {
+            return null as any;
+        }
+    })();
 
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
     const VENDEDOR_OPTIONS = useMemo(() => {

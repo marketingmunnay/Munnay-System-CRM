@@ -4,7 +4,7 @@ import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
 import { TipoComprobante, ModoPagoEgreso, TipoComprobanteLabels } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time';
+import { formatDateForInput, parseDate } from '../../utils/time';
 
 interface EgresoFormModalProps {
   isOpen: boolean;
@@ -79,10 +79,12 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     if (name === 'proveedor' && value) {
         const proveedorSeleccionado = proveedores.find(p => p.razonSocial === value);
         if (proveedorSeleccionado?.diasCredito && formData.fechaRegistro) {
-            const fechaRegistro = new Date(formData.fechaRegistro);
-            const fechaPago = new Date(fechaRegistro);
-            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
-            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+            const fechaRegistroDate = parseDate(formData.fechaRegistro as string, true);
+            if (fechaRegistroDate) {
+                const millis = fechaRegistroDate.getTime() + (proveedorSeleccionado.diasCredito * 24 * 60 * 60 * 1000);
+                const fechaPago = new Date(millis);
+                newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+            }
         }
     }
 
@@ -90,10 +92,12 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     if (name === 'fechaRegistro' && formData.proveedor) {
         const proveedorSeleccionado = proveedores.find(p => p.razonSocial === formData.proveedor);
         if (proveedorSeleccionado?.diasCredito) {
-            const fechaRegistro = new Date(value);
-            const fechaPago = new Date(fechaRegistro);
-            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
-            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+            const fechaRegistroDate = parseDate(value as string, true);
+            if (fechaRegistroDate) {
+                const millis = fechaRegistroDate.getTime() + (proveedorSeleccionado.diasCredito * 24 * 60 * 60 * 1000);
+                const fechaPago = new Date(millis);
+                newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+            }
         }
     }
 

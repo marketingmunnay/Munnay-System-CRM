@@ -34,6 +34,7 @@ import type {
 } from './types';
 import * as api from './services/api';
 import { generateNotifications } from './services/notificationService';
+import { useSchedule } from './components/shared/ScheduleContext';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -225,6 +226,15 @@ const App: React.FC = () => {
             console.log('loadData finished (finally) - cleared safety timer');
         });
     }, []);
+
+    // If another component requested scheduling a procedure, navigate to calendario
+    const schedule = useSchedule();
+    useEffect(() => {
+        if (schedule.procedureToSchedule) {
+            // Navigate to calendar so user can pick a time slot
+            handleSetCurrentPage('calendario');
+        }
+    }, [schedule.procedureToSchedule]);
 
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => {

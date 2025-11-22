@@ -657,7 +657,8 @@ const ServiciosSection: FC<{
     onSaveServiceCategory: (category: ServiceCategory) => void;
     onDeleteServiceCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ services, serviceCategories, onSaveService, onDeleteService, onSaveServiceCategory, onDeleteServiceCategory, requestConfirmation }) => {
+    itemRooms?: { id: number; nombre: string }[];
+}> = ({ services, serviceCategories, onSaveService, onDeleteService, onSaveServiceCategory, onDeleteServiceCategory, requestConfirmation, itemRooms }) => {
     const [activeTab, setActiveTab] = useState('servicios');
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<Service | null>(null);
@@ -829,7 +830,7 @@ const ServiciosSection: FC<{
                     ]}
                     itemCategories={serviceCategories}
                     categoryField="categoria"
-                    itemRooms={rooms}
+                    itemRooms={itemRooms}
                     roomField="sala"
                 />
             )}
@@ -863,7 +864,8 @@ const ProductosSection: FC<{
     onSaveProductCategory: (category: ProductCategory) => void;
     onDeleteProductCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation }) => {
+    itemRooms?: { id: number; nombre: string }[];
+}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation, itemRooms }) => {
     const [activeTab, setActiveTab] = useState('productos');
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -1039,7 +1041,7 @@ const ProductosSection: FC<{
                     ]}
                     itemCategories={productCategories}
                     categoryField="categoria"
-                    itemRooms={rooms}
+                    itemRooms={itemRooms}
                     roomField="sala"
                 />
             )}
@@ -1558,6 +1560,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onSaveServiceCategory={props.onSaveServiceCategory}
                     onDeleteServiceCategory={props.onDeleteServiceCategory}
                     requestConfirmation={props.requestConfirmation}
+                    itemRooms={rooms}
                 />;
             case 'salas':
                 return <SimpleListManager
@@ -1576,6 +1579,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onSaveProductCategory={props.onSaveProductCategory}
                     onDeleteProductCategory={props.onDeleteProductCategory}
                     requestConfirmation={props.requestConfirmation}
+                    itemRooms={rooms}
                 />;
             case 'membresias':
                 return <MembresiasSection

@@ -33,9 +33,23 @@ export const createProveedor = async (req: Request, res: Response) => {
   const parsedDiasCredito = diasCredito && diasCredito !== '' ? parseInt(diasCredito) : null;
   
   try {
+    // Normalize razonSocial for comparison/storage
+    const razonSocialRaw = (data as any).razonSocial;
+    const razonSocial = razonSocialRaw ? String(razonSocialRaw).trim() : undefined;
+
+    if (razonSocial) {
+      // Check if a proveedor with same razonSocial already exists to avoid P2002
+      const existing = await prisma.proveedor.findFirst({ where: { razonSocial: razonSocial } });
+      if (existing) {
+        console.warn('Proveedor already exists with razonSocial:', razonSocial);
+        return res.status(409).json({ message: 'Proveedor already exists with this razonSocial', proveedor: existing });
+      }
+    }
+
     const newProveedor = await prisma.proveedor.create({ 
       data: {
         ...data,
+        ...(razonSocial && { razonSocial }),
         ...(parsedDiasCredito !== null && { diasCredito: parsedDiasCredito })
       }
     });
@@ -43,6 +57,10 @@ export const createProveedor = async (req: Request, res: Response) => {
     res.status(201).json(newProveedor);
   } catch (error) {
     console.error('Error creating proveedor:', error);
+    // Prisma unique constraint error
+    if ((error as any)?.code === 'P2002') {
+      return res.status(409).json({ message: 'Proveedor with that razonSocial already exists' });
+    }
     res.status(500).json({ message: 'Error creating proveedor', error: (error as Error).message });
   }
 };
