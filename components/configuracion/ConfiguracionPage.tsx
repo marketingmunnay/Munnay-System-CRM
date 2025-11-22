@@ -90,6 +90,7 @@ const SETTINGS_SECTIONS = [
     { id: 'servicios-productos', label: 'Servicios y Productos', icon: 'inventory_2' },
     { id: 'servicios', label: 'Servicios', parent: 'servicios-productos' },
     { id: 'productos', label: 'Productos', parent: 'servicios-productos' },
+    { id: 'salas', label: 'Salas', parent: 'servicios-productos' },
     { id: 'membresias', label: 'Membresías', parent: 'servicios-productos' },
     { id: 'metas', label: 'Metas y Objetivos', icon: 'flag' },
     { id: 'importar-exportar', label: 'Importar / Exportar', icon: 'import_export' }
@@ -822,10 +823,13 @@ const ServiciosSection: FC<{
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
                         { name: 'categoria', label: 'Categoría', type: 'text', required: true },
+                        { name: 'sala', label: 'Sala', type: 'text' },
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={serviceCategories}
                     categoryField="categoria"
+                    itemRooms={rooms}
+                    roomField="sala"
                 />
             )}
 
@@ -1029,10 +1033,13 @@ const ProductosSection: FC<{
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
                         { name: 'categoria', label: 'Categoría', type: 'text', required: true },
+                        { name: 'sala', label: 'Sala', type: 'text' },
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={productCategories}
                     categoryField="categoria"
+                    itemRooms={rooms}
+                    roomField="sala"
                 />
             )}
 
@@ -1466,6 +1473,7 @@ const MiembrosEquipoSection: FC<{
 
 const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
     const [activeSection, setActiveSection] = useState('datos');
+    const { rooms, saveRoom, deleteRoom } = useLocalRooms();
 
     const renderContent = () => {
         switch (activeSection) {
@@ -1513,6 +1521,14 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onDeleteService={props.onDeleteService}
                     onSaveServiceCategory={props.onSaveServiceCategory}
                     onDeleteServiceCategory={props.onDeleteServiceCategory}
+                    requestConfirmation={props.requestConfirmation}
+                />;
+            case 'salas':
+                return <SimpleListManager
+                    title="Salas"
+                    items={rooms}
+                    onSave={(r) => saveRoom(r)}
+                    onDelete={(id) => deleteRoom(id)}
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'productos':
