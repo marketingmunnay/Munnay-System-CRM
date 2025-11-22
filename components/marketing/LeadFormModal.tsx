@@ -8,7 +8,7 @@ import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
-import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
+import { formatDateForInput, formatDateForDisplay, formatTimeForInput, parseDate } from '../../utils/time';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -1546,7 +1546,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                     </h4>
                     
                     {(formData.procedimientos || [])
-                        .sort((a: Procedure, b: Procedure) => new Date(b.fechaAtencion).getTime() - new Date(a.fechaAtencion).getTime())
+                        .sort((a: Procedure, b: Procedure) => (parseDate(b.fechaAtencion as any, true)?.getTime() || 0) - (parseDate(a.fechaAtencion as any, true)?.getTime() || 0))
                         .map((proc: Procedure, index: number) => (
                             <div 
                                 key={proc.id || index} 
@@ -1972,8 +1972,8 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                     <div className="space-y-3">
                         {seguimientos
                             .sort((a: Seguimiento, b: Seguimiento) => 
-                                new Date(b.fechaSeguimiento).getTime() - new Date(a.fechaSeguimiento).getTime()
-                            )
+                                    (parseDate(b.fechaSeguimiento as any, true)?.getTime() || 0) - (parseDate(a.fechaSeguimiento as any, true)?.getTime() || 0)
+                                )
                             .map((seg: Seguimiento) => {
                                 const numSintomas = contarSintomas(seg);
                                 const tieneSintomas = numSintomas > 0;
@@ -2201,10 +2201,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 return `${year}-${month}-${day}`;
             }
 
-            // Try parsing ISO or other string representations robustly
+            // Try parsing robustly using shared helper (handles ISO and date-only)
             try {
-                const parsed = new Date(dateValue);
-                if (!isNaN(parsed.getTime())) {
+                const parsed = parseDate(dateValue);
+                if (parsed) {
                     return parsed.toISOString().split('T')[0];
                 }
             } catch (e) {
@@ -2433,8 +2433,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             if (type === 'number') {
                 newState[name] = value === '' ? undefined : Number(value);
             } else if (type === 'datetime-local') {
-                // Convert to ISO format for datetime-local
-                newState[name] = value ? new Date(value).toISOString() : '';
+                // Convert to ISO format for datetime-local using parseDate to avoid
+                // inconsistent timezone interpretation across environments.
+                // parseDate returns a Date or null.
+                const parsed = parseDate(value as any);
+                newState[name] = parsed ? parsed.toISOString() : '';
             } else if (name === 'numero') {
                 // Format phone number
                 newState[name] = formatPhoneNumber(value);
