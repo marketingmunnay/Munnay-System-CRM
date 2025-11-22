@@ -2368,7 +2368,14 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 // to a YYYY-MM-DD value using our normalizer or fallback to formatDateForInput.
                 if (lead && (lead as any).fechaLead) {
                     const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
-                    normalized.fechaLead = forced || formatDateForInput(new Date());
+                    if (forced) {
+                        normalized.fechaLead = forced;
+                    } else {
+                        // If backend provided a value but we couldn't normalize it, leave empty
+                        // and log the raw value for debugging instead of silently using today's date.
+                        console.warn('LeadFormModal: could not normalize lead.fechaLead, raw value:', (lead as any).fechaLead);
+                        normalized.fechaLead = '';
+                    }
                 } else if (!normalized.fechaLead) {
                     normalized.fechaLead = formatDateForInput(new Date());
                 }
@@ -2414,7 +2421,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             // Force fechaLead from the original lead when available (avoid empty input)
             if (lead && (lead as any).fechaLead) {
                 const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
-                normalized.fechaLead = forced || formatDateForInput(new Date());
+                if (forced) {
+                    normalized.fechaLead = forced;
+                } else {
+                    console.warn('LeadFormModal: could not normalize lead.fechaLead on change, raw value:', (lead as any).fechaLead);
+                    normalized.fechaLead = '';
+                }
             } else if (!normalized.fechaLead) {
                 normalized.fechaLead = formatDateForInput(new Date());
             }
