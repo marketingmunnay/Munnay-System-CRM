@@ -42,7 +42,7 @@ const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería']
 // Puestos permitidos para el campo Vendedor
 const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS, fechaLeadError }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
@@ -61,6 +61,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                                     style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
                                     required
                                 />
+                                {fechaLeadError && <span className="text-red-500 text-xs mt-1 block">{fechaLeadError}</span>}
                 </div>
                 <div>
                     <label className="text-sm font-medium">Tipo Documento</label>
@@ -2001,7 +2002,7 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                                                 <div className="grid grid-cols-3 gap-3 text-sm">
                                                     <div>
                                                         <span className="text-gray-500">Fecha:</span>
-                                                        <p className="text-gray-800 font-medium">{formatFechaHora(seg.fechaSeguimiento)}</p>
+                                                        <p className="text-gray-800 font-medium">{formatDateTimeForDisplay(seg.fechaSeguimiento)}</p>
                                                     // Formatea fecha ISO a DD/MM/AAAA y hora 12h AM/PM
                                                     {/* formatFechaHora is now called from top-level scope */}
                                                     </div>
@@ -2135,6 +2136,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
     const [showSaveMessage, setShowSaveMessage] = useState(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
+    const [fechaLeadError, setFechaLeadError] = useState<string>('');
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
@@ -2461,6 +2463,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 newState[name] = value;
             }
 
+            // Inline validation for fechaLead (expect YYYY-MM-DD)
+            if (name === 'fechaLead') {
+                const v = String(value || '').trim();
+                if (v === '') {
+                    setFechaLeadError('');
+                } else if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                    setFechaLeadError('Formato inválido. Use AAAA-MM-DD');
+                } else {
+                    setFechaLeadError('');
+                }
+            }
+
             // Recalculate deudaCita when montoPagado changes
             if (name === 'montoPagado') {
                 const precio = newState.precioCita || 0;
@@ -2668,6 +2682,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             memberships={memberships}
                             PERSONAL_OPTIONS={PERSONAL_OPTIONS}
                             VENDEDOR_OPTIONS={VENDEDOR_OPTIONS}
+                            fechaLeadError={fechaLeadError}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
