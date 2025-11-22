@@ -236,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
             
             {/* Version info at bottom */}
             {!isCollapsed && (
-                <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
+                <div className="bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
                     <div className="text-xs text-gray-500">
                         <div className="font-normal">
                             Versión: {import.meta.env.VITE_GIT_COMMIT_HASH || '24a5a4'}
