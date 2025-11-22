@@ -7,8 +7,17 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
 // Usar gemini-2.0-flash que es el modelo actual disponible
 const MODEL_NAME = "gemini-2.0-flash";
 
+// Simple in-memory circuit breaker / cooldown to avoid hammering the provider
+let aiCooldownUntil: number | null = null; // timestamp ms
+const AI_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
 export const generateContent = async (req: Request, res: Response) => {
   try {
+    // If cooldown active, short-circuit to avoid further provider calls
+    if (aiCooldownUntil && Date.now() < aiCooldownUntil) {
+      const waitSec = Math.ceil((aiCooldownUntil - Date.now()) / 1000);
+      return res.status(429).json({ message: `La API de IA está en enfriamiento por límite de cuota. Intenta de nuevo en ${waitSec} segundos.` });
+    }
     const { prompt } = req.body;
 
     if (!prompt) {
@@ -33,7 +42,9 @@ export const generateContent = async (req: Request, res: Response) => {
     const errAny: any = error || {};
     // Map upstream status codes to sensible HTTP responses
     if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
-      const message = 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.';
+      // Put the backend into cooldown to avoid repeated calls for a while
+      aiCooldownUntil = Date.now() + AI_COOLDOWN_MS;
+      const message = 'La API de IA ha excedido la cuota o está limitada. Se activó un periodo de enfriamiento. Por favor revisa el plan/billing y espera antes de reintentar.';
       // Prefer to return 429 so client can surface a retry message
       return res.status(429).json({ message, detail: errAny.message || null });
     }
