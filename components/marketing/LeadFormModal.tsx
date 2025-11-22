@@ -1043,38 +1043,33 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
     // Función para calcular sesiones restantes de un tratamiento
     const getSesionesRestantes = (tratamientoId: number): { usadas: number, total: number, restantes: number } => {
-        const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === tratamientoId);
+        // Normalize IDs to numbers to avoid string/number mismatch issues
+        const tid = Number(tratamientoId);
+        const tratamiento = formData.tratamientos?.find((t: Treatment) => Number(t.id) === tid);
+
         if (!tratamiento) {
-            console.log('⚠️ Tratamiento no encontrado:', tratamientoId);
+            console.log('⚠️ Tratamiento no encontrado (id):', tratamientoId);
             console.log('Tratamientos disponibles:', formData.tratamientos?.map(t => ({ id: t.id, nombre: t.nombre })));
+            // Still log procedimientos for debugging
+            console.log('🔍 TODOS los procedimientos:', (formData.procedimientos || []).map(p => ({
+                id: p.id,
+                sesion: p.sesionNumero,
+                nombreTratamiento: p.nombreTratamiento,
+                tratamientoId: p.tratamientoId,
+                tratamientoIdTipo: typeof p.tratamientoId
+            })));
             return { usadas: 0, total: 0, restantes: 0 };
         }
-        
-        // Log TODOS los procedimientos con sus tratamientoId
-        console.log('🔍 TODOS los procedimientos:', (formData.procedimientos || []).map(p => ({
-            id: p.id,
-            sesion: p.sesionNumero,
-            nombreTratamiento: p.nombreTratamiento,
-            tratamientoId: p.tratamientoId,
-            tratamientoIdTipo: typeof p.tratamientoId
-        })));
-        
-        console.log('🔍 Buscando procedimientos con tratamientoId:', tratamientoId, 'tipo:', typeof tratamientoId);
-        
-        const procedimientosFiltrados = (formData.procedimientos || []).filter(
-            (p: Procedure) => {
-                const coincide = p.tratamientoId === tratamientoId;
-                console.log(`  - Procedimiento ${p.id}: tratamientoId=${p.tratamientoId} (${typeof p.tratamientoId}) === ${tratamientoId} (${typeof tratamientoId})? ${coincide}`);
-                return coincide;
-            }
-        );
-        
+
+        // Filter procedimientos by numeric ID match to avoid type mismatch
+        const procedimientosFiltrados = (formData.procedimientos || []).filter((p: Procedure) => Number(p.tratamientoId) === tid);
         const procedimientosUsados = procedimientosFiltrados.length;
-        
+
+        const totalSesiones = tratamiento.cantidadSesiones || 0;
         const resultado = {
             usadas: procedimientosUsados,
-            total: tratamiento.cantidadSesiones,
-            restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
+            total: totalSesiones,
+            restantes: Math.max(0, totalSesiones - procedimientosUsados)
         };
         
         console.log('🔍 getSesionesRestantes RESULTADO:', {
@@ -2133,7 +2128,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         const [activeTab, setActiveTab] = useState('ficha');
         const prevIsOpenRef = React.useRef<boolean>(false);
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
-    const [showSaveMessage, setShowSaveMessage] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<string>('');
+    const [showSaveMessage, setShowSaveMessage] = useState<boolean>(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
     const [fechaLeadError, setFechaLeadError] = useState<string>('');
 
@@ -2527,10 +2523,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     };
     
     const handleSave = async () => {
-        // Validar campos requeridos
+        // Validate required fields
         const errors: string[] = [];
-        
-        // Campos siempre requeridos
+
         if (!formData.nombres?.trim()) errors.push('Nombres');
         if (!formData.apellidos?.trim()) errors.push('Apellidos');
         if (!formData.numero?.trim()) errors.push('Número de Teléfono');
@@ -2538,8 +2533,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (!formData.anuncio) errors.push('Campaña / Anuncio');
         if (!formData.vendedor) errors.push('Vendedor(a)');
         if (!formData.estado) errors.push('Estado del Lead');
-        
-        // Campos requeridos solo si el estado es "Agendado"
+
         if (formData.estado === LeadStatus.Agendado) {
             if (formData.montoPagado === undefined || formData.montoPagado === null) {
                 errors.push('Monto Pagado Cita (requerido cuando está Agendado)');
@@ -2551,46 +2545,25 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 errors.push('Profesional (requerido cuando está Agendado)');
             }
         }
-        
+
         if (errors.length > 0) {
             alert(`Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
             return;
         }
-        
-        // Asegurar que montoPagado sea 0 si está vacío y no es Agendado
-        const dataToSave = {
-            ...formData,
-            montoPagado: formData.montoPagado ?? 0,
-        };
-        
-        console.log('🔍 FRONTEND: About to save lead:', {
-            isNewLead,
-            leadId: formData.id,
-            dataToSave: {
-                id: dataToSave.id,
-                nombres: dataToSave.nombres,
-                apellidos: dataToSave.apellidos,
-                estado: dataToSave.estado,
-                tratamientos: dataToSave.tratamientos?.length || 0,
-                procedimientos: dataToSave.procedimientos?.length || 0,
-                seguimientos: dataToSave.seguimientos?.length || 0
-            }
-        });
-        
-        try {
-            await onSave(dataToSave as Lead);
-            
-            // Mostrar mensaje de éxito
-            setShowSaveMessage(true);
-            setTimeout(() => {
-                setShowSaveMessage(false);
-            }, 3000);
-            
-            // NO cerrar el modal - mantener abierto después de guardar
 
+        const dataToSave = formData as Lead;
+        const isCreating = !lead || (lead && ((lead as any).id === undefined || (lead as any).id === null));
+
+        try {
+            setStatusMessage(isCreating ? 'Guardando datos...' : 'Actualizando datos...');
+            await onSave(dataToSave);
+            setShowSaveMessage(true);
+            setTimeout(() => setShowSaveMessage(false), 3000);
         } catch (error) {
             console.error('❌ FRONTEND: Error saving lead:', error);
             alert('Error al guardar. Por favor, inténtalo de nuevo.');
+        } finally {
+            setTimeout(() => setStatusMessage(''), 800);
         }
     };
 
@@ -2598,15 +2571,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (lead) {
             requestConfirmation(`¿Estás seguro de que quieres eliminar al lead "${lead.nombres} ${lead.apellidos}"?`, async () => {
                 try {
+                    setStatusMessage('Eliminando...');
                     await onDelete(lead.id);
-                    
                     // Mostrar mensaje de éxito
                     setShowSaveMessage(true);
                     setTimeout(() => {
                         setShowSaveMessage(false);
                         // Cerrar el modal después de eliminar
                         onClose();
-                    }, 2000);
+                    }, 1200);
+                    setTimeout(() => setStatusMessage(''), 400);
                 } catch (error) {
                     console.error('Error deleting lead:', error);
                     alert('Error al eliminar. Por favor, inténtalo de nuevo.');
@@ -2724,6 +2698,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             isOpen={isOpen}
             onClose={onClose}
             title={isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
+            statusMessage={statusMessage}
             customMaxWidth="95rem"
             footer={
                 <div className="w-full flex justify-between items-center">

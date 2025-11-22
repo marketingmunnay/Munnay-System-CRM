@@ -866,7 +866,11 @@ const ProductosSection: FC<{
     const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
 
     const handleOpenProductModal = (product?: Product) => {
-        setEditingProduct(product || null);
+        if (product) {
+            setEditingProduct(product);
+        } else {
+            setEditingProduct({ id: Date.now(), nombre: '', categoria: productCategories?.[0]?.nombre || '', precio: 0 } as Product);
+        }
         setIsProductModalOpen(true);
     };
 
@@ -1028,6 +1032,7 @@ const ProductosSection: FC<{
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={productCategories}
+                    categoryField="categoria"
                 />
             )}
 
