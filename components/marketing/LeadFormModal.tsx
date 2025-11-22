@@ -10,6 +10,7 @@ import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatDateTimeForDisplay, formatTimeForInput, parseDate } from '../../utils/time';
 import { useSchedule } from '../shared/ScheduleContext';
+import AlertModal from '../shared/AlertModal';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -1028,6 +1029,13 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
     const schedule = useSchedule();
+    const [alertState, setAlertState] = useState<{ open: boolean; title?: string; message?: React.ReactNode }>({ open: false, title: '', message: '' });
+
+    const showAlert = (title: string, message: React.ReactNode) => {
+        setAlertState({ open: true, title, message });
+    };
+
+    const closeAlert = () => setAlertState({ open: false, title: '', message: '' });
 
     // If a completedProcedure is returned from Calendar (slot selection), consume it here
     useEffect(() => {
@@ -1113,6 +1121,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
     const handleAddProcedure = () => {
         if (!formData.tratamientos || formData.tratamientos.length === 0) {
             console.log('❌ No hay tratamientos disponibles');
+            showAlert('No hay tratamientos', 'No hay tratamientos registrados. Agregue tratamientos en la pestaña Recepción para poder registrar procedimientos.');
             return;
         }
         
@@ -1128,7 +1137,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
         });
         
         if (restantes === 0) {
-            alert(`⚠️ No se puede agregar más sesiones\n\nTratamiento: ${primerTratamiento.nombre}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
+            showAlert('No se puede agregar más sesiones', `Tratamiento: ${primerTratamiento.nombre || 'Desconocido'}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
             return;
         }
         
@@ -1185,8 +1194,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                 (p: Procedure) => p.tratamientoId === procedureToSave.tratamientoId
             ).length;
             
-            const tratamiento = formData.tratamientos?.find(t => t.id === procedureToSave.tratamientoId);
-            const sesionesTotales = tratamiento?.cantidadSesiones || 0;
+            const tratamiento = formData.tratamientos?.find(t => Number(t.id) === Number(procedureToSave.tratamientoId));
+            const sesionesTotales = Number(tratamiento?.cantidadSesiones) || 0;
             
             console.log('🔍 Validando sesiones antes de guardar:', {
                 tratamientoId: procedureToSave.tratamientoId,
@@ -1197,9 +1206,9 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                 editingProcedureId
             });
             
-            // Si ya se usaron todas las sesiones, no permitir guardar
-            if (procedimientosActuales >= sesionesTotales) {
-                alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nSesiones disponibles: ${sesionesTotales}\nSesiones ya registradas: ${procedimientosActuales}\n\nNo quedan sesiones disponibles. Solicite el pago de sesiones adicionales en Recepción.`);
+            // Si el tratamiento tiene sesiones totales > 0 y ya se usaron todas, no permitir guardar
+            if (sesionesTotales > 0 && procedimientosActuales >= sesionesTotales) {
+                showAlert('No se puede guardar el procedimiento', `Tratamiento: ${tratamiento?.nombre || 'Desconocido'}\nSesiones disponibles: ${sesionesTotales}\nSesiones ya registradas: ${procedimientosActuales}\n\nNo quedan sesiones disponibles. Solicite el pago de sesiones adicionales en Recepción.`);
                 return;
             }
         }
@@ -1247,7 +1256,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
             // Verificar si hay seguimientos asociados
             const tieneSeguimientos = (prev.seguimientos || []).some((s: Seguimiento) => s.procedimientoId === procedureId);
             if (tieneSeguimientos) {
-                alert('Primero debes eliminar los seguimientos asociados a este procedimiento.');
+                // Use modal alert instead of browser alert
+                showAlert('No se puede eliminar', 'Primero debes eliminar los seguimientos asociados a este procedimiento.');
                 return prev;
             }
             return {
@@ -1304,6 +1314,9 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
     return (
         <div className="space-y-6">
+            {alertState.open && (
+                <AlertModal isOpen={alertState.open} onClose={closeAlert} title={alertState.title} message={alertState.message} />
+            )}
             {/* Header con botón Añadir y contador de sesiones */}
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-800">Procedimientos Realizados</h3>
@@ -2017,7 +2030,6 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                                                     <div>
                                                         <span className="text-gray-500">Fecha:</span>
                                                         <p className="text-gray-800 font-medium">{formatDateTimeForDisplay(seg.fechaSeguimiento)}</p>
-                                                    // Formatea fecha ISO a DD/MM/AAAA y hora 12h AM/PM
                                                     {/* formatFechaHora is now called from top-level scope */}
                                                     </div>
                                                     <div>
@@ -2152,6 +2164,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [showSaveMessage, setShowSaveMessage] = useState<boolean>(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
     const [fechaLeadError, setFechaLeadError] = useState<string>('');
+    const [globalAlert, setGlobalAlert] = useState<{ open: boolean; title?: string; message?: React.ReactNode }>({ open: false, title: '', message: '' });
+
+    const showGlobalAlert = (title: string, message: React.ReactNode) => setGlobalAlert({ open: true, title, message });
+    const closeGlobalAlert = () => setGlobalAlert({ open: false, title: '', message: '' });
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
@@ -2534,7 +2550,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         try {
             // Validar que haya apellido antes de generar
             if (!formData.apellidos?.trim()) {
-                alert('Por favor ingrese el apellido del paciente antes de generar el número de historia.');
+                showGlobalAlert('Apellido requerido', 'Por favor ingrese el apellido del paciente antes de generar el número de historia.');
                 return;
             }
             
@@ -2550,7 +2566,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             setFormData(prev => ({ ...prev, nHistoria: numeroHistoria }));
         } catch (error) {
             console.error("Failed to generate history number", error);
-            alert("Hubo un error al generar el número de historia.");
+            showGlobalAlert('Error', 'Hubo un error al generar el número de historia.');
         }
     };
     
@@ -2579,7 +2595,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
 
         if (errors.length > 0) {
-            alert(`Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
+            showGlobalAlert('Campos requeridos', `Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
             return;
         }
 
@@ -2593,7 +2609,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             setTimeout(() => setShowSaveMessage(false), 3000);
         } catch (error) {
             console.error('❌ FRONTEND: Error saving lead:', error);
-            alert('Error al guardar. Por favor, inténtalo de nuevo.');
+            showGlobalAlert('Error', 'Error al guardar. Por favor, inténtalo de nuevo.');
         } finally {
             setTimeout(() => setStatusMessage(''), 800);
         }
@@ -2615,7 +2631,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     setTimeout(() => setStatusMessage(''), 400);
                 } catch (error) {
                     console.error('Error deleting lead:', error);
-                    alert('Error al eliminar. Por favor, inténtalo de nuevo.');
+                    showGlobalAlert('Error', 'Error al eliminar. Por favor, inténtalo de nuevo.');
                 }
             });
         }
@@ -2826,6 +2842,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 ventaType="lead"
             />
         )}
+                {globalAlert.open && (
+                        <AlertModal isOpen={globalAlert.open} onClose={closeGlobalAlert} title={globalAlert.title} message={globalAlert.message} />
+                )}
       </>
   );
 };

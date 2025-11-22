@@ -14,7 +14,7 @@ interface CatalogFormModalProps {
     roomField?: string;
 }
 
-const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, item, title, fields, itemCategories, categoryField }) => {
+const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, item, title, fields, itemCategories, categoryField, itemRooms, roomField }) => {
     const [formData, setFormData] = useState<any>(item || {});
 
     useEffect(() => {

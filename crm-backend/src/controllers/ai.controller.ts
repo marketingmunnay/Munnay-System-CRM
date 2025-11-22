@@ -30,9 +30,23 @@ export const generateContent = async (req: Request, res: Response) => {
     res.status(200).json({ content: text });
   } catch (error) {
     console.error('Error generating AI content:', error);
+    const errAny: any = error || {};
+    // Map upstream status codes to sensible HTTP responses
+    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      const message = 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.';
+      // Prefer to return 429 so client can surface a retry message
+      return res.status(429).json({ message, detail: errAny.message || null });
+    }
+
+    // If the provider returned a 5xx, surface a 502 Bad Gateway
+    if (errAny.status >= 500 && errAny.status < 600) {
+      return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
+    }
+
+    // Fallback: generic error
     res.status(500).json({ 
       message: 'Error generating AI content', 
-      error: (error as Error).message 
+      detail: errAny.message || String(errAny)
     });
   }
 };
@@ -94,9 +108,16 @@ export const generateAnalysis = async (req: Request, res: Response) => {
     res.status(200).json({ analysis: text });
   } catch (error) {
     console.error('Error generating AI analysis:', error);
+    const errAny: any = error || {};
+    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      return res.status(429).json({ message: 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.' });
+    }
+    if (errAny.status >= 500 && errAny.status < 600) {
+      return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
+    }
     res.status(500).json({ 
       message: 'Error generating AI analysis', 
-      error: (error as Error).message 
+      detail: errAny.message || String(errAny)
     });
   }
 };
@@ -134,9 +155,16 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
     res.status(200).json({ report: text });
   } catch (error) {
     console.error('Error generating commercial report:', error);
+    const errAny: any = error || {};
+    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      return res.status(429).json({ message: 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.' });
+    }
+    if (errAny.status >= 500 && errAny.status < 600) {
+      return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
+    }
     res.status(500).json({ 
       message: 'Error generating commercial report', 
-      error: (error as Error).message 
+      detail: errAny.message || String(errAny)
     });
   }
 };
