@@ -65,6 +65,12 @@ export function formatDateForInput(date: string | Date | null | undefined): stri
   let d: Date | null = null;
 
   if (typeof date === 'string') {
+    // If string contains a time-part (ISO), prefer the date prefix (YYYY-MM-DD)
+    // for date-only inputs to avoid timezone shifts (e.g. '2025-11-01T00:00:00Z' -> '2025-11-01')
+    if (date.includes('T')) {
+      const prefix = String(date).split('T')[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(prefix)) return prefix;
+    }
     // Intentar crear Date directamente (maneja ISO con zona)
     const tmp = new Date(date);
     if (!isNaN(tmp.getTime())) {
@@ -87,6 +93,21 @@ export function formatDateForInput(date: string | Date | null | undefined): stri
 
 // Función para formatear fecha para mostrar en tablas (DD/MM/YYYY)
 export function formatDateForDisplay(date: string | Date | null | undefined): string {
+  if (!date) return '-';
+
+  // If the value is a date-only string (YYYY-MM-DD) or an ISO that is exactly midnight UTC,
+  // treat it as a date-only value and format using its components to avoid timezone shifts
+  // that produce the previous day in some zones.
+  if (typeof date === 'string') {
+    const dateOnlyMatch = date.match(/^(\d{4}-\d{2}-\d{2})$/);
+    const isoMidnightMatch = date.match(/^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000Z|Z)?$/);
+    const source = dateOnlyMatch ? dateOnlyMatch[1] : isoMidnightMatch ? isoMidnightMatch[1] : null;
+    if (source) {
+      const [y, m, d] = source.split('-');
+      return `${d}/${m}/${y}`;
+    }
+  }
+
   const parsedDate = parseDate(date);
   if (!parsedDate) return '-';
 
