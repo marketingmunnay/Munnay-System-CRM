@@ -9,6 +9,16 @@ import type {
 const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 // Helper genérico para requests
+class ApiError extends Error {
+  status: number;
+  body: any;
+  constructor(status: number, body: any) {
+    super(body?.message || String(body) || 'API Error');
+    this.status = status;
+    this.body = body;
+  }
+}
+
 const apiRequest = async <T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -62,7 +72,8 @@ const apiRequest = async <T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(errorData.message || 'Error en la petición a la API');
+    // Throw ApiError so callers can inspect status and body
+    throw new ApiError(response.status, errorData);
   }
 
   if (response.status === 204) return {} as T;
@@ -366,6 +377,13 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
     return response.content;
   } catch (error) {
     console.error('Error generating AI content:', error);
+    const e: any = error;
+    if (e instanceof ApiError && e.status === 429) {
+      return 'La API de IA ha excedido la cuota. Por favor revisa el plan/billing o inténtalo más tarde.';
+    }
+    if (e instanceof ApiError && e.status >= 500 && e.status < 600) {
+      return 'Error del proveedor de IA. Intenta nuevamente más tarde.';
+    }
     return 'Error al generar contenido con IA. Por favor, intenta nuevamente.';
   }
 };
@@ -379,6 +397,13 @@ export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): P
     return response.analysis;
   } catch (error) {
     console.error('Error generating AI analysis:', error);
+    const e: any = error;
+    if (e instanceof ApiError && e.status === 429) {
+      return 'La API de IA ha excedido la cuota. Por favor revisa el plan/billing o inténtalo más tarde.';
+    }
+    if (e instanceof ApiError && e.status >= 500 && e.status < 600) {
+      return 'Error del proveedor de IA. Intenta nuevamente más tarde.';
+    }
     return 'Error al generar análisis con IA. Por favor, intenta nuevamente.';
   }
 };

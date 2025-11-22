@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
+import AlertModal from '../shared/AlertModal';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from 'recharts';
 import type { Lead, Campaign, VentaExtra, Goal, Publicacion, Seguidor } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
@@ -36,6 +37,9 @@ const simpleMarkdownToHtml = (text: string) => {
 export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campaigns, ventasExtra, dateRange, goals, publicaciones, seguidores }) => {
     const [aiAnalysis, setAiAnalysis] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [aiAlert, setAiAlert] = useState<{ open: boolean; title?: string; message?: React.ReactNode }>({ open: false, title: '', message: '' });
+
+    const closeAiAlert = () => setAiAlert({ open: false, title: '', message: '' });
 
     const { filteredLeads, filteredCampaigns, filteredVentasExtra } = useMemo(() => {
         const { from, to } = dateRange;
@@ -323,8 +327,12 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
             const generatedText = await api.generateAiContent(prompt);
             setAiAnalysis(generatedText);
         } catch (error) {
-            console.error("Error generating analysis:", error);
-            setAiAnalysis("Hubo un error al generar el análisis. Por favor, intente de nuevo más tarde.");
+                console.error("Error generating analysis:", error);
+                // Show a friendly modal explaining the failure (quota/provider issues handled in services/api)
+                const err: any = error;
+                const message = (err && err.message) ? String(err.message) : 'Hubo un error al generar el análisis. Por favor, intente de nuevo más tarde.';
+                setAiAnalysis('');
+                setAiAlert({ open: true, title: 'Error al generar análisis IA', message });
         } finally {
             setIsGenerating(false);
         }
@@ -416,6 +424,10 @@ export const InformeComercial: React.FC<InformeComercialProps> = ({ leads, campa
                 <StatCard title="Ingresos Totales (Comercial)" value={formatCurrency(stats.ingresosTotales)} icon="payments" iconBgClass="bg-green-100" iconColorClass="text-green-500"/>
                 <StatCard title="ROI (Retorno de Inversión)" value={`${stats.roi.toFixed(1)}%`} icon="show_chart" iconBgClass="bg-purple-100" iconColorClass="text-purple-500"/>
             </div>
+
+            {aiAlert.open && (
+                <AlertModal isOpen={aiAlert.open} onClose={closeAiAlert} title={aiAlert.title} message={aiAlert.message} />
+            )}
 
             {/* Weekly Income vs Expenses Comparison */}
             <div className="bg-white p-6 rounded-lg shadow">
