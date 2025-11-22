@@ -31,6 +31,7 @@ export enum LeadStatus {
 
 export enum ReceptionStatus {
     Agendado = 'Agendado',
+    AgendadoPorLlegar = 'Agendado por llegar',
     PorAtender = 'Por Atender',
     Atendido = 'Atendido',
     Reprogramado = 'Reprogramado',
@@ -40,6 +41,7 @@ export enum ReceptionStatus {
 
 export enum AtencionStatus {
     PorAtender = 'Por Atender',
+    Atendido = 'Atendido',
     EnSeguimiento = 'En Seguimiento',
     SeguimientoHecho = 'Seguimiento Hecho',
 }
@@ -57,7 +59,8 @@ export type Medico = 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
 export enum MetodoPago {
     Efectivo = 'Efectivo',
     Tarjeta = 'Tarjeta',
-    Transferencia = 'Transferencia',
+    TransferenciaBCP = 'Transferencia BCP',
+    TransferenciaInterbank = 'Transferencia Interbank',
     Yape = 'Yape',
     Plin = 'Plin',
 }
@@ -80,11 +83,20 @@ export interface RegistroLlamada {
 export interface Treatment {
     id: number;
     nombre: string;
+    tipo?: 'Servicio' | 'Membresía';
     cantidadSesiones: number;
     precio: number;
     montoPagado: number;
     metodoPago?: MetodoPago;
     deuda: number;
+}
+
+export interface PagoRecepcion {
+    id: number;
+    monto: number;
+    metodoPago: MetodoPago;
+    fechaPago: string; // ISO string
+    observacion?: string;
 }
 
 export interface Procedure {
@@ -129,6 +141,7 @@ export interface Lead {
     nombres: string;
     apellidos: string;
     numero: string;
+    email?: string;
     sexo: 'M' | 'F';
     redSocial: string;
     anuncio: string;
@@ -139,6 +152,8 @@ export interface Lead {
     fechaHoraAgenda?: string; // ISO string
     servicios: string[];
     categoria: string;
+    profesionalAsignado?: string;
+    observacionesGenerales?: string;
     fechaVolverLlamar?: string; // YYYY-MM-DD
     horaVolverLlamar?: string; // HH:mm
     notas?: string;
@@ -150,13 +165,14 @@ export interface Lead {
     tratamientos?: Treatment[];
     estadoRecepcion?: ReceptionStatus;
     recursoId?: string;
+    pagosRecepcion?: PagoRecepcion[];
     // Procedure properties
     procedimientos?: Procedure[];
     seguimientos?: Seguimiento[];
     // Historia Paciente
     birthDate?: string;
     alergias?: Alergia[];
-    membresiasAdquiridas?: Membership[];
+    membresiasAdquiridas?: LeadMembership[];
     // Split Payment
     precioCita?: number;
     deudaCita?: number;
@@ -302,10 +318,17 @@ export interface ComprobanteElectronico {
 
 export enum TipoComprobante {
     Factura = 'Factura',
-    Boleta = 'Boleta de Venta',
-    ReciboHonorarios = 'Recibo por Honorarios',
-    SinComprobante = 'Sin Comprobante',
+    Boleta = 'Boleta',
+    ReciboHonorarios = 'ReciboHonorarios',
+    SinComprobante = 'SinComprobante',
 }
+
+export const TipoComprobanteLabels: Record<TipoComprobante, string> = {
+    [TipoComprobante.Factura]: 'Factura',
+    [TipoComprobante.Boleta]: 'Boleta de Venta',
+    [TipoComprobante.ReciboHonorarios]: 'Recibo por Honorarios',
+    [TipoComprobante.SinComprobante]: 'Sin Comprobante',
+};
 
 export enum ModoPagoEgreso {
     Efectivo = 'Efectivo',
@@ -317,7 +340,7 @@ export enum ModoPagoEgreso {
 export interface Egreso {
     id: number;
     fechaRegistro: string;
-    fechaPago: string;
+    fechaPago?: string;
     proveedor: string;
     categoria: string;
     descripcion: string;
@@ -329,6 +352,9 @@ export interface Egreso {
     deuda: number;
     modoPago?: ModoPagoEgreso;
     fotoUrl?: string;
+    fotoMimeType?: string;
+    fotoName?: string;
+    comprobantes?: { url: string; mimeType?: string; name?: string }[];
     tipoMoneda: 'Soles' | 'Dólares';
     observaciones?: string;
 }
@@ -341,9 +367,11 @@ export interface TipoProveedor {
 export interface Proveedor {
     id: number;
     razonSocial: string;
-    ruc: string;
+    ruc?: string;
     tipo: string;
-    numeroContacto: string;
+    numeroContacto?: string;
+    diasCredito?: number;
+    categoriaEgreso?: string;
 }
 
 export interface StatCardData {
@@ -394,18 +422,46 @@ export interface User {
     rolId: number;
     avatarUrl: string;
     position?: string;
+    
+    // Datos Personales
     documentType?: DocumentType;
     documentNumber?: string;
-    phone?: string;
     birthDate?: string;
+    nationality?: string;
+    sex?: 'M' | 'F';
+    maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
+    phone?: string;
+    email?: string;
+    
+    // Datos Laborales
     startDate?: string;
+    endDate?: string;
+    contractType?: 'Indefinido' | 'Plazo Fijo' | 'Locación de Servicios' | 'Prácticas';
+    workday?: 'Tiempo Completo' | 'Tiempo Parcial';
+    workSchedule?: string;
+    directBoss?: string;
+    workCenter?: string;
+    employeeCode?: string;
+    
+    // Datos Salariales
+    salary?: number;
+    bonuses?: number;
+    currency?: 'Soles' | 'Dólares';
+    bankName?: string;
+    accountType?: 'Ahorros' | 'Corriente' | 'CCI';
+    accountNumber?: string;
+    paymentMethod?: 'Transferencia' | 'Efectivo' | 'Cheque';
+    laborRegime?: 'Privado' | 'Público' | 'Microempresa';
+    afpType?: string;
+    afpCode?: string;
+    afpPercentage?: number;
+    healthInsurance?: string;
+    
+    // Relaciones
     addresses?: Address[];
     emergencyContacts?: EmergencyContact[];
     reconocimientos?: Reconocimiento[];
-    salary?: number;
-    contractType?: 'Plazo Fijo' | 'Indefinido';
-    maritalStatus?: 'Soltero(a)' | 'Casado(a)' | 'Divorciado(a)' | 'Viudo(a)';
-    sex?: 'M' | 'F';
+    permissions?: Page[];
 }
 
 export interface Role {
@@ -457,22 +513,71 @@ export interface Service {
     precio: number;
 }
 
+// DESACTIVADO HASTA APLICAR MIGRACIÓN
+// export enum TipoProducto {
+//     Venta = 'venta',
+//     Insumo = 'insumo',
+// }
+
 export interface Product {
     id: number;
     nombre: string;
     categoria: string;
     precio: number;
+    // Campos de inventario desactivados hasta aplicar migración
+    // tipo?: TipoProducto;
+    // costoCompra?: number;
+    // precioVenta?: number;
+    // stockActual?: number;
+    // stockMinimo?: number;
+    // stockCritico?: number;
+    // movimientos?: MovimientoStock[];
 }
 
+export interface MovimientoStock {
+    id: number;
+    productoId: number;
+    tipoMovimiento: 'entrada' | 'salida';
+    cantidad: number;
+    costoUnitario: number;
+    precioUnitario: number;
+    motivo: string;
+    fecha: string;
+    creadoPor?: string;
+    ventaExtraId?: number;
+    procedimientoId?: number;
+}
+
+// Catálogo de membresías (configuración global)
 export interface Membership {
     id: number;
     nombre: string;
-    precio: number;
-    numeroSesiones: number;
     descripcion: string;
+    precioTotal: number;
+    servicios?: MembershipService[];
 }
 
-export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima';
+// Servicios incluidos en una membresía
+export interface MembershipService {
+    id: number;
+    membershipId: number;
+    servicioNombre: string;
+    precio: number;
+    precioCita?: number;
+    numeroSesiones: number;
+}
+
+// Membresías adquiridas por un lead
+export interface LeadMembership {
+    id: number;
+    leadId: number;
+    membershipId: number;
+    membership?: Membership;
+    fechaCompra: string;
+    precioTotal: number;
+}
+
+export type NotificationType = 'complicacion_paciente' | 'pago_por_vencer' | 'nuevo_lead' | 'cita_proxima' | 'recordatorio_llamada';
 
 export interface Notification {
     id: number;

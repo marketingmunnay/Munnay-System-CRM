@@ -4,7 +4,7 @@ import type { Lead, Campaign, VentaExtra, Incidencia, Egreso, Goal, Seguidor, Pu
 import GeneralDashboard from './GeneralDashboard.tsx';
 import MarketingDashboard from './MarketingDashboard.tsx';
 import RecepcionDashboard from './RecepcionDashboard.tsx';
-import ProcedimientosDashboard from './ProcedimientosDashboard.tsx';
+import ProcedimientosDashboard from './ProcedimientosDashboardClean.tsx';
 import FinanzasDashboard from './FinanzasDashboard.tsx';
 import RecursosHumanosDashboard from './RecursosHumanosDashboard.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
@@ -72,15 +72,15 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             case 'General':
                 return <GeneralDashboard {...props} dateRange={dateRange} />;
             case 'Comercial':
-                return <MarketingDashboard {...props} />;
+                return <MarketingDashboard {...props} dateRange={dateRange} />;
             case 'Administración':
-                return <RecepcionDashboard {...props} />;
+                return <RecepcionDashboard {...props} dateRange={dateRange} />;
             case 'Procedimientos':
-                return <ProcedimientosDashboard {...props} />;
+                return <ProcedimientosDashboard {...props} dateRange={dateRange} />;
             case 'Finanzas':
-                return <FinanzasDashboard />;
+                return <FinanzasDashboard dateRange={dateRange} />;
             case 'Recursos Humanos':
-                return <RecursosHumanosDashboard users={props.users} roles={props.roles} goals={props.goals} />;
+                return <RecursosHumanosDashboard users={props.users} roles={props.roles} goals={props.goals} dateRange={dateRange} />;
             default:
                 return <GeneralDashboard {...props} dateRange={dateRange} />;
         }
@@ -90,8 +90,8 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold text-black">Dashboard</h1>
-                 {visibleTabs.some(tab => tab.id === 'general') && activeTab === 'General' && (
-                     <DateRangeFilter onApply={handleApplyDateFilter} />
+                {visibleTabs.length > 0 && (
+                    <DateRangeFilter onApply={handleApplyDateFilter} />
                 )}
             </div>
 

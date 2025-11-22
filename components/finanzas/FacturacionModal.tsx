@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { VentaExtra, Lead, ComprobanteElectronico, ComprobanteItem } from '../../types.ts';
 import { DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
+import { formatDateForDisplay } from '../../utils/time';
 
 interface FacturacionModalProps {
   isOpen: boolean;
@@ -116,7 +117,7 @@ const FacturacionModal: React.FC<FacturacionModalProps> = ({ isOpen, onClose, on
                         </div>
                         <div className="text-right">
                             <p className="font-bold text-xl">{tipoDoc === 'Boleta' ? 'B001' : 'F001'}-<span className="text-gray-500">CORRELATIVO</span></p>
-                            <p className="text-sm text-gray-500">Fecha: {new Date().toLocaleDateString('es-PE')}</p>
+                            <p className="text-sm text-gray-500">Fecha: {formatDateForDisplay(new Date())}</p>
                         </div>
                     </div>
 

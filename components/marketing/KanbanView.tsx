@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateForDisplay } from '../../utils/time';
 import type { Lead } from '../../types';
 import { LeadStatus } from '../../types';
 import { ClockIcon, CurrencyDollarIcon, UserIcon } from '../shared/Icons';
@@ -44,6 +45,11 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => (
                     <span>S/ {lead.montoPagado}</span>
                 </div>
             )}
+        </div>
+        {/* Mostrar fechaLead en la tarjeta Kanban, usando la fecha actual si no existe */}
+        <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
+            <ClockIcon className="mr-1.5 h-3 w-3"/>
+            <span>{formatDateForDisplay(lead.fechaLead || new Date())}</span>
         </div>
         {lead.fechaHoraAgenda && (
              <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">

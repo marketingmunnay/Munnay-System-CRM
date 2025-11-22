@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { User, Role, Lead, Goal } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
+import { formatDateForDisplay } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -15,8 +16,11 @@ interface PerfilEmpleadoDetalleProps {
 
 const KPICard: React.FC<{ title: string, value: string, icon: string, color: string }> = ({ title, value, icon, color }) => (
     <div className="bg-white p-4 rounded-lg border flex items-start space-x-3">
-        <div className={`p-2 rounded-full ${color}`}>
-            <GoogleIcon name={icon} className="text-white"/>
+        <div 
+            className={`${color} text-white flex items-center justify-center`}
+            style={{ padding: '0.75rem', width: '50px', height: '50px', borderRadius: '50%' }}
+        >
+            <GoogleIcon name={icon} />
         </div>
         <div>
             <p className="text-sm text-gray-500">{title}</p>
@@ -61,7 +65,8 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
 
     const userGoals = useMemo(() => {
         if (!user) return [];
-        return goals.filter(g => g.personal === user.nombres);
+        const fullName = `${user.nombres} ${user.apellidos}`;
+        return goals.filter(g => g.personal === fullName);
     }, [user, goals]);
     
     const sortedRecognitions = useMemo(() => {
@@ -114,7 +119,7 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
                         {sortedRecognitions.map(r => (
                             <div key={r.id} className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
                                 <blockquote className="italic text-gray-700">"{r.mensaje}"</blockquote>
-                                <p className="text-right text-xs font-semibold text-amber-800 mt-2">- {r.otorgadoPorNombre}, {new Date(r.fecha + 'T00:00:00').toLocaleDateString()}</p>
+                                <p className="text-right text-xs font-semibold text-amber-800 mt-2">- {r.otorgadoPorNombre}, {formatDateForDisplay(r.fecha)}</p>
                             </div>
                         ))}
                     </div>

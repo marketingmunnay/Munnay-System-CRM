@@ -3,6 +3,7 @@ import type { Incidencia, Lead } from '../../types.ts';
 import { INCIDENCIA_TYPES } from '../../constants.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
+import { formatTimeForInput, formatDateForInput } from '../../utils/time';
 
 interface IncidenciaFormModalProps {
   isOpen: boolean;
@@ -187,11 +188,11 @@ const IncidenciaFormModal: React.FC<IncidenciaFormModalProps> = ({ isOpen, onClo
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
                     <div>
                         <label htmlFor="fecha" className="mb-1 text-sm font-medium text-gray-700">Fecha</label>
-                        <input type="date" id="fecha" name="fecha" value={formData.fecha || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
+                        <input type="date" id="fecha" name="fecha" value={formatDateForInput(formData.fecha)} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
                     </div>
                     <div>
                         <label htmlFor="hora" className="mb-1 text-sm font-medium text-gray-700">Hora</label>
-                        <input type="time" id="hora" name="hora" value={formData.hora || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
+                        <input type="time" id="hora" name="hora" value={formatTimeForInput(formData.hora) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black" style={{ colorScheme: 'light' }} />
                     </div>
                  </div>
 

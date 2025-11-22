@@ -1,6 +1,7 @@
 
 import React, { useMemo } from 'react';
 import type { Lead, VentaExtra, Egreso, Goal, Publicacion, Seguidor } from '../../types.ts';
+import { parseDate } from '../../utils/time';
 import { MetodoPago } from '../../types.ts';
 import StatCard from './StatCard.tsx';
 import MonthlySalesChart from './MonthlySalesChart.tsx';
@@ -43,9 +44,15 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
             if (!from && !to) return true;
             if (!itemDateStr) return false;
 
-            const itemDate = new Date(itemDateStr);
-            const fromDate = from ? new Date(`${from}T00:00:00`) : null;
-            const toDate = to ? new Date(`${to}T23:59:59`) : null;
+            const itemDate = parseDate(itemDateStr) ?? null;
+            const fromDate = from ? parseDate(from) : null;
+            const toDate = to ? (() => {
+                const d = parseDate(to, true);
+                if (!d) return parseDate(to);
+                const end = new Date(d.getTime());
+                end.setUTCHours(23, 59, 59, 999);
+                return end;
+            })() : null;
 
             if (fromDate && itemDate < fromDate) return false;
             if (toDate && itemDate > toDate) return false;
@@ -142,20 +149,27 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
     }, [filteredLeads, filteredVentasExtra, filteredEgresos]);
     
     const activeGoals = useMemo(() => {
-        const now = new Date();
+        const now = Date.now();
         return goals.filter(goal => {
-            const start = new Date(goal.startDate + 'T00:00:00');
-            const end = new Date(goal.endDate + 'T23:59:59');
+            const startDate = parseDate(goal.startDate) ?? parseDate(goal.startDate, true);
+            const endDateBase = parseDate(goal.endDate) ?? parseDate(goal.endDate, true);
+            if (!startDate || !endDateBase) return false;
+            const start = startDate.getTime();
+            const end = (() => { const d = new Date(endDateBase.getTime()); d.setUTCHours(23,59,59,999); return d.getTime(); })();
             return now >= start && now <= end;
         });
     }, [goals]);
 
     const calculateGoalProgress = (goal: Goal): number => {
-        const goalStart = new Date(goal.startDate + 'T00:00:00');
-        const goalEnd = new Date(goal.endDate + 'T23:59:59');
+        const goalStart = parseDate(goal.startDate) ?? parseDate(goal.startDate, true);
+        const goalEndBase = parseDate(goal.endDate) ?? parseDate(goal.endDate, true);
+        if (!goalStart || !goalEndBase) return 0;
+        const goalEnd = new Date(goalEndBase.getTime());
+        goalEnd.setUTCHours(23,59,59,999);
 
         const isWithinGoalRange = (dateStr: string) => {
-            const itemDate = new Date(dateStr);
+            const itemDate = parseDate(dateStr) ?? null;
+            if (!itemDate) return false;
             return itemDate >= goalStart && itemDate <= goalEnd;
         };
 
@@ -265,13 +279,13 @@ const GeneralDashboard: React.FC<GeneralDashboardProps> = ({ leads, ventasExtra,
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-6">
                  <StatCard 
-                    title="Total Generado por Marketing" 
+                    title="Ventas Call Center" 
                     value={`S/ ${stats.totalVentasMarketing.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`} 
                     icon={<GoogleIcon name="campaign" className="text-blue-600" />}
                     iconBgClass="bg-blue-100"
                 />
                  <StatCard 
-                    title="Recuperados (Recepción)" 
+                    title="Ventas Recepción" 
                     value={`S/ ${stats.ventasExtraRecepcion.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`}
                     icon={<GoogleIcon name="point_of_sale" className="text-cyan-600" />}
                     iconBgClass="bg-cyan-100"

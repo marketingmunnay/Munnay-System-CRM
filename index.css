@@ -1,3 +1,393 @@
+/* Import modern font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    transition: all 0.3s ease;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    @apply bg-cream-50 text-cream-900;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-cream-800;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Card Styles */
+  .card {
+    @apply bg-white rounded-card shadow-soft p-6;
+    @apply border border-cream-200/50;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-soft-md hover:-translate-y-0.5;
+  }
+
+  /* Button Styles */
+  .btn {
+    @apply px-4 py-2.5 rounded-button font-medium;
+    transition: all 0.3s ease;
+    @apply focus:outline-none focus:ring-2 focus:ring-cream-400/50;
+  }
+
+  .btn-primary {
+    @apply btn bg-cream-500 text-white;
+    @apply hover:bg-cream-600 active:bg-cream-700;
+    @apply shadow-soft hover:shadow-soft-md;
+  }
+
+  .btn-secondary {
+    @apply btn bg-cream-100 text-cream-800;
+    @apply hover:bg-cream-200 active:bg-cream-300;
+  }
+
+  .btn-outline {
+    @apply btn bg-transparent border-2 border-cream-400 text-cream-700;
+    @apply hover:bg-cream-50 hover:border-cream-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-error text-white;
+    @apply hover:bg-red-600 active:bg-red-700;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-white;
+    @apply hover:bg-green-600 active:bg-green-700;
+  }
+
+  /* Input Styles */
+  .input {
+    @apply px-4 py-2.5 rounded-button border border-cream-200;
+    @apply bg-white text-cream-900 placeholder-cream-400;
+    @apply focus:outline-none focus:ring-2 focus:ring-cream-400/50 focus:border-cream-400;
+    transition: all 0.3s ease;
+  }
+
+  .input-error {
+    @apply input border-error focus:ring-error/50 focus:border-error;
+  }
+
+  /* Select Styles */
+  .select {
+    @apply input appearance-none bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23C88338' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+
+  /* Sidebar Styles */
+  .sidebar {
+    @apply bg-gradient-to-b from-cream-700 to-cream-800;
+    @apply text-cream-50 shadow-soft-lg;
+  }
+
+  .sidebar-item {
+    @apply px-4 py-3 rounded-button;
+    @apply hover:bg-cream-600/50 active:bg-cream-600;
+    @apply flex items-center gap-3;
+    transition: all 0.3s ease; @apply cursor-pointer;
+  }
+
+  .sidebar-item-active {
+    @apply sidebar-item bg-cream-500 font-medium;
+  }
+
+  /* TopBar Styles */
+  .topbar {
+    @apply bg-white border-b border-cream-200 shadow-soft;
+    @apply px-6 py-4;
+  }
+
+  /* Dashboard Card Styles */
+  .stat-card {
+    @apply card-hover;
+    @apply flex flex-col gap-2;
+  }
+
+  .stat-card-icon {
+    @apply w-12 h-12 rounded-xl;
+    @apply flex items-center justify-center;
+    @apply bg-gradient-to-br from-cream-400 to-cream-500;
+    @apply text-white text-2xl;
+  }
+
+  .stat-card-value {
+    @apply text-3xl font-bold text-cream-800;
+  }
+
+  .stat-card-label {
+    @apply text-sm text-cream-600 font-medium;
+  }
+
+  /* Table Styles */
+  .table {
+    @apply w-full border-collapse;
+  }
+
+  .table-header {
+    @apply bg-cream-100 text-cream-800 font-semibold;
+    @apply border-b-2 border-cream-300;
+  }
+
+  .table-row {
+    @apply border-b border-cream-100;
+    @apply hover:bg-cream-50 transition-smooth;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-cream-900;
+  }
+
+  /* Modal Styles */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-cream-900/20 backdrop-blur-sm;
+    @apply flex items-center justify-center z-50;
+  }
+
+  .modal {
+    @apply bg-white rounded-lg-card shadow-soft-xl;
+    @apply p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto;
+    @apply border border-cream-200;
+  }
+
+  .modal-header {
+    @apply text-2xl font-semibold text-cream-800 mb-4;
+  }
+
+  /* Badge Styles */
+  .badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1;
+  }
+
+  .badge-primary {
+    @apply badge bg-cream-100 text-cream-800;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  /* Search Bar */
+  .search-bar {
+    @apply input pl-10 w-full max-w-md;
+    @apply bg-cream-50 border-cream-200;
+  }
+
+  /* Kanban Column */
+  .kanban-column {
+    @apply bg-cream-50 rounded-card p-4;
+    @apply border border-cream-200;
+    @apply min-h-[400px];
+  }
+
+  .kanban-header {
+    @apply text-lg font-semibold text-cream-800 mb-4;
+    @apply flex items-center justify-between;
+  }
+
+  .kanban-card {
+    @apply card-hover mb-3 cursor-pointer;
+  }
+
+  /* Chart Container */
+  .chart-container {
+    @apply card p-6;
+    @apply min-h-[300px];
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply animate-spin rounded-full;
+    @apply border-4 border-cream-200 border-t-cream-500;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-cream-200 my-6;
+  }
+
+  /* Section Header */
+  .section-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold text-cream-800;
+  }
+
+  /* Alert/Notification */
+  .alert {
+    @apply p-4 rounded-button border-l-4;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 border-blue-500 text-blue-800;
+  }
+
+  .alert-success {
+    @apply alert bg-green-50 border-success text-green-800;
+  }
+
+  .alert-warning {
+    @apply alert bg-yellow-50 border-warning text-yellow-800;
+  }
+
+  .alert-error {
+    @apply alert bg-red-50 border-error text-red-800;
+  }
+
+  /* Dropdown Menu */
+  .dropdown-menu {
+    @apply absolute mt-2 bg-white rounded-button shadow-soft-lg;
+    @apply border border-cream-200 py-2 z-50;
+    @apply min-w-[200px];
+  }
+
+  .dropdown-item {
+    @apply px-4 py-2 hover:bg-cream-50 cursor-pointer;
+    @apply text-cream-900 transition-smooth;
+  }
+
+  /* Form Group */
+  .form-group {
+    @apply mb-4;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-cream-800 mb-2;
+  }
+
+  .form-error {
+    @apply text-xs text-error mt-1;
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    @apply w-full h-2 bg-cream-100 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-gradient-to-r from-cream-400 to-cream-500;
+    @apply transition-all duration-500;
+  }
+
+  /* Avatar */
+  .avatar {
+    @apply rounded-full bg-cream-200;
+    @apply flex items-center justify-center;
+    @apply font-medium text-cream-700;
+  }
+
+  /* Page Container */
+  .page-container {
+    @apply p-6 md:p-8 max-w-full;
+  }
+
+  /* Grid Layouts */
+  .grid-cards {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+
+  .grid-stats {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+}
+
+@layer utilities {
+  /* Responsive utilities */
+  .responsive-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Text utilities with warm palette */
+  .text-primary {
+    @apply text-cream-500;
+  }
+
+  .text-secondary {
+    @apply text-cream-700;
+  }
+
+  .text-muted {
+    @apply text-cream-600;
+  }
+
+  /* Background utilities */
+  .bg-primary {
+    @apply bg-cream-500;
+  }
+
+  .bg-secondary {
+    @apply bg-cream-100;
+  }
+
+  /* Border utilities */
+  .border-primary {
+    @apply border-cream-400;
+  }
+
+  /* Hover glow effect */
+  .hover-glow {
+    @apply hover:shadow-soft-lg;
+  }
+
+  /* Smooth fade-in animation */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Slide-in animation */
+  .slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}

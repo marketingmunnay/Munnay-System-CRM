@@ -8,6 +8,7 @@ import MetaCampaignFormModal from './MetaCampaignFormModal.tsx';
 import AnunciosTable from './AnunciosTable.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Campaign, Lead, MetaCampaign } from '../../types.ts';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
 
 interface CampaignsPageProps {
     campaigns: Campaign[];
@@ -45,8 +46,8 @@ const MetaCampaignsTable: React.FC<{ campaigns: MetaCampaign[], onEdit: (campaig
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {campaign.nombre}
                                 </th>
-                                <td className="px-6 py-4">{new Date(campaign.fechaInicio + 'T00:00:00').toLocaleDateString('es-PE')}</td>
-                                <td className="px-6 py-4">{new Date(campaign.fechaFin + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(campaign.fechaInicio)}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(campaign.fechaFin)}</td>
                                 <td className="px-6 py-4">{campaign.categoria}</td>
                                 <td className="px-6 py-4">
                                     <button
@@ -74,7 +75,7 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
     campaigns, leads, onSaveCampaign, onDeleteCampaign, 
     metaCampaigns, onSaveMetaCampaign, onDeleteMetaCampaign, requestConfirmation 
 }) => {
-    const [activeTab, setActiveTab] = useState<'campanas' | 'anuncios'>('anuncios');
+    const [activeTab, setActiveTab] = useState<'campanas' | 'anuncios' | 'resultados'>('anuncios');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
     const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
@@ -86,11 +87,17 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
             return campaigns;
         }
 
-        const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-        const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+        const fromDate = dateRange.from ? parseDate(dateRange.from) : null;
+        const toDate = dateRange.to ? (() => {
+            const d = parseDate(dateRange.to, true);
+            if (!d) return parseDate(dateRange.to);
+            const end = new Date(d.getTime());
+            end.setUTCHours(23, 59, 59, 999);
+            return end;
+        })() : null;
 
         return campaigns.filter(campaign => {
-            const campaignDate = new Date(`${campaign.fecha}T00:00:00`);
+            const campaignDate = parseDate(campaign.fecha) ?? null;
             if (fromDate && campaignDate < fromDate) {
                 return false;
             }
@@ -165,6 +172,61 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
         };
     }, [filteredCampaigns, leads]);
 
+    const campaignResults = useMemo(() => {
+        // Agrupar campañas por nombreAnuncio para obtener datos únicos
+        const uniqueAnuncios = new Map<string, {
+            categoria: string;
+            totalLeads: number;
+            totalAgendados: number;
+            costos: number[];
+            gastados: number[];
+        }>();
+
+        filteredCampaigns.forEach(campaign => {
+            const existing = uniqueAnuncios.get(campaign.nombreAnuncio);
+            if (existing) {
+                existing.costos.push(campaign.costoPorResultado);
+                existing.gastados.push(campaign.importeGastado);
+            } else {
+                uniqueAnuncios.set(campaign.nombreAnuncio, {
+                    categoria: campaign.categoria,
+                    totalLeads: 0,
+                    totalAgendados: 0,
+                    costos: [campaign.costoPorResultado],
+                    gastados: [campaign.importeGastado]
+                });
+            }
+        });
+
+        // Contar leads por anuncio
+        leads.forEach(lead => {
+            const anuncioData = uniqueAnuncios.get(lead.anuncio);
+            if (anuncioData) {
+                anuncioData.totalLeads++;
+                if (lead.estado === 'Agendado') {
+                    anuncioData.totalAgendados++;
+                }
+            }
+        });
+
+        // Convertir a array y calcular promedios
+        return Array.from(uniqueAnuncios.entries()).map(([nombreAnuncio, data]) => {
+            const costoPromedio = data.costos.reduce((a, b) => a + b, 0) / data.costos.length;
+            const totalGastado = data.gastados.reduce((a, b) => a + b, 0);
+            const porcentajeAgendados = data.totalLeads > 0 ? (data.totalAgendados / data.totalLeads) * 100 : 0;
+
+            return {
+                categoria: data.categoria,
+                nombreAnuncio,
+                totalLeads: data.totalLeads,
+                totalAgendados: data.totalAgendados,
+                porcentajeAgendados,
+                costoPromedio,
+                totalGastado
+            };
+        });
+    }, [filteredCampaigns, leads]);
+
   return (
     <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -218,11 +280,60 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
                     <GoogleIcon name="layers" className="mr-2" />
                     Campañas Meta
                 </button>
+                <button
+                     onClick={() => setActiveTab('resultados')}
+                     className={`${
+                        activeTab === 'resultados'
+                            ? 'border-[#aa632d] text-[#aa632d]'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                >
+                    <GoogleIcon name="analytics" className="mr-2" />
+                    Resultado de campaña
+                </button>
             </nav>
         </div>
 
         {activeTab === 'anuncios' && <AnunciosTable campaigns={filteredCampaigns} onEdit={handleEditCampaign} />}
         {activeTab === 'campanas' && <MetaCampaignsTable campaigns={metaCampaigns} onEdit={handleEditMetaCampaign} />}
+        {activeTab === 'resultados' && (
+            <div className="bg-white p-6 rounded-lg shadow mt-6">
+                <h3 className="text-lg font-semibold text-black mb-4">Resultado de Campaña</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Nombre Campaña</th>
+                                <th scope="col" className="px-6 py-3">Nombre Anuncio</th>
+                                <th scope="col" className="px-6 py-3">Total Leads</th>
+                                <th scope="col" className="px-6 py-3">Total Agendados</th>
+                                <th scope="col" className="px-6 py-3">% Agendados</th>
+                                <th scope="col" className="px-6 py-3">Costo Promedio</th>
+                                <th scope="col" className="px-6 py-3">Total Gastado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {campaignResults.map((result, index) => (
+                                <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                                    <td className="px-6 py-4 font-medium text-gray-900">{result.categoria}</td>
+                                    <td className="px-6 py-4">{result.nombreAnuncio}</td>
+                                    <td className="px-6 py-4">{result.totalLeads}</td>
+                                    <td className="px-6 py-4">{result.totalAgendados}</td>
+                                    <td className="px-6 py-4">{result.porcentajeAgendados.toFixed(1)}%</td>
+                                    <td className="px-6 py-4">S/ {result.costoPromedio.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td className="px-6 py-4">S/ {result.totalGastado.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {campaignResults.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                            <p>No se encontraron resultados de campañas.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
         
 
         <CampaignFormModal

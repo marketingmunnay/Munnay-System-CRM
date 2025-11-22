@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import type { Lead } from '../../types.ts';
 import PacienteDetailView from './PacienteDetailView.tsx';
 import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
+import { formatDateForDisplay } from '../../utils/time';
 
 interface PacientesHistoriaPageProps {
     leads: Lead[];
@@ -65,7 +66,7 @@ const PacientesHistoriaPage: React.FC<PacientesHistoriaPageProps> = ({ leads }) 
                                     <td className="px-6 py-4 font-mono">{paciente.nHistoria}</td>
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{paciente.nombres} {paciente.apellidos}</th>
                                     <td className="px-6 py-4">{paciente.numero}</td>
-                                    <td className="px-6 py-4">{paciente.fechaHoraAgenda ? new Date(paciente.fechaHoraAgenda).toLocaleDateString('es-PE') : 'N/A'}</td>
+                                    <td className="px-6 py-4">{paciente.fechaHoraAgenda ? formatDateForDisplay(paciente.fechaHoraAgenda) : 'N/A'}</td>
                                     <td className="px-6 py-4">
                                         <button onClick={() => handleViewDetails(paciente)} className="font-medium text-[#aa632d] hover:underline">Ver Historia</button>
                                     </td>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Lead, VentaExtra } from '../../types.ts';
+import { parseDate } from '../../utils/time';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ServiceCategorySalesChartProps {
@@ -18,7 +19,10 @@ const CATEGORIES_TO_DISPLAY: ('Evaluación Médica' | 'Evaluación Específica' 
 const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ leads, ventasExtra }) => {
     const availableYears = useMemo(() => {
         const allYears = new Set<number>();
-        ventasExtra.forEach(v => allYears.add(new Date(v.fechaVenta + 'T00:00:00').getFullYear()));
+        ventasExtra.forEach(v => {
+            const d = parseDate(v.fechaVenta) || new Date(v.fechaVenta);
+            allYears.add(d.getUTCFullYear());
+        });
         leads.forEach(l => {
             if (l.fechaHoraAgenda) {
                 allYears.add(new Date(l.fechaHoraAgenda).getFullYear());
@@ -42,9 +46,9 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
             // Process Ventas Extra
             ventasExtra.forEach(v => {
                 if (v.categoria === category) {
-                    const ventaDate = new Date(v.fechaVenta + 'T00:00:00');
-                    if (ventaDate.getFullYear() === selectedYear) {
-                        monthlyData[ventaDate.getMonth()].Ventas += v.montoPagado;
+                    const ventaDate = parseDate(v.fechaVenta) || new Date(v.fechaVenta);
+                    if (ventaDate.getUTCFullYear() === selectedYear) {
+                        monthlyData[ventaDate.getUTCMonth()].Ventas += v.montoPagado;
                     }
                 }
             });
@@ -52,9 +56,9 @@ const ServiceCategorySalesChart: React.FC<ServiceCategorySalesChartProps> = ({ l
             // Process Lead related sales
             leads.forEach(l => {
                 if (l.categoria === category && l.fechaHoraAgenda) {
-                    const agendaDate = new Date(l.fechaHoraAgenda);
-                    if (agendaDate.getFullYear() === selectedYear) {
-                        const month = agendaDate.getMonth();
+                    const agendaDate = parseDate(l.fechaHoraAgenda) || new Date(l.fechaHoraAgenda);
+                    if (agendaDate.getUTCFullYear() === selectedYear) {
+                        const month = agendaDate.getUTCMonth();
                         // Add initial appointment fee if it belongs to this category
                         monthlyData[month].Ventas += l.montoPagado || 0;
                         

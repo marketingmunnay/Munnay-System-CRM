@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Notification } from '../../types.ts';
-import { formatDistanceToNow } from '../../utils/time.ts';
+import { formatDistanceToNow } from '../../utils/time';
 
 interface NotificationItemProps {
     notification: Notification;
@@ -16,6 +16,7 @@ const NOTIFICATION_ICONS: Record<Notification['type'], { icon: string, color: st
     pago_por_vencer: { icon: 'receipt_long', color: 'text-orange-500' },
     nuevo_lead: { icon: 'person_add', color: 'text-blue-500' },
     cita_proxima: { icon: 'event', color: 'text-purple-500' },
+    recordatorio_llamada: { icon: 'phone_in_talk', color: 'text-green-500' },
 };
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClick }) => {

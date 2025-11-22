@@ -3,6 +3,7 @@ import type { User, Role, Address, EmergencyContact, JobPosition } from '../../t
 import { DocumentType } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon, EyeIcon, EyeSlashIcon } from '../shared/Icons.tsx';
+import { formatDateForInput } from '../../utils/time';
 
 interface UsuarioFormModalProps {
   isOpen: boolean;
@@ -35,7 +36,16 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
   useEffect(() => {
     if (isOpen) {
       setFormData(user
-          ? { ...user, password: '', addresses: user.addresses || [], emergencyContacts: user.emergencyContacts || [] } // Ensure arrays are initialized
+          ? { 
+              ...user, 
+              password: '', 
+              addresses: user.addresses || [], 
+              emergencyContacts: user.emergencyContacts || [],
+              // Convertir fechas ISO a formato YYYY-MM-DD para inputs tipo date
+              birthDate: user.birthDate ? user.birthDate.split('T')[0] : '',
+              startDate: user.startDate ? user.startDate.split('T')[0] : '',
+              endDate: user.endDate ? user.endDate.split('T')[0] : '',
+            }
           : {
               id: Date.now(),
               rolId: roles[0]?.id,
@@ -198,7 +208,17 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" name="birthDate" value={formData.birthDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                            <input type="date" name="birthDate" value={formatDateForInput(formData.birthDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nacionalidad</label>
+                            <input type="text" name="nationality" value={formData.nationality || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
                     <hr className="my-6"/>
@@ -244,7 +264,35 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio Laboral</label>
-                            <input type="date" name="startDate" value={formData.startDate || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                            <input type="date" name="startDate" value={formatDateForInput(formData.startDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                            <input type="date" name="endDate" value={formatDateForInput(formData.endDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Jefe Directo</label>
+                            <input type="text" name="directBoss" value={formData.directBoss || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+                            <input type="text" name="bankName" value={formData.bankName || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de AFP/ONP</label>
+                            <select name="afpType" value={formData.afpType || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2">
+                                <option value="">Seleccionar...</option>
+                                <option value="AFP">AFP</option>
+                                <option value="ONP">ONP</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">% de Aporte AFP</label>
+                            <input type="number" name="afpPercentage" value={formData.afpPercentage || ''} onChange={handleChange} step="0.01" min="0" max="100" className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
                 </div>

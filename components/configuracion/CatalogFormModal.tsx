@@ -28,9 +28,22 @@ const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, 
         e.preventDefault();
         // Basic validation
         for (const field of fields) {
-            if (field.required && (!formData[field.name] || String(formData[field.name]).trim() === '')) {
-                alert(`El campo "${field.label}" es obligatorio.`);
-                return;
+            if (field.required) {
+                const value = formData[field.name];
+                
+                // Para campos numéricos, permitir 0 como valor válido
+                if (field.type === 'number') {
+                    if (value === null || value === undefined || value === '') {
+                        alert(`El campo "${field.label}" es obligatorio.`);
+                        return;
+                    }
+                } else {
+                    // Para campos de texto, verificar que no esté vacío
+                    if (!value || String(value).trim() === '') {
+                        alert(`El campo "${field.label}" es obligatorio.`);
+                        return;
+                    }
+                }
             }
         }
         onSave(formData);

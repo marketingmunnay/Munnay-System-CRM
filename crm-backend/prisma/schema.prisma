@@ -109,8 +109,8 @@ enum NotificationType {
 }
 
 enum GoalUnit {
-  Cantidad
-  Porcentaje
+  cantidad
+  porcentaje
 }
 
 enum GoalArea {
@@ -145,49 +145,65 @@ enum GoalObjective {
 // MODELS
 
 model Lead {
-  id                 Int      @id @default(autoincrement())
-  fechaLead          DateTime
-  nombres            String
-  apellidos          String
-  numero             String
-  sexo               String
-  redSocial          String
-  anuncio            String
-  vendedor           Seller
-  estado             LeadStatus
-  montoPagado        Float    @default(0)
-  metodoPago         MetodoPago?
-  fechaHoraAgenda    DateTime?
-  servicios          String[]
-  categoria          String
-  fechaVolverLlamar  DateTime?
-  horaVolverLlamar   String?
-  notas              String?  @db.Text
-  nHistoria          String?  @unique
-  aceptoTratamiento  String?
-  motivoNoCierre     String?
-  estadoRecepcion    ReceptionStatus?
-  recursoId          String?
-  birthDate          DateTime?
-  precioCita         Float?
-  deudaCita          Float?
-  metodoPagoDeuda    MetodoPago?
-  documentType       DocumentType?
-  documentNumber     String?
-  razonSocial        String?
-  direccionFiscal    String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  fechaLead              DateTime
+  nombres                String
+  apellidos              String
+  numero                 String
+  email                  String?
+  sexo                   String
+  redSocial              String
+  anuncio                String
+  vendedor               Seller
+  estado                 LeadStatus
+  montoPagado            Float    @default(0)
+  metodoPago             MetodoPago?
+  fechaHoraAgenda        DateTime?
+  servicios              String[]
+  categoria              String
+  profesionalAsignado    String?
+  observacionesGenerales String?  @db.Text
+  fechaVolverLlamar      DateTime?
+  horaVolverLlamar       String?
+  notas                  String?  @db.Text
+  nHistoria              String?  @unique
+  aceptoTratamiento      String?
+  motivoNoCierre         String?
+  estadoRecepcion        ReceptionStatus?
+  recursoId              String?
+  birthDate              DateTime?
+  precioCita             Float?
+  deudaCita              Float?
+  metodoPagoDeuda        MetodoPago?
+  documentType           DocumentType?
+  documentNumber         String?
+  razonSocial            String?
+  direccionFiscal        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   registrosLlamada     RegistroLlamada[]
   tratamientos         Treatment[]
   procedimientos       Procedure[]
   seguimientos         Seguimiento[]
   alergias             Alergia[]
-  membresiasAdquiridas Membership[]
+  membresiasAdquiridas LeadMembership[]
   comprobantes         ComprobanteElectronico[]
   ventasExtra          VentaExtra[]
   incidencias          Incidencia[]
+  pagosRecepcion       PagoRecepcion[]
+}
+
+model PagoRecepcion {
+  id          Int        @id @default(autoincrement())
+  monto       Float
+  metodoPago  MetodoPago
+  fechaPago   DateTime   @default(now())
+  observacion String?    @db.Text
+  leadId      Int
+  lead        Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model RegistroLlamada {
@@ -201,8 +217,9 @@ model RegistroLlamada {
 }
 
 model Treatment {
-  id               Int        @id @default(autoincrement())
+  id               BigInt     @id @default(autoincrement())
   nombre           String
+  tipo             String?    @default("Servicio")
   cantidadSesiones Int
   precio           Float
   montoPagado      Float
@@ -218,7 +235,7 @@ model Procedure {
   personal          String
   horaInicio        String
   horaFin           String
-  tratamientoId     Int
+  tratamientoId     BigInt
   nombreTratamiento String
   sesionNumero      Int
   asistenciaMedica  Boolean
@@ -369,7 +386,7 @@ model ComprobanteItem {
 model Egreso {
   id               Int       @id @default(autoincrement())
   fechaRegistro    DateTime
-  fechaPago        DateTime
+  fechaPago        DateTime?
   proveedor        String
   categoria        String
   descripcion      String
@@ -386,11 +403,13 @@ model Egreso {
 }
 
 model Proveedor {
-  id             Int    @id @default(autoincrement())
-  razonSocial    String @unique
-  ruc            String @unique
-  tipo           String
-  numeroContacto String
+  id              Int     @id @default(autoincrement())
+  razonSocial     String  @unique
+  ruc             String?
+  tipo            String
+  numeroContacto  String?
+  diasCredito     Int?
+  categoriaEgreso String?
 }
 
 model TipoProveedor {
@@ -405,17 +424,43 @@ model User {
   usuario             String    @unique
   password            String
   rolId               Int
-  avatarUrl String  @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
-  position            String?
+  avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
+  
+  // Datos Personales
   documentType        DocumentType?
   documentNumber      String?
-  phone               String?
   birthDate           DateTime?
-  startDate           DateTime?
-  salary              Float?
-  contractType        String?
-  maritalStatus       String?
+  nationality         String?
   sex                 String?
+  maritalStatus       String?
+  phone               String?
+  email               String?
+  
+  // Datos Laborales
+  position            String?
+  startDate           DateTime?
+  endDate             DateTime?
+  contractType        String?
+  workday             String?
+  workSchedule        String?
+  directBoss          String?
+  workCenter          String?
+  employeeCode        String?
+  
+  // Datos Salariales
+  salary              Float?
+  bonuses             Float?
+  currency            String?
+  bankName            String?
+  accountType         String?
+  accountNumber       String?
+  paymentMethod       String?
+  laborRegime         String?
+  afpType             String?
+  afpCode             String?
+  afpPercentage       Float?
+  healthInsurance     String?
+  
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -520,18 +565,82 @@ model Service {
   precio    Float
 }
 
+// ENUM DESACTIVADO HASTA APLICAR MIGRACIÓN
+// enum TipoProducto {
+//   venta
+//   insumo
+// }
+
 model Product {
-  id        Int    @id @default(autoincrement())
-  nombre    String @unique
-  categoria String
-  precio    Float
+  id             Int      @id @default(autoincrement())
+  nombre         String   @unique
+  categoria      String
+  precio         Float
+  
+  // CAMPOS DESACTIVADOS (no existen en BD de producción)
+  // createdAt      DateTime @default(now())
+  // updatedAt      DateTime @updatedAt
+  // tipo           TipoProducto?
+  // costoCompra    Float?
+  // precioVenta    Float?
+  // stockActual    Int?
+  // stockMinimo    Int?
+  // stockCritico   Int?
+  // movimientos    MovimientoStock[]
 }
 
+// MODELO DESACTIVADO HASTA APLICAR MIGRACIÓN EN PRODUCCIÓN
+// Descomentar cuando se aplique: npx prisma migrate deploy
+// model MovimientoStock {
+//   id              Int      @id @default(autoincrement())
+//   productoId      Int
+//   producto        Product  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+//   tipoMovimiento  String   // "entrada" o "salida"
+//   cantidad        Int
+//   costoUnitario   Float    @default(0)
+//   precioUnitario  Float    @default(0)
+//   motivo          String   @db.Text
+//   fecha           DateTime @default(now())
+//   creadoPor       String?  // Usuario que registró el movimiento
+//   ventaExtraId    Int?     // Referencia opcional a venta
+//   procedimientoId Int?     // Referencia opcional a procedimiento
+//   createdAt       DateTime @default(now())
+// }
+
+// Catálogo de membresías disponibles (configuración global)
 model Membership {
-  id             Int    @id @default(autoincrement())
-  nombre         String @unique
+  id              Int                      @id @default(autoincrement())
+  nombre          String                   @unique
+  descripcion     String                   @db.Text
+  precioTotal     Float                    @default(0)
+  servicios       MembershipService[]      // Servicios incluidos en la membresía
+  leadMemberships LeadMembership[]         // Membresías adquiridas por leads
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+}
+
+// Servicios incluidos en una membresía
+model MembershipService {
+  id             Int        @id @default(autoincrement())
+  membershipId   Int
+  membership     Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  servicioNombre String
   precio         Float
+  precioCita     Float?
   numeroSesiones Int
-  descripcion    String
-  leads          Lead[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// Membresías adquiridas por un lead
+model LeadMembership {
+  id           Int        @id @default(autoincrement())
+  leadId       Int
+  lead         Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  membershipId Int
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  fechaCompra  DateTime   @default(now())
+  precioTotal  Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

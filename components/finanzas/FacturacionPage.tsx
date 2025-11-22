@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import type { ComprobanteElectronico } from '../../types.ts';
-import { SunatStatus, TipoComprobanteElectronico } from '../../types.ts';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
+import type { ComprobanteElectronico } from '../../types';
+import { SunatStatus, TipoComprobante } from '../../types';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
+import DateRangeFilter from '../shared/DateRangeFilter';
+import { MagnifyingGlassIcon } from '../shared/Icons';
 
 interface FacturacionPageProps {
     comprobantes: ComprobanteElectronico[];
@@ -28,15 +29,21 @@ const FacturacionPage: React.FC<FacturacionPageProps> = ({ comprobantes }) => {
     const [statusFilter, setStatusFilter] = useState<SunatStatus | ''>('');
 
     const filteredComprobantes = useMemo(() => {
-        let results = [...comprobantes].sort((a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime());
+        let results = [...comprobantes].sort((a, b) => (parseDate(b.fechaEmision)?.getTime() ?? new Date(b.fechaEmision).getTime()) - (parseDate(a.fechaEmision)?.getTime() ?? new Date(a.fechaEmision).getTime()));
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+            const fromDate = dateRange.from ? parseDate(dateRange.from) : null;
+            const toDate = dateRange.to ? (() => {
+                const d = parseDate(dateRange.to, true);
+                if (!d) return parseDate(dateRange.to);
+                const end = new Date(d.getTime());
+                end.setUTCHours(23, 59, 59, 999);
+                return end;
+            })() : null;
             results = results.filter(c => {
-                const emisionDate = new Date(`${c.fechaEmision}T00:00:00`);
-                if (fromDate && emisionDate < fromDate) return false;
-                if (toDate && emisionDate > toDate) return false;
+                const emisionDate = parseDate(c.fechaEmision) ?? null;
+                if (fromDate && emisionDate && emisionDate < fromDate) return false;
+                if (toDate && emisionDate && emisionDate > toDate) return false;
                 return true;
             });
         }
@@ -108,7 +115,7 @@ const FacturacionPage: React.FC<FacturacionPageProps> = ({ comprobantes }) => {
                                         <p>{c.tipoDocumento === 'Boleta' ? 'Boleta de Venta' : 'Factura'}</p>
                                         <p className="font-mono text-xs text-gray-600">{c.serie}-{c.correlativo.toString().padStart(6, '0')}</p>
                                     </td>
-                                    <td className="px-6 py-4">{new Date(c.fechaEmision + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                    <td className="px-6 py-4">{formatDateForDisplay(c.fechaEmision)}</td>
                                     <td className="px-6 py-4">
                                         <p className="font-medium text-gray-800">{c.clienteDenominacion}</p>
                                         <p className="text-xs text-gray-500">{c.clienteTipoDocumento}: {c.clienteNumeroDocumento}</p>

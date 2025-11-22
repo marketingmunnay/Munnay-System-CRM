@@ -73,22 +73,22 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
   };
 
   const renderFormField = (label: string, name: keyof Campaign, type: string = 'text', options?: string[]) => {
-      if (type === 'date') {
+        if (type === 'date') {
         return (
-            <div className="flex flex-col">
-                <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>
-                <input
-                    type={type}
-                    id={name}
-                    name={name}
-                    value={String(formData[name] ?? '')}
-                    onChange={handleChange}
-                    className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
-                    style={{ colorScheme: 'light' }}
-                />
-            </div>
+          <div className="flex flex-col">
+            <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>
+            <input
+              type="date"
+              id={name}
+              name={name}
+              value={formatDateForInput(formData[name])}
+              onChange={handleChange}
+              className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+              style={{ colorScheme: 'light' }}
+            />
+          </div>
         );
-      }
+        }
       return (
      <div className="flex flex-col">
         <label htmlFor={name} className="mb-1 text-sm font-medium text-gray-700">{label}</label>

@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import apiRouter from './api';
+import path from 'path';
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ const allowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
   'https://munnay-system.vercel.app',
+  'https://munnay-crm-frontend.onrender.com',
+  'http://localhost:4173',
+  'http://localhost:3000'
 ];
 
 // ✅ Regex para permitir previews de Vercel
@@ -31,8 +35,13 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+
+// Serve uploaded files (comprobantes, etc.)
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 // ✅ Health check
 app.get('/health', (_req, res) => {

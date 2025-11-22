@@ -6,6 +6,9 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
+import { formatDateForDisplay, parseDate } from '../../utils/time';
+import { TipoComprobante, TipoComprobanteLabels } from '../../types';
+import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 
 interface EgresosDiariosPageProps {
     egresos: Egreso[];
@@ -24,7 +27,7 @@ const formatCurrency = (value: number, moneda: 'Soles' | 'Dólares' = 'Soles') =
     const prefix = moneda === 'Soles' ? 'S/' : '$';
     return `${prefix} ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-const formatDate = (dateString?: string) => dateString ? new Date(dateString + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A';
+const formatDate = (dateString?: string) => formatDateForDisplay(dateString);
 
 
 const ImagePreviewModal: React.FC<{
@@ -97,7 +100,7 @@ const EgresoDetails: FC<{ egreso: Egreso | null, onViewImage: (url: string) => v
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                    <DetailRow label="Tipo de Comprobante" value={egreso.tipoComprobante} />
+                    <DetailRow label="Tipo de Comprobante" value={TipoComprobanteLabels[egreso.tipoComprobante as TipoComprobante] || egreso.tipoComprobante} />
                     <DetailRow label="Serie" value={egreso.serieComprobante} />
                     <DetailRow label="Número" value={egreso.nComprobante} />
                  </div>
@@ -159,6 +162,7 @@ const EgresosTable: React.FC<{
                         <th scope="col" className="px-6 py-3">Fecha Pago</th>
                         <th scope="col" className="px-6 py-3">Proveedor</th>
                         <th scope="col" className="px-6 py-3">Categoría</th>
+                        <th scope="col" className="px-6 py-3">Descripción</th>
                         <th scope="col" className="px-6 py-3">Monto Total</th>
                         <th scope="col" className="px-6 py-3">Deuda</th>
                         <th scope="col" className="px-6 py-3 text-center">Estado Pago</th>
@@ -172,6 +176,7 @@ const EgresosTable: React.FC<{
                             <td className="px-6 py-4">{formatDate(egreso.fechaPago)}</td>
                             <th scope="row" className="px-6 py-4 font-medium text-gray-900">{egreso.proveedor}</th>
                             <td className="px-6 py-4">{egreso.categoria}</td>
+                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate" title={egreso.descripcion}>{egreso.descripcion}</td>
                             <td className="px-6 py-4 font-semibold">{formatCurrency(egreso.montoTotal, egreso.tipoMoneda)}</td>
                             <td className={`px-6 py-4 font-semibold ${egreso.deuda > 0 ? 'text-red-600' : 'text-gray-500'}`}>{formatCurrency(egreso.deuda, egreso.tipoMoneda)}</td>
                             <td className="px-6 py-4 text-center">
@@ -224,15 +229,30 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     const [viewingEgreso, setViewingEgreso] = useState<Egreso | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+    const [tipoCambio, setTipoCambio] = useState<TipoCambio | null>(null);
+
+    // Obtener tipo de cambio al montar el componente
+    useEffect(() => {
+        const fetchTipoCambio = async () => {
+            const tc = await getTipoCambioSunat();
+            setTipoCambio(tc);
+        };
+        fetchTipoCambio();
+    }, []);
 
     const dateFilteredEgresos = useMemo(() => {
         let results = egresos;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+            const fromDate = dateRange.from ? parseDate(dateRange.from, true) : null;
+            const toDate = dateRange.to ? parseDate(dateRange.to, true) : null;
+            if (toDate) {
+                // mover al final del día UTC
+                toDate.setUTCHours(23, 59, 59, 999);
+            }
             results = results.filter(e => {
-                const egresoDate = new Date(`${e.fechaPago}T00:00:00`);
+                const egresoDate = parseDate(e.fechaPago);
+                if (!egresoDate) return false;
                 if (fromDate && egresoDate < fromDate) return false;
                 if (toDate && egresoDate > toDate) return false;
                 return true;
@@ -255,24 +275,119 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
     }, [dateFilteredEgresos, searchTerm, activeTab]);
 
     const stats = useMemo(() => {
-        const totalEgresos = dateFilteredEgresos.reduce((sum, e) => sum + e.montoTotal, 0);
-        const totalDeuda = dateFilteredEgresos.reduce((sum, e) => sum + e.deuda, 0);
-        const totalInsumos = dateFilteredEgresos
-            .filter(e => e.categoria === 'Insumos')
-            .reduce((sum, e) => sum + e.montoTotal, 0);
-        return { totalEgresos, totalDeuda, totalInsumos };
-    }, [dateFilteredEgresos]);
+        const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
+        const tc = tcDisponible ? tipoCambio.venta! : 0;
+        
+        console.log('Calculando stats con tipo de cambio:', {
+            tipoCambio,
+            tcDisponible,
+            tc,
+            disponible: tipoCambio?.disponible,
+            venta: tipoCambio?.venta
+        });
+        
+        let totalEgresosSoles = 0;
+        let totalEgresosDolares = 0;
+        let totalDeudaSoles = 0;
+        let totalDeudaDolares = 0;
+        let totalInsumosSoles = 0;
+        let totalInsumosDolares = 0;
+
+        dateFilteredEgresos.forEach(e => {
+            const esSoles = e.tipoMoneda === 'Soles';
+            
+            // Acumular egresos por moneda
+            if (esSoles) {
+                totalEgresosSoles += e.montoTotal;
+                totalDeudaSoles += e.deuda;
+                if (e.categoria === 'Insumos Médicos') totalInsumosSoles += e.montoTotal;
+            } else {
+                totalEgresosDolares += e.montoTotal;
+                totalDeudaDolares += e.deuda;
+                if (e.categoria === 'Insumos Médicos') totalInsumosDolares += e.montoTotal;
+            }
+        });
+
+        // Calcular totales en soles solo si el TC está disponible
+        const totalEgresosEnSoles = tcDisponible ? totalEgresosSoles + (totalEgresosDolares * tc) : null;
+        const totalDeudaEnSoles = tcDisponible ? totalDeudaSoles + (totalDeudaDolares * tc) : null;
+        const totalInsumosEnSoles = tcDisponible ? totalInsumosSoles + (totalInsumosDolares * tc) : null;
+
+        console.log('Resultado cálculo stats:', {
+            totalEgresosSoles,
+            totalEgresosDolares,
+            totalEgresosEnSoles,
+            tcDisponible
+        });
+
+        return { 
+            totalEgresosSoles, 
+            totalEgresosDolares,
+            totalEgresosEnSoles,
+            totalDeudaSoles,
+            totalDeudaDolares,
+            totalDeudaEnSoles,
+            totalInsumosSoles,
+            totalInsumosDolares,
+            totalInsumosEnSoles,
+            tcDisponible
+        };
+    }, [dateFilteredEgresos, tipoCambio]);
+
+    // Totales agrupados por tipo de proveedor (según catálogo `proveedores[].tipo`)
+    const totalsByProveedorTipo = useMemo(() => {
+        const map: Record<string, { totalSoles: number; totalDolares: number }> = {};
+
+        dateFilteredEgresos.forEach(e => {
+            const proveedor = proveedores.find(p => p.razonSocial === e.proveedor);
+            const tipo = proveedor?.tipo || 'Desconocido';
+            if (!map[tipo]) map[tipo] = { totalSoles: 0, totalDolares: 0 };
+            if (e.tipoMoneda === 'Soles') map[tipo].totalSoles += e.montoTotal;
+            else map[tipo].totalDolares += e.montoTotal;
+        });
+
+        const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
+        const tc = tcDisponible ? tipoCambio!.venta! : 0;
+
+        const result = Object.keys(map).map(tipo => ({
+            tipo,
+            totalSoles: map[tipo].totalSoles,
+            totalDolares: map[tipo].totalDolares,
+            totalEnSoles: tcDisponible ? map[tipo].totalSoles + (map[tipo].totalDolares * tc) : null
+        }));
+
+        // Sort descending by totalEnSoles (or totalSoles if tc not available)
+        result.sort((a, b) => {
+            const aval = a.totalEnSoles ?? a.totalSoles;
+            const bval = b.totalEnSoles ?? b.totalSoles;
+            return bval - aval;
+        });
+
+        return result;
+    }, [dateFilteredEgresos, proveedores, tipoCambio]);
 
     const proximosPagos = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
+        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         return dateFilteredEgresos
             .filter(e => e.deuda > 0 && e.fechaPago)
             .map(e => {
-                const fechaPago = new Date(e.fechaPago + 'T00:00:00');
-                const diffTime = fechaPago.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return { ...e, diasParaVencer: diffDays };
+                try {
+                    // Manejar fechas en formato ISO (YYYY-MM-DDTHH:mm:ss.sssZ) y YYYY-MM-DD
+                    const parsed = parseDate(e.fechaPago);
+                    if (!parsed) {
+                        console.warn('Fecha de pago inválida:', e.fechaPago);
+                        return { ...e, diasParaVencer: 0 };
+                    }
+                    // Normalizar a medianoche UTC de la fecha de pago para comparar por días completos
+                    const fechaPago = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
+                    const diffTime = fechaPago.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return { ...e, diasParaVencer: diffDays };
+                } catch (error) {
+                    console.error('Error calculando días para vencer:', error, e);
+                    return { ...e, diasParaVencer: 0 };
+                }
             })
             .sort((a, b) => a.diasParaVencer - b.diasParaVencer);
     }, [dateFilteredEgresos]);
@@ -327,25 +442,169 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                 <StatCard 
-                    title="Total de Egresos (filtrado)" 
-                    value={formatCurrency(stats.totalEgresos)}
-                    icon={<GoogleIcon name="payments" className="text-red-500" />}
-                    iconBgClass="bg-red-100"
-                />
-                 <StatCard 
-                    title="Total de Deuda (filtrado)" 
-                    value={formatCurrency(stats.totalDeuda)}
-                    icon={<GoogleIcon name="receipt_long" className="text-orange-500" />}
-                    iconBgClass="bg-orange-100"
-                />
-                 <StatCard 
-                    title="Total Compra de Insumos (filtrado)" 
-                    value={formatCurrency(stats.totalInsumos)}
-                    icon={<GoogleIcon name="inventory_2" className="text-blue-500" />}
-                    iconBgClass="bg-blue-100"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-red-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="payments" className="text-red-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Total de Egresos</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalEgresosSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalEgresosDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                {stats.tcDisponible && stats.totalEgresosEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-red-600">{formatCurrency(stats.totalEgresosEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
+                            </div>
+                        </div>
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
+                    </div>
+                </div>
+
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-orange-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="receipt_long" className="text-orange-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Total de Deuda</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeudaSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeudaDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                {stats.tcDisponible && stats.totalDeudaEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalDeudaEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
+                            </div>
+                        </div>
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
+                    </div>
+                </div>
+                
+                 <div className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                            <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                <GoogleIcon name="inventory_2" className="text-blue-500" />
+                            </div>
+                            <h3 className="text-sm font-medium text-gray-600">Compra de Insumos</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Soles:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalInsumosSoles, 'Soles')}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Dólares:</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalInsumosDolares, 'Dólares')}</span>
+                        </div>
+                        <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-gray-600">Total en Soles:</span>
+                                {stats.tcDisponible && stats.totalInsumosEnSoles !== null ? (
+                                    <span className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalInsumosEnSoles, 'Soles')}</span>
+                                ) : (
+                                    <span className="text-sm text-gray-400 italic">-</span>
+                                )}
+                            </div>
+                        </div>
+                        {tipoCambio?.disponible && tipoCambio.venta ? (
+                            <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                        ) : (
+                            <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Card: Tipo de Gastos (diseño tipo lista con barras de progreso) */}
+                <div className="bg-white p-4 rounded-lg shadow-md border col-span-1 md:col-span-1">
+                    <div className="mb-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-600">Tipo de Gastos</h3>
+                                <p className="text-xs text-gray-400">Distribución por tipo (Top)</p>
+                            </div>
+                            <div className="text-right">
+                                {/* Total general en la parte superior, preferir totalEnSoles si está disponible */}
+                                {totalsByProveedorTipo.length === 0 ? (
+                                    <span className="text-lg font-bold text-gray-900">S/ 0.00</span>
+                                ) : (() => {
+                                    const grandTotal = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0);
+                                    return <span className="text-xl font-extrabold text-gray-900">{formatCurrency(grandTotal, 'Soles')}</span>;
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        {totalsByProveedorTipo.length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay egresos en el rango seleccionado.</p>
+                        ) : (
+                            (() => {
+                                const top = totalsByProveedorTipo.slice(0, 6);
+                                // Use grand total across ALL tipos so bar widths are proportional to full distribution
+                                const grandTotalAll = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0) || 1;
+                                return top.map(item => {
+                                    const value = item.totalEnSoles ?? item.totalSoles;
+                                    const percent = Math.round((value / grandTotalAll) * 100);
+                                    return (
+                                        <div key={item.tipo}>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-gray-700 truncate max-w-[120px]">{item.tipo}</span>
+                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(value, 'Soles')}</span>
+                                            </div>
+                                            <div className="w-full bg-blue-100 rounded-full h-2 mt-2 overflow-hidden">
+                                                <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()
+                        )}
+                    </div>
+
+                    {totalsByProveedorTipo.length > 6 && (
+                        <p className="text-xs text-gray-400 mt-3">Mostrando 6 de {totalsByProveedorTipo.length} tipos</p>
+                    )}
+                    {tipoCambio?.disponible && tipoCambio.venta && (
+                        <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
+                    )}
+                </div>
             </div>
 
             <div className="border-b border-gray-200 mb-6">
@@ -384,6 +643,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                                         <tr>
                                             <th className="px-4 py-2 text-left">Proveedor</th>
                                             <th className="px-4 py-2 text-left">Categoría</th>
+                                            <th className="px-4 py-2 text-left">Descripción</th>
                                             <th className="px-4 py-2 text-left">Monto Deuda</th>
                                             <th className="px-4 py-2 text-left">Fecha de Pago</th>
                                             <th className="px-4 py-2 text-left">Días p/ Vencer</th>
@@ -400,6 +660,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                                                 <tr key={p.id} className="border-b border-yellow-200 last:border-b-0">
                                                     <td className="px-4 py-2 font-medium">{p.proveedor}</td>
                                                     <td className="px-4 py-2">{p.categoria}</td>
+                                                    <td className="px-4 py-2 text-gray-600">{p.descripcion}</td>
                                                     <td className="px-4 py-2">{formatCurrency(p.deuda, p.tipoMoneda)}</td>
                                                     <td className="px-4 py-2">{formatDate(p.fechaPago)}</td>
                                                     <td className={`px-4 py-2 ${diasStyle}`}>

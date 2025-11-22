@@ -6,6 +6,7 @@ import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, MagnifyingGlassIcon } from '../shared/Icons.tsx';
 import SeguidorFormModal from './SeguidorFormModal.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
+import { formatDateForDisplay } from '../../utils/time';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -43,7 +44,7 @@ const SeguidoresTable: React.FC<{ seguidores: Seguidor[], onEdit: (seg: Seguidor
                     <tbody>
                         {seguidores.map(s => (
                             <tr key={s.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{new Date(s.fecha + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(s.fecha)}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900">{s.cuenta}</th>
                                 <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${redSocialBadgeColors[s.redSocial]}`}>{s.redSocial}</span></td>
                                 <td className="px-6 py-4">{s.seguidores.toLocaleString('es-PE')}</td>
@@ -77,12 +78,12 @@ const SeguidoresPage: React.FC<SeguidoresPageProps> = ({ seguidores, onSave, onD
         let results = seguidores;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(s => {
-                const segDate = new Date(`${s.fecha}T00:00:00`);
-                if (fromDate && segDate < fromDate) return false;
-                if (toDate && segDate > toDate) return false;
+                if (!s.fecha) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && s.fecha < dateRange.from) return false;
+                if (dateRange.to && s.fecha > dateRange.to) return false;
                 return true;
             });
         }

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Incidencia, Lead } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
+import { formatDateTimeForDisplay } from '../../utils/time';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '../shared/Icons.tsx';
 import IncidenciaFormModal from './IncidenciaFormModal.tsx';
 
@@ -22,12 +23,12 @@ const IncidenciasPage: React.FC<IncidenciasPageProps> = ({ incidencias, paciente
         let results = incidencias;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(inc => {
-                const incDate = new Date(`${inc.fecha}T00:00:00`);
-                if (fromDate && incDate < fromDate) return false;
-                if (toDate && incDate > toDate) return false;
+                if (!inc.fecha) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && inc.fecha < dateRange.from) return false;
+                if (dateRange.to && inc.fecha > dateRange.to) return false;
                 return true;
             });
         }
@@ -105,7 +106,7 @@ const IncidenciasPage: React.FC<IncidenciasPageProps> = ({ incidencias, paciente
                         <tbody>
                             {filteredIncidencias.map(inc => (
                                 <tr key={inc.id} className="bg-white border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4">{new Date(inc.fecha + `T${inc.hora}`).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td className="px-6 py-4">{formatDateTimeForDisplay(inc.fecha + `T${inc.hora}`)}</td>
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{inc.nombrePaciente}</th>
                                     <td className="px-6 py-4">{inc.tipoIncidencia}</td>
                                     <td className="px-6 py-4">{inc.detalleIncidencia}</td>

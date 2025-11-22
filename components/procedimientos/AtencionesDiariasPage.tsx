@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import type { Lead, Procedure, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Campaign } from '../../types';
 import { AtencionStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { EyeIcon, UserIcon, ClockIcon } from '../shared/Icons';
@@ -9,6 +9,7 @@ import StatCard from '../dashboard/StatCard';
 interface AtencionesDiariasPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   onSaveLead: (lead: Lead) => void;
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
@@ -30,21 +31,42 @@ interface Atencion {
 
 const statusConfig: Record<AtencionStatus, { title: string; color: string; textColor: string; }> = {
     [AtencionStatus.PorAtender]: { title: 'Por Atender', color: 'bg-sky-200', textColor: 'text-sky-800' },
+    [AtencionStatus.Atendido]: { title: 'Atendido', color: 'bg-blue-200', textColor: 'text-blue-800' },
     [AtencionStatus.EnSeguimiento]: { title: 'En Seguimiento', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
     [AtencionStatus.SeguimientoHecho]: { title: 'Seguimiento Hecho', color: 'bg-green-200', textColor: 'text-green-800' },
 };
 
+// Normalize reception status tokens (backend) or display values into the UI enum values
+const normalizeReception = (value?: string) => {
+    if (!value) return ReceptionStatus.Agendado;
+    const s = String(value).trim();
+    const map: Record<string, string> = {
+        'Agendado': ReceptionStatus.Agendado,
+        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
+        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
+        'PorAtender': ReceptionStatus.PorAtender,
+        'Por Atender': ReceptionStatus.PorAtender,
+        'Atendido': ReceptionStatus.Atendido,
+        'Reprogramado': ReceptionStatus.Reprogramado,
+        'Cancelado': ReceptionStatus.Cancelado,
+        'NoAsistio': ReceptionStatus.NoAsistio,
+        'No Asistió': ReceptionStatus.NoAsistio
+    };
+    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
+    return map[s] ?? ReceptionStatus.Agendado;
+};
+
 const getProcedimientoStatus = (lead: Lead, procedure: Procedure): AtencionStatus => {
     const hasSeguimiento = lead.seguimientos?.some(s => s.procedimientoId === procedure.id);
-    if (hasSeguimiento) {
-        return AtencionStatus.SeguimientoHecho;
-    }
-    
-    if (lead.estadoRecepcion === ReceptionStatus.Atendido) {
-        return AtencionStatus.EnSeguimiento;
-    }
+    // If there's already a seguimiento, it's done
+    if (hasSeguimiento) return AtencionStatus.SeguimientoHecho;
 
-    return AtencionStatus.PorAtender;
+    // If reception says 'Atendido' show it in Atendido column (no seguimiento yet)
+    const estado = normalizeReception(lead.estadoRecepcion);
+    if (estado === ReceptionStatus.Atendido) return AtencionStatus.Atendido;
+
+    // If procedure exists but reception not 'Atendido', consider it En Seguimiento
+    return AtencionStatus.EnSeguimiento;
 };
 
 
@@ -140,7 +162,7 @@ const AtencionesTable: React.FC<{ atenciones: Atencion[], onEdit: (lead: Lead) =
     );
 };
 
-export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -150,13 +172,14 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
         let allAtenciones: Atencion[] = [];
 
         // Filter leads that have accepted treatments and procedures
-        const relevantLeads = leads.filter(lead => 
-            lead.aceptoTratamiento === 'Si' && 
-            lead.tratamientos && 
-            lead.tratamientos.length > 0 &&
-            lead.procedimientos &&
-            lead.procedimientos.length > 0
-        );
+        const relevantLeads = leads.filter(lead => {
+            const estado = normalizeReception(lead.estadoRecepcion);
+            const hasTreatments = lead.tratamientos && lead.tratamientos.length > 0;
+            const hasProcedures = lead.procedimientos && lead.procedimientos.length > 0;
+            // Include leads that accepted treatment OR leads that are in Por Atender reception status
+            return (lead.aceptoTratamiento === 'Si' || estado === ReceptionStatus.PorAtender)
+                && hasTreatments && hasProcedures;
+        });
 
         // Flatten procedures into individual 'Atencion' objects
         relevantLeads.forEach(lead => {
@@ -171,19 +194,35 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
 
         // Apply date range filter based on procedure date
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
             allAtenciones = allAtenciones.filter(atencion => {
-                const procedureDate = new Date(`${atencion.procedure.fechaAtencion}T00:00:00`);
-                if (fromDate && procedureDate < fromDate) return false;
-                if (toDate && procedureDate > toDate) return false;
+                if (!atencion.procedure.fechaAtencion) return false;
+                
+                // Simple string comparison for YYYY-MM-DD format
+                if (dateRange.from && atencion.procedure.fechaAtencion < dateRange.from) return false;
+                if (dateRange.to && atencion.procedure.fechaAtencion > dateRange.to) return false;
                 return true;
             });
         }
         
-        // Sort by date and time
-        return allAtenciones.sort((a, b) => {
+        // Group by patient - show only the most recent procedure for each patient
+        const groupedByPatient = new Map<number, Atencion>();
+        
+        allAtenciones
+            .sort((a, b) => {
+                // Sort by date and time to get most recent first
+                const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
+                const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
+                return dateB.getTime() - dateA.getTime(); // Most recent first
+            })
+            .forEach(atencion => {
+                // Only keep the first (most recent) procedure for each patient
+                if (!groupedByPatient.has(atencion.lead.id)) {
+                    groupedByPatient.set(atencion.lead.id, atencion);
+                }
+            });
+
+        // Convert back to array and sort by date/time
+        return Array.from(groupedByPatient.values()).sort((a, b) => {
             const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
             const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
             return dateA.getTime() - dateB.getTime();
@@ -215,9 +254,19 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
         setIsModalOpen(true);
     };
     
-    const handleSaveAndClose = (lead: Lead) => {
-        onSaveLead(lead);
-        setIsModalOpen(false);
+    const handleSaveAndClose = async (lead: Lead) => {
+        await onSaveLead(lead);
+        // Update editingLead with the latest data after save
+        if (lead.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === lead.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
     };
 
     const kanbanColumns = Object.values(AtencionStatus);
@@ -227,6 +276,21 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Atenciones Diarias</h1>
                 <DateRangeFilter onApply={handleApplyDateFilter} />
+            </div>
+
+            {/* Information Note */}
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <GoogleIcon name="info" className="text-blue-400" />
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                            <strong>Vista resumida:</strong> Se muestra únicamente la atención más reciente de cada paciente. 
+                            Para ver todos los procedimientos, utiliza el formulario de edición del paciente.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -298,6 +362,7 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
                 onDelete={onDeleteLead}
                 lead={editingLead}
                 metaCampaigns={metaCampaigns}
+                campaigns={campaigns}
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}

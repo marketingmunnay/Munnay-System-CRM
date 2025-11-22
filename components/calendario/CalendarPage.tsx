@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
@@ -8,6 +9,7 @@ import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, Fu
 interface CalendarPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
     onSaveLead: (lead: Lead) => void;
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
@@ -65,7 +67,7 @@ const durationToHeight = (startStr: string, endStr: string) => {
 };
 
 
-const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -132,18 +134,29 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
         setIsModalOpen(true);
     };
     
-    const handleSaveAndClose = (lead: Lead) => {
-        onSaveLead(lead);
-        setIsModalOpen(false);
-    }
+    const handleSaveAndClose = async (lead: Lead) => {
+        await onSaveLead(lead);
+        // Update editingLead with the latest data after save
+        if (lead.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === lead.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
+    };
 
     const { appointments, blocked } = useMemo(() => {
-        const selectedDateStr = currentDate.toISOString().split('T')[0];
-        const appointments = leads.filter(lead =>
-            lead.estado === LeadStatus.Agendado &&
-            lead.fechaHoraAgenda &&
-            lead.fechaHoraAgenda.startsWith(selectedDateStr)
-        );
+        const selectedDateStr = formatDateForInput(currentDate);
+        const appointments = (leads || []).filter(lead => {
+            if (lead.estado !== LeadStatus.Agendado) return false;
+            if (!lead.fechaHoraAgenda) return false;
+            const leadDate = formatDateForInput(lead.fechaHoraAgenda);
+            return leadDate === selectedDateStr;
+        });
         const blocked = BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr);
         return { appointments, blocked };
     }, [leads, currentDate]);
@@ -167,13 +180,16 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
 
     const AppointmentCard: React.FC<{ appointment: Lead }> = ({ appointment }) => {
         if (!appointment.fechaHoraAgenda) return null;
-    
-        const startTime = appointment.fechaHoraAgenda.split('T')[1].substring(0, 5);
-        const appDate = new Date(appointment.fechaHoraAgenda);
+
+        const parsed = parseDate(appointment.fechaHoraAgenda);
+        if (!parsed) return null;
+
+        const startTime = `${parsed.getHours().toString().padStart(2, '0')}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+        const appDate = new Date(parsed.getTime());
         // Assuming 1 hour duration for all appointments as there is no end time in the model
         appDate.setHours(appDate.getHours() + 1);
         const endTime = `${appDate.getHours().toString().padStart(2, '0')}:${appDate.getMinutes().toString().padStart(2, '0')}`;
-        
+
         const top = timeToPosition(startTime);
         const height = durationToHeight(startTime, endTime);
     
@@ -291,7 +307,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, metaCampaigns, onSav
                 onSave={handleSaveAndClose}
                 onDelete={onDeleteLead}
                 lead={editingLead}
-                metaCampaigns={metaCampaigns}
+                     metaCampaigns={metaCampaigns}
+                     campaigns={campaigns}
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}

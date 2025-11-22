@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Lead, Campaign } from '../../types.ts';
+import { parseDate } from '../../utils/time';
 import StatCard from './StatCard.tsx';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -9,26 +10,55 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 interface MarketingDashboardProps {
     leads: Lead[];
     campaigns: Campaign[];
+    dateRange: { from: string; to: string };
 }
 
-const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ leads, campaigns }) => {
-    const stats = useMemo(() => {
-        const totalLeads = leads.length;
-        const totalAgendados = leads.filter(l => l.estado === 'Agendado').length;
-        const totalPagosCitas = leads.reduce((sum, l) => sum + l.montoPagado, 0);
+const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ leads, campaigns, dateRange }) => {
+    const { filteredLeads, filteredCampaigns } = useMemo(() => {
+        const { from, to } = dateRange;
         
-        const totalGastadoCampanas = campaigns.reduce((sum, c) => sum + c.importeGastado, 0);
-        const totalResultadosCampanas = campaigns.reduce((sum, c) => sum + c.resultados, 0);
+        const checkDate = (itemDateStr?: string) => {
+            if (!from && !to) return true;
+            if (!itemDateStr) return false;
+            
+            const itemDate = parseDate(itemDateStr) ?? null;
+            const fromDate = from ? parseDate(from) : null;
+            const toDate = to ? (() => {
+                const d = parseDate(to, true);
+                if (!d) return parseDate(to);
+                const end = new Date(d.getTime());
+                end.setUTCHours(23, 59, 59, 999);
+                return end;
+            })() : null;
+            
+            if (fromDate && itemDate < fromDate) return false;
+            if (toDate && itemDate > toDate) return false;
+            return true;
+        };
+        
+        return {
+            filteredLeads: leads.filter(l => checkDate(l.fechaLead)),
+            filteredCampaigns: campaigns.filter(c => checkDate(c.fecha))
+        };
+    }, [leads, campaigns, dateRange]);
+    
+    const stats = useMemo(() => {
+        const totalLeads = filteredLeads.length;
+        const totalAgendados = filteredLeads.filter(l => l.estado === 'Agendado').length;
+        const totalPagosCitas = filteredLeads.reduce((sum, l) => sum + l.montoPagado, 0);
+        
+        const totalGastadoCampanas = filteredCampaigns.reduce((sum, c) => sum + c.importeGastado, 0);
+        const totalResultadosCampanas = filteredCampaigns.reduce((sum, c) => sum + c.resultados, 0);
         const costoPromedioResultado = totalResultadosCampanas > 0 ? totalGastadoCampanas / totalResultadosCampanas : 0;
         
         const porcentajeAgendados = totalLeads > 0 ? (totalAgendados / totalLeads) * 100 : 0;
 
         return { totalLeads, totalAgendados, totalPagosCitas, costoPromedioResultado, porcentajeAgendados };
-    }, [leads, campaigns]);
+    }, [filteredLeads, filteredCampaigns]);
 
     const campaignPerformance = useMemo(() => {
-        return campaigns.map(campaign => {
-            const leadsFromCampaign = leads.filter(lead => lead.anuncio === campaign.nombreAnuncio);
+        return filteredCampaigns.map(campaign => {
+            const leadsFromCampaign = filteredLeads.filter(lead => lead.anuncio === campaign.nombreAnuncio);
             const agendadosFromCampaign = leadsFromCampaign.filter(lead => lead.estado === 'Agendado').length;
             const conversion = leadsFromCampaign.length > 0 ? (agendadosFromCampaign / leadsFromCampaign.length) * 100 : 0;
             return {
@@ -38,7 +68,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ leads, campaign
                 conversion,
             };
         }).sort((a, b) => b.conversion - a.conversion);
-    }, [campaigns, leads]);
+    }, [filteredCampaigns, filteredLeads]);
 
     const topCampaigns = campaignPerformance.slice(0, 5);
 

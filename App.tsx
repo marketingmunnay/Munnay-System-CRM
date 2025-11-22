@@ -24,6 +24,7 @@ import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
 import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPage';
+import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
@@ -38,8 +39,8 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Auth states - Authentication disabled, default user with full permissions
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // Data states
@@ -96,66 +97,169 @@ const App: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [
-                leadsData, campaignsData, ventasData, incidenciasData, 
-                egresosData, proveedoresData, usersData, rolesData,
-                businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
-                serviceCategoriesData, productCategoriesData, jobPositionsData,
-                publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
-                tiposProveedorData, goalsData, comprobantesData
-            ] = await Promise.all([
-                api.getLeads(), api.getCampaigns(), api.getVentasExtra(),
-                api.getIncidencias(), api.getEgresos(), api.getProveedores(),
-                api.getUsers(), api.getRoles(), api.getBusinessInfo(),
-                api.getClientSources(), api.getServices(), api.getProducts(), api.getMemberships(),
-                api.getServiceCategories(), api.getProductCategories(), api.getJobPositions(),
-                api.getPublicaciones(), api.getSeguidores(), api.getMetaCampaigns(), api.getEgresoCategories(),
-                api.getTiposProveedor(), api.getGoals(), api.getComprobantes()
-            ]);
-            setLeads(leadsData);
-            setCampaigns(campaignsData);
-            setVentasExtra(ventasData);
-            setIncidencias(incidenciasData);
-            setEgresos(egresosData);
-            setProveedores(proveedoresData);
-            setUsers(usersData);
-            setRoles(rolesData);
-            setBusinessInfo(businessInfoData);
-            setClientSources(clientSourcesData);
-            setServices(servicesData);
-            setProducts(productsData);
-            setMemberships(membershipsData);
-            setServiceCategories(serviceCategoriesData);
-            setProductCategories(productCategoriesData);
-            setJobPositions(jobPositionsData);
-            setPublicaciones(publicacionesData);
-            setSeguidores(seguidoresData);
-            setMetaCampaigns(metaCampaignsData);
-            setEgresoCategories(egresoCategoriesData);
-            setTiposProveedor(tiposProveedorData);
-            setGoals(goalsData);
-            setComprobantes(comprobantesData);
-            
-            setNotifications(generateNotifications({ leads: leadsData, egresos: egresosData }));
+            const calls: Array<{ key: string; fn: () => Promise<any> }> = [
+                { key: 'leads', fn: () => api.getLeads?.() || Promise.resolve([]) },
+                { key: 'campaigns', fn: () => api.getCampaigns?.() || Promise.resolve([]) },
+                { key: 'ventas', fn: () => api.getVentasExtra?.() || Promise.resolve([]) },
+                { key: 'incidencias', fn: () => api.getIncidencias?.() || Promise.resolve([]) },
+                { key: 'egresos', fn: () => api.getEgresos?.() || Promise.resolve([]) },
+                { key: 'proveedores', fn: () => api.getProveedores?.() || Promise.resolve([]) },
+                { key: 'users', fn: () => api.getUsers?.() || Promise.resolve([]) },
+                { key: 'roles', fn: () => api.getRoles?.() || Promise.resolve([]) },
+                { key: 'businessInfo', fn: () => api.getBusinessInfo?.() || Promise.resolve(null) },
+                { key: 'clientSources', fn: () => api.getClientSources?.() || Promise.resolve([]) },
+                { key: 'services', fn: () => api.getServices?.() || Promise.resolve([]) },
+                { key: 'products', fn: () => api.getProducts?.() || Promise.resolve([]) },
+                { key: 'memberships', fn: () => api.getMemberships?.() || Promise.resolve([]) },
+                { key: 'serviceCategories', fn: () => api.getServiceCategories?.() || Promise.resolve([]) },
+                { key: 'productCategories', fn: () => api.getProductCategories?.() || Promise.resolve([]) },
+                { key: 'jobPositions', fn: () => api.getJobPositions?.() || Promise.resolve([]) },
+                { key: 'publicaciones', fn: () => api.getPublicaciones?.() || Promise.resolve([]) },
+                { key: 'seguidores', fn: () => api.getSeguidores?.() || Promise.resolve([]) },
+                { key: 'metaCampaigns', fn: () => api.getMetaCampaigns?.() || Promise.resolve([]) },
+                { key: 'egresoCategories', fn: () => api.getEgresoCategories?.() || Promise.resolve([]) },
+                { key: 'tiposProveedor', fn: () => api.getTiposProveedor?.() || Promise.resolve([]) },
+                { key: 'goals', fn: () => api.getGoals?.() || Promise.resolve([]) },
+                { key: 'comprobantes', fn: () => api.getComprobantes?.() || Promise.resolve([]) },
+            ];
+
+            console.log('loadData: launching', calls.map(c => c.key));
+
+            const settled = await Promise.allSettled(calls.map(c => {
+                console.log(`loadData: starting ${c.key}`);
+                return c.fn();
+            }));
+
+            const data: Record<string, any> = {};
+            settled.forEach((r, idx) => {
+                const key = calls[idx].key;
+                if (r.status === 'fulfilled') {
+                    console.log(`loadData: fulfilled ${key}`);
+                    data[key] = r.value;
+                } else {
+                    console.error(`loadData: rejected ${key}`, r.reason);
+                    // default values
+                    data[key] = key === 'businessInfo' ? null : [];
+                }
+            });
+
+            // Apply results to state (use defaults when needed)
+            setLeads(data.leads || []);
+            setCampaigns(data.campaigns || []);
+            setVentasExtra(data.ventas || []);
+            setIncidencias(data.incidencias || []);
+            setEgresos(data.egresos || []);
+            setProveedores(data.proveedores || []);
+            setUsers(data.users || []);
+            setRoles(data.roles || []);
+            setBusinessInfo(data.businessInfo || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            setClientSources(data.clientSources || []);
+            setServices(data.services || []);
+            setProducts(data.products || []);
+            setMemberships(data.memberships || []);
+            setServiceCategories(data.serviceCategories || []);
+            setProductCategories(data.productCategories || []);
+            setJobPositions(data.jobPositions || []);
+            setPublicaciones(data.publicaciones || []);
+            setSeguidores(data.seguidores || []);
+            setMetaCampaigns(data.metaCampaigns || []);
+            setEgresoCategories(data.egresoCategories || []);
+            setTiposProveedor(data.tiposProveedor || []);
+            setGoals(data.goals || []);
+            setComprobantes(data.comprobantes || []);
+
+            setNotifications(generateNotifications({ leads: data.leads || [], egresos: data.egresos || [] }));
 
         } catch (error) {
             console.error("Failed to load data", error);
+            // Set minimal business info on error
+            if (!businessInfo) {
+                setBusinessInfo({ nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            }
         } finally {
+            // Always set up a default admin user with full permissions (authentication disabled)
+            if (!currentUser) {
+                const allPermissions: Page[] = [
+                    'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                    'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
+                    'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
+                    'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
+                    'finanzas-facturacion', 'rrhh-perfiles', 'informes', 'configuracion'
+                ];
+                
+                const defaultUser: User = {
+                    id: 0,
+                    nombres: 'Usuario',
+                    apellidos: 'Administrador',
+                    usuario: 'admin',
+                    rolId: 1,
+                    avatarUrl: '',
+                    permissions: [
+                        'calendario', 'marketing-campanas', 'marketing-leads', 
+                        'redes-sociales-publicaciones', 'redes-sociales-seguidores',
+                        'procedimientos-ventas-extra', 'recepcion-agendados', 
+                        'recepcion-ventas-extra', 'recepcion-incidencias',
+                        'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
+                        'procedimientos-atenciones', 'procedimientos-seguimiento',
+                        'procedimientos-incidencias', 'pacientes-historia', 
+                        'informes', 'configuracion'
+                    ],
+                };
+                
+                setCurrentUser(defaultUser);
+            }
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadData();
+        console.log('App mounted - starting loadData');
+        const safetyTimer = setTimeout(() => {
+            console.warn('loadData safety timeout reached (20s) - forcing loading=false');
+            setLoading(false);
+        }, 20000);
+
+        loadData().finally(() => {
+            clearTimeout(safetyTimer as unknown as number);
+            console.log('loadData finished (finally) - cleared safety timer');
+        });
     }, []);
 
     // Handlers for data manipulation
-    const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
+    const handleSaveLead = async (lead: Lead) => {
+        console.log('🔁 FRONTEND: Saving lead...', { id: lead?.id });
+        try {
+            const saved = await api.saveLead(lead);
+            console.log('✅ FRONTEND: Save successful', { id: saved?.id });
+        } catch (err) {
+            console.error('❌ FRONTEND: Error saving lead', err);
+            throw err;
+        }
+        await loadData();
+    };
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };
+    const handleImportCampaigns = async (campaigns: any[]) => { await api.bulkImportCampaigns(campaigns); await loadData(); };
     const handleSaveMetaCampaign = async (campaign: MetaCampaign) => { await api.saveMetaCampaign(campaign); await loadData(); };
     const handleDeleteMetaCampaign = async (campaignId: number) => { await api.deleteMetaCampaign(campaignId); await loadData(); };
+    const handleImportMetaCampaigns = async (metaCampaigns: any[]) => { await api.bulkImportMetaCampaigns(metaCampaigns); await loadData(); };
+    const handleImportLeads = async (leads: any[]) => { await api.bulkImportLeads(leads); await loadData(); };
+    const handleImportVentasExtra = async (ventas: any[]) => { await api.bulkImportVentasExtra(ventas); await loadData(); };
+    const handleImportIncidencias = async (incidencias: any[]) => { await api.bulkImportIncidencias(incidencias); await loadData(); };
+    const handleImportEgresos = async (egresos: any[]) => { await api.bulkImportEgresos(egresos); await loadData(); };
+    const handleImportProveedores = async (proveedores: any[]) => { await api.bulkImportProveedores(proveedores); await loadData(); };
+    const handleImportPublicaciones = async (publicaciones: any[]) => { await api.bulkImportPublicaciones(publicaciones); await loadData(); };
+    const handleImportSeguidores = async (seguidores: any[]) => { await api.bulkImportSeguidores(seguidores); await loadData(); };
+    const handleImportComprobantes = async (comprobantes: any[]) => { await api.bulkImportComprobantes(comprobantes); await loadData(); };
+    const handleImportServices = async (services: any[]) => { await api.bulkImportServices(services); await loadData(); };
+    const handleImportProducts = async (products: any[]) => { await api.bulkImportProducts(products); await loadData(); };
+    const handleImportMemberships = async (memberships: any[]) => { await api.bulkImportMemberships(memberships); await loadData(); };
+    const handleImportServiceCategories = async (categories: any[]) => { await api.bulkImportServiceCategories(categories); await loadData(); };
+    const handleImportProductCategories = async (categories: any[]) => { await api.bulkImportProductCategories(categories); await loadData(); };
+    const handleImportEgresoCategories = async (categories: any[]) => { await api.bulkImportEgresoCategories(categories); await loadData(); };
+    const handleImportJobPositions = async (positions: any[]) => { await api.bulkImportJobPositions(positions); await loadData(); };
     const handleSavePublicacion = async (publicacion: Publicacion) => { await api.savePublicacion(publicacion); await loadData(); };
     const handleDeletePublicacion = async (publicacionId: number) => { await api.deletePublicacion(publicacionId); await loadData(); };
     const handleSaveSeguidor = async (seguidor: Seguidor) => { await api.saveSeguidor(seguidor); await loadData(); };
@@ -170,7 +274,21 @@ const App: React.FC = () => {
     const handleDeleteProveedor = async (proveedorId: number) => { await api.deleteProveedor(proveedorId); await loadData(); };
     const handleSaveTipoProveedor = async (tipo: TipoProveedor) => { await api.saveTipoProveedor(tipo); await loadData(); };
     const handleDeleteTipoProveedor = async (id: number) => { await api.deleteTipoProveedor(id); await loadData(); };
-    const handleSaveUser = async (user: User) => { await api.saveUser(user); await loadData(); };
+    const handleSaveUser = async (user: User) => { 
+        console.log('=== APP.TSX handleSaveUser ===');
+        console.log('Usuario recibido:', user);
+        try {
+            console.log('Llamando a api.saveUser...');
+            const result = await api.saveUser(user);
+            console.log('Respuesta de api.saveUser:', result);
+            console.log('Recargando datos...');
+            await loadData();
+            console.log('Datos recargados exitosamente');
+        } catch (error) {
+            console.error('ERROR en handleSaveUser:', error);
+            throw error;
+        }
+    };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
     const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
@@ -221,16 +339,52 @@ const App: React.FC = () => {
     };
 
     const currentUserPermissions = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.permissions : [];
+        if (!currentUser) return [];
+        // If user has permissions directly (our default user), use those
+        if (currentUser.permissions && currentUser.permissions.length > 0) {
+            return currentUser.permissions;
+        }
+        // Otherwise try to find from roles
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.permissions : [];
+        }
+        return [];
     }, [currentUser, roles]);
 
     const currentUserDashboardMetrics = useMemo(() => {
-        if (!currentUser || !roles.length) return [];
-        const userRole = roles.find(role => role.id === currentUser.rolId);
-        return userRole ? userRole.dashboardMetrics || [] : [];
+        if (!currentUser) return [];
+        // Return all metrics by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+        }
+        if (roles.length > 0) {
+            const userRole = roles.find(role => role.id === currentUser.rolId);
+            return userRole ? userRole.dashboardMetrics || [] : [];
+        }
+        return [];
     }, [currentUser, roles]);
+
+    // Map user permissions to dashboard tabs
+    const currentUserDashboardTabs = useMemo(() => {
+        if (!currentUser) return [];
+        // Return all tabs by default for our default admin user
+        if (currentUser.id === 0) {
+            return ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh'];
+        }
+        const tabs: string[] = [];
+        const perms = currentUserPermissions;
+        
+        // Map permissions to tabs
+        if (perms.some(p => p === 'dashboard')) tabs.push('general');
+        if (perms.some(p => p.startsWith('marketing-') || p.startsWith('redes-sociales-'))) tabs.push('marketing');
+        if (perms.some(p => p.startsWith('recepcion-'))) tabs.push('recepcion');
+        if (perms.some(p => p.startsWith('procedimientos-'))) tabs.push('procedimientos');
+        if (perms.some(p => p.startsWith('finanzas-'))) tabs.push('finanzas');
+        if (perms.some(p => p.startsWith('rrhh-'))) tabs.push('rrhh');
+        
+        return tabs;
+    }, [currentUser, currentUserPermissions]);
     
     const handleSetCurrentPage = (page: Page) => {
         if (currentUserPermissions.includes(page)) {
@@ -261,7 +415,7 @@ const App: React.FC = () => {
             ventasExtra, 
             incidencias, 
             egresos, 
-            permissions: currentUserDashboardMetrics,
+            permissions: currentUserDashboardTabs,
             goals,
             seguidores,
             publicaciones,
@@ -277,7 +431,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard {...dashboardProps} />;
             case 'marketing-leads':
-                return <LeadsPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <LeadsPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} memberships={memberships} users={users} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'marketing-campanas':
                  return <CampaignsPage 
                     campaigns={campaigns} 
@@ -294,21 +448,21 @@ const App: React.FC = () => {
             case 'redes-sociales-seguidores':
                 return <SeguidoresPage seguidores={seguidores} onSave={handleSaveSeguidor} onDelete={handleDeleteSeguidor} requestConfirmation={requestConfirmation} />;
             case 'recepcion-agendados':
-                return <AgendadosPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AgendadosPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
-                return <VentasExtraPage title="Recuperados" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <VentasExtraPage title="Ventas Recepción" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
-                return <AtencionesDiariasPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <AtencionesDiariasPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-seguimiento':
                 return <AnalisisSeguimientoPage leads={leads} />;
             case 'pacientes-historia':
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
-                return <CalendarPage leads={leads} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'procedimientos-ventas-extra':
-                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
@@ -367,6 +521,9 @@ const App: React.FC = () => {
                     onDeleteEgresoCategory={handleDeleteEgresoCategory}
                     requestConfirmation={requestConfirmation}
                     comprobantes={comprobantes}
+                    onImportCampaigns={handleImportCampaigns}
+                    onImportMetaCampaigns={handleImportMetaCampaigns}
+                    onImportLeads={handleImportLeads}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 
@@ -394,12 +551,14 @@ const App: React.FC = () => {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
 
-    if (!isAuthenticated) {
-        return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
-    }
+    // Authentication disabled - go directly to dashboard
+    // if (!isAuthenticated) {
+    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
+    // }
 
     return (
         <div className="flex h-screen bg-gray-100">
+            <BirthdayAnimation users={users} />
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={handleSetCurrentPage}

@@ -5,16 +5,20 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico } from '../../types.ts';
+import { formatDateForDisplay, formatDateForInput } from '../../utils/time';
+import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
 interface LeadsPageProps {
     leads: Lead[];
     metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
     onSaveLead: (lead: Lead) => void;
     onDeleteLead: (leadId: number) => void;
     clientSources: ClientSource[];
     services: Service[];
+    memberships?: Membership[];
+    users?: any[];
     requestConfirmation: (message: string, onConfirm: () => void) => void;
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
@@ -51,7 +55,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
                     <tbody>
                         {leads.map(lead => (
                             <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{new Date(lead.fechaLead + 'T00:00:00').toLocaleDateString('es-PE')}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead || new Date())}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {lead.nombres} {lead.apellidos}
                                 </th>
@@ -83,7 +87,7 @@ const LeadsTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({
 };
 
 
-const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, memberships, users, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -94,27 +98,38 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         let results = leads;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
-
             results = results.filter(lead => {
-                const leadDate = new Date(`${lead.fechaLead}T00:00:00`);
-                if (fromDate && leadDate < fromDate) {
+                if (!lead.fechaLead) return false;
+
+                const leadDate = formatDateForInput(lead.fechaLead);
+
+                if (!leadDate) return false;
+                if (dateRange.from && leadDate < dateRange.from) {
                     return false;
                 }
-                if (toDate && leadDate > toDate) {
+                if (dateRange.to && leadDate > dateRange.to) {
                     return false;
                 }
                 return true;
             });
         }
 
-        if (viewMode === 'table' && searchTerm) {
-            results = results.filter(lead =>
-                `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.numero.includes(searchTerm) ||
-                lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+        if (searchTerm) {
+            const q = searchTerm.trim().toLowerCase();
+            const qDigits = q.replace(/\D/g, '');
+            results = results.filter(lead => {
+                const fullName = `${lead.nombres || ''} ${lead.apellidos || ''}`.toLowerCase();
+                const numero = String(lead.numero || '').replace(/\D/g, '');
+                const historia = String(lead.nHistoria || '').toLowerCase();
+                const anuncio = String(lead.anuncio || '').toLowerCase();
+
+                const matchName = fullName.includes(q);
+                const matchNumero = qDigits ? numero.includes(qDigits) : (String(lead.numero || '').toLowerCase().includes(q));
+                const matchHistoria = historia.includes(q);
+                const matchAnuncio = anuncio.includes(q);
+
+                return matchName || matchNumero || matchHistoria || matchAnuncio;
+            });
         }
         
         return results;
@@ -135,9 +150,19 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
         setEditingLead(null);
     };
 
-    const handleSaveLead = (leadToSave: Lead) => {
-        onSaveLead(leadToSave);
-        handleCloseModal();
+    const handleSaveLead = async (leadToSave: Lead) => {
+        await onSaveLead(leadToSave);
+        // Update editingLead with the latest data after save
+        if (leadToSave.id && editingLead) {
+            // Find the updated lead from the leads array after the save operation
+            // This ensures the modal shows the latest data
+            setTimeout(() => {
+                const updatedLead = leads.find(l => l.id === leadToSave.id);
+                if (updatedLead) {
+                    setEditingLead(updatedLead);
+                }
+            }, 100); // Small delay to ensure the parent data is updated
+        }
     };
     
     const handleApplyDateFilter = (dates: { from: string, to: string }) => {
@@ -230,8 +255,11 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, metaCampaigns, onSaveLead,
             onDelete={onDeleteLead}
             lead={editingLead}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
+            memberships={memberships}
+            users={users}
             requestConfirmation={requestConfirmation}
             onSaveComprobante={onSaveComprobante}
             comprobantes={comprobantes}
