@@ -2360,9 +2360,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     console.debug('🧭 LeadFormModal normalization debug error', e);
                 }
 
-                // Preserve fechaHoraAgenda (may include time) and ensure fechaLead default
+                // Preserve fechaHoraAgenda (may include time).
                 if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
-                if (!normalized.fechaLead) normalized.fechaLead = formatDateForInput(new Date());
+                // If backend provided a fechaLead but normalization failed, force it
+                // to a YYYY-MM-DD value using our normalizer or fallback to formatDateForInput.
+                if (lead && (lead as any).fechaLead) {
+                    const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
+                    normalized.fechaLead = forced || formatDateForInput(new Date());
+                } else if (!normalized.fechaLead) {
+                    normalized.fechaLead = formatDateForInput(new Date());
+                }
 
                 setFormData(normalized);
             } else {
@@ -2401,6 +2408,14 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             }
 
             if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
+
+            // Force fechaLead from the original lead when available (avoid empty input)
+            if (lead && (lead as any).fechaLead) {
+                const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
+                normalized.fechaLead = forced || formatDateForInput(new Date());
+            } else if (!normalized.fechaLead) {
+                normalized.fechaLead = formatDateForInput(new Date());
+            }
 
             setFormData(normalized as any);
         }
