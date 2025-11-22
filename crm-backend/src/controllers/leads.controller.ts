@@ -4,11 +4,21 @@ import prisma from '../lib/prisma';
 // Convert BigInt values (returned by Prisma for BigInt columns) into JSON-serializable
 // values. If the BigInt fits into a safe JS number we convert to Number, otherwise to string.
 const convertBigInts = (value: any): any => {
+  // Handle BigInt values
   if (typeof value === 'bigint') {
     const num = Number(value);
     return Number.isSafeInteger(num) ? num : String(value);
   }
+
+  // Dates should be serialized to ISO strings so the frontend receives a stable value
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  // Recurse arrays
   if (Array.isArray(value)) return value.map(v => convertBigInts(v));
+
+  // Recurse plain objects
   if (value && typeof value === 'object') {
     const out: any = {};
     for (const k of Object.keys(value)) {
@@ -16,6 +26,7 @@ const convertBigInts = (value: any): any => {
     }
     return out;
   }
+
   return value;
 };
 
