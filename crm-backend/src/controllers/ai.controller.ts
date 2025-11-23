@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
+import prisma from '../lib/prisma';
+import crypto from 'crypto';
 
 // Configuración del cliente OpenAI (Groq)
 const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
@@ -194,5 +196,88 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
       message: 'Error generating commercial report', 
       detail: errAny.message || String(errAny)
     });
+  }
+};
+
+// POST /api/ai/lead-analysis
+// Body: { leadId: number, force?: boolean }
+export const generateLeadAnalysis = async (req: Request, res: Response) => {
+  try {
+    const { leadId, force } = req.body;
+    if (!leadId) return res.status(400).json({ message: 'leadId is required' });
+
+    // Fetch lead with relevant relations
+    const lead = await prisma.lead.findUnique({
+      where: { id: Number(leadId) },
+      include: { seguimientos: true, procedimientos: true }
+    });
+    if (!lead) return res.status(404).json({ message: 'Lead not found' });
+
+    // Compute a hash of seguimientos + procedimientos to detect changes
+    const payloadForHash = JSON.stringify({ seguimientos: lead.seguimientos || [], procedimientos: lead.procedimientos || [] });
+    const hash = crypto.createHash('sha1').update(payloadForHash).digest('hex');
+
+    // Try to parse existing observacionesGenerales as JSON to get stored AI summaries
+    let existingObj: any = null;
+    if (lead.observacionesGenerales) {
+      try {
+        existingObj = JSON.parse(lead.observacionesGenerales);
+      } catch {
+        // not JSON, keep as human text
+        existingObj = { human: lead.observacionesGenerales };
+      }
+    } else {
+      existingObj = {};
+    }
+
+    if (!force && existingObj.aiSummaries && existingObj.aiSummaries.hash === hash) {
+      // No change: return stored summaries
+      return res.status(200).json({ fromCache: true, summaries: existingObj.aiSummaries });
+    }
+
+    // Build prompts
+    const analysisPrompt = `Eres un experto médico en estética. Analiza estos seguimientos del paciente y entrega: Resumen del progreso, Tendencias, Recomendaciones específicas, Alertas prioritarias y Evaluación general. Datos:\n\n${JSON.stringify(lead.seguimientos, null, 2)}`;
+
+    const observacionesPrompt = `Resume todas las observaciones post-tratamiento y procedimientos realizados en un párrafo conciso. Procedimientos:\n\n${JSON.stringify(lead.procedimientos, null, 2)}\n\nSeguimientos (observaciones):\n\n${JSON.stringify(lead.seguimientos.map((s: any) => s.observacion || s.observaciones || ''), null, 2)}`;
+
+    // Respect cooldown
+    if (aiCooldownUntil && Date.now() < aiCooldownUntil) {
+      const waitSec = Math.ceil((aiCooldownUntil - Date.now()) / 1000);
+      return res.status(429).json({ message: `La API de IA está en enfriamiento. Intenta de nuevo en ${waitSec} segundos.` });
+    }
+
+    if (!GROQ_API_KEY) return res.status(500).json({ message: 'Groq/OpenAI API key not configured' });
+
+    // Call AI for analysis
+    const analysisResp = await client.responses.create({ model: MODEL_NAME, input: analysisPrompt });
+    const analysisText = extractTextFromResponse(analysisResp) || '';
+
+    const obsResp = await client.responses.create({ model: MODEL_NAME, input: observacionesPrompt });
+    const obsText = extractTextFromResponse(obsResp) || '';
+
+    const summaries = {
+      hash,
+      updatedAt: new Date().toISOString(),
+      analysis: analysisText,
+      observacionesSummary: obsText
+    };
+
+    // Merge into existingObj and persist as JSON in observacionesGenerales
+    const toStore = { ...existingObj, aiSummaries: summaries };
+    await prisma.lead.update({ where: { id: Number(leadId) }, data: { observacionesGenerales: JSON.stringify(toStore) } });
+
+    res.status(200).json({ fromCache: false, summaries });
+  } catch (error) {
+    console.error('Error generating lead analysis:', error);
+    const errAny: any = error || {};
+    const statusCode = errAny.status || errAny.statusCode || errAny.code || null;
+    if (statusCode === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      aiCooldownUntil = Date.now() + AI_COOLDOWN_MS;
+      return res.status(429).json({ message: 'La API de IA ha excedido la cuota o está limitada.' });
+    }
+    if (statusCode && statusCode >= 500 && statusCode < 600) {
+      return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
+    }
+    res.status(500).json({ message: 'Error generating lead analysis', detail: errAny.message || String(errAny) });
   }
 };
