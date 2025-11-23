@@ -329,8 +329,12 @@ model VentaExtra {
   metodoPago      MetodoPago
   deuda           Float
   fechaPagoDeuda  DateTime?
+  vendedorId      Int?
+  apoyoPorId      Int?
   paciente        Lead       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   comprobante     ComprobanteElectronico?
+  vendedor        User?      @relation("VentaVendedor", fields: [vendedorId], references: [id])
+  apoyoPor        User?      @relation("VentaApoyo", fields: [apoyoPorId], references: [id])
 }
 
 model Incidencia {
