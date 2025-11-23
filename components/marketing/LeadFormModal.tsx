@@ -1024,7 +1024,7 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     );
 };
 
-const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS }) => {
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS, onClose }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
@@ -1157,6 +1157,50 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
             observacion: ''
         });
         setEditingProcedureId(null);
+    };
+
+    // Handler to delegate scheduling to Calendar: create a prefilled procedure (no date/time)
+    const handleScheduleNextSession = () => {
+        if (!formData.tratamientos || formData.tratamientos.length === 0) {
+            showAlert('No hay tratamientos', 'No hay tratamientos registrados. Agregue tratamientos en la pestaña Recepción para poder registrar procedimientos.');
+            return;
+        }
+
+        const primerTratamiento = formData.tratamientos[0];
+        const { restantes, usadas, total } = getSesionesRestantes(primerTratamiento.id);
+        if (restantes === 0) {
+            showAlert('No se puede agendar', `Tratamiento: ${primerTratamiento.nombre || 'Desconocido'}\nSesiones utilizadas: ${usadas}/${total}\nNo quedan sesiones disponibles.`);
+            return;
+        }
+
+        const nextSessionNumber = getNextSessionNumber(primerTratamiento.id);
+        const newProcData: Partial<Procedure> = {
+            id: Date.now(),
+            fechaAtencion: null,
+            horaInicio: '',
+            horaFin: '',
+            tratamientoId: primerTratamiento.id,
+            nombreTratamiento: primerTratamiento.nombre,
+            sesionNumero: nextSessionNumber,
+            personal: formData.profesionalAsignado || 'Vanesa',
+            asistenciaMedica: false,
+            medico: undefined,
+            observacion: '',
+            // keep reference to the lead so Calendar can return to the same lead
+            // this is an extended field in the Partial type and used at runtime
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            leadId: formData.id,
+        };
+
+        // set in schedule context so Calendar can consume it and allow slot selection
+        schedule.setProcedureToSchedule(newProcData);
+        // close the lead modal so the app navigates to calendar
+        try {
+            if (onClose) onClose();
+        } catch (e) {
+            // ignore
+        }
     };
 
     const handleEditProcedure = (procedure: Procedure) => {
@@ -1397,6 +1441,37 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                                 {getSesionesRestantes(formData.tratamientos[0].id).restantes}
                             </span>
                         )}
+                    </button>
+                    
+                    <button
+                        type="button"
+                        onClick={handleScheduleNextSession}
+                        disabled={(() => {
+                            if (!hasTratamientos) return true;
+                            const primerTratamiento = formData.tratamientos?.[0];
+                            if (!primerTratamiento) return true;
+                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                            return restantes === 0;
+                        })()}
+                        className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
+                            (() => {
+                                if (!hasTratamientos) return 'bg-gray-300 cursor-not-allowed';
+                                const primerTratamiento = formData.tratamientos?.[0];
+                                if (!primerTratamiento) return 'bg-gray-300 cursor-not-allowed';
+                                const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                                return restantes > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed';
+                            })()
+                        } ml-2`}
+                        title={(() => {
+                            if (!hasTratamientos) return 'Debe agregar tratamientos en la pestaña Recepción primero';
+                            const primerTratamiento = formData.tratamientos?.[0];
+                            if (!primerTratamiento) return 'No hay tratamientos disponibles';
+                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
+                            return restantes === 0 ? 'No quedan sesiones disponibles' : 'Agendar la próxima sesión en el calendario';
+                        })()}
+                    >
+                        <GoogleIcon name="event" className="mr-1" />
+                        Agendar próxima sesión
                     </button>
                 </div>
             </div>
@@ -2732,6 +2807,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     formData={formData} 
                     handleSetFormData={setFormData}
                     PERSONAL_OPTIONS={PERSONAL_OPTIONS}
+                    onClose={onClose}
                 />;
             case 'seguimiento':
                 return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} PERSONAL_OPTIONS={PERSONAL_OPTIONS} />;

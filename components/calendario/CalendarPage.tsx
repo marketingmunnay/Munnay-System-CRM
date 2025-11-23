@@ -132,21 +132,38 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
             anuncio: '',
         };
         // If a procedureToSchedule exists in context, use it to prefill procedure and open modal
-        try {
-            const schedule = useSchedule();
-            if (schedule.procedureToSchedule) {
-                // mark completed procedure in context with selected slot
-                const completed = {
-                    ...schedule.procedureToSchedule,
-                    fechaAtencion: formatDateForInput(clickDate),
-                    horaInicio: `${clickDate.getHours().toString().padStart(2,'0')}:${clickDate.getMinutes().toString().padStart(2,'0')}`,
-                    horaFin: undefined as any,
-                };
-                schedule.setCompletedProcedure(completed);
-                schedule.setProcedureToSchedule(null);
+        if (schedule.procedureToSchedule) {
+            const completed = {
+                ...schedule.procedureToSchedule,
+                fechaAtencion: formatDateForInput(clickDate),
+                horaInicio: `${clickDate.getHours().toString().padStart(2,'0')}:${clickDate.getMinutes().toString().padStart(2,'0')}`,
+                horaFin: undefined as any,
+            };
+            schedule.setCompletedProcedure(completed);
+
+            // Keep reference to origin lead if provided on the procedureToSchedule
+            // (we store it as an extended field `leadId` when delegating from Lead modal)
+            // Try to find the original lead and open modal for that lead, otherwise create a new lead object
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const originLeadId = (schedule.procedureToSchedule as any)?.leadId;
+            let leadToEdit: Partial<Lead> | null = null;
+            if (originLeadId) {
+                const found = leads.find(l => l.id === originLeadId);
+                if (found) leadToEdit = found;
             }
-        } catch (err) {
-            // ignore if schedule context not available
+
+            if (leadToEdit) {
+                setEditingLead(leadToEdit as Lead);
+            } else {
+                setEditingLead(newLead as Lead);
+            }
+
+            // clear the request to schedule (we've captured it as completed)
+            schedule.setProcedureToSchedule(null);
+
+            setIsModalOpen(true);
+            return;
         }
 
         setEditingLead(newLead as Lead);

@@ -35,6 +35,7 @@ import type {
 import * as api from './services/api';
 import { generateNotifications } from './services/notificationService';
 import { useSchedule } from './components/shared/ScheduleContext';
+import { StatusToastProvider } from './components/shared/StatusToastContext';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -567,6 +568,7 @@ const App: React.FC = () => {
     // }
 
     return (
+        <StatusToastProvider>
         <div className="flex h-screen bg-gray-100">
             <BirthdayAnimation users={users} />
             <Sidebar 
@@ -600,6 +602,7 @@ const App: React.FC = () => {
                 />
             )}
         </div>
+        </StatusToastProvider>
     );
 };
 
