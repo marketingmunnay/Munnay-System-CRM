@@ -404,9 +404,6 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                  </div>
             </fieldset>
             
-            {(formData.montoPagado || 0) > 0 && (
-                {/* Facturación section removed as requested */}
-
                 <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
                      <legend className="text-md font-bold px-2 text-black">3. Comercial</legend>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
@@ -439,29 +436,12 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                          </div>
                      </div>
                 </fieldset>
-            )}
 
         </form>
       </div>
     </Modal>
 
-    {isFacturacionModalOpen && pacienteEncontrado && formData.id && (
-        <FacturacionModal
-            isOpen={isFacturacionModalOpen}
-            onClose={handleCloseFacturacionModal}
-            onSave={handleFacturacionSave}
-            paciente={pacienteEncontrado as Lead}
-            venta={{
-                ...formData as VentaExtra,
-                servicio: formData.servicio || 'Venta Extra',
-                categoria: formData.categoria || 'General',
-                pacienteId: pacienteEncontrado.id,
-                nombrePaciente: pacienteEncontrado.nombres + ' ' + pacienteEncontrado.apellidos,
-                nHistoria: pacienteEncontrado.nHistoria || '',
-            }}
-            ventaType="venta_extra"
-        />
-    )}
+    
     </>
   );
 };
