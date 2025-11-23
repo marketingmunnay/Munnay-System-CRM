@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership, User } from '../../types';
 import { MetodoPago } from '../../types';
 import Modal from '../shared/Modal.tsx';
-import FacturacionModal from '../finanzas/FacturacionModal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
 import { formatDateForInput } from '../../utils/time';
 
@@ -20,18 +19,20 @@ interface VentaExtraFormModalProps {
   onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
   comprobantes: ComprobanteElectronico[];
   onSaveLead: (lead: Lead) => void;
+    users: User[];
 }
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
+export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen, onClose, onSave, onDelete, venta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead, users }) => {
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);
   const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | 'Membresía' | ''>('');
-  const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [recibioApoyo, setRecibioApoyo] = useState(false);
 
   const serviceCategoriesAndItems = useMemo(() => {
     return services.reduce((acc, s) => {
@@ -193,6 +194,12 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
         const montoPagado = newState.montoPagado || 0;
         newState.deuda = precio - montoPagado;
 
+        // Persist vendedor selection into formData
+        if (name === 'vendedor') {
+            // store the user id as vendedorId
+            newState.vendedorId = Number(value) || undefined;
+        }
+
         return newState;
     });
   };
@@ -213,7 +220,12 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
     }
     
     // Guardar la venta
-    onSave(formData as VentaExtra);
+    // attach vendedor/apoyo fields if present
+    const payload: any = { ...formData };
+    if (recibioApoyo && payload.apoyoPorId) {
+        payload.apoyoPorId = payload.apoyoPorId;
+    }
+    onSave(payload as VentaExtra);
     
     // Si es un servicio, crear un Procedure en el lead
     if (saleType === 'Servicio' && pacienteEncontrado && !venta) {
@@ -256,11 +268,11 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
   };
 
   const handleOpenFacturacionModal = () => {
-    setIsFacturacionModalOpen(true);
+        // facturación eliminada per request
   };
 
   const handleCloseFacturacionModal = () => {
-    setIsFacturacionModalOpen(false);
+        setIsFacturacionModalOpen(false);
   };
 
   const handleFacturacionSave = async (comprobante: ComprobanteElectronico) => {
@@ -393,19 +405,40 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             </fieldset>
             
             {(formData.montoPagado || 0) > 0 && (
-                 <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
-                     <legend className="text-md font-bold px-2 text-black">3. Facturación</legend>
-                     <div className="mt-2 flex justify-end">
-                        <button
-                            type="button"
-                            onClick={handleOpenFacturacionModal}
-                            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
-                        >
-                            <GoogleIcon name="add_to_photos" className="mr-2 text-xl" />
-                            Generar Comprobante
-                        </button>
-                    </div>
-                 </fieldset>
+                {/* Facturación section removed as requested */}
+
+                <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
+                     <legend className="text-md font-bold px-2 text-black">3. Comercial</legend>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
+                         <div>
+                            <label htmlFor="vendedor" className="mb-1 text-sm font-medium text-gray-700">Vendedor</label>
+                            <select id="vendedor" name="vendedor" value={(formData as any).vendedorId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                                <option value="">Seleccionar...</option>
+                                {users.filter(u => ['Tec. Enfermera', 'Lic. en Enfermería', 'Recepcionista'].includes(u.position || '')).map(u => (
+                                    <option key={u.id} value={u.id}>{u.nombres} {u.apellidos} - {u.position}</option>
+                                ))}
+                            </select>
+                         </div>
+                         <div className="md:col-span-2">
+                            <label className="flex items-center space-x-2">
+                                <input type="checkbox" checked={recibioApoyo} onChange={(e) => setRecibioApoyo(e.target.checked)} />
+                                <span className="text-sm font-medium text-gray-700">¿Recibió apoyo en esta venta?</span>
+                            </label>
+
+                            {recibioApoyo && (
+                                <div className="mt-2">
+                                    <label htmlFor="apoyoPor" className="mb-1 text-sm font-medium text-gray-700">Seleccionar trabajador que apoyó</label>
+                                    <select id="apoyoPor" name="apoyoPorId" value={(formData as any).apoyoPorId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                                        <option value="">Seleccionar trabajador...</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>{u.nombres} {u.apellidos} {u.position ? `- ${u.position}` : ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                         </div>
+                     </div>
+                </fieldset>
             )}
 
         </form>

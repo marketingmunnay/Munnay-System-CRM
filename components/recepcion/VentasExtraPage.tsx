@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership } from '../../types';
+import type { VentaExtra, Lead, Service, Product, ComprobanteElectronico, Membership, User } from '../../types';
 import { Seller } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import { formatDateForDisplay } from '../../utils/time';
@@ -37,6 +37,7 @@ interface VentasExtraPageProps {
     title: string;
     ventas: VentaExtra[];
     pacientes: Lead[];
+    users: User[];
     onSaveVenta: (venta: VentaExtra) => void;
     onSaveLead: (lead: Lead) => void;
     onDeleteVenta: (ventaId: number) => void;
@@ -48,7 +49,7 @@ interface VentasExtraPageProps {
     comprobantes: ComprobanteElectronico[];
 }
 
-const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSaveVenta, onDeleteVenta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead }) => {
+const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSaveVenta, onDeleteVenta, pacientes, services, products, memberships, requestConfirmation, onSaveComprobante, comprobantes, onSaveLead, users }) => {
     const [activeTab, setActiveTab] = useState<'ventas' | 'llamadas'>('ventas');
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
@@ -474,6 +475,7 @@ const VentasExtraPage: React.FC<VentasExtraPageProps> = ({ title, ventas, onSave
                 services={services}
                 products={products}
                 memberships={memberships}
+                users={users}
                 requestConfirmation={requestConfirmation}
                 onSaveComprobante={onSaveComprobante}
                 comprobantes={comprobantes}
