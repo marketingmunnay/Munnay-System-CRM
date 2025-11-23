@@ -1,15 +1,45 @@
 import { Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
-// Configuración de Google Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
+// Configuración del cliente OpenAI (Groq)
+const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
+const client = new OpenAI({
+  apiKey: GROQ_API_KEY,
+  baseURL: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
+});
 
-// Usar gemini-2.0-flash que es el modelo actual disponible
-const MODEL_NAME = "gemini-2.0-flash";
+// Modelo por defecto (puede ajustarse con env OPENAI_MODEL)
+const MODEL_NAME = process.env.OPENAI_MODEL || 'openai/gpt-oss-20b';
 
 // Simple in-memory circuit breaker / cooldown to avoid hammering the provider
 let aiCooldownUntil: number | null = null; // timestamp ms
 const AI_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+// Helper para extraer texto de la respuesta de la API (Groq/OpenAI)
+const extractTextFromResponse = (resp: any): string => {
+  if (!resp) return '';
+  // si la librería expone `output_text` (ejemplo de Groq)
+  if (typeof resp.output_text === 'string' && resp.output_text.length) return resp.output_text;
+
+  // nueva API Responses: buscar en `output` o `output[0].content`
+  if (Array.isArray(resp.output) && resp.output.length) {
+    const first = resp.output[0];
+    if (typeof first === 'string') return first;
+    if (first.content && Array.isArray(first.content)) {
+      return first.content.map((c: any) => c.text || (typeof c === 'string' ? c : '')).join('');
+    }
+  }
+
+  // fallback: si la respuesta tiene `text` o `choices` (compatibilidad con otros clientes)
+  if (typeof resp.text === 'string') return resp.text;
+  if (resp.choices && Array.isArray(resp.choices) && resp.choices[0]) {
+    const c = resp.choices[0];
+    if (typeof c.text === 'string') return c.text;
+    if (c.message && typeof c.message.content === 'string') return c.message.content;
+  }
+
+  return '';
+};
 
 export const generateContent = async (req: Request, res: Response) => {
   try {
@@ -24,37 +54,26 @@ export const generateContent = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Prompt is required' });
     }
 
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      return res.status(500).json({ message: 'Google Gemini API key not configured' });
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ message: 'Groq/OpenAI API key not configured' });
     }
 
-    // Obtener el modelo Gemini
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
-    // Generar contenido con el prompt proporcionado
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
+    // Llamada al endpoint Responses (Groq/OpenAI)
+    const resp = await client.responses.create({ model: MODEL_NAME, input: prompt });
+    const text = extractTextFromResponse(resp) || '';
     res.status(200).json({ content: text });
   } catch (error) {
     console.error('Error generating AI content:', error);
     const errAny: any = error || {};
-    // Map upstream status codes to sensible HTTP responses
-    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
-      // Put the backend into cooldown to avoid repeated calls for a while
+    const statusCode = errAny.status || errAny.statusCode || errAny.code || null;
+    if (statusCode === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
       aiCooldownUntil = Date.now() + AI_COOLDOWN_MS;
       const message = 'La API de IA ha excedido la cuota o está limitada. Se activó un periodo de enfriamiento. Por favor revisa el plan/billing y espera antes de reintentar.';
-      // Prefer to return 429 so client can surface a retry message
       return res.status(429).json({ message, detail: errAny.message || null });
     }
-
-    // If the provider returned a 5xx, surface a 502 Bad Gateway
-    if (errAny.status >= 500 && errAny.status < 600) {
+    if (statusCode && statusCode >= 500 && statusCode < 600) {
       return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
     }
-
-    // Fallback: generic error
     res.status(500).json({ 
       message: 'Error generating AI content', 
       detail: errAny.message || String(errAny)
@@ -70,8 +89,8 @@ export const generateAnalysis = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Seguimientos array is required' });
     }
 
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      return res.status(500).json({ message: 'Google Gemini API key not configured' });
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ message: 'Groq/OpenAI API key not configured' });
     }
 
     // Crear un prompt específico para análisis de seguimientos
@@ -111,19 +130,18 @@ export const generateAnalysis = async (req: Request, res: Response) => {
     Mantén un tono profesional, médico y constructivo. El análisis debe ser específico para tratamientos estéticos y orientado a la mejora continua del cuidado del paciente.
     `;
 
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
+    const resp = await client.responses.create({ model: MODEL_NAME, input: prompt });
+    const text = extractTextFromResponse(resp) || '';
     res.status(200).json({ analysis: text });
   } catch (error) {
     console.error('Error generating AI analysis:', error);
     const errAny: any = error || {};
-    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+    const statusCode = errAny.status || errAny.statusCode || errAny.code || null;
+    if (statusCode === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      aiCooldownUntil = Date.now() + AI_COOLDOWN_MS;
       return res.status(429).json({ message: 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.' });
     }
-    if (errAny.status >= 500 && errAny.status < 600) {
+    if (statusCode && statusCode >= 500 && statusCode < 600) {
       return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
     }
     res.status(500).json({ 
@@ -137,8 +155,8 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
   try {
     const { salesData, goals, period } = req.body;
 
-    if (!process.env.GOOGLE_GEMINI_API_KEY) {
-      return res.status(500).json({ message: 'Google Gemini API key not configured' });
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ message: 'Groq/OpenAI API key not configured' });
     }
 
     const prompt = `
@@ -158,19 +176,18 @@ export const generateCommercialReport = async (req: Request, res: Response) => {
     **Importante:** No incluyas encabezados numerados o con '###' como "### 2. ...". Solo usa los títulos en negrita proporcionados.
     `;
 
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
+    const resp = await client.responses.create({ model: MODEL_NAME, input: prompt });
+    const text = extractTextFromResponse(resp) || '';
     res.status(200).json({ report: text });
   } catch (error) {
     console.error('Error generating commercial report:', error);
     const errAny: any = error || {};
-    if (errAny.status === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+    const statusCode = errAny.status || errAny.statusCode || errAny.code || null;
+    if (statusCode === 429 || /quota|rate limit|Too Many Requests/i.test(errAny.message || '')) {
+      aiCooldownUntil = Date.now() + AI_COOLDOWN_MS;
       return res.status(429).json({ message: 'La API de IA ha excedido la cuota o está limitada. Por favor revisa el plan/billing y espera antes de reintentar.' });
     }
-    if (errAny.status >= 500 && errAny.status < 600) {
+    if (statusCode && statusCode >= 500 && statusCode < 600) {
       return res.status(502).json({ message: 'Error del proveedor de IA. Intenta nuevamente más tarde.' });
     }
     res.status(500).json({ 
