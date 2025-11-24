@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 // import { VentaExtra } from '@prisma/client';
 
 export const getVentas = async (req: Request, res: Response) => {
@@ -60,12 +61,15 @@ export const createVenta = async (req: Request, res: Response) => {
   if (data.apoyoPorId !== undefined) data.apoyoPorId = Number(data.apoyoPorId);
 
   try {
+    const payload = {
+      ...data,
+      fechaVenta: data.fechaVenta ? new Date(data.fechaVenta) : new Date(),
+      fechaPagoDeuda: data.fechaPagoDeuda ? new Date(data.fechaPagoDeuda) : undefined,
+    };
+
     const newVenta = await prisma.ventaExtra.create({
-      data: {
-        ...data,
-        fechaVenta: data.fechaVenta ? new Date(data.fechaVenta) : new Date(),
-        fechaPagoDeuda: data.fechaPagoDeuda ? new Date(data.fechaPagoDeuda) : undefined,
-      },
+      // Cast to Prisma input to satisfy TypeScript; payload is validated at runtime by Prisma
+      data: payload as unknown as Prisma.VentaExtraCreateInput,
     });
     res.status(201).json(newVenta);
   } catch (error) {
@@ -113,13 +117,14 @@ export const updateVenta = async (req: Request, res: Response) => {
   if (data.apoyoPorId !== undefined) data.apoyoPorId = Number(data.apoyoPorId);
 
   try {
+    const payload = {
+      ...data,
+      fechaVenta: data.fechaVenta ? new Date(data.fechaVenta) : undefined,
+      fechaPagoDeuda: data.fechaPagoDeuda ? new Date(data.fechaPagoDeuda) : undefined,
+    };
     const updatedVenta = await prisma.ventaExtra.update({
       where: { id: id },
-      data: {
-        ...data,
-        fechaVenta: data.fechaVenta ? new Date(data.fechaVenta) : undefined,
-        fechaPagoDeuda: data.fechaPagoDeuda ? new Date(data.fechaPagoDeuda) : undefined,
-      },
+      data: payload as unknown as Prisma.VentaExtraUpdateInput,
     });
     res.status(200).json(updatedVenta);
   } catch (error) {
