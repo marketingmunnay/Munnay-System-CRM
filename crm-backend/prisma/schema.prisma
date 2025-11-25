@@ -192,6 +192,7 @@ model Lead {
   ventasExtra          VentaExtra[]
   incidencias          Incidencia[]
   pagosRecepcion       PagoRecepcion[]
+  appointments         Appointment[]
 }
 
 model PagoRecepcion {
@@ -475,6 +476,7 @@ model User {
   reconocimientosRecibidos Reconocimiento[]   @relation("RecibidoPor")
   ventasComoVendedor       VentaExtra[]       @relation("VentaVendedor")
   ventasComoApoyo          VentaExtra[]       @relation("VentaApoyo")
+  appointments             Appointment[]
 }
 
 model Address {
@@ -649,4 +651,19 @@ model LeadMembership {
   precioTotal  Float
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+// Calendar appointments
+model Appointment {
+  id         Int      @id @default(autoincrement())
+  startAt    DateTime
+  endAt      DateTime
+  resourceId Int
+  title      String?
+  leadId     Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  resource User @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  lead     Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
 }

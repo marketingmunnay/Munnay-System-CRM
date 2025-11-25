@@ -227,32 +227,10 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
     }
     onSave(payload as VentaExtra);
     
-    // Si es un servicio, crear un Procedure en el lead
-    if (saleType === 'Servicio' && pacienteEncontrado && !venta) {
-      // Generar IDs temporales negativos para evitar conflictos con autoincrement
-      const tempId = -Math.floor(Math.random() * 1000000);
-      const tempTratamientoId = -Math.floor(Math.random() * 1000000);
-      
-      const newProcedure: any = {
-        id: tempId,
-        fechaAtencion: formData.fechaVenta || new Date().toISOString().split('T')[0],
-        personal: 'Por asignar',
-        horaInicio: '09:00',
-        horaFin: '10:00',
-        tratamientoId: tempTratamientoId,
-        nombreTratamiento: formData.servicio || '',
-        sesionNumero: 1,
-        asistenciaMedica: false,
-        observacion: `Venta registrada - Código: ${formData.codigoVenta}`
-      };
-      
-      const updatedLead: Lead = {
-        ...pacienteEncontrado,
-        procedimientos: [...(pacienteEncontrado.procedimientos || []), newProcedure]
-      };
-      
-      onSaveLead(updatedLead);
-    }
+        // NOTE: we no longer auto-create a Procedure for the lead when recording a VentaExtra.
+        // Creating Procedures requires a valid tratamientoId (FK to treatments), which
+        // is not available here. Procedure creation should be handled separately in
+        // the Recepción/Procedimientos flow where treatments exist.
   };
 
   const handleDelete = () => {
@@ -409,7 +387,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
                          <div>
                             <label htmlFor="vendedor" className="mb-1 text-sm font-medium text-gray-700">Vendedor</label>
-                            <select id="vendedor" name="vendedor" value={(formData as any).vendedorId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                            <select id="vendedor" name="vendedorId" value={(formData as any).vendedorId || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
                                 <option value="">Seleccionar...</option>
                                 {users.filter(u => ['Tec. Enfermera', 'Lic. en Enfermería', 'Recepcionista'].includes(u.position || '')).map(u => (
                                     <option key={u.id} value={u.id}>{u.nombres} {u.apellidos} - {u.position}</option>
