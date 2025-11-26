@@ -52,6 +52,7 @@ const navItems: NavItem[] = [
             { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
         ]
     },
+        { id: 'tareas', label: 'Tareas', icon: <GoogleIcon name="task" className="text-xl" />, page: 'tareas' },
     {
         id: 'administracion',
         label: 'Administración',

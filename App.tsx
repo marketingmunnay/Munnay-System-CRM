@@ -16,6 +16,7 @@ import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage'
 import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
 import CalendarPage from './components/calendario/CalendarPage';
+import TasksPage from './components/tasks/TasksPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
 // FIX: Changed to named export for ConfiguracionPage
@@ -472,6 +473,8 @@ const App: React.FC = () => {
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
                 return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+            case 'tareas':
+                return <TasksPage />;
             case 'procedimientos-ventas-extra':
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} users={users} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'procedimientos-incidencias':
