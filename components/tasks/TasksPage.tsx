@@ -73,11 +73,16 @@ export const TasksPage: React.FC = () => {
 
             <div className="space-y-3 max-h-[60vh] overflow-auto">
               {(cards[col.id] || []).map(card => (
-                <div key={card.id} className="p-3 bg-gray-50 rounded-md border border-gray-100 shadow-sm">
+                <div key={card.id} className="p-3 bg-gradient-to-br from-white to-gray-50 rounded-md border border-gray-100 shadow-sm">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <div className="font-semibold text-sm truncate">{card.title}</div>
-                      {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-yellow-100 flex items-center justify-center text-xs font-semibold text-pink-700">
+                        {card.assignee ? card.assignee.split(' ').map(n=>n[0]).slice(0,2).join('') : 'NA'}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm truncate">{card.title}</div>
+                        {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
+                      </div>
                     </div>
                     <div className="text-xs text-gray-400 ml-2">{card.assignee}</div>
                   </div>

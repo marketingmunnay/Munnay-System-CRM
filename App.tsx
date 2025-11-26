@@ -184,6 +184,7 @@ const App: React.FC = () => {
             if (!currentUser) {
                 const allPermissions: Page[] = [
                     'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'tareas',
                     'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                     'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
                     'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
@@ -203,6 +204,7 @@ const App: React.FC = () => {
                         'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                         'procedimientos-ventas-extra', 'recepcion-agendados', 
                         'recepcion-ventas-extra', 'recepcion-incidencias',
+                        'tareas',
                         'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
                         'procedimientos-atenciones', 'procedimientos-seguimiento',
                         'procedimientos-incidencias', 'pacientes-historia', 
