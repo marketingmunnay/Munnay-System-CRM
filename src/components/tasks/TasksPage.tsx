@@ -55,8 +55,11 @@ export default function TasksPage() {
           <p className="text-sm text-gray-500">Gestión visual de tareas — tablero Kanban ligero</p>
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">Project: Homepage Design</span>
+          <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm">Sprint 12</span>
+          <span className="text-xs text-gray-400">• 8 members</span>
           <button className="px-4 py-2 bg-white border rounded-md text-sm shadow-sm hover:bg-gray-50">Filter</button>
-          <button className="px-4 py-2 bg-[#aa632d] text-white rounded-md shadow-sm hover:bg-[#8e5225]">+ New Board</button>
+          <button className="px-4 py-2 bg-[#aa632d] text-white rounded-md shadow-md hover:bg-[#8e5225]">+ New Board</button>
         </div>
       </div>
 
