@@ -5,13 +5,17 @@ interface TaskCard {
   title: string;
   description?: string;
   assignee?: string;
+  priority?: 'Alta' | 'Media' | 'Baja';
+  dueDate?: string | null;
+  tags?: string[];
+  members?: string[];
 }
 
 const initialColumns = [
-  { id: 'todo', title: 'Task Ready' },
-  { id: 'inprogress', title: 'On Progress' },
-  { id: 'review', title: 'Needs Review' },
-  { id: 'done', title: 'Done' },
+  { id: 'todo', title: 'Por Hacer' },
+  { id: 'inprogress', title: 'En Progreso' },
+  { id: 'review', title: 'En Revisión' },
+  { id: 'done', title: 'Hecho' },
 ];
 
 const demoCards: Record<string, TaskCard[]> = {
@@ -35,14 +39,37 @@ export default function TasksPage() {
   const [cards, setCards] = useState<Record<string, TaskCard[]>>(demoCards);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [addTags, setAddTags] = useState(false);
+  const [addChecklist, setAddChecklist] = useState(false);
+  const [addDate, setAddDate] = useState(false);
+  const [addMembers, setAddMembers] = useState(false);
+  const [newPriority, setNewPriority] = useState<'Alta'|'Media'|'Baja'>('Media');
+  const [newDueDate, setNewDueDate] = useState<string>('');
   const [newAssignee, setNewAssignee] = useState('');
 
   const addCardTo = (colId: string) => {
     if (!newTitle.trim()) return;
     const nextId = Date.now();
-    const newCard: TaskCard = { id: nextId, title: newTitle.trim(), assignee: newAssignee || undefined };
+    const newCard: TaskCard = {
+      id: nextId,
+      title: newTitle.trim(),
+      description: newDescription || undefined,
+      assignee: newAssignee || undefined,
+      priority: newPriority,
+      dueDate: addDate && newDueDate ? newDueDate : null,
+      tags: addTags ? ['Etiqueta'] : undefined,
+      members: addMembers && newAssignee ? [newAssignee] : undefined,
+    };
     setCards(prev => ({ ...prev, [colId]: [newCard, ...(prev[colId] || [])] }));
     setNewTitle('');
+    setNewDescription('');
+    setAddTags(false);
+    setAddChecklist(false);
+    setAddDate(false);
+    setAddMembers(false);
+    setNewPriority('Media');
+    setNewDueDate('');
     setNewAssignee('');
     setCreating(false);
   };
@@ -84,8 +111,14 @@ export default function TasksPage() {
                           {card.assignee ? card.assignee.split(' ').map(n=>n[0]).slice(0,2).join('') : 'NA'}
                         </div>
                         <div>
-                          <div className="font-semibold text-sm truncate">{card.title}</div>
-                          {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
+                              <div className="font-semibold text-sm truncate">{card.title}</div>
+                              {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
+                              <div className="mt-2 flex items-center gap-2 text-xs">
+                                {card.priority && <span className={`px-2 py-0.5 rounded text-white ${card.priority === 'Alta' ? 'bg-red-500' : card.priority === 'Media' ? 'bg-yellow-500' : 'bg-green-500'}`}>{card.priority}</span>}
+                                {card.dueDate && <span className="text-gray-400">📅 {card.dueDate}</span>}
+                                {card.tags && <span className="text-gray-400">🏷️ {card.tags.length}</span>}
+                                {card.members && <span className="text-gray-400">👥 {card.members.length}</span>}
+                              </div>
                         </div>
                       </div>
                       <div className="text-xs text-gray-400 ml-2">{card.assignee}</div>
@@ -95,15 +128,35 @@ export default function TasksPage() {
 
                 {col.id === 'todo' && (
                   <div>
-                    {!creating ? (
-                      <button onClick={() => setCreating(true)} className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md">+ Add Card</button>
+                      {!creating ? (
+                      <button onClick={() => setCreating(true)} className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md">+ Añadir tarjeta</button>
                     ) : (
                       <div className="p-3 bg-white border rounded-md">
-                        <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What is the task?" className="w-full p-2 border rounded mb-2" />
-                        <input value={newAssignee} onChange={e => setNewAssignee(e.target.value)} placeholder="Assignee (optional)" className="w-full p-2 border rounded mb-2" />
+                        <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título" className="w-full p-2 border rounded mb-2" />
+                        <textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Descripción" className="w-full p-2 border rounded mb-2" />
+                        <input value={newAssignee} onChange={e => setNewAssignee(e.target.value)} placeholder="Miembro (opcional)" className="w-full p-2 border rounded mb-2" />
+
+                        <div className="mb-2">
+                          <div className="text-sm font-semibold mb-1">Añadir a la tarjeta</div>
+                          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={addTags} onChange={e => setAddTags(e.target.checked)} /> Etiquetas</label>
+                          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={addChecklist} onChange={e => setAddChecklist(e.target.checked)} /> Checklist</label>
+                          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={addDate} onChange={e => setAddDate(e.target.checked)} /> Fecha</label>
+                          {addDate && <input type="date" value={newDueDate} onChange={e=>setNewDueDate(e.target.value)} className="w-full p-2 border rounded mt-1" />}
+                          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={addMembers} onChange={e => setAddMembers(e.target.checked)} /> Miembros</label>
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="text-sm font-semibold mb-1">Prioridad</div>
+                          <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="w-full p-2 border rounded">
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                          </select>
+                        </div>
+
                         <div className="flex gap-2">
-                          <button onClick={() => addCardTo('todo')} className="px-3 py-1 bg-[#aa632d] text-white rounded">Done</button>
-                          <button onClick={() => { setCreating(false); setNewTitle(''); setNewAssignee(''); }} className="px-3 py-1 border rounded">Cancel</button>
+                          <button onClick={() => addCardTo('todo')} className="px-3 py-1 bg-[#aa632d] text-white rounded">Crear</button>
+                          <button onClick={() => { setCreating(false); setNewTitle(''); setNewAssignee(''); setNewDescription(''); setAddTags(false); setAddChecklist(false); setAddDate(false); setAddMembers(false); setNewPriority('Media'); setNewDueDate(''); }} className="px-3 py-1 border rounded">Cancelar</button>
                         </div>
                       </div>
                     )}
@@ -116,7 +169,7 @@ export default function TasksPage() {
         </div>
 
         <aside className="w-80 bg-white rounded-lg p-4 shadow-sm">
-          <h3 className="text-sm font-semibold mb-3">Task Progress</h3>
+          <h3 className="text-sm font-semibold mb-3">Progreso de tareas</h3>
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Copywriting</span><span>3/8</span></div>
