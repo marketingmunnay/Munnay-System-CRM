@@ -152,31 +152,23 @@ export default function TasksPage() {
               <div className="space-y-3 max-h-[60vh] overflow-auto">
                 {(cards[col.id] || []).map(card => (
                   <div key={card.id} className="p-3 bg-white/90 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-xs font-semibold text-indigo-700">
-                          {card.assignee ? card.assignee.split(' ').map(n=>n[0]).slice(0,2).join('') : 'NA'}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-sm truncate">{card.title}</div>
-                          {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
-                          <div className="mt-2 flex items-center gap-2 text-xs">
-                            {card.priority && <span className={`px-2 py-0.5 rounded text-white ${card.priority === 'Alta' ? 'bg-red-500' : card.priority === 'Media' ? 'bg-yellow-500' : 'bg-green-500'}`}>{card.priority}</span>}
-                            {card.dueDate && <span className="text-gray-400">📅 {card.dueDate}</span>}
-                            {card.tags && <span className="text-gray-400">🏷️ {card.tags.length}</span>}
-                            {card.members && <span className="text-gray-400">👥 {card.members.length}</span>}
-                          </div>
-                        </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+                        <div className="truncate">{card.members && card.members.length ? card.members.join(', ') : (card.assignee || '')}</div>
+                        <div>{card.priority && <span className={`px-2 py-0.5 rounded text-white ${card.priority === 'Alta' ? 'bg-red-500' : card.priority === 'Media' ? 'bg-yellow-500' : 'bg-green-500'}`}>{card.priority}</span>}</div>
                       </div>
-                      <div className="text-xs text-gray-500 ml-2">{card.assignee}</div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                      <div className="flex -space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center text-[10px]">AM</div>
-                        <div className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center text-[10px]">LL</div>
-                        <div className="w-6 h-6 rounded-full bg-pink-200 flex items-center justify-center text-[10px]">SB</div>
-                      </div>
-                      <div>2 comments</div>
+
+                      <div className="font-semibold text-sm truncate">{card.title}</div>
+                      {card.description && <div className="text-xs text-gray-500 mt-1">{card.description}</div>}
+                      {card.dueDate && <div className="text-xs text-gray-500 mt-2">📅 {card.dueDate}</div>}
+
+                      {card.tags && card.tags.length > 0 && (
+                        <div className="mt-2 flex gap-1">
+                          {card.tags.map(t => (
+                            <span key={t.id} className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: t.color, color: '#fff' }}>{t.title}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
