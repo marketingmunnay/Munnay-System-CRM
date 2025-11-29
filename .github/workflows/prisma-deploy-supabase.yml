@@ -20,16 +20,20 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
+        working-directory: crm-backend
         run: |
           npm ci
 
       - name: Generate Prisma Client
+        working-directory: crm-backend
         run: npx prisma generate
 
       - name: Run migrations (prisma migrate deploy)
+        working-directory: crm-backend
         run: |
           echo "Running prisma migrate deploy against $DATABASE_URL"
           npx prisma migrate deploy
 
       - name: Show Prisma migrate status
+        working-directory: crm-backend
         run: npx prisma migrate status --schema=./prisma/schema.prisma || true
