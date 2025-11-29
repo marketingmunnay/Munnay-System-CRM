@@ -1,0 +1,35 @@
+name: Deploy Prisma Migrations to Supabase
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  migrate:
+    name: Run Prisma Migrations
+    runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_PRODUCTION: 'false'
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run migrations (prisma migrate deploy)
+        run: |
+          echo "Running prisma migrate deploy against $DATABASE_URL"
+          npx prisma migrate deploy
+
+      - name: Show Prisma migrate status
+        run: npx prisma migrate status --schema=./prisma/schema.prisma || true
