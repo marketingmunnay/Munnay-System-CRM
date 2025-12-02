@@ -5,8 +5,8 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// URL del backend en producción (Render)
-const API_URL = "https://munnay-crm-backend.onrender.com/api";
+// URL del backend en producción (VPS)
+const API_URL = "http://157.173.119.186/api";
 
 // Helper genérico para requests
 class ApiError extends Error {
