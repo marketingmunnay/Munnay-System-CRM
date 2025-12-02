@@ -5,8 +5,8 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-// URL del backend en producción (VPS)
-const API_URL = "http://157.173.119.186/api";
+// URL del backend en producción (VPS con HTTPS)
+const API_URL = "https://api.munnaymedicinaestetica.com/api";
 
 // Helper genérico para requests
 class ApiError extends Error {
