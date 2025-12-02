@@ -649,6 +649,26 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
             } else if (type === 'Egresos' && onImportEgresos) {
                 const egresos: any[] = [];
 
+                // Helper to normalize enum values to PascalCase
+                const normalizeTipoComprobante = (val: string): string => {
+                    if (!val) return '';
+                    const normalized = val.toLowerCase();
+                    if (normalized === 'factura') return 'Factura';
+                    if (normalized === 'boleta') return 'Boleta';
+                    if (normalized === 'recibohonorarios' || normalized === 'recibo honorarios') return 'ReciboHonorarios';
+                    if (normalized === 'sincomprobante' || normalized === 'sin comprobante') return 'SinComprobante';
+                    return val; // Return original if no match
+                };
+
+                const normalizeModoPago = (val: string): string => {
+                    if (!val) return '';
+                    const normalized = val.toLowerCase();
+                    if (normalized === 'efectivo') return 'Efectivo';
+                    if (normalized === 'transferencia') return 'Transferencia';
+                    if (normalized === 'tarjeta') return 'Tarjeta';
+                    return val;
+                };
+
                 for (let i = 0; i < dataRows.length; i++) {
                     const values = dataRows[i].split(',').map(v => v.trim());
                     const egreso: any = {};
@@ -664,6 +684,10 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                         } else if (header === 'comprobantes' && value) {
                             // split by semicolon
                             egreso.comprobantes = value.split(';').map(s => ({ url: s.trim() })).filter((x:any) => x.url);
+                        } else if (header === 'tipoComprobante' && value) {
+                            egreso[header] = normalizeTipoComprobante(value);
+                        } else if (header === 'modoPago' && value) {
+                            egreso[header] = normalizeModoPago(value);
                         } else {
                             egreso[header] = value;
                         }
