@@ -316,3 +316,53 @@ export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): P
     return 'Error al generar análisis con IA. Por favor, intenta nuevamente.';
   }
 };
+
+// ====== INVENTARIO INTELIGENTE ======
+
+// Configuración de productos
+export const getConfiguracionProducto = (productoId: number) =>
+  apiRequest(`/inventory/configuracion/${productoId}`, 'GET');
+
+export const crearConfiguracionProducto = (data: any) =>
+  apiRequest('/inventory/configuracion', 'POST', data);
+
+export const actualizarConfiguracionProducto = (id: number, data: any) =>
+  apiRequest(`/inventory/configuracion/${id}`, 'PUT', data);
+
+// Movimientos de inventario
+export const registrarMovimiento = (data: any) =>
+  apiRequest('/inventory/movimientos', 'POST', data);
+
+export const getMovimientos = (configuracionProductoId?: number) =>
+  apiRequest(`/inventory/movimientos${configuracionProductoId ? `?configuracionProductoId=${configuracionProductoId}` : ''}`, 'GET');
+
+// Pagos parciales y prepagos
+export const crearPagoProducto = (data: any) =>
+  apiRequest('/inventory/pagos', 'POST', data);
+
+export const abonarPagoProducto = (id: number, data: any) =>
+  apiRequest(`/inventory/pagos/${id}/abonar`, 'POST', data);
+
+export const entregarProducto = (id: number, data: any) =>
+  apiRequest(`/inventory/pagos/${id}/entregar`, 'POST', data);
+
+export const getPagosProductos = (params?: { nHistoria?: string; estadoPago?: string; estadoProducto?: string }) => {
+  const query = params ? '?' + new URLSearchParams(Object.entries(params).filter(([_, v]) => v !== undefined) as [string, string][]).toString() : '';
+  return apiRequest(`/inventory/pagos${query}`, 'GET');
+};
+
+// Alertas
+export const getAlertas = (params?: { visto?: boolean; resuelto?: boolean }) => {
+  const query = params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]) as [string, string][]).toString() : '';
+  return apiRequest(`/inventory/alertas${query}`, 'GET');
+};
+
+export const marcarAlertaVista = (id: number) =>
+  apiRequest(`/inventory/alertas/${id}/vista`, 'PATCH');
+
+export const resolverAlerta = (id: number) =>
+  apiRequest(`/inventory/alertas/${id}/resolver`, 'PATCH');
+
+// Reportes
+export const getReporteInventario = () =>
+  apiRequest('/inventory/reporte', 'GET');
