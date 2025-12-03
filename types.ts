@@ -652,3 +652,92 @@ export interface FeedbackSesion {
     temasDiscutidos: string;
     acuerdos: string;
 }
+
+// ========================================
+// MÓDULO DE INVENTARIO INTELIGENTE
+// ========================================
+
+export type UnidadMedida = 'unidades' | 'cajas' | 'paquetes' | 'blister' | 'ml' | 'g' | 'litros';
+export type TipoMovimiento = 'entrada' | 'salida' | 'ajuste' | 'reserva' | 'devolucion';
+export type EstadoPago = 'pendiente' | 'parcial' | 'completado' | 'cancelado';
+export type EstadoProducto = 'reservado' | 'pendiente_entrega' | 'entregado' | 'pendiente_stock';
+export type TipoAlerta = 'stock_bajo' | 'stock_critico' | 'stock_cero';
+
+export interface ConfiguracionProducto {
+    id: number;
+    productoId: number;
+    stockActual: number;
+    stockMinimo: number;
+    unidadMedida: UnidadMedida;
+    equivalenciaBase: number;
+    costoUnitario: number;
+    aplicaIGV: boolean;
+    igvPorcentaje: number;
+    alertasActivas: boolean;
+    createdAt: string;
+    updatedAt: string;
+    movimientos?: MovimientoInventario[];
+    alertas?: AlertaStock[];
+}
+
+export interface MovimientoInventario {
+    id: number;
+    configuracionProductoId: number;
+    tipoMovimiento: TipoMovimiento;
+    cantidad: number;
+    stockAnterior: number;
+    stockNuevo: number;
+    costoUnitario: number;
+    precioVenta: number;
+    motivo: string;
+    referencia?: string;
+    creadoPor?: string;
+    createdAt: string;
+}
+
+export interface PagoProducto {
+    id: number;
+    productoId: number;
+    nHistoria: string;
+    montoTotal: number;
+    montoPagado: number;
+    saldoPendiente: number;
+    estadoPago: EstadoPago;
+    estadoProducto: EstadoProducto;
+    esPrepago: boolean;
+    fechaPago: string;
+    fechaEntrega?: string;
+    historialPagos?: HistorialPagoProducto[];
+    observaciones?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface HistorialPagoProducto {
+    id: number;
+    pagoProductoId: number;
+    montoAbonado: number;
+    metodoPago: string;
+    fechaPago: string;
+    registradoPor?: string;
+    observaciones?: string;
+    createdAt: string;
+}
+
+export interface AlertaStock {
+    id: number;
+    configuracionProductoId: number;
+    tipoAlerta: TipoAlerta;
+    mensaje: string;
+    stockActual: number;
+    stockMinimo: number;
+    visto: boolean;
+    resuelto: boolean;
+    createdAt: string;
+    resolvidoAt?: string;
+}
+
+export interface ProductoConInventario extends Product {
+    configuracion?: ConfiguracionProducto;
+    alertasActivas?: number;
+}

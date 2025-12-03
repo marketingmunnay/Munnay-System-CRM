@@ -644,3 +644,104 @@ model LeadMembership {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
+
+// ========================================
+// MÓDULO DE INVENTARIO INTELIGENTE
+// ========================================
+
+// Configuración de inventario del producto
+model ConfiguracionProducto {
+  id                  Int      @id @default(autoincrement())
+  productoId          Int      @unique
+  stockActual         Int      @default(0)
+  stockMinimo         Int      @default(5)
+  unidadMedida        String   @default("unidades") // unidades, cajas, paquetes, blister, ml, g, litros
+  equivalenciaBase    Float    @default(1) // Para conversiones (ej: 1 caja = 10 unidades)
+  costoUnitario       Float    @default(0)
+  aplicaIGV           Boolean  @default(true)
+  igvPorcentaje       Float    @default(18)
+  alertasActivas      Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  movimientos         MovimientoInventario[]
+  alertas             AlertaStock[]
+}
+
+// Movimientos de entrada/salida de inventario
+model MovimientoInventario {
+  id                      Int      @id @default(autoincrement())
+  configuracionProductoId Int
+  configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
+  
+  tipoMovimiento          String   // "entrada", "salida", "ajuste", "reserva", "devolucion"
+  cantidad                Int
+  stockAnterior           Int
+  stockNuevo              Int
+  
+  costoUnitario           Float    @default(0)
+  precioVenta             Float    @default(0)
+  
+  motivo                  String   @db.Text
+  referencia              String?  // ID de venta, compra, etc.
+  
+  creadoPor               String?
+  createdAt               DateTime @default(now())
+}
+
+// Pagos parciales de productos
+model PagoProducto {
+  id                Int      @id @default(autoincrement())
+  productoId        Int
+  nHistoria         String   // Lead/Paciente
+  
+  montoTotal        Float
+  montoPagado       Float    @default(0)
+  saldoPendiente    Float
+  
+  estadoPago        String   // "pendiente", "parcial", "completado", "cancelado"
+  estadoProducto    String   // "reservado", "pendiente_entrega", "entregado", "pendiente_stock"
+  
+  esPrepago         Boolean  @default(false) // Si es pago adelantado sin stock
+  fechaPago         DateTime @default(now())
+  fechaEntrega      DateTime?
+  
+  historialPagos    HistorialPagoProducto[]
+  
+  observaciones     String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Historial de abonos a productos
+model HistorialPagoProducto {
+  id              Int      @id @default(autoincrement())
+  pagoProductoId  Int
+  pagoProducto    PagoProducto @relation(fields: [pagoProductoId], references: [id], onDelete: Cascade)
+  
+  montoAbonado    Float
+  metodoPago      String   // "Efectivo", "Transferencia", "Tarjeta", "Yape"
+  fechaPago       DateTime @default(now())
+  registradoPor   String?
+  observaciones   String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+}
+
+// Alertas de stock bajo
+model AlertaStock {
+  id                      Int      @id @default(autoincrement())
+  configuracionProductoId Int
+  configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
+  
+  tipoAlerta              String   // "stock_bajo", "stock_critico", "stock_cero"
+  mensaje                 String   @db.Text
+  stockActual             Int
+  stockMinimo             Int
+  
+  visto                   Boolean  @default(false)
+  resuelto                Boolean  @default(false)
+  
+  createdAt               DateTime @default(now())
+  resolvidoAt             DateTime?
+}
