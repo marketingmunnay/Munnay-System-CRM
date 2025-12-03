@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
 import { getEgresos } from '../../services/api';
+import type { BulkImportEgresosResponse } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
 
@@ -87,7 +88,7 @@ interface ImportExportPageProps {
     onImportLeads?: (leads: any[]) => Promise<void>;
     onImportVentasExtra?: (ventas: any[]) => Promise<void>;
     onImportIncidencias?: (incidencias: any[]) => Promise<void>;
-    onImportEgresos?: (egresos: any[]) => Promise<void>;
+    onImportEgresos?: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
     onImportProveedores?: (proveedores: any[]) => Promise<void>;
     onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
     onImportSeguidores?: (seguidores: any[]) => Promise<void>;
@@ -100,6 +101,34 @@ interface ImportExportPageProps {
     onImportEgresoCategories?: (categories: any[]) => Promise<void>;
     onImportJobPositions?: (positions: any[]) => Promise<void>;
 }
+
+interface ImportProgressState {
+    isOpen: boolean;
+    title: string;
+    totalItems: number;
+    processedItems: number;
+    currentItem: string;
+    isComplete: boolean;
+    successMessage: string;
+    errorMessage: string;
+    detailItems: { rowNumber?: number; error: string }[];
+    successCount: number | null;
+    errorCount: number | null;
+}
+
+const createInitialImportProgress = (): ImportProgressState => ({
+    isOpen: false,
+    title: '',
+    totalItems: 0,
+    processedItems: 0,
+    currentItem: '',
+    isComplete: false,
+    successMessage: '',
+    errorMessage: '',
+    detailItems: [],
+    successCount: null,
+    errorCount: null
+});
 
 const ImportExportPage: React.FC<ImportExportPageProps> = ({ 
     comprobantes, 
@@ -121,16 +150,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
     onImportEgresoCategories,
     onImportJobPositions
 }) => {
-    const [importProgress, setImportProgress] = useState({
-        isOpen: false,
-        title: '',
-        totalItems: 0,
-        processedItems: 0,
-        currentItem: '',
-        isComplete: false,
-        successMessage: '',
-        errorMessage: ''
-    });
+    const [importProgress, setImportProgress] = useState<ImportProgressState>(() => createInitialImportProgress());
 
     const [validationErrors, setValidationErrors] = useState<{
         isOpen: boolean;
@@ -331,7 +351,10 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 currentItem: '',
                 isComplete: false,
                 successMessage: '',
-                errorMessage: ''
+                errorMessage: '',
+                detailItems: [],
+                successCount: null,
+                errorCount: null
             });
 
             if (type === 'Campañas' && onImportCampaigns) {
@@ -651,13 +674,13 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
 
                 // Helper to normalize enum values to PascalCase
                 const normalizeTipoComprobante = (val: string): string => {
-                    if (!val) return '';
+                    if (!val || !val.trim()) return 'SinComprobante';
                     const normalized = val.toLowerCase().trim().replace(/\s+/g, '');
                     if (normalized === 'factura') return 'Factura';
                     if (normalized === 'boleta') return 'Boleta';
                     if (normalized === 'recibohonorarios' || normalized === 'recibodehonorarios') return 'ReciboHonorarios';
                     if (normalized === 'sincomprobante') return 'SinComprobante';
-                    return val; // Return original if no match
+                    return val; // Return original if no match so backend can alert
                 };
 
                 const normalizeModoPago = (val: string): string => {
@@ -666,6 +689,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     if (normalized === 'efectivo') return 'Efectivo';
                     if (normalized === 'transferencia' || normalized === 'transferencia bancaria') return 'Transferencia';
                     if (normalized === 'tarjeta' || normalized === 'tarjeta de crédito' || normalized === 'tarjeta de credito') return 'Tarjeta';
+                    if (normalized === 'yape') return 'Yape';
                     return val;
                 };
 
@@ -684,7 +708,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                         } else if (header === 'comprobantes' && value) {
                             // split by semicolon
                             egreso.comprobantes = value.split(';').map(s => ({ url: s.trim() })).filter((x:any) => x.url);
-                        } else if (header === 'tipoComprobante' && value) {
+                        } else if (header === 'tipoComprobante') {
                             egreso[header] = normalizeTipoComprobante(value);
                         } else if (header === 'modoPago' && value) {
                             egreso[header] = normalizeModoPago(value);
@@ -692,6 +716,10 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                             egreso[header] = value;
                         }
                     });
+
+                    if (!egreso.tipoComprobante || String(egreso.tipoComprobante).trim() === '') {
+                        egreso.tipoComprobante = 'SinComprobante';
+                    }
 
                     egresos.push(egreso);
 
@@ -705,19 +733,39 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 }
 
                 try {
-                    await onImportEgresos(egresos);
-                    
+                    const response = await onImportEgresos(egresos);
+                    const failures = response?.egresos?.filter(result => !result.success) ?? [];
+                    const detailItems = failures.map((failure, idx) => ({
+                        rowNumber: typeof failure.index === 'number' ? failure.index + 1 : undefined,
+                        error: failure.error || 'Error desconocido'
+                    }));
+                    const successCount = response?.successCount ?? (egresos.length - failures.length);
+                    const errorCount = response?.errorCount ?? failures.length;
+                    const hasErrors = errorCount > 0;
+
                     setImportProgress(prev => ({
                         ...prev,
+                        processedItems: totalItems,
                         isComplete: true,
-                        successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
+                        successMessage: hasErrors ? '' : `Se importaron ${successCount} egresos exitosamente.`,
+                        errorMessage: hasErrors
+                            ? `Se importaron ${successCount} egresos, pero ${errorCount} registros tuvieron errores. Revisa el detalle para corregirlos.`
+                            : '',
+                        detailItems,
+                        successCount,
+                        errorCount
                     }));
                 } catch (error) {
                     console.error('Error importing egresos:', error);
                     setImportProgress(prev => ({
                         ...prev,
+                        processedItems: totalItems,
                         isComplete: true,
-                        successMessage: `Error al importar egresos: ${(error as Error).message || 'Error desconocido'}`
+                        successMessage: '',
+                        errorMessage: `Error al importar egresos: ${(error as Error).message || 'Error desconocido'}`,
+                        detailItems: [],
+                        successCount: 0,
+                        errorCount: totalItems
                     }));
                 }
             } else {
@@ -798,16 +846,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
     };
 
     const handleCloseProgressModal = () => {
-        setImportProgress({
-            isOpen: false,
-            title: '',
-            totalItems: 0,
-            processedItems: 0,
-            currentItem: '',
-            isComplete: false,
-            successMessage: '',
-            errorMessage: ''
-        });
+        setImportProgress(createInitialImportProgress());
     };
 
     const handleValidationModalClose = () => {
@@ -1004,6 +1043,9 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 isComplete={importProgress.isComplete}
                 successMessage={importProgress.successMessage}
                 errorMessage={importProgress.errorMessage}
+                successCount={importProgress.successCount}
+                errorCount={importProgress.errorCount}
+                detailItems={importProgress.detailItems}
                 onClose={handleCloseProgressModal}
             />
 

@@ -34,6 +34,7 @@ import type {
     Goal, ComprobanteElectronico
 } from './types';
 import * as api from './services/api';
+import type { BulkImportEgresosResponse } from './services/api';
 import { generateNotifications } from './services/notificationService';
 import { useSchedule } from './components/shared/ScheduleContext';
 import { StatusToastProvider } from './components/shared/StatusToastContext';
@@ -262,10 +263,11 @@ const App: React.FC = () => {
     const handleImportLeads = async (leads: any[]) => { await api.bulkImportLeads(leads); await loadData(); };
     const handleImportVentasExtra = async (ventas: any[]) => { await api.bulkImportVentasExtra(ventas); await loadData(); };
     const handleImportIncidencias = async (incidencias: any[]) => { await api.bulkImportIncidencias(incidencias); await loadData(); };
-    const handleImportEgresos = async (egresos: any[]) => { 
+    const handleImportEgresos = async (egresos: any[]): Promise<BulkImportEgresosResponse> => { 
         try {
-            await api.bulkImportEgresos(egresos); 
+            const result = await api.bulkImportEgresos(egresos); 
             await loadData();
+            return result;
         } catch (error) {
             console.error('Error importing egresos:', error);
             throw error; // Re-throw para que ImportExportPage pueda manejarlo

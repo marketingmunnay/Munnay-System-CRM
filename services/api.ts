@@ -5,6 +5,20 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
+export interface BulkImportResultItem<T> {
+  success: boolean;
+  item?: T;
+  index?: number;
+  error?: string;
+}
+
+export interface BulkImportEgresosResponse {
+  message: string;
+  egresos: BulkImportResultItem<Egreso>[];
+  successCount: number;
+  errorCount: number;
+}
+
 // URL del backend en producción (VPS con HTTPS)
 const API_URL = "https://api.munnaymedicinaestetica.com/api";
 
@@ -179,8 +193,8 @@ export const saveEgreso = (egreso: Egreso): Promise<Egreso> =>
     : apiRequest<Egreso>('/expenses', 'POST', egreso);
 export const deleteEgreso = (id: number): Promise<void> =>
   apiRequest<void>(`/expenses/${id}`, 'DELETE');
-export const bulkImportEgresos = (egresos: any[]): Promise<{ message: string; egresos: Egreso[] }> =>
-  apiRequest<{ message: string; egresos: Egreso[] }>('/expenses/bulk', 'POST', egresos);
+export const bulkImportEgresos = (egresos: any[]): Promise<BulkImportEgresosResponse> =>
+  apiRequest<BulkImportEgresosResponse>('/expenses/bulk', 'POST', egresos);
 
 // ====== PROVEEDORES ======
 export const getProveedores = (): Promise<Proveedor[]> => 
