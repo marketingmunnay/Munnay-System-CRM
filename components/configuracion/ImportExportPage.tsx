@@ -704,13 +704,22 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
 
-                await onImportEgresos(egresos);
-
-                setImportProgress(prev => ({
-                    ...prev,
-                    isComplete: true,
-                    successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
-                }));
+                try {
+                    await onImportEgresos(egresos);
+                    
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
+                    }));
+                } catch (error) {
+                    console.error('Error importing egresos:', error);
+                    setImportProgress(prev => ({
+                        ...prev,
+                        isComplete: true,
+                        successMessage: `Error al importar egresos: ${(error as Error).message || 'Error desconocido'}`
+                    }));
+                }
             } else {
                 // For other types, simulate processing (types without specific import functions yet)
                 for (let i = 0; i < totalItems; i++) {
