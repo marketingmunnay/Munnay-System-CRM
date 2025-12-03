@@ -652,20 +652,20 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 // Helper to normalize enum values to PascalCase
                 const normalizeTipoComprobante = (val: string): string => {
                     if (!val) return '';
-                    const normalized = val.toLowerCase();
+                    const normalized = val.toLowerCase().trim().replace(/\s+/g, '');
                     if (normalized === 'factura') return 'Factura';
                     if (normalized === 'boleta') return 'Boleta';
-                    if (normalized === 'recibohonorarios' || normalized === 'recibo honorarios') return 'ReciboHonorarios';
-                    if (normalized === 'sincomprobante' || normalized === 'sin comprobante') return 'SinComprobante';
+                    if (normalized === 'recibohonorarios' || normalized === 'recibodehonorarios') return 'ReciboHonorarios';
+                    if (normalized === 'sincomprobante') return 'SinComprobante';
                     return val; // Return original if no match
                 };
 
                 const normalizeModoPago = (val: string): string => {
                     if (!val) return '';
-                    const normalized = val.toLowerCase();
+                    const normalized = val.toLowerCase().trim();
                     if (normalized === 'efectivo') return 'Efectivo';
-                    if (normalized === 'transferencia') return 'Transferencia';
-                    if (normalized === 'tarjeta') return 'Tarjeta';
+                    if (normalized === 'transferencia' || normalized === 'transferencia bancaria') return 'Transferencia';
+                    if (normalized === 'tarjeta' || normalized === 'tarjeta de crédito' || normalized === 'tarjeta de credito') return 'Tarjeta';
                     return val;
                 };
 
