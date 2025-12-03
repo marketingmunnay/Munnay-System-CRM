@@ -6,7 +6,7 @@ import type {
 } from '../types.ts';
 
 // URL del backend en producción (Render)
-const API_URL = "https://munnay-crm-backend.onrender.com/api";
+const API_URL = "https://api.munnaymedicinaestetica.com/api";
 
 // Helper genérico para requests
 const apiRequest = async <T>(

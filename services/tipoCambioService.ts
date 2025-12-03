@@ -14,7 +14,7 @@ let tipoCambioCache: { data: TipoCambio | null; timestamp: number } = {
 };
 
 const CACHE_DURATION = 1000 * 60 * 30; // 30 minutos
-const API_URL = "https://munnay-crm-backend.onrender.com/api";
+const API_URL = "https://api.munnaymedicinaestetica.com/api";
 
 export const getTipoCambioSunat = async (): Promise<TipoCambio> => {
   // Verificar si hay cache válido
