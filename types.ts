@@ -337,6 +337,7 @@ export enum ModoPagoEgreso {
     Efectivo = 'Efectivo',
     Transferencia = 'Transferencia',
     Tarjeta = 'Tarjeta',
+    Yape = 'Yape',
 }
 
 export interface Egreso {
