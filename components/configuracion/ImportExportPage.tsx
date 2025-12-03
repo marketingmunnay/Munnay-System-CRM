@@ -602,6 +602,50 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     successMessage: `Se importaron ${incidencias.length} incidencias exitosamente.`
                 }));
 
+            } else if (type === 'Egresos' && onImportEgresos) {
+                const egresos = [];
+
+                for (let i = 0; i < dataRows.length; i++) {
+                    const values = dataRows[i].split(',').map(v => v.trim());
+                    const egreso: any = {};
+
+                    headers.forEach((header, index) => {
+                        const value = values[index];
+                        if (['montoTotal', 'montoPagado', 'deuda'].includes(header)) {
+                            egreso[header] = parseFloat(value) || 0;
+                        } else if (['fechaRegistro', 'fechaPago'].includes(header) && value) {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                egreso[header] = date.toISOString().split('T')[0];
+                            } else {
+                                egreso[header] = value;
+                            }
+                        } else {
+                            egreso[header] = value;
+                        }
+                    });
+
+                    egresos.push(egreso);
+
+                    // Update progress
+                    setImportProgress(prev => ({
+                        ...prev,
+                        processedItems: i + 1,
+                        currentItem: egreso.proveedor || `Registro ${i + 1}`
+                    }));
+
+                    // Add small delay to show progress animation
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+
+                await onImportEgresos(egresos);
+
+                setImportProgress(prev => ({
+                    ...prev,
+                    isComplete: true,
+                    successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
+                }));
+
             } else if (type === 'Comprobantes Electrónicos' && onImportComprobantes) {
                 const comprobantes = [];
 
@@ -820,6 +864,18 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     "descripcion", "solucionado"
                 ]}
                 onImport={(file) => handleFileImport(file, 'Incidencias')}
+            />
+
+            <ImportSection
+                title="Egresos"
+                description="Importa registros de egresos y gastos del negocio."
+                templateFilename="plantilla_egresos.csv"
+                headers={[
+                    "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion",
+                    "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal",
+                    "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones"
+                ]}
+                onImport={(file) => handleFileImport(file, 'Egresos')}
             />
 
             <ImportSection
