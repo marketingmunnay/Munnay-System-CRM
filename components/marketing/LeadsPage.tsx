@@ -5,7 +5,7 @@ import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
-import { formatDateForDisplay, formatDateForInput } from '../../utils/time';
+import { formatDateForDisplay, formatDateForInput } from '../../utils/time.ts';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
 
@@ -114,22 +114,12 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
             });
         }
 
-        if (searchTerm) {
-            const q = searchTerm.trim().toLowerCase();
-            const qDigits = q.replace(/\D/g, '');
-            results = results.filter(lead => {
-                const fullName = `${lead.nombres || ''} ${lead.apellidos || ''}`.toLowerCase();
-                const numero = String(lead.numero || '').replace(/\D/g, '');
-                const historia = String(lead.nHistoria || '').toLowerCase();
-                const anuncio = String(lead.anuncio || '').toLowerCase();
-
-                const matchName = fullName.includes(q);
-                const matchNumero = qDigits ? numero.includes(qDigits) : (String(lead.numero || '').toLowerCase().includes(q));
-                const matchHistoria = historia.includes(q);
-                const matchAnuncio = anuncio.includes(q);
-
-                return matchName || matchNumero || matchHistoria || matchAnuncio;
-            });
+        if (viewMode === 'table' && searchTerm) {
+            results = results.filter(lead =>
+                `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                lead.numero.includes(searchTerm) ||
+                lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
         
         return results;

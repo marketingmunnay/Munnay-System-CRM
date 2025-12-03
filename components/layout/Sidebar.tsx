@@ -22,7 +22,6 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-    // Ordered per request: Dashboard, Calendario, Comercial, Recepción, Procedimientos, Administración, Recursos Humanos
     { id: 'dashboard', label: 'Dashboard', icon: <GoogleIcon name="home" className="text-xl" />, page: 'dashboard' },
     { id: 'calendario', label: 'Calendario', icon: <GoogleIcon name="calendar_month" className="text-xl" />, page: 'calendario' },
     { 
@@ -45,21 +44,20 @@ const navItems: NavItem[] = [
         ]
     },
     {
-        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
-            { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
-            { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
-            { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
-            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
-        ]
-    },
-        { id: 'tareas', label: 'Tareas', icon: <GoogleIcon name="task" className="text-xl" />, page: 'tareas' },
-    {
         id: 'administracion',
         label: 'Administración',
         icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />,
         subItems: [
              { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
              { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
+        ]
+    },
+    {
+        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
+            { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
+            { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
+            { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
+            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
         ]
     },
     {
@@ -108,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
     };
 
     useEffect(() => {
-            const findAncestors = (items: NavItem[], page: Page, ancestors: string[] = []): string[] | null => {
+        const findAncestors = (items: NavItem[], page: Page, ancestors: string[] = []): string[] | null => {
             for (const item of items) {
                 if (item.page === page) {
                     return ancestors;
@@ -123,23 +121,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
             return null;
         };
         const ancestors = findAncestors(navItems, currentPage);
-            if (ancestors && ancestors.length > 0) {
-                // Keep only the top-most ancestor open to ensure a single open menu at a time
-                setOpenMenus([ancestors[0]]);
-            } else {
-                setOpenMenus([]);
-            }
+        if (ancestors) {
+            setOpenMenus(prev => [...new Set([...prev, ...ancestors])]);
+        }
     }, [currentPage]);
     
     const toggleMenu = (id: string) => {
-        // Only allow one open menu at a time. Clicking an already-open menu closes it.
-        setOpenMenus(prev => (prev.includes(id) ? [] : [id]));
-    };
-
-    const handleSetCurrentPage = (page: Page) => {
-        setCurrentPage(page);
-        // Close any open menus when navigating
-        setOpenMenus([]);
+        setOpenMenus(prev => 
+            prev.includes(id) ? prev.filter(menuId => menuId !== id) : [...prev, id]
+        );
     };
 
     return (
@@ -192,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                                                     {subItem.subItems.map(leafItem => (
                                                                         <button
                                                                             key={leafItem.id}
-                                                                            onClick={() => handleSetCurrentPage(leafItem.page as Page)}
+                                                                            onClick={() => setCurrentPage(leafItem.page as Page)}
                                                                             className={`w-full text-left p-2 text-sm rounded-lg transition-colors ${
                                                                                 currentPage === leafItem.page ? 'bg-[#aa632d] text-white' : 'text-gray-500 hover:bg-gray-100'
                                                                             }`}
@@ -206,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                                     ) : (
                                                         <button
                                                             key={subItem.id}
-                                                            onClick={() => handleSetCurrentPage(subItem.page as Page)}
+                                                            onClick={() => setCurrentPage(subItem.page as Page)}
                                                             className={`w-full text-left p-2 text-sm rounded-lg transition-colors ${
                                                                 currentPage === subItem.page ? 'bg-[#aa632d] text-white' : 'text-gray-500 hover:bg-gray-100'
                                                             }`}
@@ -221,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                                 </>
                             ) : (
                                 <button
-                                    onClick={() => handleSetCurrentPage(item.page as Page)}
+                                    onClick={() => setCurrentPage(item.page as Page)}
                                     className={`w-full flex items-center p-2 rounded-lg text-sm font-medium transition-colors ${
                                         currentPage === item.page ? 'bg-[#aa632d] text-white' : 'text-gray-600 hover:bg-gray-100'
                                     }`}
@@ -237,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
             
             {/* Version info at bottom */}
             {!isCollapsed && (
-                <div className="bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
+                <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
                     <div className="text-xs text-gray-500">
                         <div className="font-normal">
                             Versión: {import.meta.env.VITE_GIT_COMMIT_HASH || '24a5a4'}

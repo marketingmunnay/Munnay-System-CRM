@@ -6,8 +6,7 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
 import EgresoFormModal from './EgresoFormModal.tsx';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay, parseDate } from '../../utils/time';
-import { TipoComprobante, TipoComprobanteLabels } from '../../types';
+import { formatDateForDisplay } from '../../utils/time.ts';
 import { getTipoCambioSunat, type TipoCambio } from '../../services/tipoCambioService.ts';
 
 interface EgresosDiariosPageProps {
@@ -100,7 +99,7 @@ const EgresoDetails: FC<{ egreso: Egreso | null, onViewImage: (url: string) => v
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                    <DetailRow label="Tipo de Comprobante" value={TipoComprobanteLabels[egreso.tipoComprobante as TipoComprobante] || egreso.tipoComprobante} />
+                    <DetailRow label="Tipo de Comprobante" value={egreso.tipoComprobante} />
                     <DetailRow label="Serie" value={egreso.serieComprobante} />
                     <DetailRow label="Número" value={egreso.nComprobante} />
                  </div>
@@ -244,15 +243,10 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         let results = egresos;
 
         if (dateRange.from || dateRange.to) {
-            const fromDate = dateRange.from ? parseDate(dateRange.from, true) : null;
-            const toDate = dateRange.to ? parseDate(dateRange.to, true) : null;
-            if (toDate) {
-                // mover al final del día UTC
-                toDate.setUTCHours(23, 59, 59, 999);
-            }
+            const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
+            const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
             results = results.filter(e => {
-                const egresoDate = parseDate(e.fechaPago);
-                if (!egresoDate) return false;
+                const egresoDate = new Date(`${e.fechaPago}T00:00:00`);
                 if (fromDate && egresoDate < fromDate) return false;
                 if (toDate && egresoDate > toDate) return false;
                 return true;
@@ -334,53 +328,24 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
         };
     }, [dateFilteredEgresos, tipoCambio]);
 
-    // Totales agrupados por tipo de proveedor (según catálogo `proveedores[].tipo`)
-    const totalsByProveedorTipo = useMemo(() => {
-        const map: Record<string, { totalSoles: number; totalDolares: number }> = {};
-
-        dateFilteredEgresos.forEach(e => {
-            const proveedor = proveedores.find(p => p.razonSocial === e.proveedor);
-            const tipo = proveedor?.tipo || 'Desconocido';
-            if (!map[tipo]) map[tipo] = { totalSoles: 0, totalDolares: 0 };
-            if (e.tipoMoneda === 'Soles') map[tipo].totalSoles += e.montoTotal;
-            else map[tipo].totalDolares += e.montoTotal;
-        });
-
-        const tcDisponible = tipoCambio?.disponible && tipoCambio?.venta;
-        const tc = tcDisponible ? tipoCambio!.venta! : 0;
-
-        const result = Object.keys(map).map(tipo => ({
-            tipo,
-            totalSoles: map[tipo].totalSoles,
-            totalDolares: map[tipo].totalDolares,
-            totalEnSoles: tcDisponible ? map[tipo].totalSoles + (map[tipo].totalDolares * tc) : null
-        }));
-
-        // Sort descending by totalEnSoles (or totalSoles if tc not available)
-        result.sort((a, b) => {
-            const aval = a.totalEnSoles ?? a.totalSoles;
-            const bval = b.totalEnSoles ?? b.totalSoles;
-            return bval - aval;
-        });
-
-        return result;
-    }, [dateFilteredEgresos, proveedores, tipoCambio]);
-
     const proximosPagos = useMemo(() => {
-        const now = new Date();
-        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         return dateFilteredEgresos
             .filter(e => e.deuda > 0 && e.fechaPago)
             .map(e => {
                 try {
                     // Manejar fechas en formato ISO (YYYY-MM-DDTHH:mm:ss.sssZ) y YYYY-MM-DD
-                    const parsed = parseDate(e.fechaPago);
-                    if (!parsed) {
+                    let fechaPagoStr = e.fechaPago!;
+                    // Si la fecha incluye 'T', solo tomar la parte de fecha
+                    if (fechaPagoStr.includes('T')) {
+                        fechaPagoStr = fechaPagoStr.split('T')[0];
+                    }
+                    const fechaPago = new Date(fechaPagoStr + 'T00:00:00');
+                    if (isNaN(fechaPago.getTime())) {
                         console.warn('Fecha de pago inválida:', e.fechaPago);
                         return { ...e, diasParaVencer: 0 };
                     }
-                    // Normalizar a medianoche UTC de la fecha de pago para comparar por días completos
-                    const fechaPago = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate()));
                     const diffTime = fechaPago.getTime() - today.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     return { ...e, diasParaVencer: diffDays };
@@ -442,7 +407,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                  <div className="bg-white p-4 rounded-lg shadow-md border">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
@@ -478,7 +443,7 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                         )}
                     </div>
                 </div>
-
+                
                  <div className="bg-white p-4 rounded-lg shadow-md border">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
@@ -549,61 +514,6 @@ const EgresosDiariosPage: React.FC<EgresosDiariosPageProps> = ({ egresos, onSave
                             <p className="text-xs text-red-400 mt-1">{tipoCambio?.mensaje || 'TC no disponible'}</p>
                         )}
                     </div>
-                </div>
-
-                {/* Card: Tipo de Gastos (diseño tipo lista con barras de progreso) */}
-                <div className="bg-white p-4 rounded-lg shadow-md border col-span-1 md:col-span-1">
-                    <div className="mb-3">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-600">Tipo de Gastos</h3>
-                                <p className="text-xs text-gray-400">Distribución por tipo (Top)</p>
-                            </div>
-                            <div className="text-right">
-                                {/* Total general en la parte superior, preferir totalEnSoles si está disponible */}
-                                {totalsByProveedorTipo.length === 0 ? (
-                                    <span className="text-lg font-bold text-gray-900">S/ 0.00</span>
-                                ) : (() => {
-                                    const grandTotal = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0);
-                                    return <span className="text-xl font-extrabold text-gray-900">{formatCurrency(grandTotal, 'Soles')}</span>;
-                                })()}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-3">
-                        {totalsByProveedorTipo.length === 0 ? (
-                            <p className="text-sm text-gray-500">No hay egresos en el rango seleccionado.</p>
-                        ) : (
-                            (() => {
-                                const top = totalsByProveedorTipo.slice(0, 6);
-                                // Use grand total across ALL tipos so bar widths are proportional to full distribution
-                                const grandTotalAll = totalsByProveedorTipo.reduce((s, it) => s + (it.totalEnSoles ?? it.totalSoles), 0) || 1;
-                                return top.map(item => {
-                                    const value = item.totalEnSoles ?? item.totalSoles;
-                                    const percent = Math.round((value / grandTotalAll) * 100);
-                                    return (
-                                        <div key={item.tipo}>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-gray-700 truncate max-w-[120px]">{item.tipo}</span>
-                                                <span className="text-sm font-semibold text-gray-900">{formatCurrency(value, 'Soles')}</span>
-                                            </div>
-                                            <div className="w-full bg-blue-100 rounded-full h-2 mt-2 overflow-hidden">
-                                                <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${percent}%` }} />
-                                            </div>
-                                        </div>
-                                    );
-                                });
-                            })()
-                        )}
-                    </div>
-
-                    {totalsByProveedorTipo.length > 6 && (
-                        <p className="text-xs text-gray-400 mt-3">Mostrando 6 de {totalsByProveedorTipo.length} tipos</p>
-                    )}
-                    {tipoCambio?.disponible && tipoCambio.venta && (
-                        <p className="text-xs text-gray-400 mt-1">TC: {tipoCambio.venta.toFixed(3)}</p>
-                    )}
                 </div>
             </div>
 

@@ -1,8 +1,6 @@
 
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
-import { getEgresos } from '../../services/api';
-import type { BulkImportEgresosResponse } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
 
@@ -88,7 +86,7 @@ interface ImportExportPageProps {
     onImportLeads?: (leads: any[]) => Promise<void>;
     onImportVentasExtra?: (ventas: any[]) => Promise<void>;
     onImportIncidencias?: (incidencias: any[]) => Promise<void>;
-    onImportEgresos?: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
+    onImportEgresos?: (egresos: any[]) => Promise<void>;
     onImportProveedores?: (proveedores: any[]) => Promise<void>;
     onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
     onImportSeguidores?: (seguidores: any[]) => Promise<void>;
@@ -101,34 +99,6 @@ interface ImportExportPageProps {
     onImportEgresoCategories?: (categories: any[]) => Promise<void>;
     onImportJobPositions?: (positions: any[]) => Promise<void>;
 }
-
-interface ImportProgressState {
-    isOpen: boolean;
-    title: string;
-    totalItems: number;
-    processedItems: number;
-    currentItem: string;
-    isComplete: boolean;
-    successMessage: string;
-    errorMessage: string;
-    detailItems: { rowNumber?: number; error: string }[];
-    successCount: number | null;
-    errorCount: number | null;
-}
-
-const createInitialImportProgress = (): ImportProgressState => ({
-    isOpen: false,
-    title: '',
-    totalItems: 0,
-    processedItems: 0,
-    currentItem: '',
-    isComplete: false,
-    successMessage: '',
-    errorMessage: '',
-    detailItems: [],
-    successCount: null,
-    errorCount: null
-});
 
 const ImportExportPage: React.FC<ImportExportPageProps> = ({ 
     comprobantes, 
@@ -150,7 +120,16 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
     onImportEgresoCategories,
     onImportJobPositions
 }) => {
-    const [importProgress, setImportProgress] = useState<ImportProgressState>(() => createInitialImportProgress());
+    const [importProgress, setImportProgress] = useState({
+        isOpen: false,
+        title: '',
+        totalItems: 0,
+        processedItems: 0,
+        currentItem: '',
+        isComplete: false,
+        successMessage: '',
+        errorMessage: ''
+    });
 
     const [validationErrors, setValidationErrors] = useState<{
         isOpen: boolean;
@@ -232,12 +211,6 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 required: ['tipoDocumento', 'serie', 'correlativo', 'fechaEmision'],
                 numeric: ['opGravadas', 'igv', 'total'],
                 date: ['fechaEmision']
-            }
-            ,
-            'Egresos': {
-                required: ['fechaRegistro', 'proveedor', 'categoria', 'descripcion', 'montoTotal'],
-                numeric: ['montoTotal', 'montoPagado', 'deuda'],
-                date: ['fechaRegistro', 'fechaPago']
             }
         };
 
@@ -351,10 +324,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 currentItem: '',
                 isComplete: false,
                 successMessage: '',
-                errorMessage: '',
-                detailItems: [],
-                successCount: null,
-                errorCount: null
+                errorMessage: ''
             });
 
             if (type === 'Campañas' && onImportCampaigns) {
@@ -669,105 +639,6 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                     successMessage: `Se importaron ${comprobantes.length} comprobantes electrónicos exitosamente.`
                 }));
 
-            } else if (type === 'Egresos' && onImportEgresos) {
-                const egresos: any[] = [];
-
-                // Helper to normalize enum values to PascalCase
-                const normalizeTipoComprobante = (val: string): string => {
-                    if (!val || !val.trim()) return 'SinComprobante';
-                    const normalized = val.toLowerCase().trim().replace(/\s+/g, '');
-                    if (normalized === 'factura') return 'Factura';
-                    if (normalized === 'boleta') return 'Boleta';
-                    if (normalized === 'recibohonorarios' || normalized === 'recibodehonorarios') return 'ReciboHonorarios';
-                    if (normalized === 'sincomprobante') return 'SinComprobante';
-                    return val; // Return original if no match so backend can alert
-                };
-
-                const normalizeModoPago = (val: string): string => {
-                    if (!val) return '';
-                    const normalized = val.toLowerCase().trim();
-                    if (normalized === 'efectivo') return 'Efectivo';
-                    if (normalized === 'transferencia' || normalized === 'transferencia bancaria') return 'Transferencia';
-                    if (normalized === 'tarjeta' || normalized === 'tarjeta de crédito' || normalized === 'tarjeta de credito') return 'Tarjeta';
-                    if (normalized === 'yape') return 'Yape';
-                    return val;
-                };
-
-                for (let i = 0; i < dataRows.length; i++) {
-                    const values = dataRows[i].split(',').map(v => v.trim());
-                    const egreso: any = {};
-
-                    headers.forEach((header, index) => {
-                        const value = values[index];
-                        if (['montoTotal', 'montoPagado', 'deuda'].includes(header)) {
-                            egreso[header] = parseFloat(value) || 0;
-                        } else if (['fechaRegistro', 'fechaPago'].includes(header) && value) {
-                            const date = new Date(value);
-                            if (!isNaN(date.getTime())) egreso[header] = date.toISOString().split('T')[0];
-                            else egreso[header] = value;
-                        } else if (header === 'comprobantes' && value) {
-                            // split by semicolon
-                            egreso.comprobantes = value.split(';').map(s => ({ url: s.trim() })).filter((x:any) => x.url);
-                        } else if (header === 'tipoComprobante') {
-                            egreso[header] = normalizeTipoComprobante(value);
-                        } else if (header === 'modoPago' && value) {
-                            egreso[header] = normalizeModoPago(value);
-                        } else {
-                            egreso[header] = value;
-                        }
-                    });
-
-                    if (!egreso.tipoComprobante || String(egreso.tipoComprobante).trim() === '') {
-                        egreso.tipoComprobante = 'SinComprobante';
-                    }
-
-                    egresos.push(egreso);
-
-                    setImportProgress(prev => ({
-                        ...prev,
-                        processedItems: i + 1,
-                        currentItem: egreso.proveedor || `Registro ${i + 1}`
-                    }));
-
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                }
-
-                try {
-                    const response = await onImportEgresos(egresos);
-                    const failures = response?.egresos?.filter(result => !result.success) ?? [];
-                    const detailItems = failures.map((failure, idx) => ({
-                        rowNumber: typeof failure.index === 'number' ? failure.index + 1 : undefined,
-                        error: failure.error || 'Error desconocido'
-                    }));
-                    const successCount = response?.successCount ?? (egresos.length - failures.length);
-                    const errorCount = response?.errorCount ?? failures.length;
-                    const hasErrors = errorCount > 0;
-
-                    setImportProgress(prev => ({
-                        ...prev,
-                        processedItems: totalItems,
-                        isComplete: true,
-                        successMessage: hasErrors ? '' : `Se importaron ${successCount} egresos exitosamente.`,
-                        errorMessage: hasErrors
-                            ? `Se importaron ${successCount} egresos, pero ${errorCount} registros tuvieron errores. Revisa el detalle para corregirlos.`
-                            : '',
-                        detailItems,
-                        successCount,
-                        errorCount
-                    }));
-                } catch (error) {
-                    console.error('Error importing egresos:', error);
-                    setImportProgress(prev => ({
-                        ...prev,
-                        processedItems: totalItems,
-                        isComplete: true,
-                        successMessage: '',
-                        errorMessage: `Error al importar egresos: ${(error as Error).message || 'Error desconocido'}`,
-                        detailItems: [],
-                        successCount: 0,
-                        errorCount: totalItems
-                    }));
-                }
             } else {
                 // For other types, simulate processing (types without specific import functions yet)
                 for (let i = 0; i < totalItems; i++) {
@@ -846,7 +717,16 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
     };
 
     const handleCloseProgressModal = () => {
-        setImportProgress(createInitialImportProgress());
+        setImportProgress({
+            isOpen: false,
+            title: '',
+            totalItems: 0,
+            processedItems: 0,
+            currentItem: '',
+            isComplete: false,
+            successMessage: '',
+            errorMessage: ''
+        });
     };
 
     const handleValidationModalClose = () => {
@@ -978,62 +858,6 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 onImport={(file) => handleFileImport(file, 'Comprobantes Electrónicos')}
             />
 
-            {/* Import / Export Egresos */}
-            <ImportSection
-                title="Egresos"
-                description="Importa registros de egresos (gastos) desde un CSV. Para comprobantes múltiples use la columna 'comprobantes' separando URLs por punto y coma (;)."
-                templateFilename="plantilla_egresos.csv"
-                headers={[
-                    "id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"
-                ]}
-                onImport={(file) => handleFileImport(file, 'Egresos')}
-            />
-
-            <div className="bg-white p-6 rounded-lg shadow-md border">
-                <h3 className="text-xl font-bold text-black flex items-center">
-                    <GoogleIcon name="download" className="mr-2 text-gray-500" /> Exportar Egresos
-                </h3>
-                <p className="text-sm text-gray-600 mt-2 mb-4">Descarga todos los egresos actuales en formato CSV.</p>
-                <div>
-                    <button
-                        onClick={async () => {
-                            try {
-                                const data = await getEgresos();
-                                if (!data || data.length === 0) {
-                                    alert('No hay egresos para exportar.');
-                                    return;
-                                }
-                                const headers = ["id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"];
-                                const rows = data.map(e => {
-                                    const comprobantes = (e.comprobantes || []).map((c:any) => c.url).join(';');
-                                    return headers.map(h => {
-                                        const v = (e as any)[h];
-                                        if (h === 'comprobantes') return `"${comprobantes}"`;
-                                        if (v === undefined || v === null) return '';
-                                        // Escape quotes
-                                        return `"${String(v).replace(/"/g, '""')}"`;
-                                    }).join(',');
-                                });
-                                const csv = [headers.join(','), ...rows].join('\n');
-                                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-                                const link = document.createElement('a');
-                                link.href = URL.createObjectURL(blob);
-                                link.download = 'egresos_export.csv';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            } catch (err) {
-                                console.error('Error exporting egresos', err);
-                                alert('Error al exportar egresos. Revisa la consola.');
-                            }
-                        }}
-                        className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors text-sm font-medium"
-                    >
-                        <GoogleIcon name="download" className="mr-2" /> Exportar Egresos
-                    </button>
-                </div>
-            </div>
-
             <ImportProgressModal
                 isOpen={importProgress.isOpen}
                 title={importProgress.title}
@@ -1043,9 +867,6 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 isComplete={importProgress.isComplete}
                 successMessage={importProgress.successMessage}
                 errorMessage={importProgress.errorMessage}
-                successCount={importProgress.successCount}
-                errorCount={importProgress.errorCount}
-                detailItems={importProgress.detailItems}
                 onClose={handleCloseProgressModal}
             />
 

@@ -5,34 +5,10 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico
 } from '../types.ts';
 
-export interface BulkImportResultItem<T> {
-  success: boolean;
-  item?: T;
-  index?: number;
-  error?: string;
-}
-
-export interface BulkImportEgresosResponse {
-  message: string;
-  egresos: BulkImportResultItem<Egreso>[];
-  successCount: number;
-  errorCount: number;
-}
-
-// URL del backend en producción (VPS con HTTPS)
-const API_URL = "https://api.munnaymedicinaestetica.com/api";
+// URL del backend en producción (Render)
+const API_URL = "https://munnay-crm-backend.onrender.com/api";
 
 // Helper genérico para requests
-class ApiError extends Error {
-  status: number;
-  body: any;
-  constructor(status: number, body: any) {
-    super(body?.message || String(body) || 'API Error');
-    this.status = status;
-    this.body = body;
-  }
-}
-
 const apiRequest = async <T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -42,84 +18,17 @@ const apiRequest = async <T>(
     method,
     headers: { 'Content-Type': 'application/json' },
   };
-  if (body) {
-    // Convertir recursivamente strings con formato YYYY-MM-DD a ISO UTC (YYYY-MM-DDT00:00:00Z)
-    const convertDatesToISO = (obj: any): any => {
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj === 'string') {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(obj)) {
-          return obj + 'T00:00:00Z';
-        }
-        return obj;
-      }
-      if (Array.isArray(obj)) return obj.map(convertDatesToISO);
-      if (typeof obj === 'object') {
-        const out: any = {};
-        for (const k of Object.keys(obj)) {
-          out[k] = convertDatesToISO(obj[k]);
-        }
-        return out;
-      }
-      return obj;
-    };
+  if (body) options.body = JSON.stringify(body);
 
-    options.body = JSON.stringify(convertDatesToISO(body));
-  }
-
-  // Añadir timeout para evitar que fetch quede pendiente indefinidamente
-  const fetchWithTimeout = (url: string, opts: RequestInit, timeout = 10000) => {
-    return new Promise<Response>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('timeout')), timeout);
-      fetch(url, opts)
-        .then(res => {
-          clearTimeout(timer);
-          resolve(res);
-        })
-        .catch(err => {
-          clearTimeout(timer);
-          reject(err);
-        });
-    });
-  };
-
-  const response = await fetchWithTimeout(`${API_URL}${endpoint}`, options, 15000);
+  const response = await fetch(`${API_URL}${endpoint}`, options);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
-    // Throw ApiError so callers can inspect status and body
-    throw new ApiError(response.status, errorData);
+    throw new Error(errorData.message || 'Error en la petición a la API');
   }
 
   if (response.status === 204) return {} as T;
-  // Normalize dates in the JSON response: convert common DD/MM/YYYY strings
-  // to YYYY-MM-DD so the rest of the app can bind them to <input type="date">.
-  const raw = await response.json();
-
-  const normalizeDatesInObject = (obj: any): any => {
-    if (obj === null || obj === undefined) return obj;
-    if (typeof obj === 'string') {
-      // Match DD/MM/YYYY optionally surrounded by whitespace
-      const ddmmyyyy = obj.match(/^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/);
-      if (ddmmyyyy) {
-        const day = ddmmyyyy[1];
-        const month = ddmmyyyy[2];
-        const year = ddmmyyyy[3];
-        return `${year}-${month}-${day}`;
-      }
-      return obj;
-    }
-    if (Array.isArray(obj)) return obj.map(normalizeDatesInObject);
-    if (typeof obj === 'object') {
-      const out: any = {};
-      for (const k of Object.keys(obj)) {
-        out[k] = normalizeDatesInObject(obj[k]);
-      }
-      return out;
-    }
-    return obj;
-  };
-
-  return normalizeDatesInObject(raw) as T;
+  return response.json();
 };
 
 // ====== LEADS ======
@@ -193,8 +102,8 @@ export const saveEgreso = (egreso: Egreso): Promise<Egreso> =>
     : apiRequest<Egreso>('/expenses', 'POST', egreso);
 export const deleteEgreso = (id: number): Promise<void> =>
   apiRequest<void>(`/expenses/${id}`, 'DELETE');
-export const bulkImportEgresos = (egresos: any[]): Promise<BulkImportEgresosResponse> =>
-  apiRequest<BulkImportEgresosResponse>('/expenses/bulk', 'POST', egresos);
+export const bulkImportEgresos = (egresos: any[]): Promise<{ message: string; egresos: Egreso[] }> =>
+  apiRequest<{ message: string; egresos: Egreso[] }>('/expenses/bulk', 'POST', egresos);
 
 // ====== PROVEEDORES ======
 export const getProveedores = (): Promise<Proveedor[]> => 
@@ -391,13 +300,6 @@ export const generateAiContent = async (prompt: string): Promise<string> => {
     return response.content;
   } catch (error) {
     console.error('Error generating AI content:', error);
-    const e: any = error;
-    if (e instanceof ApiError && e.status === 429) {
-      return 'La API de IA ha excedido la cuota. Por favor revisa el plan/billing o inténtalo más tarde.';
-    }
-    if (e instanceof ApiError && e.status >= 500 && e.status < 600) {
-      return 'Error del proveedor de IA. Intenta nuevamente más tarde.';
-    }
     return 'Error al generar contenido con IA. Por favor, intenta nuevamente.';
   }
 };
@@ -411,13 +313,6 @@ export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): P
     return response.analysis;
   } catch (error) {
     console.error('Error generating AI analysis:', error);
-    const e: any = error;
-    if (e instanceof ApiError && e.status === 429) {
-      return 'La API de IA ha excedido la cuota. Por favor revisa el plan/billing o inténtalo más tarde.';
-    }
-    if (e instanceof ApiError && e.status >= 500 && e.status < 600) {
-      return 'Error del proveedor de IA. Intenta nuevamente más tarde.';
-    }
     return 'Error al generar análisis con IA. Por favor, intenta nuevamente.';
   }
 };

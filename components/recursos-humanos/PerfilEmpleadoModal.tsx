@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { User, Role, Lead, Goal } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
-import { formatDateForDisplay } from '../../utils/time';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

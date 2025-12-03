@@ -10,11 +10,9 @@ interface CatalogFormModalProps {
     fields: { name: keyof any, label: string, type: string, required?: boolean }[];
     itemCategories?: { id: number, nombre: string }[];
     categoryField?: string;
-    itemRooms?: { id: string | number, nombre: string }[];
-    roomField?: string;
 }
 
-const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, item, title, fields, itemCategories, categoryField, itemRooms, roomField }) => {
+const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, item, title, fields, itemCategories, categoryField }) => {
     const [formData, setFormData] = useState<any>(item || {});
 
     useEffect(() => {
@@ -82,20 +80,6 @@ const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, 
                                 <option value="">Seleccionar...</option>
                                 {itemCategories.map(cat => (
                                     <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                                ))}
-                            </select>
-                        ) : field.name === roomField && itemRooms ? (
-                            <select
-                                id={String(field.name)}
-                                name={String(field.name)}
-                                value={formData[field.name] || ''}
-                                onChange={handleChange}
-                                required={field.required}
-                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
-                            >
-                                <option value="">Seleccionar...</option>
-                                {itemRooms.map(r => (
-                                    <option key={String(r.id)} value={r.nombre}>{r.nombre}</option>
                                 ))}
                             </select>
                         ) : field.type === 'textarea' ? (

@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Lead } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
-import { formatDateForDisplay } from '../../utils/time';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

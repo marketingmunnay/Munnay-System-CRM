@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Modal from '../shared/Modal';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -15,9 +15,6 @@ interface ImportProgressModalProps {
     successMessage?: string;
     errorMessage?: string;
     onClose: () => void;
-    successCount?: number;
-    errorCount?: number;
-    detailItems?: { rowNumber?: number; error: string }[];
 }
 
 const ImportProgressModal: React.FC<ImportProgressModalProps> = ({
@@ -29,19 +26,9 @@ const ImportProgressModal: React.FC<ImportProgressModalProps> = ({
     isComplete,
     successMessage,
     errorMessage,
-    onClose,
-    successCount,
-    errorCount,
-    detailItems
+    onClose
 }) => {
     const progressPercentage = totalItems > 0 ? Math.round((processedItems / totalItems) * 100) : 0;
-    const [showDetails, setShowDetails] = useState(false);
-
-    useEffect(() => {
-        if (!isOpen || !isComplete) {
-            setShowDetails(false);
-        }
-    }, [isOpen, isComplete]);
 
     return (
         <Modal
@@ -150,50 +137,16 @@ const ImportProgressModal: React.FC<ImportProgressModalProps> = ({
                                         {processedItems}
                                     </span>
                                 </div>
-                                {typeof successCount === 'number' && (
-                                    <div className="flex justify-between">
-                                        <span>Registros exitosos:</span>
-                                        <span className="font-medium text-green-600">{successCount}</span>
-                                    </div>
-                                )}
-                                {typeof errorCount === 'number' && (
+                                {errorMessage && (
                                     <div className="flex justify-between">
                                         <span>Registros con error:</span>
-                                        <span className={`font-medium ${errorCount > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                            {errorCount}
+                                        <span className="font-medium text-red-600">
+                                            {totalItems - processedItems}
                                         </span>
                                     </div>
                                 )}
                             </div>
                         </div>
-
-                        {detailItems && detailItems.length > 0 && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm font-semibold text-red-700">Detalle de errores detectados</p>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowDetails(prev => !prev)}
-                                        className="text-xs font-medium text-red-700 hover:text-red-900"
-                                    >
-                                        {showDetails ? 'Ocultar' : 'Ver'}
-                                    </button>
-                                </div>
-                                {showDetails && (
-                                    <ul className="space-y-2 max-h-48 overflow-y-auto pr-1 text-sm text-red-700">
-                                        {detailItems.map((detail, idx) => (
-                                            <li key={`${detail.rowNumber ?? idx}-${idx}`} className="bg-white border border-red-100 rounded-md p-2">
-                                                {detail.rowNumber ? `Fila ${detail.rowNumber}` : `Registro ${idx + 1}`}:
-                                                <span className="ml-1">{detail.error}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {!showDetails && (
-                                    <p className="text-xs text-red-600">Haz clic en "Ver" para revisar cada error.</p>
-                                )}
-                            </div>
-                        )}
                     </div>
                 )}
             </div>

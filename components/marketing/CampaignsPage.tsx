@@ -8,7 +8,7 @@ import MetaCampaignFormModal from './MetaCampaignFormModal.tsx';
 import AnunciosTable from './AnunciosTable.tsx';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import type { Campaign, Lead, MetaCampaign } from '../../types.ts';
-import { formatDateForDisplay, parseDate } from '../../utils/time';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 interface CampaignsPageProps {
     campaigns: Campaign[];
@@ -87,17 +87,11 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
             return campaigns;
         }
 
-        const fromDate = dateRange.from ? parseDate(dateRange.from) : null;
-        const toDate = dateRange.to ? (() => {
-            const d = parseDate(dateRange.to, true);
-            if (!d) return parseDate(dateRange.to);
-            const end = new Date(d.getTime());
-            end.setUTCHours(23, 59, 59, 999);
-            return end;
-        })() : null;
+        const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
+        const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
 
         return campaigns.filter(campaign => {
-            const campaignDate = parseDate(campaign.fecha) ?? null;
+            const campaignDate = new Date(`${campaign.fecha}T00:00:00`);
             if (fromDate && campaignDate < fromDate) {
                 return false;
             }

@@ -4,7 +4,6 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, Seller } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
-import { useSchedule } from '../shared/ScheduleContext';
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
 
 interface CalendarPageProps {
@@ -69,7 +68,6 @@ const durationToHeight = (startStr: string, endStr: string) => {
 
 
 const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
-    const schedule = useSchedule();
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -131,41 +129,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
             categoria: '',
             anuncio: '',
         };
-        // If a procedureToSchedule exists in context, use it to prefill procedure and open modal
-        if (schedule.procedureToSchedule) {
-            const completed = {
-                ...schedule.procedureToSchedule,
-                fechaAtencion: formatDateForInput(clickDate),
-                horaInicio: `${clickDate.getHours().toString().padStart(2,'0')}:${clickDate.getMinutes().toString().padStart(2,'0')}`,
-                horaFin: undefined as any,
-            };
-            schedule.setCompletedProcedure(completed);
-
-            // Keep reference to origin lead if provided on the procedureToSchedule
-            // (we store it as an extended field `leadId` when delegating from Lead modal)
-            // Try to find the original lead and open modal for that lead, otherwise create a new lead object
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            const originLeadId = (schedule.procedureToSchedule as any)?.leadId;
-            let leadToEdit: Partial<Lead> | null = null;
-            if (originLeadId) {
-                const found = leads.find(l => l.id === originLeadId);
-                if (found) leadToEdit = found;
-            }
-
-            if (leadToEdit) {
-                setEditingLead(leadToEdit as Lead);
-            } else {
-                setEditingLead(newLead as Lead);
-            }
-
-            // clear the request to schedule (we've captured it as completed)
-            schedule.setProcedureToSchedule(null);
-
-            setIsModalOpen(true);
-            return;
-        }
-
+        
         setEditingLead(newLead as Lead);
         setIsModalOpen(true);
     };

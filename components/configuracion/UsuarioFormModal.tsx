@@ -3,7 +3,7 @@ import type { User, Role, Address, EmergencyContact, JobPosition } from '../../t
 import { DocumentType } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon, EyeIcon, EyeSlashIcon } from '../shared/Icons.tsx';
-import { formatDateForInput } from '../../utils/time';
+import { formatDateForInput } from '../../utils/time.ts';
 
 interface UsuarioFormModalProps {
   isOpen: boolean;
@@ -208,7 +208,7 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" name="birthDate" value={formatDateForInput(formData.birthDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                            <input type="date" name="birthDate" value={formatDateForInput(formData.birthDate instanceof Date && !isNaN(formData.birthDate.getTime()) ? formData.birthDate : new Date())} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,11 +264,11 @@ const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({ isOpen, onClose, on
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio Laboral</label>
-                            <input type="date" name="startDate" value={formatDateForInput(formData.startDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                            <input type="date" name="startDate" value={formatDateForInput(formData.startDate instanceof Date && !isNaN(formData.startDate.getTime()) ? formData.startDate : new Date())} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
-                            <input type="date" name="endDate" value={formatDateForInput(formData.endDate) || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
+                            <input type="date" name="endDate" value={formatDateForInput(formData.endDate instanceof Date && !isNaN(formData.endDate.getTime()) ? formData.endDate : new Date())} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"/>
                         </div>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -2,15 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 // Moved formatFechaHora to top-level scope
                                                     {/* formatFechaHora ahora solo se llama desde JSX, definida en el scope superior */}
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership, User } from '../../types';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
-import { formatDateForInput, formatDateForDisplay, formatDateTimeForDisplay, formatTimeForInput, parseDate } from '../../utils/time';
-import { useSchedule } from '../shared/ScheduleContext';
-import AlertModal from '../shared/AlertModal';
+import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -44,7 +42,7 @@ const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería']
 // Puestos permitidos para el campo Vendedor
 const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS, fechaLeadError }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
@@ -53,16 +51,15 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                 <legend className="text-md font-bold px-2 text-black">Información Básica</legend>
                 <div>
                     <label className="text-sm font-medium">Fecha Lead <span className="text-red-500">*</span></label>
-                                <input
-                                    type="date"
-                                    name="fechaLead"
-                                    value={formatDateForInput(formData.fechaLead) || ''}
-                                    onChange={handleChange}
-                                    className="w-full bg-[#f9f9fa] p-2"
-                                    style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
-                                    required
-                                />
-                                {fechaLeadError && <span className="text-red-500 text-xs mt-1 block">{fechaLeadError}</span>}
+                        <input 
+                            type="date" 
+                            name="fechaLead" 
+                            value={formatDateForInput(formData.fechaLead || new Date()) || ''} 
+                            onChange={handleChange} 
+                            className="w-full bg-[#f9f9fa] p-2" 
+                            style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
+                            required 
+                    />
                 </div>
                 <div>
                     <label className="text-sm font-medium">Tipo Documento</label>
@@ -169,10 +166,18 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaAgenda" 
-                            value={formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date())} 
+                            value={(() => {
+                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
+                                    return formData.fechaHoraAgenda.split('T')[0];
+                                }
+                                if (typeof formData.fechaHoraAgenda === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(formData.fechaHoraAgenda)) {
+                                    return formData.fechaHoraAgenda;
+                                }
+                                return new Date().toISOString().split('T')[0];
+                            })()} 
                             onChange={(e) => {
                                 const fecha = e.target.value;
-                                const horaActual = formatTimeForInput(formData.fechaHoraAgenda) || '12:00';
+                                const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
@@ -188,10 +193,17 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <label className="text-sm font-medium">Hora de Agenda</label>
                         <select 
                             name="horaAgenda" 
-                            value={formatTimeForInput(formData.fechaHoraAgenda) || ''} 
+                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? (formData.fechaHoraAgenda.split('T')[1]?.substring(0,5) || '') : ''} 
                             onChange={(e) => {
                                 const hora = e.target.value;
-                                const fechaActual = formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date());
+                                let fechaActual = '';
+                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
+                                    fechaActual = formData.fechaHoraAgenda.split('T')[0];
+                                } else if (typeof formData.fechaHoraAgenda === 'string') {
+                                    fechaActual = formData.fechaHoraAgenda;
+                                } else {
+                                    fechaActual = new Date().toISOString().split('T')[0];
+                                }
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
@@ -348,7 +360,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                          <input
                              type="date"
                              name="fechaVolverLlamar"
-                             value={formatDateForInput(formData.fechaVolverLlamar) || ''}
+                             value={formatDateForInput(formData.fechaVolverLlamar ? formData.fechaVolverLlamar : new Date())}
                              onChange={handleChange}
                              className="w-full bg-[#f9f9fa] p-2"
                              style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }}
@@ -1024,36 +1036,10 @@ const RecepcionTabContent: React.FC<any> = ({ formData, handleChange, handleGene
     );
 };
 
-const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS, onClose }) => {
+const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, PERSONAL_OPTIONS }) => {
     const [currentProcedure, setCurrentProcedure] = useState<Partial<Procedure> | null>(null);
     const [editingProcedureId, setEditingProcedureId] = useState<number | null>(null);
     const [justSavedProcedureId, setJustSavedProcedureId] = useState<number | null>(null);
-    const schedule = useSchedule();
-    const [alertState, setAlertState] = useState<{ open: boolean; title?: string; message?: React.ReactNode }>({ open: false, title: '', message: '' });
-
-    const showAlert = (title: string, message: React.ReactNode) => {
-        setAlertState({ open: true, title, message });
-    };
-
-    const closeAlert = () => setAlertState({ open: false, title: '', message: '' });
-
-    // If a completedProcedure is returned from Calendar (slot selection), consume it here
-    useEffect(() => {
-        if (schedule.completedProcedure) {
-            const cp = schedule.completedProcedure;
-            setCurrentProcedure(prev => ({
-                ...prev,
-                ...cp,
-                // ensure date field is set for the input control
-                fechaAtencion: cp.fechaAtencion || formatDateForInput(new Date()),
-                horaInicio: cp.horaInicio || (cp.horaInicio === '' ? '' : cp.horaInicio),
-                horaFin: cp.horaFin || cp.horaFin || ''
-            }));
-            setEditingProcedureId(null);
-            // clear it so it's not re-applied
-            schedule.setCompletedProcedure(null);
-        }
-    }, [schedule.completedProcedure]);
 
     // Función para obtener el siguiente número de sesión para un tratamiento
     const getNextSessionNumber = (tratamientoId: number): number => {
@@ -1071,33 +1057,38 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
     // Función para calcular sesiones restantes de un tratamiento
     const getSesionesRestantes = (tratamientoId: number): { usadas: number, total: number, restantes: number } => {
-        // Normalize IDs to numbers to avoid string/number mismatch issues
-        const tid = Number(tratamientoId);
-        const tratamiento = formData.tratamientos?.find((t: Treatment) => Number(t.id) === tid);
-
+        const tratamiento = formData.tratamientos?.find((t: Treatment) => t.id === tratamientoId);
         if (!tratamiento) {
-            console.log('⚠️ Tratamiento no encontrado (id):', tratamientoId);
+            console.log('⚠️ Tratamiento no encontrado:', tratamientoId);
             console.log('Tratamientos disponibles:', formData.tratamientos?.map(t => ({ id: t.id, nombre: t.nombre })));
-            // Still log procedimientos for debugging
-            console.log('🔍 TODOS los procedimientos:', (formData.procedimientos || []).map(p => ({
-                id: p.id,
-                sesion: p.sesionNumero,
-                nombreTratamiento: p.nombreTratamiento,
-                tratamientoId: p.tratamientoId,
-                tratamientoIdTipo: typeof p.tratamientoId
-            })));
             return { usadas: 0, total: 0, restantes: 0 };
         }
-
-        // Filter procedimientos by numeric ID match to avoid type mismatch
-        const procedimientosFiltrados = (formData.procedimientos || []).filter((p: Procedure) => Number(p.tratamientoId) === tid);
+        
+        // Log TODOS los procedimientos con sus tratamientoId
+        console.log('🔍 TODOS los procedimientos:', (formData.procedimientos || []).map(p => ({
+            id: p.id,
+            sesion: p.sesionNumero,
+            nombreTratamiento: p.nombreTratamiento,
+            tratamientoId: p.tratamientoId,
+            tratamientoIdTipo: typeof p.tratamientoId
+        })));
+        
+        console.log('🔍 Buscando procedimientos con tratamientoId:', tratamientoId, 'tipo:', typeof tratamientoId);
+        
+        const procedimientosFiltrados = (formData.procedimientos || []).filter(
+            (p: Procedure) => {
+                const coincide = p.tratamientoId === tratamientoId;
+                console.log(`  - Procedimiento ${p.id}: tratamientoId=${p.tratamientoId} (${typeof p.tratamientoId}) === ${tratamientoId} (${typeof tratamientoId})? ${coincide}`);
+                return coincide;
+            }
+        );
+        
         const procedimientosUsados = procedimientosFiltrados.length;
-
-        const totalSesiones = tratamiento.cantidadSesiones || 0;
+        
         const resultado = {
             usadas: procedimientosUsados,
-            total: totalSesiones,
-            restantes: Math.max(0, totalSesiones - procedimientosUsados)
+            total: tratamiento.cantidadSesiones,
+            restantes: Math.max(0, tratamiento.cantidadSesiones - procedimientosUsados)
         };
         
         console.log('🔍 getSesionesRestantes RESULTADO:', {
@@ -1121,7 +1112,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
     const handleAddProcedure = () => {
         if (!formData.tratamientos || formData.tratamientos.length === 0) {
             console.log('❌ No hay tratamientos disponibles');
-            showAlert('No hay tratamientos', 'No hay tratamientos registrados. Agregue tratamientos en la pestaña Recepción para poder registrar procedimientos.');
             return;
         }
         
@@ -1137,7 +1127,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
         });
         
         if (restantes === 0) {
-            showAlert('No se puede agregar más sesiones', `Tratamiento: ${primerTratamiento.nombre || 'Desconocido'}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
+            alert(`⚠️ No se puede agregar más sesiones\n\nTratamiento: ${primerTratamiento.nombre}\nSesiones utilizadas: ${usadas}/${total}\nSesiones restantes: 0\n\nPara agregar más sesiones, solicite el pago de sesiones adicionales en Recepción.`);
             return;
         }
         
@@ -1146,7 +1136,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
         
         setCurrentProcedure({
             id: Date.now(),
-            fechaAtencion: formatDateForInput(new Date()),
+            fechaAtencion: new Date().toISOString().split('T')[0],
             horaInicio: '',
             horaFin: '',
             tratamientoId: formData.tratamientos[0].id,
@@ -1157,50 +1147,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
             observacion: ''
         });
         setEditingProcedureId(null);
-    };
-
-    // Handler to delegate scheduling to Calendar: create a prefilled procedure (no date/time)
-    const handleScheduleNextSession = () => {
-        if (!formData.tratamientos || formData.tratamientos.length === 0) {
-            showAlert('No hay tratamientos', 'No hay tratamientos registrados. Agregue tratamientos en la pestaña Recepción para poder registrar procedimientos.');
-            return;
-        }
-
-        const primerTratamiento = formData.tratamientos[0];
-        const { restantes, usadas, total } = getSesionesRestantes(primerTratamiento.id);
-        if (restantes === 0) {
-            showAlert('No se puede agendar', `Tratamiento: ${primerTratamiento.nombre || 'Desconocido'}\nSesiones utilizadas: ${usadas}/${total}\nNo quedan sesiones disponibles.`);
-            return;
-        }
-
-        const nextSessionNumber = getNextSessionNumber(primerTratamiento.id);
-        const newProcData: Partial<Procedure> = {
-            id: Date.now(),
-            fechaAtencion: null,
-            horaInicio: '',
-            horaFin: '',
-            tratamientoId: primerTratamiento.id,
-            nombreTratamiento: primerTratamiento.nombre,
-            sesionNumero: nextSessionNumber,
-            personal: formData.profesionalAsignado || 'Vanesa',
-            asistenciaMedica: false,
-            medico: undefined,
-            observacion: '',
-            // keep reference to the lead so Calendar can return to the same lead
-            // this is an extended field in the Partial type and used at runtime
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            leadId: formData.id,
-        };
-
-        // set in schedule context so Calendar can consume it and allow slot selection
-        schedule.setProcedureToSchedule(newProcData);
-        // close the lead modal so the app navigates to calendar
-        try {
-            if (onClose) onClose();
-        } catch (e) {
-            // ignore
-        }
     };
 
     const handleEditProcedure = (procedure: Procedure) => {
@@ -1238,8 +1184,8 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                 (p: Procedure) => p.tratamientoId === procedureToSave.tratamientoId
             ).length;
             
-            const tratamiento = formData.tratamientos?.find(t => Number(t.id) === Number(procedureToSave.tratamientoId));
-            const sesionesTotales = Number(tratamiento?.cantidadSesiones) || 0;
+            const tratamiento = formData.tratamientos?.find(t => t.id === procedureToSave.tratamientoId);
+            const sesionesTotales = tratamiento?.cantidadSesiones || 0;
             
             console.log('🔍 Validando sesiones antes de guardar:', {
                 tratamientoId: procedureToSave.tratamientoId,
@@ -1250,9 +1196,9 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                 editingProcedureId
             });
             
-            // Si el tratamiento tiene sesiones totales > 0 y ya se usaron todas, no permitir guardar
-            if (sesionesTotales > 0 && procedimientosActuales >= sesionesTotales) {
-                showAlert('No se puede guardar el procedimiento', `Tratamiento: ${tratamiento?.nombre || 'Desconocido'}\nSesiones disponibles: ${sesionesTotales}\nSesiones ya registradas: ${procedimientosActuales}\n\nNo quedan sesiones disponibles. Solicite el pago de sesiones adicionales en Recepción.`);
+            // Si ya se usaron todas las sesiones, no permitir guardar
+            if (procedimientosActuales >= sesionesTotales) {
+                alert(`⚠️ No se puede guardar el procedimiento\n\nTratamiento: ${tratamiento?.nombre || 'Desconocido'}\nSesiones disponibles: ${sesionesTotales}\nSesiones ya registradas: ${procedimientosActuales}\n\nNo quedan sesiones disponibles. Solicite el pago de sesiones adicionales en Recepción.`);
                 return;
             }
         }
@@ -1300,8 +1246,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
             // Verificar si hay seguimientos asociados
             const tieneSeguimientos = (prev.seguimientos || []).some((s: Seguimiento) => s.procedimientoId === procedureId);
             if (tieneSeguimientos) {
-                // Use modal alert instead of browser alert
-                showAlert('No se puede eliminar', 'Primero debes eliminar los seguimientos asociados a este procedimiento.');
+                alert('Primero debes eliminar los seguimientos asociados a este procedimiento.');
                 return prev;
             }
             return {
@@ -1358,9 +1303,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
 
     return (
         <div className="space-y-6">
-            {alertState.open && (
-                <AlertModal isOpen={alertState.open} onClose={closeAlert} title={alertState.title} message={alertState.message} />
-            )}
             {/* Header con botón Añadir y contador de sesiones */}
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-800">Procedimientos Realizados</h3>
@@ -1441,37 +1383,6 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                                 {getSesionesRestantes(formData.tratamientos[0].id).restantes}
                             </span>
                         )}
-                    </button>
-                    
-                    <button
-                        type="button"
-                        onClick={handleScheduleNextSession}
-                        disabled={(() => {
-                            if (!hasTratamientos) return true;
-                            const primerTratamiento = formData.tratamientos?.[0];
-                            if (!primerTratamiento) return true;
-                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
-                            return restantes === 0;
-                        })()}
-                        className={`flex items-center px-4 py-2 rounded-lg text-white text-sm ${
-                            (() => {
-                                if (!hasTratamientos) return 'bg-gray-300 cursor-not-allowed';
-                                const primerTratamiento = formData.tratamientos?.[0];
-                                if (!primerTratamiento) return 'bg-gray-300 cursor-not-allowed';
-                                const { restantes } = getSesionesRestantes(primerTratamiento.id);
-                                return restantes > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed';
-                            })()
-                        } ml-2`}
-                        title={(() => {
-                            if (!hasTratamientos) return 'Debe agregar tratamientos en la pestaña Recepción primero';
-                            const primerTratamiento = formData.tratamientos?.[0];
-                            if (!primerTratamiento) return 'No hay tratamientos disponibles';
-                            const { restantes } = getSesionesRestantes(primerTratamiento.id);
-                            return restantes === 0 ? 'No quedan sesiones disponibles' : 'Agendar la próxima sesión en el calendario';
-                        })()}
-                    >
-                        <GoogleIcon name="event" className="mr-1" />
-                        Agendar próxima sesión
                     </button>
                 </div>
             </div>
@@ -1650,7 +1561,7 @@ const ProcedimientosTabContent: React.FC<any> = ({ formData, handleSetFormData, 
                     </h4>
                     
                     {(formData.procedimientos || [])
-                        .sort((a: Procedure, b: Procedure) => (parseDate(b.fechaAtencion as any, true)?.getTime() || 0) - (parseDate(a.fechaAtencion as any, true)?.getTime() || 0))
+                        .sort((a: Procedure, b: Procedure) => new Date(b.fechaAtencion).getTime() - new Date(a.fechaAtencion).getTime())
                         .map((proc: Procedure, index: number) => (
                             <div 
                                 key={proc.id || index} 
@@ -1765,7 +1676,7 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
             id: Date.now(),
             procedimientoId: primerProcedimiento.id,
             nombreProcedimiento: getProcedimientoLabel(primerProcedimiento),
-            fechaSeguimiento: formatDateForInput(new Date()),
+            fechaSeguimiento: new Date().toISOString().split('T')[0],
             personal: 'Vanesa',
             inflamacion: false,
             ampollas: false,
@@ -2076,8 +1987,8 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                     <div className="space-y-3">
                         {seguimientos
                             .sort((a: Seguimiento, b: Seguimiento) => 
-                                    (parseDate(b.fechaSeguimiento as any, true)?.getTime() || 0) - (parseDate(a.fechaSeguimiento as any, true)?.getTime() || 0)
-                                )
+                                new Date(b.fechaSeguimiento).getTime() - new Date(a.fechaSeguimiento).getTime()
+                            )
                             .map((seg: Seguimiento) => {
                                 const numSintomas = contarSintomas(seg);
                                 const tieneSintomas = numSintomas > 0;
@@ -2104,7 +2015,8 @@ const SeguimientoTabContent: React.FC<any> = ({ formData, handleSetFormData, PER
                                                 <div className="grid grid-cols-3 gap-3 text-sm">
                                                     <div>
                                                         <span className="text-gray-500">Fecha:</span>
-                                                        <p className="text-gray-800 font-medium">{formatDateTimeForDisplay(seg.fechaSeguimiento)}</p>
+                                                        <p className="text-gray-800 font-medium">{formatFechaHora(seg.fechaSeguimiento)}</p>
+                                                    // Formatea fecha ISO a DD/MM/AAAA y hora 12h AM/PM
                                                     {/* formatFechaHora is now called from top-level scope */}
                                                     </div>
                                                     <div>
@@ -2235,14 +2147,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         const [activeTab, setActiveTab] = useState('ficha');
         const prevIsOpenRef = React.useRef<boolean>(false);
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
-    const [statusMessage, setStatusMessage] = useState<string>('');
-    const [showSaveMessage, setShowSaveMessage] = useState<boolean>(false);
+    const [showSaveMessage, setShowSaveMessage] = useState(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
-    const [fechaLeadError, setFechaLeadError] = useState<string>('');
-    const [globalAlert, setGlobalAlert] = useState<{ open: boolean; title?: string; message?: React.ReactNode }>({ open: false, title: '', message: '' });
-
-    const showGlobalAlert = (title: string, message: React.ReactNode) => setGlobalAlert({ open: true, title, message });
-    const closeGlobalAlert = () => setGlobalAlert({ open: false, title: '', message: '' });
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
@@ -2250,18 +2156,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             .filter((user: any) => user.position && PUESTOS_PROFESIONAL.includes(user.position))
             .map((user: any) => `${user.nombres} ${user.apellidos}`);
     }, [users]);
-
-    const schedule = (() => {
-        try {
-            // lazy require hook to avoid breaking tests/environments where provider missing
-            // but when app runs normally, provider is present
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const s = require('../shared/ScheduleContext').useSchedule();
-            return s;
-        } catch (e) {
-            return null as any;
-        }
-    })();
 
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
     const VENDEDOR_OPTIONS = useMemo(() => {
@@ -2291,95 +2185,35 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     }, [users]);
 
     // Helper function to format date fields for input[type="date"]
-    // Delegate to shared utils to keep behavior consistent across the app
     const formatDateForInputField = (dateValue: any): string => {
-        try {
-            return formatDateForInput(dateValue) || '';
-        } catch (e) {
-            return '';
-        }
-    };
-
-    // Normalizer: some backend responses use DD/MM/YYYY strings (e.g. '19/11/2025').
-    // HTML date inputs expect YYYY-MM-DD. Convert common DD/MM/YYYY format to
-    // YYYY-MM-DD before passing to input value. Otherwise fall back to
-    // `formatDateForInput` which handles ISO/Date objects and YYYY-MM-DD.
-    const normalizeDateStringForInput = (dateValue: any): string => {
         if (!dateValue) return '';
-
-        // If it's already a Date instance, return YYYY-MM-DD
-        if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+        
+        // If it's already a string in YYYY-MM-DD format, return as is
+        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+            return dateValue;
+        }
+        
+        // If it's a string with time (ISO format), extract date part
+        if (typeof dateValue === 'string' && dateValue.includes('T')) {
+            return dateValue.split('T')[0];
+        }
+        
+        // If it's a Date object, format it
+        if (dateValue instanceof Date) {
             return dateValue.toISOString().split('T')[0];
         }
-
-        // If it's a string in DD/MM/YYYY format, convert to YYYY-MM-DD
-        if (typeof dateValue === 'string') {
-            const ddmmyyyy = dateValue.match(/^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/);
-            if (ddmmyyyy) {
-                const day = ddmmyyyy[1];
-                const month = ddmmyyyy[2];
-                const year = ddmmyyyy[3];
-                return `${year}-${month}-${day}`;
+        
+        // Try to parse as date and format
+        try {
+            const date = new Date(dateValue);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
             }
-
-            // Try parsing robustly using shared helper (handles ISO and date-only)
-            try {
-                const parsed = parseDate(dateValue);
-                if (parsed) {
-                    return parsed.toISOString().split('T')[0];
-                }
-            } catch (e) {
-                // fallthrough to formatDateForInputField
-            }
+        } catch (e) {
+            // Invalid date, return empty string
         }
-
-        // Fallback to the shared helper which already handles Date/ISO/strings
-        return formatDateForInputField(dateValue);
-    };
-
-    // Recursively normalize any property names that include 'fecha' or 'date'
-    // This will handle nested arrays/objects like `seguimientos`, `procedimientos`,
-    // `registrosLlamada`, etc. It returns a new copy and does not mutate the input.
-    const normalizeDatesInObject = (obj: any): any => {
-        if (obj == null) return obj;
-
-        if (Array.isArray(obj)) {
-            return obj.map(item => normalizeDatesInObject(item));
-        }
-
-        if (typeof obj !== 'object') return obj;
-
-        const copy: any = {};
-        for (const key of Object.keys(obj)) {
-            const val = obj[key];
-
-            if (val == null) {
-                copy[key] = val;
-                continue;
-            }
-
-            // If key looks like a date field, normalize it
-            const k = String(key).toLowerCase();
-            if (k.includes('fecha') || k.includes('date')) {
-                copy[key] = normalizeDateStringForInput(val);
-                continue;
-            }
-
-            // Recurse into arrays and objects
-            if (Array.isArray(val)) {
-                copy[key] = val.map((item: any) => normalizeDatesInObject(item));
-                continue;
-            }
-
-            if (typeof val === 'object') {
-                copy[key] = normalizeDatesInObject(val);
-                continue;
-            }
-
-            copy[key] = val;
-        }
-
-        return copy;
+        
+        return '';
     };
 
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
@@ -2459,52 +2293,23 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     useEffect(() => {
         // Only run when modal transitions from closed -> open
         if (!prevIsOpenRef.current && isOpen) {
-                if (lead) {
-                // Build base mapped lead and recursively normalize all date-like fields
-                const baseLead = {
-                    ...lead,
+            if (lead) {
+                // Normaliza y fuerza fechaLead a formato YYYY-MM-DD
+                const normalized = { 
+                    ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
+                    fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
+                    fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
+                    birthDate: formatDateForInputField(lead.birthDate),
+                    fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
                 } as any;
-
-                const normalized = normalizeDatesInObject(baseLead);
-
-                // DEBUG: inspect date-like fields (original vs normalized)
-                try {
-                    const dateKeys = Object.keys(baseLead).filter(k => /fecha|date/i.test(k));
-                    const debugObj: Record<string, any> = {};
-                    dateKeys.forEach(k => {
-                        debugObj[k] = { original: baseLead[k], normalized: normalized[k], typeOriginal: typeof baseLead[k] };
-                    });
-                    console.debug('🧭 LeadFormModal open normalization:', debugObj);
-                } catch (e) {
-                    console.debug('🧭 LeadFormModal normalization debug error', e);
-                }
-
-                // Preserve fechaHoraAgenda (may include time).
-                if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
-                // If backend provided a fechaLead but normalization failed, force it
-                // to a YYYY-MM-DD value using our normalizer or fallback to formatDateForInput.
-                if (lead && (lead as any).fechaLead) {
-                    const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
-                    if (forced) {
-                        normalized.fechaLead = forced;
-                    } else {
-                        // If backend provided a value but we couldn't normalize it, leave empty
-                        // and log the raw value for debugging instead of silently using today's date.
-                        console.warn('LeadFormModal: could not normalize lead.fechaLead, raw value:', (lead as any).fechaLead);
-                        normalized.fechaLead = '';
-                    }
-                } else if (!normalized.fechaLead) {
-                    normalized.fechaLead = formatDateForInput(new Date());
-                }
-
                 setFormData(normalized);
             } else {
                 // Nuevo lead: fuerza fechaLead a formato YYYY-MM-DD
                 setFormData({
                     ...initialFormData,
-                    fechaLead: formatDateForInput(new Date()),
+                    fechaLead: new Date().toISOString().split('T')[0],
                 });
             }
             setActiveTab(initialTab || 'ficha');
@@ -2516,41 +2321,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     // Force refresh formData when lead changes (e.g., after save)
     useEffect(() => {
         if (lead && isOpen) {
-            const baseLead = {
-                ...lead,
-                vendedor: mapSellerFront(lead.vendedor),
+            setFormData({ 
+                ...lead, 
+                vendedor: mapSellerFront(lead.vendedor), 
                 estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-            } as any;
-
-            const normalized = normalizeDatesInObject(baseLead);
-            // DEBUG: inspect date-like fields when lead changes
-            try {
-                const dateKeys = Object.keys(baseLead).filter(k => /fecha|date/i.test(k));
-                const debugObj: Record<string, any> = {};
-                dateKeys.forEach(k => {
-                    debugObj[k] = { original: baseLead[k], normalized: normalized[k], typeOriginal: typeof baseLead[k] };
-                });
-                console.debug('🧭 LeadFormModal change normalization:', debugObj);
-            } catch (e) {
-                console.debug('🧭 LeadFormModal normalization debug error', e);
-            }
-
-            if (lead.fechaHoraAgenda) normalized.fechaHoraAgenda = lead.fechaHoraAgenda;
-
-            // Force fechaLead from the original lead when available (avoid empty input)
-            if (lead && (lead as any).fechaLead) {
-                const forced = normalizeDateStringForInput((lead as any).fechaLead) || formatDateForInput((lead as any).fechaLead);
-                if (forced) {
-                    normalized.fechaLead = forced;
-                } else {
-                    console.warn('LeadFormModal: could not normalize lead.fechaLead on change, raw value:', (lead as any).fechaLead);
-                    normalized.fechaLead = '';
-                }
-            } else if (!normalized.fechaLead) {
-                normalized.fechaLead = formatDateForInput(new Date());
-            }
-
-            setFormData(normalized as any);
+                // Format date fields for input[type="date"]
+                fechaLead: formatDateForInputField(lead.fechaLead),
+                fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
+                birthDate: formatDateForInputField(lead.birthDate),
+                fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
+            } as any);
         }
     }, [lead]);
 
@@ -2581,28 +2361,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             if (type === 'number') {
                 newState[name] = value === '' ? undefined : Number(value);
             } else if (type === 'datetime-local') {
-                // Convert to ISO format for datetime-local using parseDate to avoid
-                // inconsistent timezone interpretation across environments.
-                // parseDate returns a Date or null.
-                const parsed = parseDate(value as any);
-                newState[name] = parsed ? parsed.toISOString() : '';
+                // Convert to ISO format for datetime-local
+                newState[name] = value ? new Date(value).toISOString() : '';
             } else if (name === 'numero') {
                 // Format phone number
                 newState[name] = formatPhoneNumber(value);
             } else {
                 newState[name] = value;
-            }
-
-            // Inline validation for fechaLead (expect YYYY-MM-DD)
-            if (name === 'fechaLead') {
-                const v = String(value || '').trim();
-                if (v === '') {
-                    setFechaLeadError('');
-                } else if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                    setFechaLeadError('Formato inválido. Use AAAA-MM-DD');
-                } else {
-                    setFechaLeadError('');
-                }
             }
 
             // Recalculate deudaCita when montoPagado changes
@@ -2625,7 +2390,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         try {
             // Validar que haya apellido antes de generar
             if (!formData.apellidos?.trim()) {
-                showGlobalAlert('Apellido requerido', 'Por favor ingrese el apellido del paciente antes de generar el número de historia.');
+                alert('Por favor ingrese el apellido del paciente antes de generar el número de historia.');
                 return;
             }
             
@@ -2641,14 +2406,15 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             setFormData(prev => ({ ...prev, nHistoria: numeroHistoria }));
         } catch (error) {
             console.error("Failed to generate history number", error);
-            showGlobalAlert('Error', 'Hubo un error al generar el número de historia.');
+            alert("Hubo un error al generar el número de historia.");
         }
     };
     
     const handleSave = async () => {
-        // Validate required fields
+        // Validar campos requeridos
         const errors: string[] = [];
-
+        
+        // Campos siempre requeridos
         if (!formData.nombres?.trim()) errors.push('Nombres');
         if (!formData.apellidos?.trim()) errors.push('Apellidos');
         if (!formData.numero?.trim()) errors.push('Número de Teléfono');
@@ -2656,7 +2422,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (!formData.anuncio) errors.push('Campaña / Anuncio');
         if (!formData.vendedor) errors.push('Vendedor(a)');
         if (!formData.estado) errors.push('Estado del Lead');
-
+        
+        // Campos requeridos solo si el estado es "Agendado"
         if (formData.estado === LeadStatus.Agendado) {
             if (formData.montoPagado === undefined || formData.montoPagado === null) {
                 errors.push('Monto Pagado Cita (requerido cuando está Agendado)');
@@ -2668,25 +2435,46 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 errors.push('Profesional (requerido cuando está Agendado)');
             }
         }
-
+        
         if (errors.length > 0) {
-            showGlobalAlert('Campos requeridos', `Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
+            alert(`Los siguientes campos son requeridos:\n- ${errors.join('\n- ')}`);
             return;
         }
-
-        const dataToSave = formData as Lead;
-        const isCreating = !lead || (lead && ((lead as any).id === undefined || (lead as any).id === null));
-
+        
+        // Asegurar que montoPagado sea 0 si está vacío y no es Agendado
+        const dataToSave = {
+            ...formData,
+            montoPagado: formData.montoPagado ?? 0,
+        };
+        
+        console.log('🔍 FRONTEND: About to save lead:', {
+            isNewLead,
+            leadId: formData.id,
+            dataToSave: {
+                id: dataToSave.id,
+                nombres: dataToSave.nombres,
+                apellidos: dataToSave.apellidos,
+                estado: dataToSave.estado,
+                tratamientos: dataToSave.tratamientos?.length || 0,
+                procedimientos: dataToSave.procedimientos?.length || 0,
+                seguimientos: dataToSave.seguimientos?.length || 0
+            }
+        });
+        
         try {
-            setStatusMessage(isCreating ? 'Guardando datos...' : 'Actualizando datos...');
-            await onSave(dataToSave);
+            await onSave(dataToSave as Lead);
+            
+            // Mostrar mensaje de éxito
             setShowSaveMessage(true);
-            setTimeout(() => setShowSaveMessage(false), 3000);
+            setTimeout(() => {
+                setShowSaveMessage(false);
+            }, 3000);
+            
+            // NO cerrar el modal - mantener abierto después de guardar
+
         } catch (error) {
             console.error('❌ FRONTEND: Error saving lead:', error);
-            showGlobalAlert('Error', 'Error al guardar. Por favor, inténtalo de nuevo.');
-        } finally {
-            setTimeout(() => setStatusMessage(''), 800);
+            alert('Error al guardar. Por favor, inténtalo de nuevo.');
         }
     };
 
@@ -2694,19 +2482,18 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (lead) {
             requestConfirmation(`¿Estás seguro de que quieres eliminar al lead "${lead.nombres} ${lead.apellidos}"?`, async () => {
                 try {
-                    setStatusMessage('Eliminando...');
                     await onDelete(lead.id);
+                    
                     // Mostrar mensaje de éxito
                     setShowSaveMessage(true);
                     setTimeout(() => {
                         setShowSaveMessage(false);
                         // Cerrar el modal después de eliminar
                         onClose();
-                    }, 1200);
-                    setTimeout(() => setStatusMessage(''), 400);
+                    }, 2000);
                 } catch (error) {
                     console.error('Error deleting lead:', error);
-                    showGlobalAlert('Error', 'Error al eliminar. Por favor, inténtalo de nuevo.');
+                    alert('Error al eliminar. Por favor, inténtalo de nuevo.');
                 }
             });
         }
@@ -2790,7 +2577,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             memberships={memberships}
                             PERSONAL_OPTIONS={PERSONAL_OPTIONS}
                             VENDEDOR_OPTIONS={VENDEDOR_OPTIONS}
-                            fechaLeadError={fechaLeadError}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
@@ -2807,7 +2593,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     formData={formData} 
                     handleSetFormData={setFormData}
                     PERSONAL_OPTIONS={PERSONAL_OPTIONS}
-                    onClose={onClose}
                 />;
             case 'seguimiento':
                 return <SeguimientoTabContent formData={formData} handleSetFormData={setFormData} PERSONAL_OPTIONS={PERSONAL_OPTIONS} />;
@@ -2822,7 +2607,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             isOpen={isOpen}
             onClose={onClose}
             title={isNewLead ? 'Registrar Nuevo Lead' : `Ficha de Paciente: ${formData.nombres} ${formData.apellidos}`}
-            statusMessage={statusMessage}
             customMaxWidth="95rem"
             footer={
                 <div className="w-full flex justify-between items-center">
@@ -2901,10 +2685,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 onClose={handleCloseFacturacionModal}
                 onSave={handleFacturacionSave}
                 paciente={formData as Lead} // Patient data from the form
-                    venta={{ // Create a VentaExtra-like object from lead data for the modal
+                venta={{ // Create a VentaExtra-like object from lead data for the modal
                     id: formData.id,
                     codigoVenta: `CITA-${formData.id}`,
-                    fechaVenta: formatDateForInput(formData.fechaHoraAgenda) || formatDateForInput(new Date()),
+                    fechaVenta: formData.fechaHoraAgenda?.split('T')[0] || new Date().toISOString().split('T')[0],
                     pacienteId: formData.id,
                     nHistoria: formData.nHistoria || '',
                     nombrePaciente: `${formData.nombres} ${formData.apellidos}`,
@@ -2918,9 +2702,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 ventaType="lead"
             />
         )}
-                {globalAlert.open && (
-                        <AlertModal isOpen={globalAlert.open} onClose={closeGlobalAlert} title={globalAlert.title} message={globalAlert.message} />
-                )}
       </>
   );
 };

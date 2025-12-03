@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import type { Lead } from '../../types.ts';
 import PacienteDetailView from './PacienteDetailView.tsx';
 import { MagnifyingGlassIcon } from '../shared/Icons.tsx';
-import { formatDateForDisplay } from '../../utils/time';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 interface PacientesHistoriaPageProps {
     leads: Lead[];

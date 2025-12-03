@@ -12,7 +12,6 @@ import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
 import { usePagination } from '../../utils/usePagination';
-import { RESOURCES } from '../../constants';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -91,7 +90,6 @@ const SETTINGS_SECTIONS = [
     { id: 'servicios-productos', label: 'Servicios y Productos', icon: 'inventory_2' },
     { id: 'servicios', label: 'Servicios', parent: 'servicios-productos' },
     { id: 'productos', label: 'Productos', parent: 'servicios-productos' },
-    { id: 'salas', label: 'Salas', parent: 'servicios-productos' },
     { id: 'membresias', label: 'Membresías', parent: 'servicios-productos' },
     { id: 'metas', label: 'Metas y Objetivos', icon: 'flag' },
     { id: 'importar-exportar', label: 'Importar / Exportar', icon: 'import_export' }
@@ -657,8 +655,7 @@ const ServiciosSection: FC<{
     onSaveServiceCategory: (category: ServiceCategory) => void;
     onDeleteServiceCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-    itemRooms?: { id: number; nombre: string }[];
-}> = ({ services, serviceCategories, onSaveService, onDeleteService, onSaveServiceCategory, onDeleteServiceCategory, requestConfirmation, itemRooms }) => {
+}> = ({ services, serviceCategories, onSaveService, onDeleteService, onSaveServiceCategory, onDeleteServiceCategory, requestConfirmation }) => {
     const [activeTab, setActiveTab] = useState('servicios');
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<Service | null>(null);
@@ -825,13 +822,10 @@ const ServiciosSection: FC<{
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
                         { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'sala', label: 'Sala', type: 'text' },
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={serviceCategories}
                     categoryField="categoria"
-                    itemRooms={itemRooms}
-                    roomField="sala"
                 />
             )}
 
@@ -864,8 +858,7 @@ const ProductosSection: FC<{
     onSaveProductCategory: (category: ProductCategory) => void;
     onDeleteProductCategory: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-    itemRooms?: { id: number; nombre: string }[];
-}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation, itemRooms }) => {
+}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation }) => {
     const [activeTab, setActiveTab] = useState('productos');
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -873,11 +866,7 @@ const ProductosSection: FC<{
     const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
 
     const handleOpenProductModal = (product?: Product) => {
-        if (product) {
-            setEditingProduct(product);
-        } else {
-            setEditingProduct({ id: Date.now(), nombre: '', categoria: productCategories?.[0]?.nombre || '', precio: 0 } as Product);
-        }
+        setEditingProduct(product || null);
         setIsProductModalOpen(true);
     };
 
@@ -1036,13 +1025,9 @@ const ProductosSection: FC<{
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
                         { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'sala', label: 'Sala', type: 'text' },
                         { name: 'precio', label: 'Precio', type: 'number', required: true },
                     ]}
                     itemCategories={productCategories}
-                    categoryField="categoria"
-                    itemRooms={itemRooms}
-                    roomField="sala"
                 />
             )}
 
@@ -1474,44 +1459,8 @@ const MiembrosEquipoSection: FC<{
     );
 };
 
-// Local hook to manage Salas stored in localStorage (key: 'config_salas')
-const useLocalRooms = () => {
-    const storageKey = 'config_salas';
-    const [rooms, setRooms] = useState<{ id: number; nombre: string }[]>(() => {
-        try {
-            const raw = localStorage.getItem(storageKey);
-            if (raw) return JSON.parse(raw);
-        } catch (e) {
-            // ignore parse errors
-        }
-        // fallback to default rooms from constants
-        return RESOURCES.filter(r => r.type === 'room').map((r, idx) => ({ id: Date.now() + idx, nombre: r.name }));
-    });
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(storageKey, JSON.stringify(rooms));
-        } catch (e) {
-            // ignore storage errors
-        }
-    }, [rooms]);
-
-    const saveRoom = (room: { id: number; nombre: string }) => {
-        setRooms(prev => {
-            const exists = prev.some(r => r.id === room.id);
-            if (exists) return prev.map(r => r.id === room.id ? room : r);
-            return [...prev, room];
-        });
-    };
-
-    const deleteRoom = (id: number) => setRooms(prev => prev.filter(r => r.id !== id));
-
-    return { rooms, saveRoom, deleteRoom };
-};
-
 const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
     const [activeSection, setActiveSection] = useState('datos');
-    const { rooms, saveRoom, deleteRoom } = useLocalRooms();
 
     const renderContent = () => {
         switch (activeSection) {
@@ -1560,15 +1509,6 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onSaveServiceCategory={props.onSaveServiceCategory}
                     onDeleteServiceCategory={props.onDeleteServiceCategory}
                     requestConfirmation={props.requestConfirmation}
-                    itemRooms={rooms}
-                />;
-            case 'salas':
-                return <SimpleListManager
-                    title="Salas"
-                    items={rooms}
-                    onSave={(r) => saveRoom(r)}
-                    onDelete={(id) => deleteRoom(id)}
-                    requestConfirmation={props.requestConfirmation}
                 />;
             case 'productos':
                 return <ProductosSection
@@ -1579,7 +1519,6 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onSaveProductCategory={props.onSaveProductCategory}
                     onDeleteProductCategory={props.onDeleteProductCategory}
                     requestConfirmation={props.requestConfirmation}
-                    itemRooms={rooms}
                 />;
             case 'membresias':
                 return <MembresiasSection

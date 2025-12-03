@@ -16,7 +16,6 @@ import PacientesHistoriaPage from './components/pacientes/PacientesHistoriaPage'
 import { AtencionesDiariasPage } from './components/procedimientos/AtencionesDiariasPage';
 import AnalisisSeguimientoPage from './components/procedimientos/AnalisisSeguimientoPage';
 import CalendarPage from './components/calendario/CalendarPage';
-import TasksPage from './components/tasks/TasksPage';
 import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
 // FIX: Changed to named export for ConfiguracionPage
@@ -34,10 +33,7 @@ import type {
     Goal, ComprobanteElectronico
 } from './types';
 import * as api from './services/api';
-import type { BulkImportEgresosResponse } from './services/api';
 import { generateNotifications } from './services/notificationService';
-import { useSchedule } from './components/shared/ScheduleContext';
-import { StatusToastProvider } from './components/shared/StatusToastContext';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -101,78 +97,47 @@ const App: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const calls: Array<{ key: string; fn: () => Promise<any> }> = [
-                { key: 'leads', fn: () => api.getLeads?.() || Promise.resolve([]) },
-                { key: 'campaigns', fn: () => api.getCampaigns?.() || Promise.resolve([]) },
-                { key: 'ventas', fn: () => api.getVentasExtra?.() || Promise.resolve([]) },
-                { key: 'incidencias', fn: () => api.getIncidencias?.() || Promise.resolve([]) },
-                { key: 'egresos', fn: () => api.getEgresos?.() || Promise.resolve([]) },
-                { key: 'proveedores', fn: () => api.getProveedores?.() || Promise.resolve([]) },
-                { key: 'users', fn: () => api.getUsers?.() || Promise.resolve([]) },
-                { key: 'roles', fn: () => api.getRoles?.() || Promise.resolve([]) },
-                { key: 'businessInfo', fn: () => api.getBusinessInfo?.() || Promise.resolve(null) },
-                { key: 'clientSources', fn: () => api.getClientSources?.() || Promise.resolve([]) },
-                { key: 'services', fn: () => api.getServices?.() || Promise.resolve([]) },
-                { key: 'products', fn: () => api.getProducts?.() || Promise.resolve([]) },
-                { key: 'memberships', fn: () => api.getMemberships?.() || Promise.resolve([]) },
-                { key: 'serviceCategories', fn: () => api.getServiceCategories?.() || Promise.resolve([]) },
-                { key: 'productCategories', fn: () => api.getProductCategories?.() || Promise.resolve([]) },
-                { key: 'jobPositions', fn: () => api.getJobPositions?.() || Promise.resolve([]) },
-                { key: 'publicaciones', fn: () => api.getPublicaciones?.() || Promise.resolve([]) },
-                { key: 'seguidores', fn: () => api.getSeguidores?.() || Promise.resolve([]) },
-                { key: 'metaCampaigns', fn: () => api.getMetaCampaigns?.() || Promise.resolve([]) },
-                { key: 'egresoCategories', fn: () => api.getEgresoCategories?.() || Promise.resolve([]) },
-                { key: 'tiposProveedor', fn: () => api.getTiposProveedor?.() || Promise.resolve([]) },
-                { key: 'goals', fn: () => api.getGoals?.() || Promise.resolve([]) },
-                { key: 'comprobantes', fn: () => api.getComprobantes?.() || Promise.resolve([]) },
-            ];
-
-            console.log('loadData: launching', calls.map(c => c.key));
-
-            const settled = await Promise.allSettled(calls.map(c => {
-                console.log(`loadData: starting ${c.key}`);
-                return c.fn();
-            }));
-
-            const data: Record<string, any> = {};
-            settled.forEach((r, idx) => {
-                const key = calls[idx].key;
-                if (r.status === 'fulfilled') {
-                    console.log(`loadData: fulfilled ${key}`);
-                    data[key] = r.value;
-                } else {
-                    console.error(`loadData: rejected ${key}`, r.reason);
-                    // default values
-                    data[key] = key === 'businessInfo' ? null : [];
-                }
-            });
-
-            // Apply results to state (use defaults when needed)
-            setLeads(data.leads || []);
-            setCampaigns(data.campaigns || []);
-            setVentasExtra(data.ventas || []);
-            setIncidencias(data.incidencias || []);
-            setEgresos(data.egresos || []);
-            setProveedores(data.proveedores || []);
-            setUsers(data.users || []);
-            setRoles(data.roles || []);
-            setBusinessInfo(data.businessInfo || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
-            setClientSources(data.clientSources || []);
-            setServices(data.services || []);
-            setProducts(data.products || []);
-            setMemberships(data.memberships || []);
-            setServiceCategories(data.serviceCategories || []);
-            setProductCategories(data.productCategories || []);
-            setJobPositions(data.jobPositions || []);
-            setPublicaciones(data.publicaciones || []);
-            setSeguidores(data.seguidores || []);
-            setMetaCampaigns(data.metaCampaigns || []);
-            setEgresoCategories(data.egresoCategories || []);
-            setTiposProveedor(data.tiposProveedor || []);
-            setGoals(data.goals || []);
-            setComprobantes(data.comprobantes || []);
-
-            setNotifications(generateNotifications({ leads: data.leads || [], egresos: data.egresos || [] }));
+            const [
+                leadsData, campaignsData, ventasData, incidenciasData, 
+                egresosData, proveedoresData, usersData, rolesData,
+                businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
+                serviceCategoriesData, productCategoriesData, jobPositionsData,
+                publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
+                tiposProveedorData, goalsData, comprobantesData
+            ] = await Promise.all([
+                api.getLeads?.() || Promise.resolve([]), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
+                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
+                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
+                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
+                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
+            ]);
+            setLeads(leadsData);
+            setCampaigns(campaignsData);
+            setVentasExtra(ventasData);
+            setIncidencias(incidenciasData);
+            setEgresos(egresosData);
+            setProveedores(proveedoresData);
+            setUsers(usersData);
+            setRoles(rolesData);
+            setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
+            setClientSources(clientSourcesData);
+            setServices(servicesData);
+            setProducts(productsData);
+            setMemberships(membershipsData);
+            setServiceCategories(serviceCategoriesData);
+            setProductCategories(productCategoriesData);
+            setJobPositions(jobPositionsData);
+            setPublicaciones(publicacionesData);
+            setSeguidores(seguidoresData);
+            setMetaCampaigns(metaCampaignsData);
+            setEgresoCategories(egresoCategoriesData);
+            setTiposProveedor(tiposProveedorData);
+            setGoals(goalsData);
+            setComprobantes(comprobantesData);
+            
+            setNotifications(generateNotifications({ leads: leadsData, egresos: egresosData }));
 
         } catch (error) {
             console.error("Failed to load data", error);
@@ -185,7 +150,6 @@ const App: React.FC = () => {
             if (!currentUser) {
                 const allPermissions: Page[] = [
                     'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
-                    'tareas',
                     'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                     'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
                     'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
@@ -205,7 +169,6 @@ const App: React.FC = () => {
                         'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                         'procedimientos-ventas-extra', 'recepcion-agendados', 
                         'recepcion-ventas-extra', 'recepcion-incidencias',
-                        'tareas',
                         'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
                         'procedimientos-atenciones', 'procedimientos-seguimiento',
                         'procedimientos-incidencias', 'pacientes-historia', 
@@ -220,39 +183,11 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
-        console.log('App mounted - starting loadData');
-        const safetyTimer = setTimeout(() => {
-            console.warn('loadData safety timeout reached (20s) - forcing loading=false');
-            setLoading(false);
-        }, 20000);
-
-        loadData().finally(() => {
-            clearTimeout(safetyTimer as unknown as number);
-            console.log('loadData finished (finally) - cleared safety timer');
-        });
+        loadData();
     }, []);
 
-    // If another component requested scheduling a procedure, navigate to calendario
-    const schedule = useSchedule();
-    useEffect(() => {
-        if (schedule.procedureToSchedule) {
-            // Navigate to calendar so user can pick a time slot
-            handleSetCurrentPage('calendario');
-        }
-    }, [schedule.procedureToSchedule]);
-
     // Handlers for data manipulation
-    const handleSaveLead = async (lead: Lead) => {
-        console.log('🔁 FRONTEND: Saving lead...', { id: lead?.id });
-        try {
-            const saved = await api.saveLead(lead);
-            console.log('✅ FRONTEND: Save successful', { id: saved?.id });
-        } catch (err) {
-            console.error('❌ FRONTEND: Error saving lead', err);
-            throw err;
-        }
-        await loadData();
-    };
+    const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
     const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };
@@ -263,16 +198,7 @@ const App: React.FC = () => {
     const handleImportLeads = async (leads: any[]) => { await api.bulkImportLeads(leads); await loadData(); };
     const handleImportVentasExtra = async (ventas: any[]) => { await api.bulkImportVentasExtra(ventas); await loadData(); };
     const handleImportIncidencias = async (incidencias: any[]) => { await api.bulkImportIncidencias(incidencias); await loadData(); };
-    const handleImportEgresos = async (egresos: any[]): Promise<BulkImportEgresosResponse> => { 
-        try {
-            const result = await api.bulkImportEgresos(egresos); 
-            await loadData();
-            return result;
-        } catch (error) {
-            console.error('Error importing egresos:', error);
-            throw error; // Re-throw para que ImportExportPage pueda manejarlo
-        }
-    };
+    const handleImportEgresos = async (egresos: any[]) => { await api.bulkImportEgresos(egresos); await loadData(); };
     const handleImportProveedores = async (proveedores: any[]) => { await api.bulkImportProveedores(proveedores); await loadData(); };
     const handleImportPublicaciones = async (publicaciones: any[]) => { await api.bulkImportPublicaciones(publicaciones); await loadData(); };
     const handleImportSeguidores = async (seguidores: any[]) => { await api.bulkImportSeguidores(seguidores); await loadData(); };
@@ -474,7 +400,7 @@ const App: React.FC = () => {
             case 'recepcion-agendados':
                 return <AgendadosPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
             case 'recepcion-ventas-extra':
-                return <VentasExtraPage title="Ventas Recepción" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} users={users} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
+                return <VentasExtraPage title="Ventas Recepción" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'recepcion-incidencias':
                 return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'procedimientos-atenciones':
@@ -485,10 +411,8 @@ const App: React.FC = () => {
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
                 return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
-            case 'tareas':
-                return <TasksPage />;
             case 'procedimientos-ventas-extra':
-                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} users={users} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
+                return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'procedimientos-incidencias':
                  return <IncidenciasPage incidencias={incidencias} pacientes={leads.filter(l => l.nHistoria)} onSaveIncidencia={handleSaveIncidencia} onDeleteIncidencia={handleDeleteIncidencia} requestConfirmation={requestConfirmation} />;
             case 'finanzas-egresos':
@@ -583,7 +507,6 @@ const App: React.FC = () => {
     // }
 
     return (
-        <StatusToastProvider>
         <div className="flex h-screen bg-gray-100">
             <BirthdayAnimation users={users} />
             <Sidebar 
@@ -617,7 +540,6 @@ const App: React.FC = () => {
                 />
             )}
         </div>
-        </StatusToastProvider>
     );
 };
 
