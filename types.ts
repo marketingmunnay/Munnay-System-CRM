@@ -335,9 +335,8 @@ export const TipoComprobanteLabels: Record<TipoComprobante, string> = {
 
 export enum ModoPagoEgreso {
     Efectivo = 'Efectivo',
-    Transferencia = 'Transferencia Bancaria',
-    Tarjeta = 'Tarjeta de Crédito/Débito',
-    Yape = 'Yape/Plin',
+    Transferencia = 'Transferencia',
+    Tarjeta = 'Tarjeta',
 }
 
 export interface Egreso {
