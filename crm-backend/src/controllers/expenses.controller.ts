@@ -121,3 +121,65 @@ export const deleteExpense = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting expense', error: (error as Error).message });
   }
 };
+
+export const bulkImportExpenses = async (req: Request, res: Response) => {
+  const egresos = req.body;
+
+  if (!Array.isArray(egresos)) {
+    return res.status(400).json({ message: 'Expected an array of expenses' });
+  }
+
+  const parseDate = (dateStr: string | undefined): Date | undefined => {
+    if (!dateStr || dateStr === 'undefined' || dateStr === '') return undefined;
+    const date = new Date(dateStr + 'T00:00:00');
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+
+  const results: any[] = [];
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (let i = 0; i < egresos.length; i++) {
+    const egreso = egresos[i];
+    
+    try {
+      const { id, fechaRegistro, fechaPago, ...data } = egreso;
+      
+      // Validar campos requeridos
+      if (!data.proveedor || !data.categoria || !data.descripcion || data.montoTotal === undefined) {
+        throw new Error('Faltan campos requeridos: proveedor, categoria, descripcion, montoTotal');
+      }
+
+      const parsedFechaPago = parseDate(fechaPago);
+      
+      const newExpense = await prisma.egreso.create({
+        data: {
+          ...data,
+          fechaRegistro: parseDate(fechaRegistro) || new Date(),
+          ...(parsedFechaPago && { fechaPago: parsedFechaPago }),
+        },
+      });
+
+      results.push({
+        success: true,
+        index: i,
+        data: newExpense
+      });
+      successCount++;
+    } catch (error) {
+      results.push({
+        success: false,
+        index: i,
+        error: (error as Error).message
+      });
+      errorCount++;
+    }
+  }
+
+  res.status(200).json({
+    message: `Importación completada: ${successCount} exitosos, ${errorCount} errores`,
+    successCount,
+    errorCount,
+    egresos: results
+  });
+};
