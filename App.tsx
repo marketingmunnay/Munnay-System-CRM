@@ -198,7 +198,16 @@ const App: React.FC = () => {
     const handleImportLeads = async (leads: any[]) => { await api.bulkImportLeads(leads); await loadData(); };
     const handleImportVentasExtra = async (ventas: any[]) => { await api.bulkImportVentasExtra(ventas); await loadData(); };
     const handleImportIncidencias = async (incidencias: any[]) => { await api.bulkImportIncidencias(incidencias); await loadData(); };
-    const handleImportEgresos = async (egresos: any[]) => { await api.bulkImportEgresos(egresos); await loadData(); };
+    const handleImportEgresos = async (egresos: any[]): Promise<api.BulkImportEgresosResponse> => { 
+        try {
+            const result = await api.bulkImportEgresos(egresos);
+            await loadData();
+            return result;
+        } catch (error) {
+            console.error('Error importing egresos:', error);
+            throw error;
+        }
+    };
     const handleImportProveedores = async (proveedores: any[]) => { await api.bulkImportProveedores(proveedores); await loadData(); };
     const handleImportPublicaciones = async (publicaciones: any[]) => { await api.bulkImportPublicaciones(publicaciones); await loadData(); };
     const handleImportSeguidores = async (seguidores: any[]) => { await api.bulkImportSeguidores(seguidores); await loadData(); };

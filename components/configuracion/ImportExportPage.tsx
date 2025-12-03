@@ -1,6 +1,8 @@
 
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
+import { getEgresos } from '../../services/api';
+import type { BulkImportEgresosResponse } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
 
@@ -86,7 +88,7 @@ interface ImportExportPageProps {
     onImportLeads?: (leads: any[]) => Promise<void>;
     onImportVentasExtra?: (ventas: any[]) => Promise<void>;
     onImportIncidencias?: (incidencias: any[]) => Promise<void>;
-    onImportEgresos?: (egresos: any[]) => Promise<void>;
+    onImportEgresos?: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
     onImportProveedores?: (proveedores: any[]) => Promise<void>;
     onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
     onImportSeguidores?: (seguidores: any[]) => Promise<void>;
@@ -211,6 +213,11 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 required: ['tipoDocumento', 'serie', 'correlativo', 'fechaEmision'],
                 numeric: ['opGravadas', 'igv', 'total'],
                 date: ['fechaEmision']
+            },
+            'Egresos': {
+                required: ['fechaRegistro', 'proveedor', 'categoria', 'descripcion', 'montoTotal'],
+                numeric: ['montoTotal', 'montoPagado', 'deuda'],
+                date: ['fechaRegistro', 'fechaPago']
             }
         };
 
@@ -603,7 +610,28 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 }));
 
             } else if (type === 'Egresos' && onImportEgresos) {
-                const egresos = [];
+                const egresos: any[] = [];
+
+                // Helper to normalize enum values to PascalCase
+                const normalizeTipoComprobante = (val: string): string => {
+                    if (!val || !val.trim()) return 'SinComprobante';
+                    const normalized = val.toLowerCase().trim().replace(/\s+/g, '');
+                    if (normalized === 'factura') return 'Factura';
+                    if (normalized === 'boleta') return 'Boleta';
+                    if (normalized === 'recibohonorarios' || normalized === 'recibodehonorarios') return 'ReciboHonorarios';
+                    if (normalized === 'sincomprobante') return 'SinComprobante';
+                    return val; // Return original if no match so backend can alert
+                };
+
+                const normalizeModoPago = (val: string): string => {
+                    if (!val) return '';
+                    const normalized = val.toLowerCase().trim();
+                    if (normalized === 'efectivo') return 'Efectivo';
+                    if (normalized === 'transferencia' || normalized === 'transferencia bancaria' || normalized === 'transferenciabancaria') return 'Transferencia';
+                    if (normalized === 'tarjeta' || normalized === 'tarjeta de crédito' || normalized === 'tarjeta de credito' || normalized === 'tarjetadecredito') return 'Tarjeta';
+                    if (normalized === 'yape') return 'Yape';
+                    return val;
+                };
 
                 for (let i = 0; i < dataRows.length; i++) {
                     const values = dataRows[i].split(',').map(v => v.trim());
@@ -620,31 +648,69 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                             } else {
                                 egreso[header] = value;
                             }
+                        } else if (header === 'comprobantes' && value) {
+                            // split by semicolon
+                            egreso.comprobantes = value.split(';').map(s => ({ url: s.trim() })).filter((x: any) => x.url);
+                        } else if (header === 'tipoComprobante') {
+                            egreso[header] = normalizeTipoComprobante(value);
+                        } else if (header === 'modoPago' && value) {
+                            egreso[header] = normalizeModoPago(value);
                         } else {
                             egreso[header] = value;
                         }
                     });
 
+                    if (!egreso.tipoComprobante || String(egreso.tipoComprobante).trim() === '') {
+                        egreso.tipoComprobante = 'SinComprobante';
+                    }
+
                     egresos.push(egreso);
 
-                    // Update progress
                     setImportProgress(prev => ({
                         ...prev,
                         processedItems: i + 1,
                         currentItem: egreso.proveedor || `Registro ${i + 1}`
                     }));
 
-                    // Add small delay to show progress animation
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
 
-                await onImportEgresos(egresos);
+                try {
+                    const response = await onImportEgresos(egresos);
+                    const failures = response?.egresos?.filter(result => !result.success) ?? [];
+                    const detailItems = failures.map((failure, idx) => ({
+                        rowNumber: typeof failure.index === 'number' ? failure.index + 1 : undefined,
+                        error: failure.error || 'Error desconocido'
+                    }));
+                    const successCount = response?.successCount ?? (egresos.length - failures.length);
+                    const errorCount = response?.errorCount ?? failures.length;
+                    const hasErrors = errorCount > 0;
 
-                setImportProgress(prev => ({
-                    ...prev,
-                    isComplete: true,
-                    successMessage: `Se importaron ${egresos.length} egresos exitosamente.`
-                }));
+                    setImportProgress(prev => ({
+                        ...prev,
+                        processedItems: totalItems,
+                        isComplete: true,
+                        successMessage: hasErrors ? '' : `Se importaron ${successCount} egresos exitosamente.`,
+                        errorMessage: hasErrors
+                            ? `Se importaron ${successCount} egresos, pero ${errorCount} registros tuvieron errores. Revisa el detalle para corregirlos.`
+                            : '',
+                        detailItems,
+                        successCount,
+                        errorCount
+                    }));
+                } catch (error) {
+                    console.error('Error importing egresos:', error);
+                    setImportProgress(prev => ({
+                        ...prev,
+                        processedItems: totalItems,
+                        isComplete: true,
+                        successMessage: '',
+                        errorMessage: `Error al importar egresos: ${(error as Error).message || 'Error desconocido'}`,
+                        detailItems: [],
+                        successCount: 0,
+                        errorCount: totalItems
+                    }));
+                }
 
             } else if (type === 'Comprobantes Electrónicos' && onImportComprobantes) {
                 const comprobantes = [];
@@ -868,15 +934,53 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
 
             <ImportSection
                 title="Egresos"
-                description="Importa registros de egresos y gastos del negocio."
+                description="Importa registros de egresos (gastos) desde un CSV. Para comprobantes múltiples use la columna 'comprobantes' separando URLs por punto y coma (;)."
                 templateFilename="plantilla_egresos.csv"
                 headers={[
-                    "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion",
-                    "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal",
-                    "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones"
+                    "id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante",
+                    "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"
                 ]}
                 onImport={(file) => handleFileImport(file, 'Egresos')}
             />
+
+            <div className="bg-white p-6 rounded-lg shadow-md border">
+                <h3 className="text-xl font-bold text-black flex items-center">
+                    <GoogleIcon name="download" className="mr-2 text-gray-500" /> Exportar Egresos
+                </h3>
+                <p className="text-sm text-gray-600 mt-2 mb-4">Descarga todos los egresos actuales en formato CSV.</p>
+                <div>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const data = await getEgresos();
+                                if (!data || data.length === 0) {
+                                    alert('No hay egresos para exportar.');
+                                    return;
+                                }
+                                const headers = ["id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"];
+                                const rows = data.map(e => {
+                                    const comprobantes = (e.comprobantes || []).map((c: any) => c.url).join(';');
+                                    return [e.id, e.fechaRegistro, e.fechaPago || '', e.proveedor, e.categoria, e.descripcion, e.tipoComprobante, e.serieComprobante || '', e.nComprobante || '', e.montoTotal, e.montoPagado, e.deuda, e.modoPago || '', e.tipoMoneda, e.observaciones || '', comprobantes].join(',');
+                                });
+                                const csv = [headers.join(','), ...rows].join('\n');
+                                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = 'egresos_export.csv';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            } catch (err) {
+                                console.error('Error exporting egresos', err);
+                                alert('Error al exportar egresos. Revisa la consola.');
+                            }
+                        }}
+                        className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors text-sm font-medium"
+                    >
+                        <GoogleIcon name="download" className="mr-2" /> Exportar Egresos
+                    </button>
+                </div>
+            </div>
 
             <ImportSection
                 title="Atenciones Diarias (Procedimientos)"
