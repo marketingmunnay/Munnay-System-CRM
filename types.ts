@@ -663,6 +663,38 @@ export type TipoMovimiento = 'entrada' | 'salida' | 'ajuste' | 'reserva' | 'devo
 export type EstadoPago = 'pendiente' | 'parcial' | 'completado' | 'cancelado';
 export type EstadoProducto = 'reservado' | 'pendiente_entrega' | 'entregado' | 'pendiente_stock';
 export type TipoAlerta = 'stock_bajo' | 'stock_critico' | 'stock_cero';
+export type EstadoStockInventario = 'normal' | 'stock_bajo' | 'sin_stock' | 'bajo' | 'critico';
+
+export interface InventarioReporteItem {
+    productoId: number;
+    productoNombre: string;
+    stockActual: number;
+    stockMinimo: number;
+    unidadMedida: UnidadMedida;
+    costoUnitario: number;
+    precioVenta: number;
+    precioSinIGV: number;
+    igvMonto: number;
+    aplicaIGV: boolean;
+    valorInventario: number;
+    valorVenta: number;
+    alertasActivas: number;
+    estadoStock: EstadoStockInventario;
+}
+
+export interface InventarioResumen {
+    totalProductos: number;
+    totalValorInventario: number;
+    totalValorVenta: number;
+    productosSinStock: number;
+    productosStockBajo: number;
+    alertasActivas: number;
+}
+
+export interface InventarioReporteResponse {
+    reporte: InventarioReporteItem[];
+    resumen: InventarioResumen;
+}
 
 export interface ConfiguracionProducto {
     id: number;

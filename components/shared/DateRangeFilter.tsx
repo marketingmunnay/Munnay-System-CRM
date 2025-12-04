@@ -8,9 +8,10 @@ interface DateRangeFilterProps {
 }
 
 const formatDate = (date: Date | null) => {
-    // Always return a valid date string for input fields
-    const safeDate = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
-    return safeDate.toISOString().split('T')[0];
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+  return '';
 }
 
 const formatDateForDisplay = (date: Date) => {
@@ -55,17 +56,14 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   }, [wrapperRef]);
 
   const handleApply = () => {
-    // Always apply valid dates
     onApply({ from: formatDate(startDate), to: formatDate(endDate) });
     setIsOpen(false);
   };
   
   const handleClear = () => {
-    // Instead of clearing to null, reset to today
-    const today = new Date();
-    setStartDate(today);
-    setEndDate(today);
-    onApply({ from: formatDate(today), to: formatDate(today) });
+    setStartDate(null);
+    setEndDate(null);
+    onApply({ from: '', to: '' });
   };
 
 

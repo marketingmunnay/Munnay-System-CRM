@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/api';
-import { ProductoConInventario, MovimientoInventario, PagoProducto, AlertaStock, ConfiguracionProducto } from '../../types';
+import { MovimientoInventario, PagoProducto, AlertaStock, ConfiguracionProducto, InventarioReporteResponse } from '../../types';
 import { Package, Plus, AlertTriangle, TrendingUp, DollarSign, CheckCircle, Clock, Box } from 'lucide-react';
 import ConfiguracionInventarioModal from './ConfiguracionInventarioModal';
 import MovimientoInventarioModal from './MovimientoInventarioModal';
@@ -13,7 +13,7 @@ interface InventarioPageProps {
 
 export default function InventarioPage({ productos, onReload }: InventarioPageProps) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'configuracion' | 'movimientos' | 'pagos' | 'alertas'>('dashboard');
-  const [reporte, setReporte] = useState<any>(null);
+  const [reporte, setReporte] = useState<InventarioReporteResponse | null>(null);
   const [configuraciones, setConfiguraciones] = useState<ConfiguracionProducto[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoInventario[]>([]);
   const [pagos, setPagos] = useState<PagoProducto[]>([]);
@@ -43,12 +43,12 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
       setReporte(reporteData);
       setMovimientos(movimientosData);
       setPagos(pagosData);
-      setAlertas(alertasData.filter((a: AlertaStock) => !a.resuelto));
+      setAlertas(alertasData.filter(a => !a.resuelto));
 
       // Extraer configuraciones del reporte
-      if (reporteData.reporte) {
-        const configs: ConfiguracionProducto[] = reporteData.reporte.map((item: any) => ({
-          id: item.id,
+      if (reporteData.reporte?.length) {
+        const configs: ConfiguracionProducto[] = reporteData.reporte.map((item) => ({
+          id: item.productoId,
           productoId: item.productoId,
           stockActual: item.stockActual,
           stockMinimo: item.stockMinimo,
@@ -56,12 +56,14 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
           equivalenciaBase: 1,
           costoUnitario: item.costoUnitario,
           aplicaIGV: item.aplicaIGV,
-          igvPorcentaje: item.igvMonto ? 18 : 0,
-          alertasActivas: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          igvPorcentaje: item.aplicaIGV ? 18 : 0,
+          alertasActivas: item.alertasActivas > 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }));
         setConfiguraciones(configs);
+      } else {
+        setConfiguraciones([]);
       }
     } catch (error) {
       console.error('Error al cargar datos de inventario:', error);
@@ -138,15 +140,20 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
     }
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
+  const renderDashboard = () => {
+    const totalProductos = reporte?.resumen?.totalProductos ?? 0;
+    const valorInventario = reporte?.resumen ? reporte.resumen.totalValorInventario.toFixed(2) : '0.00';
+    const valorVenta = reporte?.resumen ? reporte.resumen.totalValorVenta.toFixed(2) : '0.00';
+
+    return (
+      <div className="space-y-6">
       {/* Resumen general */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Productos</p>
-              <p className="text-2xl font-bold text-gray-900">{reporte?.resumen?.totalProductos || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{totalProductos}</p>
             </div>
             <Box className="w-10 h-10 text-blue-500" />
           </div>
@@ -156,7 +163,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Valor Inventario</p>
-              <p className="text-2xl font-bold text-gray-900">S/ {reporte?.resumen?.totalValorInventario?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-bold text-gray-900">S/ {valorInventario}</p>
             </div>
             <DollarSign className="w-10 h-10 text-green-500" />
           </div>
@@ -166,7 +173,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Valor Venta</p>
-              <p className="text-2xl font-bold text-gray-900">S/ {reporte?.resumen?.totalValorVenta?.toFixed(2) || '0.00'}</p>
+              <p className="text-2xl font-bold text-gray-900">S/ {valorVenta}</p>
             </div>
             <TrendingUp className="w-10 h-10 text-purple-500" />
           </div>
@@ -236,7 +243,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {reporte?.reporte?.map((item: any) => (
+              {(reporte?.reporte ?? []).map((item) => (
                 <tr key={item.productoId} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{item.productoNombre}</div>
@@ -304,7 +311,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {reporte?.reporte?.map((item: any) => {
+            {(reporte?.reporte ?? []).map((item) => {
               const config = configuraciones.find(c => c.productoId === item.productoId);
               return (
                 <tr key={item.productoId} className="hover:bg-gray-50">
@@ -341,8 +348,9 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
           </tbody>
         </table>
       </div>
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderMovimientos = () => (
     <div className="space-y-6">

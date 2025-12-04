@@ -484,6 +484,20 @@ const App: React.FC = () => {
                     onImportCampaigns={handleImportCampaigns}
                     onImportMetaCampaigns={handleImportMetaCampaigns}
                     onImportLeads={handleImportLeads}
+                    onImportVentasExtra={handleImportVentasExtra}
+                    onImportIncidencias={handleImportIncidencias}
+                    onImportEgresos={handleImportEgresos}
+                    onImportProveedores={handleImportProveedores}
+                    onImportPublicaciones={handleImportPublicaciones}
+                    onImportSeguidores={handleImportSeguidores}
+                    onImportComprobantes={handleImportComprobantes}
+                    onImportServices={handleImportServices}
+                    onImportProducts={handleImportProducts}
+                    onImportMemberships={handleImportMemberships}
+                    onImportServiceCategories={handleImportServiceCategories}
+                    onImportProductCategories={handleImportProductCategories}
+                    onImportEgresoCategories={handleImportEgresoCategories}
+                    onImportJobPositions={handleImportJobPositions}
                 />;
             case 'administracion-inventario':
                 return <InventarioPage

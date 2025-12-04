@@ -1,5 +1,6 @@
 import React, { useState, useMemo, FC, useEffect, useRef } from 'react';
 import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico } from '../../types';
+import type { BulkImportEgresosResponse } from '../../services/api';
 import { PlusIcon, TrashIcon } from '../shared/Icons';
 import UsuarioFormModal from './UsuarioFormModal';
 import RolFormModal from './RolFormModal';
@@ -66,7 +67,7 @@ interface ConfiguracionPageProps {
     onImportLeads?: (leads: any[]) => Promise<void>;
     onImportVentasExtra?: (ventas: any[]) => Promise<void>;
     onImportIncidencias?: (incidencias: any[]) => Promise<void>;
-    onImportEgresos?: (egresos: any[]) => Promise<void>;
+    onImportEgresos?: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
     onImportProveedores?: (proveedores: any[]) => Promise<void>;
     onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
     onImportSeguidores?: (seguidores: any[]) => Promise<void>;

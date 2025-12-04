@@ -2,8 +2,23 @@ import type {
   Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
   BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
   ProductCategory, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
-  TipoProveedor, Goal, ComprobanteElectronico
+  TipoProveedor, Goal, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
+  PagoProducto, AlertaStock, InventarioReporteResponse
 } from '../types.ts';
+
+export interface BulkImportEgresoResult {
+  success: boolean;
+  index: number;
+  data?: Egreso;
+  error?: string;
+}
+
+export interface BulkImportEgresosResponse {
+  message: string;
+  successCount: number;
+  errorCount: number;
+  egresos: BulkImportEgresoResult[];
+}
 
 // URL del backend en producción (Render)
 const API_URL = "https://api.munnaymedicinaestetica.com/api";
@@ -102,8 +117,8 @@ export const saveEgreso = (egreso: Egreso): Promise<Egreso> =>
     : apiRequest<Egreso>('/expenses', 'POST', egreso);
 export const deleteEgreso = (id: number): Promise<void> =>
   apiRequest<void>(`/expenses/${id}`, 'DELETE');
-export const bulkImportEgresos = (egresos: any[]): Promise<{ message: string; egresos: Egreso[] }> =>
-  apiRequest<{ message: string; egresos: Egreso[] }>('/expenses/bulk', 'POST', egresos);
+export const bulkImportEgresos = (egresos: any[]): Promise<BulkImportEgresosResponse> =>
+  apiRequest<BulkImportEgresosResponse>('/expenses/bulk', 'POST', egresos);
 
 // ====== PROVEEDORES ======
 export const getProveedores = (): Promise<Proveedor[]> => 
@@ -320,49 +335,53 @@ export const generateAiAnalysis = async (seguimientos: any[], paciente?: any): P
 // ====== INVENTARIO INTELIGENTE ======
 
 // Configuración de productos
-export const getConfiguracionProducto = (productoId: number) =>
-  apiRequest(`/inventory/configuracion/${productoId}`, 'GET');
+export const getConfiguracionProducto = (productoId: number): Promise<ConfiguracionProducto> =>
+  apiRequest<ConfiguracionProducto>(`/inventory/configuracion/${productoId}`, 'GET');
 
-export const crearConfiguracionProducto = (data: any) =>
-  apiRequest('/inventory/configuracion', 'POST', data);
+export const crearConfiguracionProducto = (data: any): Promise<ConfiguracionProducto> =>
+  apiRequest<ConfiguracionProducto>('/inventory/configuracion', 'POST', data);
 
-export const actualizarConfiguracionProducto = (id: number, data: any) =>
-  apiRequest(`/inventory/configuracion/${id}`, 'PUT', data);
+export const actualizarConfiguracionProducto = (id: number, data: any): Promise<ConfiguracionProducto> =>
+  apiRequest<ConfiguracionProducto>(`/inventory/configuracion/${id}`, 'PUT', data);
 
 // Movimientos de inventario
-export const registrarMovimiento = (data: any) =>
-  apiRequest('/inventory/movimientos', 'POST', data);
+export const registrarMovimiento = (data: any): Promise<MovimientoInventario> =>
+  apiRequest<MovimientoInventario>('/inventory/movimientos', 'POST', data);
 
-export const getMovimientos = (configuracionProductoId?: number) =>
-  apiRequest(`/inventory/movimientos${configuracionProductoId ? `?configuracionProductoId=${configuracionProductoId}` : ''}`, 'GET');
+export const getMovimientos = (configuracionProductoId?: number): Promise<MovimientoInventario[]> =>
+  apiRequest<MovimientoInventario[]>(`/inventory/movimientos${configuracionProductoId ? `?configuracionProductoId=${configuracionProductoId}` : ''}`, 'GET');
 
 // Pagos parciales y prepagos
-export const crearPagoProducto = (data: any) =>
-  apiRequest('/inventory/pagos', 'POST', data);
+export const crearPagoProducto = (data: any): Promise<PagoProducto> =>
+  apiRequest<PagoProducto>('/inventory/pagos', 'POST', data);
 
-export const abonarPagoProducto = (id: number, data: any) =>
-  apiRequest(`/inventory/pagos/${id}/abonar`, 'POST', data);
+export const abonarPagoProducto = (id: number, data: any): Promise<PagoProducto> =>
+  apiRequest<PagoProducto>(`/inventory/pagos/${id}/abonar`, 'POST', data);
 
-export const entregarProducto = (id: number, data: any) =>
-  apiRequest(`/inventory/pagos/${id}/entregar`, 'POST', data);
+export const entregarProducto = (id: number, data: any = {}): Promise<PagoProducto> =>
+  apiRequest<PagoProducto>(`/inventory/pagos/${id}/entregar`, 'POST', data);
 
-export const getPagosProductos = (params?: { nHistoria?: string; estadoPago?: string; estadoProducto?: string }) => {
-  const query = params ? '?' + new URLSearchParams(Object.entries(params).filter(([_, v]) => v !== undefined) as [string, string][]).toString() : '';
-  return apiRequest(`/inventory/pagos${query}`, 'GET');
+export const getPagosProductos = (params?: { nHistoria?: string; estadoPago?: string; estadoProducto?: string }): Promise<PagoProducto[]> => {
+  const query = params
+    ? '?' + new URLSearchParams(Object.entries(params).filter(([_, v]) => v !== undefined) as [string, string][]).toString()
+    : '';
+  return apiRequest<PagoProducto[]>(`/inventory/pagos${query}`, 'GET');
 };
 
 // Alertas
-export const getAlertas = (params?: { visto?: boolean; resuelto?: boolean }) => {
-  const query = params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]) as [string, string][]).toString() : '';
-  return apiRequest(`/inventory/alertas${query}`, 'GET');
+export const getAlertas = (params?: { visto?: boolean; resuelto?: boolean }): Promise<AlertaStock[]> => {
+  const query = params
+    ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]) as [string, string][]).toString()
+    : '';
+  return apiRequest<AlertaStock[]>(`/inventory/alertas${query}`, 'GET');
 };
 
-export const marcarAlertaVista = (id: number) =>
-  apiRequest(`/inventory/alertas/${id}/vista`, 'PATCH');
+export const marcarAlertaVista = (id: number): Promise<AlertaStock> =>
+  apiRequest<AlertaStock>(`/inventory/alertas/${id}/vista`, 'PATCH');
 
-export const resolverAlerta = (id: number) =>
-  apiRequest(`/inventory/alertas/${id}/resolver`, 'PATCH');
+export const resolverAlerta = (id: number): Promise<AlertaStock> =>
+  apiRequest<AlertaStock>(`/inventory/alertas/${id}/resolver`, 'PATCH');
 
 // Reportes
-export const getReporteInventario = () =>
-  apiRequest('/inventory/reporte', 'GET');
+export const getReporteInventario = (): Promise<InventarioReporteResponse> =>
+  apiRequest<InventarioReporteResponse>('/inventory/reporte', 'GET');
