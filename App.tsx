@@ -20,6 +20,7 @@ import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
 // FIX: Changed to named export for ConfiguracionPage
 import { ConfiguracionPage } from './components/configuracion/ConfiguracionPage';
+import InventarioPage from './components/administracion/InventarioPage';
 import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
@@ -483,6 +484,11 @@ const App: React.FC = () => {
                     onImportCampaigns={handleImportCampaigns}
                     onImportMetaCampaigns={handleImportMetaCampaigns}
                     onImportLeads={handleImportLeads}
+                />;
+            case 'administracion-inventario':
+                return <InventarioPage
+                    productos={products}
+                    onReload={loadData}
                 />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 

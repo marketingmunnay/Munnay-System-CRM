@@ -17,6 +17,7 @@ export type Page =
     'pacientes-historia' |
     'finanzas-egresos' |
     'finanzas-facturacion' |
+    'administracion-inventario' |
     'rrhh-perfiles' |
     'informes' |
     'configuracion';

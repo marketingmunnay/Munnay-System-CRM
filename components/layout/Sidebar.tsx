@@ -50,6 +50,7 @@ const navItems: NavItem[] = [
         subItems: [
              { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
              { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
+             { id: 'administracion-inventario', label: 'Inventario', page: 'administracion-inventario' },
         ]
     },
     {
