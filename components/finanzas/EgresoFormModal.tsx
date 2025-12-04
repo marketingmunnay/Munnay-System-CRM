@@ -46,7 +46,6 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
             });
         } else {
             setFormData({
-                id: Date.now(),
                 fechaRegistro: new Date().toISOString().split('T')[0],
                 fechaPago: new Date().toISOString().split('T')[0],
                 categoria: egresoCategories[0]?.nombre || '',
