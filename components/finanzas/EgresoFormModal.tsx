@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
-import { TipoComprobante, ModoPagoEgreso } from '../../types.ts';
+import { TipoComprobante, ModoPagoEgreso, TIPO_COMPROBANTE_LABELS, MODO_PAGO_EGRESO_LABELS } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
 import { formatDateForInput } from '../../utils/time.ts';
@@ -20,6 +20,21 @@ interface EgresoFormModalProps {
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
+
+const tipoComprobanteOptions = [
+    { value: TipoComprobante.Factura, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.Factura] },
+    { value: TipoComprobante.Boleta, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.Boleta] },
+    { value: TipoComprobante.ReciboHonorarios, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.ReciboHonorarios] },
+    { value: TipoComprobante.SinComprobante, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.SinComprobante] },
+];
+
+const modoPagoOptions = [
+    { value: '', label: 'Sin especificar' },
+    { value: ModoPagoEgreso.Efectivo, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Efectivo] },
+    { value: ModoPagoEgreso.Transferencia, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Transferencia] },
+    { value: ModoPagoEgreso.Tarjeta, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Tarjeta] },
+    { value: ModoPagoEgreso.Yape, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Yape] },
+];
 
 export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egreso, proveedores, egresoCategories, requestConfirmation }: EgresoFormModalProps) {
   const [formData, setFormData] = useState<Partial<Egreso>>({});
@@ -63,6 +78,10 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     const { name, value, type } = e.target;
     
     let newFormData = { ...formData, [name]: type === 'number' ? Number(value) : value };
+
+    if (name === 'modoPago' && value === '') {
+        newFormData.modoPago = undefined;
+    }
 
     // Si cambia la categoría, resetear el proveedor si el actual no está en la nueva lista filtrada
     if (name === 'categoria' && formData.proveedor) {
@@ -263,7 +282,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                    {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', Object.values(TipoComprobante).map(v => ({ value: v, label: v})))}
+                    {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', tipoComprobanteOptions)}
                     {renderFormField('Serie', 'serieComprobante')}
                     {renderFormField('Número', 'nComprobante')}
                  </div>
@@ -285,7 +304,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         <label htmlFor="deuda" className="mb-1 text-sm font-medium text-gray-700">Deuda</label>
                         <input type="number" id="deuda" name="deuda" value={formData.deuda || 0} readOnly className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 bg-gray-100 font-bold text-red-600"/>
                     </div>
-                    {renderFormField('Modo de Pago', 'modoPago', 'select', Object.values(ModoPagoEgreso).map(v=>({value: v, label: v})))}
+                    {renderFormField('Modo de Pago', 'modoPago', 'select', modoPagoOptions)}
                  </div>
             </fieldset>
             

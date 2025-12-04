@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect, FC } from 'react';
 import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
+import { TipoComprobante, ModoPagoEgreso, TIPO_COMPROBANTE_LABELS, MODO_PAGO_EGRESO_LABELS } from '../../types.ts';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from '../shared/Icons.tsx';
@@ -27,6 +28,12 @@ const formatCurrency = (value: number, moneda: 'Soles' | 'Dólares' = 'Soles') =
     return `${prefix} ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 const formatDate = (dateString?: string) => formatDateForDisplay(dateString);
+
+const formatTipoComprobante = (value?: TipoComprobante) =>
+    value ? (TIPO_COMPROBANTE_LABELS[value] ?? value) : undefined;
+
+const formatModoPago = (value?: ModoPagoEgreso) =>
+    value ? (MODO_PAGO_EGRESO_LABELS[value] ?? value) : undefined;
 
 
 const ImagePreviewModal: React.FC<{
@@ -99,7 +106,7 @@ const EgresoDetails: FC<{ egreso: Egreso | null, onViewImage: (url: string) => v
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                    <DetailRow label="Tipo de Comprobante" value={egreso.tipoComprobante} />
+                    <DetailRow label="Tipo de Comprobante" value={formatTipoComprobante(egreso.tipoComprobante)} />
                     <DetailRow label="Serie" value={egreso.serieComprobante} />
                     <DetailRow label="Número" value={egreso.nComprobante} />
                  </div>
@@ -112,7 +119,7 @@ const EgresoDetails: FC<{ egreso: Egreso | null, onViewImage: (url: string) => v
                     <DetailRow label="Monto Total" value={formatCurrency(egreso.montoTotal, egreso.tipoMoneda)} />
                     <DetailRow label="Monto Pagado" value={formatCurrency(egreso.montoPagado, egreso.tipoMoneda)} />
                     <DetailRow label="Deuda" value={formatCurrency(egreso.deuda, egreso.tipoMoneda)} />
-                    <DetailRow label="Modo de Pago" value={egreso.modoPago} />
+                    <DetailRow label="Modo de Pago" value={formatModoPago(egreso.modoPago)} />
                  </div>
             </fieldset>
 

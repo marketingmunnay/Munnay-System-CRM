@@ -320,17 +320,31 @@ export interface ComprobanteElectronico {
 
 export enum TipoComprobante {
     Factura = 'Factura',
-    Boleta = 'Boleta de Venta',
-    ReciboHonorarios = 'Recibo por Honorarios',
-    SinComprobante = 'Sin Comprobante',
+    Boleta = 'Boleta',
+    ReciboHonorarios = 'ReciboHonorarios',
+    SinComprobante = 'SinComprobante',
 }
+
+export const TIPO_COMPROBANTE_LABELS: Record<TipoComprobante, string> = {
+    [TipoComprobante.Factura]: 'Factura',
+    [TipoComprobante.Boleta]: 'Boleta de Venta',
+    [TipoComprobante.ReciboHonorarios]: 'Recibo por Honorarios',
+    [TipoComprobante.SinComprobante]: 'Sin Comprobante',
+};
 
 export enum ModoPagoEgreso {
     Efectivo = 'Efectivo',
-    Transferencia = 'Transferencia Bancaria',
-    Tarjeta = 'Tarjeta de Crédito/Débito',
-    Yape = 'Yape/Plin',
+    Transferencia = 'Transferencia',
+    Tarjeta = 'Tarjeta',
+    Yape = 'Yape',
 }
+
+export const MODO_PAGO_EGRESO_LABELS: Record<ModoPagoEgreso, string> = {
+    [ModoPagoEgreso.Efectivo]: 'Efectivo',
+    [ModoPagoEgreso.Transferencia]: 'Transferencia bancaria',
+    [ModoPagoEgreso.Tarjeta]: 'Tarjeta de crédito/débito',
+    [ModoPagoEgreso.Yape]: 'Yape / Plin',
+};
 
 export interface Egreso {
     id: number;
