@@ -652,17 +652,17 @@ model LeadMembership {
 // Configuración de inventario del producto
 model ConfiguracionProducto {
   id                  Int      @id @default(autoincrement())
-  productoId          Int      @unique
-  stockActual         Int      @default(0)
-  stockMinimo         Int      @default(5)
-  unidadMedida        String   @default("unidades") // unidades, cajas, paquetes, blister, ml, g, litros
-  equivalenciaBase    Float    @default(1) // Para conversiones (ej: 1 caja = 10 unidades)
-  costoUnitario       Float    @default(0)
-  aplicaIGV           Boolean  @default(true)
-  igvPorcentaje       Float    @default(18)
-  alertasActivas      Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  productoId          Int      @unique @map("productoid")
+  stockActual         Int      @default(0) @map("stockactual")
+  stockMinimo         Int      @default(5) @map("stockminimo")
+  unidadMedida        String   @default("unidades") @map("unidadmedida") // unidades, cajas, paquetes, blister, ml, g, litros
+  equivalenciaBase    Float    @default(1) @map("equivalenciabase") // Para conversiones (ej: 1 caja = 10 unidades)
+  costoUnitario       Float    @default(0) @map("costounitario")
+  aplicaIGV           Boolean  @default(true) @map("aplicaigv")
+  igvPorcentaje       Float    @default(18) @map("igvporcentaje")
+  alertasActivas      Boolean  @default(true) @map("alertasactivas")
+  createdAt           DateTime @default(now()) @map("createdat")
+  updatedAt           DateTime @updatedAt @map("updatedat")
 
   movimientos         MovimientoInventario[]
   alertas             AlertaStock[]
@@ -673,22 +673,22 @@ model ConfiguracionProducto {
 // Movimientos de entrada/salida de inventario
 model MovimientoInventario {
   id                      Int      @id @default(autoincrement())
-  configuracionProductoId Int
+  configuracionProductoId Int      @map("configuracionproductoid")
   configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
   
-  tipoMovimiento          String   // "entrada", "salida", "ajuste", "reserva", "devolucion"
+  tipoMovimiento          String   @map("tipomovimiento") // "entrada", "salida", "ajuste", "reserva", "devolucion"
   cantidad                Int
-  stockAnterior           Int
-  stockNuevo              Int
+  stockAnterior           Int      @map("stockanterior")
+  stockNuevo              Int      @map("stocknuevo")
   
-  costoUnitario           Float    @default(0)
-  precioVenta             Float    @default(0)
+  costoUnitario           Float    @default(0) @map("costounitario")
+  precioVenta             Float    @default(0) @map("precioventa")
   
   motivo                  String   @db.Text
   referencia              String?  // ID de venta, compra, etc.
   
-  creadoPor               String?
-  createdAt               DateTime @default(now())
+  creadoPor               String?  @map("creadopor")
+  createdAt               DateTime @default(now()) @map("createdat")
 
   @@map("movimientoinventario")
 }
@@ -696,25 +696,25 @@ model MovimientoInventario {
 // Pagos parciales de productos
 model PagoProducto {
   id                Int      @id @default(autoincrement())
-  productoId        Int
-  nHistoria         String   // Lead/Paciente
+  productoId        Int      @map("productoid")
+  nHistoria         String   @map("nhistoria") // Lead/Paciente
   
-  montoTotal        Float
-  montoPagado       Float    @default(0)
-  saldoPendiente    Float
+  montoTotal        Float    @map("montototal")
+  montoPagado       Float    @default(0) @map("montopagado")
+  saldoPendiente    Float    @map("saldopendiente")
   
-  estadoPago        String   // "pendiente", "parcial", "completado", "cancelado"
-  estadoProducto    String   // "reservado", "pendiente_entrega", "entregado", "pendiente_stock"
+  estadoPago        String   @map("estadopago") // "pendiente", "parcial", "completado", "cancelado"
+  estadoProducto    String   @map("estadoproducto") // "reservado", "pendiente_entrega", "entregado", "pendiente_stock"
   
-  esPrepago         Boolean  @default(false) // Si es pago adelantado sin stock
-  fechaPago         DateTime @default(now())
-  fechaEntrega      DateTime?
+  esPrepago         Boolean  @default(false) @map("esprepago") // Si es pago adelantado sin stock
+  fechaPago         DateTime @default(now()) @map("fechapago")
+  fechaEntrega      DateTime? @map("fechaentrega")
   
   historialPagos    HistorialPagoProducto[]
   
   observaciones     String?  @db.Text
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now()) @map("createdat")
+  updatedAt         DateTime @updatedAt @map("updatedat")
 
   @@map("pagoproducto")
 }
@@ -722,16 +722,16 @@ model PagoProducto {
 // Historial de abonos a productos
 model HistorialPagoProducto {
   id              Int      @id @default(autoincrement())
-  pagoProductoId  Int
+  pagoProductoId  Int      @map("pagoproductoid")
   pagoProducto    PagoProducto @relation(fields: [pagoProductoId], references: [id], onDelete: Cascade)
   
-  montoAbonado    Float
-  metodoPago      String   // "Efectivo", "Transferencia", "Tarjeta", "Yape"
-  fechaPago       DateTime @default(now())
-  registradoPor   String?
+  montoAbonado    Float    @map("montoabonado")
+  metodoPago      String   @map("metodopago") // "Efectivo", "Transferencia", "Tarjeta", "Yape"
+  fechaPago       DateTime @default(now()) @map("fechapago")
+  registradoPor   String?  @map("registradopor")
   observaciones   String?  @db.Text
   
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("createdat")
 
   @@map("historialpagoproducto")
 }
@@ -739,19 +739,19 @@ model HistorialPagoProducto {
 // Alertas de stock bajo
 model AlertaStock {
   id                      Int      @id @default(autoincrement())
-  configuracionProductoId Int
+  configuracionProductoId Int      @map("configuracionproductoid")
   configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
   
-  tipoAlerta              String   // "stock_bajo", "stock_critico", "stock_cero"
+  tipoAlerta              String   @map("tipoalerta") // "stock_bajo", "stock_critico", "stock_cero"
   mensaje                 String   @db.Text
-  stockActual             Int
-  stockMinimo             Int
+  stockActual             Int      @map("stockactual")
+  stockMinimo             Int      @map("stockminimo")
   
   visto                   Boolean  @default(false)
   resuelto                Boolean  @default(false)
   
-  createdAt               DateTime @default(now())
-  resolvidoAt             DateTime?
+  createdAt               DateTime @default(now()) @map("createdat")
+  resolvidoAt             DateTime? @map("resolvidoat")
 
   @@map("alertastock")
 }
