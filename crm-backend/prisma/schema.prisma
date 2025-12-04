@@ -666,6 +666,8 @@ model ConfiguracionProducto {
 
   movimientos         MovimientoInventario[]
   alertas             AlertaStock[]
+
+  @@map("configuracionproducto")
 }
 
 // Movimientos de entrada/salida de inventario
@@ -687,6 +689,8 @@ model MovimientoInventario {
   
   creadoPor               String?
   createdAt               DateTime @default(now())
+
+  @@map("movimientoinventario")
 }
 
 // Pagos parciales de productos
@@ -711,6 +715,8 @@ model PagoProducto {
   observaciones     String?  @db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@map("pagoproducto")
 }
 
 // Historial de abonos a productos
@@ -726,6 +732,8 @@ model HistorialPagoProducto {
   observaciones   String?  @db.Text
   
   createdAt       DateTime @default(now())
+
+  @@map("historialpagoproducto")
 }
 
 // Alertas de stock bajo
@@ -744,4 +752,6 @@ model AlertaStock {
   
   createdAt               DateTime @default(now())
   resolvidoAt             DateTime?
+
+  @@map("alertastock")
 }
