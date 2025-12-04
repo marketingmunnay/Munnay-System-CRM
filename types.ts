@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export type Page = 
     'dashboard' | 
     'calendario' | 
+    'tareas' |
     'marketing-campanas' | 
     'marketing-leads' | 
     'redes-sociales-publicaciones' |

@@ -24,6 +24,7 @@ type NavItem = {
 const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <GoogleIcon name="home" className="text-xl" />, page: 'dashboard' },
     { id: 'calendario', label: 'Calendario', icon: <GoogleIcon name="calendar_month" className="text-xl" />, page: 'calendario' },
+    { id: 'tareas', label: 'Tareas', icon: <GoogleIcon name="task" className="text-xl" />, page: 'tareas' },
     { 
         id: 'marketing', label: 'Comercial', icon: <GoogleIcon name="campaign" className="text-xl" />, subItems: [
             { id: 'marketing-campanas', label: 'Campañas', page: 'marketing-campanas' },

@@ -26,6 +26,7 @@ import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
 import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPage';
 import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
+import TasksPage from './components/tasks/TasksPage';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
@@ -150,7 +151,7 @@ const App: React.FC = () => {
             // Always set up a default admin user with full permissions (authentication disabled)
             if (!currentUser) {
                 const allPermissions: Page[] = [
-                    'dashboard', 'calendario', 'marketing-campanas', 'marketing-leads',
+                    'dashboard', 'calendario', 'tareas', 'marketing-campanas', 'marketing-leads',
                     'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                     'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
                     'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
@@ -166,7 +167,7 @@ const App: React.FC = () => {
                     rolId: 1,
                     avatarUrl: '',
                     permissions: [
-                        'calendario', 'marketing-campanas', 'marketing-leads', 
+                        'calendario', 'tareas', 'marketing-campanas', 'marketing-leads', 
                         'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                         'procedimientos-ventas-extra', 'recepcion-agendados', 
                         'recepcion-ventas-extra', 'recepcion-incidencias',
@@ -421,6 +422,8 @@ const App: React.FC = () => {
                 return <PacientesHistoriaPage leads={leads} />;
             case 'calendario':
                 return <CalendarPage leads={leads} campaigns={campaigns} metaCampaigns={metaCampaigns} onSaveLead={handleSaveLead} onDeleteLead={handleDeleteLead} clientSources={clientSources} services={services} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} />;
+            case 'tareas':
+                return <TasksPage />;
             case 'procedimientos-ventas-extra':
                 return <VentasExtraPage title="Ventas" ventas={ventasExtra} pacientes={leads.filter(l => l.nHistoria)} onSaveVenta={handleSaveVentaExtra} onDeleteVenta={handleDeleteVentaExtra} services={services} products={products} memberships={memberships} requestConfirmation={requestConfirmation} onSaveComprobante={handleSaveComprobante} comprobantes={comprobantes} onSaveLead={handleSaveLead} />;
             case 'procedimientos-incidencias':
