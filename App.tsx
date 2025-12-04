@@ -155,7 +155,7 @@ const App: React.FC = () => {
                     'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
                     'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
                     'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
-                    'finanzas-facturacion', 'rrhh-perfiles', 'informes', 'configuracion'
+                    'finanzas-facturacion', 'administracion-inventario', 'rrhh-perfiles', 'informes', 'configuracion'
                 ];
                 
                 const defaultUser: User = {
@@ -170,7 +170,7 @@ const App: React.FC = () => {
                         'redes-sociales-publicaciones', 'redes-sociales-seguidores',
                         'procedimientos-ventas-extra', 'recepcion-agendados', 
                         'recepcion-ventas-extra', 'recepcion-incidencias',
-                        'finanzas-egresos', 'finanzas-facturacion', 'rrhh-perfiles',
+                        'finanzas-egresos', 'finanzas-facturacion', 'administracion-inventario', 'rrhh-perfiles',
                         'procedimientos-atenciones', 'procedimientos-seguimiento',
                         'procedimientos-incidencias', 'pacientes-historia', 
                         'informes', 'configuracion'
