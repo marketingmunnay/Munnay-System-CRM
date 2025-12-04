@@ -35,7 +35,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
     try {
       const [reporteData, movimientosData, pagosData, alertasData] = await Promise.all([
         api.getReporteInventario(),
-        api.getMovimientosInventario(),
+        api.getMovimientos(),
         api.getPagosProductos(),
         api.getAlertas()
       ]);
