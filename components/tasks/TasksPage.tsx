@@ -15,6 +15,16 @@ interface TaskItem {
 	area: 'Producto' | 'Crecimiento' | 'Experiencia';
 }
 
+type NewTaskForm = {
+	title: string;
+	owner: string;
+	status: TaskStatus;
+	priority: TaskPriority;
+	dueDate: string;
+	area: TaskItem['area'];
+	tags: string;
+};
+
 const statusMeta: Record<TaskStatus, { label: string; dot: string; palette: string; accent: string; bar: string }> = {
 	backlog: {
 		label: 'Descubrir',
@@ -58,6 +68,29 @@ const heroTexture = {
 };
 
 const focusTags = ['Sprint 12 · Automatización', 'Customer Health', 'Roadmap Q4'];
+
+const statusOptions: { value: TaskStatus; label: string }[] = [
+	{ value: 'backlog', label: 'Descubrir' },
+	{ value: 'in-progress', label: 'En curso' },
+	{ value: 'review', label: 'Revisión' },
+	{ value: 'done', label: 'Listo' }
+];
+
+const areaOptions: { value: TaskItem['area']; label: string }[] = [
+	{ value: 'Producto', label: 'Producto' },
+	{ value: 'Crecimiento', label: 'Crecimiento' },
+	{ value: 'Experiencia', label: 'Experiencia Paciente' }
+];
+
+const initialNewTaskState: NewTaskForm = {
+	title: '',
+	owner: '',
+	status: 'backlog',
+	priority: 'media',
+	dueDate: '',
+	area: 'Producto',
+	tags: ''
+};
 
 const sampleTasks: TaskItem[] = [
 	{
@@ -168,12 +201,48 @@ const formatShortDate = (isoDate: string) => {
 };
 
 const TasksPage: React.FC = () => {
+	const [tasks, setTasks] = useState<TaskItem[]>(sampleTasks);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
 	const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
 	const [insightView, setInsightView] = useState<'impacto' | 'capacidad'>('impacto');
+	const [activeView, setActiveView] = useState<'tablero' | 'insights'>('tablero');
+	const [newTask, setNewTask] = useState<NewTaskForm>({ ...initialNewTaskState });
+	const [creationMessage, setCreationMessage] = useState<string | null>(null);
+	const [formError, setFormError] = useState<string | null>(null);
 
-	const tasks = useMemo(() => sampleTasks, []);
+	const handleNewTaskChange = (field: keyof NewTaskForm, value: string) => {
+		setNewTask(prev => ({ ...prev, [field]: value }));
+	};
+
+	const handleCreateTask = (event: React.FormEvent) => {
+		event.preventDefault();
+		setFormError(null);
+		if (!newTask.title.trim() || !newTask.owner.trim()) {
+			setFormError('Completa al menos el título y el responsable.');
+			return;
+		}
+		const parsedTags = newTask.tags
+			.split(',')
+			.map(tag => tag.trim())
+			.filter(Boolean);
+		const dueDate = newTask.dueDate || new Date().toISOString().split('T')[0];
+		const payload: TaskItem = {
+			id: `TKS-${Math.floor(Date.now() / 1000)}`,
+			title: newTask.title.trim(),
+			owner: newTask.owner.trim(),
+			status: newTask.status,
+			priority: newTask.priority,
+			dueDate,
+			tags: parsedTags,
+			progress: 0,
+			area: newTask.area
+		};
+		setTasks(prev => [payload, ...prev]);
+		setNewTask({ ...initialNewTaskState });
+		setCreationMessage('Tarea registrada');
+		setTimeout(() => setCreationMessage(null), 2500);
+	};
 
 	const filteredTasks = useMemo(() => {
 		const term = search.trim().toLowerCase();
@@ -214,74 +283,81 @@ const TasksPage: React.FC = () => {
 	return (
 		<div className="space-y-6">
 			<section
-				className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#18113b] via-[#24194e] to-[#3a1762] text-white shadow-[0px_30px_60px_rgba(19,8,53,0.35)]"
+				className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#fffaf4] via-[#f3f4ff] to-[#fef7eb] text-[#0f172a] shadow-[0px_35px_70px_rgba(15,23,42,0.08)]"
 				style={heroTexture}
 			>
 				{/* Soft glow background keeps hero vivid without heavy assets */}
 				<div className="relative flex flex-col gap-8 p-8 lg:flex-row lg:items-center lg:justify-between">
 					<div className="space-y-4 max-w-2xl">
-						<div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1 text-xs uppercase tracking-[0.35em] text-white/80">
+						<div className="inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-1 text-xs uppercase tracking-[0.35em] text-[#0f172a]">
 							<span className="material-symbols-outlined text-base">pace</span>
 							Sprint táctico
 						</div>
 						<div>
-							<h1 className="text-3xl font-semibold leading-tight md:text-4xl">Tablero de Tareas Orquestadas</h1>
-							<p className="mt-3 text-base text-white/80 md:text-lg">
+							<h1 className="text-3xl font-semibold leading-tight md:text-4xl text-[#0f172a]">Tablero de Tareas Orquestadas</h1>
+							<p className="mt-3 text-base text-[#0f172a] md:text-lg">
 								Visualiza prioridades, velocidad del equipo y bloqueos antes de que impacten al paciente.
 								Las señales se actualizan con los últimos movimientos operativos.
 							</p>
 						</div>
 						<div className="flex flex-wrap gap-3">
 							{focusTags.map(tag => (
-								<span key={tag} className="rounded-full border border-white/30 bg-white/10 px-4 py-1 text-sm text-white/80">
+								<span key={tag} className="rounded-full border border-[#0f172a1a] bg-white/70 px-4 py-1 text-sm text-[#0f172a]">
 									{tag}
 								</span>
 							))}
 						</div>
 					</div>
-					<div className="grid w-full max-w-md grid-cols-2 gap-4 text-center text-slate-900">
-						<div className="rounded-2xl bg-white/95 p-5 shadow-xl">
-							<p className="text-xs uppercase tracking-widest text-slate-400">Prioridades críticas</p>
-							<p className="mt-2 text-4xl font-semibold text-slate-900">{metrics.focus}</p>
-							<p className="text-sm text-slate-500">tareas alta prioridad abiertas</p>
+					<div className="grid w-full max-w-md grid-cols-2 gap-4 text-center text-[#0f172a]">
+						<div className="rounded-2xl bg-white p-5 shadow-xl">
+							<p className="text-xs uppercase tracking-widest text-[#0f172ab3]">Prioridades críticas</p>
+							<p className="mt-2 text-4xl font-semibold text-[#0f172a]">{metrics.focus}</p>
+							<p className="text-sm text-[#0f172ab3]">tareas alta prioridad abiertas</p>
 						</div>
-						<div className="rounded-2xl bg-white/90 p-5 shadow-xl">
-							<p className="text-xs uppercase tracking-widest text-slate-400">Velocidad semanal</p>
-							<p className="mt-2 text-4xl font-semibold text-slate-900">{metrics.completed}</p>
-							<p className="text-sm text-slate-500">entregas listas esta semana</p>
+						<div className="rounded-2xl bg-white p-5 shadow-xl">
+							<p className="text-xs uppercase tracking-widest text-[#0f172ab3]">Velocidad semanal</p>
+							<p className="mt-2 text-4xl font-semibold text-[#0f172a]">{metrics.completed}</p>
+							<p className="text-sm text-[#0f172ab3]">entregas listas esta semana</p>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			<div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-				<section className="space-y-4">
-					<div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm backdrop-blur">
-						<div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-							<div className="relative flex-1">
-								<span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">search</span>
-								<input
-									className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-700 shadow-inner focus:border-[#aa632d] focus:outline-none"
-									placeholder="Buscar por responsable, etiqueta o título"
-									value={search}
-									onChange={e => setSearch(e.target.value)}
-								/>
+			<div className="flex flex-wrap gap-3 rounded-2xl bg-white shadow-sm border border-slate-100 px-4 py-3 text-sm font-semibold text-slate-500">
+				{[
+					{ id: 'tablero', label: 'Tablero de tareas' },
+					{ id: 'insights', label: 'Insights operativos' }
+				].map(tab => (
+					<button
+						key={tab.id}
+						onClick={() => setActiveView(tab.id as 'tablero' | 'insights')}
+						className={`rounded-full px-4 py-2 transition-colors ${
+							activeView === tab.id
+								? 'bg-[#0f172a] text-white shadow'
+								: 'bg-slate-100 text-slate-600 hover:text-[#0f172a]'
+						}`}
+					>
+						{tab.label}
+					</button>
+				))}
+			</div>
+
+			{activeView === 'tablero' ? (
+				<div className="grid gap-6 lg:grid-cols-[4fr_1fr]">
+					<section className="space-y-4">
+						<div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm backdrop-blur">
+							<div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+								<div className="relative flex-1">
+									<span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">search</span>
+									<input
+										className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm text-slate-700 shadow-inner focus:border-[#aa632d] focus:outline-none"
+										placeholder="Buscar por responsable, etiqueta o título"
+										value={search}
+										onChange={e => setSearch(e.target.value)}
+									/>
+								</div>
 							</div>
-							<div className="flex items-center gap-2 self-start rounded-2xl bg-slate-100/60 p-1">
-								{(['impacto', 'capacidad'] as const).map(view => (
-									<button
-										key={view}
-										onClick={() => setInsightView(view)}
-										className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide ${
-											insightView === view ? 'bg-white shadow text-slate-900' : 'text-slate-500'
-										}`}
-									>
-										{view}
-									</button>
-								))}
-							</div>
-						</div>
-						<div className="mt-5 flex flex-wrap gap-2">
+							<div className="mt-5 flex flex-wrap gap-2">
 							{[{ label: 'Todos', value: 'all' }, ...Object.entries(statusMeta).map(([value, meta]) => ({ label: meta.label, value }))].map(({ label, value }) => (
 								<button
 									key={value}
@@ -351,99 +427,196 @@ const TasksPage: React.FC = () => {
 													<span>{task.owner}</span>
 												</div>
 												<span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityMeta[task.priority].classes}`}>
-													{priorityMeta[task.priority].label}
-												</span>
-											</div>
-											<div className="mt-4">
-												<div className="mb-1 flex items-center justify-between text-xs text-slate-400">
-													<span>Progreso</span>
-													<span className="font-semibold text-slate-600">{task.progress}%</span>
-												</div>
-												<div className="h-2 w-full rounded-full bg-slate-100">
-													<div className={`h-full rounded-full ${statusMeta[status].bar}`} style={{ width: `${task.progress}%` }} />
-												</div>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-						))}
-					</div>
-				</section>
+														</section>
 
-				<section className="space-y-4">
-					<div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-xs uppercase tracking-[0.4em] text-slate-400">Radar</p>
-								<h2 className="text-2xl font-semibold text-slate-900">{insightView === 'impacto' ? 'Impacto inmediato' : 'Capacidad disponible'}</h2>
-								<p className="mt-1 text-sm text-slate-500">
-									{insightView === 'impacto'
-										? 'Enfócate en tareas que desbloquean facturación y experiencia paciente.'
-										: 'Evalúa la carga actual antes de sumar nuevas iniciativas.'}
-								</p>
-							</div>
-							<span className="material-symbols-outlined text-3xl text-slate-300">insights</span>
-						</div>
-						<div className="mt-6 grid gap-3">
-							{[{ label: 'Due pronto', value: metrics.dueSoon, tone: 'from-red-100 via-orange-50 to-white' },
-							  { label: 'Activas', value: metrics.active, tone: 'from-amber-50 via-yellow-50 to-white' },
-							  { label: 'Listas', value: metrics.completed, tone: 'from-emerald-50 via-green-50 to-white' }].map(cell => (
-								<div key={cell.label} className={`rounded-2xl border border-slate-100 bg-gradient-to-r ${cell.tone} p-4`}
-								>
-									<div className="flex items-center justify-between text-sm text-slate-500">
-										<span>{cell.label}</span>
-										<span className="text-lg font-semibold text-slate-900">{cell.value}</span>
-									</div>
-									<div className="mt-2 h-2 rounded-full bg-white/80">
-										<div className="h-full rounded-full bg-slate-900/10" style={{ width: `${Math.min(cell.value * 12, 100)}%` }} />
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
+														<aside className="space-y-4">
+															<div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-sm">
+																<h3 className="text-lg font-semibold text-[#0f172a]">Registrar nueva tarea</h3>
+																<p className="text-sm text-slate-500">Crea misiones tácticas y aparecerán inmediatamente en el tablero.</p>
+																<form className="mt-4 space-y-3" onSubmit={handleCreateTask}>
+																	{creationMessage && (
+																		<p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{creationMessage}</p>
+																	)}
+																	{formError && (
+																		<p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{formError}</p>
+																	)}
+																	<input
+																		type="text"
+																		placeholder="Título de la tarea"
+																		value={newTask.title}
+																		onChange={e => handleNewTaskChange('title', e.target.value)}
+																		className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																	/>
+																	<input
+																		type="text"
+																		placeholder="Responsable"
+																		value={newTask.owner}
+																		onChange={e => handleNewTaskChange('owner', e.target.value)}
+																		className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																	/>
+																	<div className="grid grid-cols-2 gap-3">
+																		<select
+																			value={newTask.priority}
+																			onChange={e => handleNewTaskChange('priority', e.target.value)}
+																			className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																		>
+																			{Object.entries(priorityMeta).map(([value, meta]) => (
+																				<option key={value} value={value}>{meta.label}</option>
+																			))}
+																		</select>
+																		<select
+																			value={newTask.status}
+																			onChange={e => handleNewTaskChange('status', e.target.value)}
+																			className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																		>
+																			{statusOptions.map(option => (
+																				<option key={option.value} value={option.value}>{option.label}</option>
+																			))}
+																		</select>
+																	</div>
+																	<div className="grid grid-cols-2 gap-3">
+																		<input
+																			type="date"
+																			value={newTask.dueDate}
+																			onChange={e => handleNewTaskChange('dueDate', e.target.value)}
+																			className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																		/>
+																		<select
+																			value={newTask.area}
+																			onChange={e => handleNewTaskChange('area', e.target.value)}
+																			className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																		>
+																			{areaOptions.map(option => (
+																				<option key={option.value} value={option.value}>{option.label}</option>
+																			))}
+																		</select>
+																	</div>
+																	<textarea
+																		placeholder="Etiquetas separadas por coma"
+																		value={newTask.tags}
+																		onChange={e => handleNewTaskChange('tags', e.target.value)}
+																		rows={2}
+																		className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
+																	/>
+																	<button
+																		type="submit"
+																		className="w-full rounded-2xl bg-[#0f172a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#15213b]"
+																	>
+																		Guardar tarea
+																	</button>
+																</form>
+															</div>
+															<div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+																<p className="font-semibold text-slate-700">Sugerencias rápidas</p>
+																<ul className="mt-2 space-y-1">
+																	<li>• Usa etiquetas para agrupar rituales.</li>
+																	<li>• Cambia el estado a "Revisión" cuando dependa de QA.</li>
+																	<li>• Mantén due dates cortos para priorizar ejecución.</li>
+																</ul>
+															</div>
+														</aside>
+													</div>
+												) : (
+													<div className="space-y-6">
+														<div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm">
+															<div className="flex items-center justify-between">
+																<div>
+																	<p className="text-xs uppercase tracking-[0.4em] text-slate-400">Radar</p>
+																	<h2 className="text-2xl font-semibold text-slate-900">{insightView === 'impacto' ? 'Impacto inmediato' : 'Capacidad disponible'}</h2>
+																	<p className="mt-1 text-sm text-slate-500">
+																		{insightView === 'impacto'
+																			? 'Enfócate en tareas que desbloquean facturación y experiencia paciente.'
+																			: 'Evalúa la carga actual antes de sumar nuevas iniciativas.'}
+																	</p>
+																</div>
+																<div className="flex items-center gap-2 self-start rounded-2xl bg-slate-100/60 p-1">
+																	{(['impacto', 'capacidad'] as const).map(view => (
+																		<button
+																			key={view}
+																			onClick={() => setInsightView(view)}
+																			className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide ${
+																				insightView === view ? 'bg-white shadow text-slate-900' : 'text-slate-500'
+																			}`}
+																		>
+																			{view}
+																		</button>
+																	))}
+																</div>
+															</div>
+															<div className="mt-6 grid gap-3">
+																{[{ label: 'Due pronto', value: metrics.dueSoon, tone: 'from-red-100 via-orange-50 to-white' },
+																  { label: 'Activas', value: metrics.active, tone: 'from-amber-50 via-yellow-50 to-white' },
+																  { label: 'Listas', value: metrics.completed, tone: 'from-emerald-50 via-green-50 to-white' }].map(cell => (
+																	<div key={cell.label} className={`rounded-2xl border border-slate-100 bg-gradient-to-r ${cell.tone} p-4`}
+																	>
+																		<div className="flex items-center justify-between text-sm text-slate-500">
+																			<span>{cell.label}</span>
+																			<span className="text-lg font-semibold text-slate-900">{cell.value}</span>
+																		</div>
+																		<div className="mt-2 h-2 rounded-full bg-white/80">
+																			<div className="h-full rounded-full bg-slate-900/10" style={{ width: `${Math.min(cell.value * 12, 100)}%` }} />
+																		</div>
+																	</div>
+																))}
+															</div>
+														</div>
 
-					<div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-sm">
-						<div className="flex items-center justify-between">
-							<h3 className="text-lg font-semibold text-slate-900">Próximas entregas</h3>
-							<span className="text-xs uppercase tracking-[0.4em] text-slate-400">Timeline</span>
-						</div>
-						<div className="mt-4 space-y-4">
-							{upcoming.map(task => {
-								const days = getDaysUntil(task.dueDate);
-								return (
-									<div key={task.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
-										<div className="text-center">
-											<p className="text-xs uppercase text-slate-400">{formatShortDate(task.dueDate)}</p>
-											<p className="text-lg font-semibold text-slate-900">{days <= 0 ? 'Hoy' : `${days}d`}</p>
-										</div>
-										<div className="flex-1">
-											<p className="text-sm font-semibold text-slate-900">{task.title}</p>
-											<p className="text-xs text-slate-500">{task.owner} · {statusMeta[task.status].label}</p>
-										</div>
-										<span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityMeta[task.priority].classes}`}>
-											{priorityMeta[task.priority].label}
-										</span>
-									</div>
-								);
-							})}
-						</div>
-					</div>
+														<div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-sm">
+															<div className="flex items-center justify-between">
+																<h3 className="text-lg font-semibold text-slate-900">Próximas entregas</h3>
+																<span className="text-xs uppercase tracking-[0.4em] text-slate-400">Timeline</span>
+															</div>
+															<div className="mt-4 space-y-4">
+																{upcoming.map(task => {
+																	const days = getDaysUntil(task.dueDate);
+																	return (
+																		<div key={task.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+																			<div className="text-center">
+																				<p className="text-xs uppercase text-slate-400">{formatShortDate(task.dueDate)}</p>
+																				<p className="text-lg font-semibold text-slate-900">{days <= 0 ? 'Hoy' : `${days}d`}</p>
+																			</div>
+																			<div className="flex-1">
+																				<p className="text-sm font-semibold text-slate-900">{task.title}</p>
+																				<p className="text-xs text-slate-500">{task.owner} · {statusMeta[task.status].label}</p>
+																			</div>
+																			<span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityMeta[task.priority].classes}`}>
+																				{priorityMeta[task.priority].label}
+																			</span>
+																		</div>
+																	);
+																})}
+															</div>
+														</div>
 
-					<div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-sm">
-						<div className="flex items-center justify-between">
-							<h3 className="text-lg font-semibold text-slate-900">Carga del equipo</h3>
-							<span className="material-symbols-outlined text-slate-300">group_work</span>
-						</div>
-						<div className="mt-4 space-y-4">
-							{baseLoad.map(member => (
-								<div key={member.name} className="rounded-2xl border border-slate-100 bg-white/80 p-4">
-									<div className="flex items-center justify-between">
-										<div>
-											<p className="text-sm font-semibold text-slate-900">{member.name}</p>
-											<p className="text-xs text-slate-500">{member.role}</p>
-										</div>
-										<span className="text-xs font-semibold text-emerald-500">{member.trend}</span>
+														<div className="rounded-3xl border border-slate-100 bg-white/95 p-5 shadow-sm">
+															<div className="flex items-center justify-between">
+																<h3 className="text-lg font-semibold text-slate-900">Carga del equipo</h3>
+																<span className="material-symbols-outlined text-slate-300">group_work</span>
+															</div>
+															<div className="mt-4 space-y-4">
+																{baseLoad.map(member => (
+																	<div key={member.name} className="rounded-2xl border border-slate-100 bg-white/80 p-4">
+																		<div className="flex items-center justify-between">
+																			<div>
+																				<p className="text-sm font-semibold text-slate-900">{member.name}</p>
+																				<p className="text-xs text-slate-500">{member.role}</p>
+																			</div>
+																			<span className="text-xs font-semibold text-emerald-500">{member.trend}</span>
+																		</div>
+																		<p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-400">{member.focus}</p>
+																		<div className="mt-3 h-2 rounded-full bg-slate-100">
+																			<div
+																				className="h-full rounded-full bg-gradient-to-r from-[#ffb347] via-[#ffcc33] to-[#fed049]"
+																				style={{ width: `${member.load * 100}%` }}
+																			/>
+																		</div>
+																		<div className="mt-1 text-right text-xs text-slate-500">{Math.round(member.load * 100)}% de capacidad</div>
+																	</div>
+																))}
+															</div>
+														</div>
+													</div>
+												)}
 									</div>
 									<p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-400">{member.focus}</p>
 									<div className="mt-3 h-2 rounded-full bg-slate-100">
