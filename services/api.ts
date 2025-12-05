@@ -24,6 +24,8 @@ export interface BulkImportEgresosResponse {
 const API_URL = "https://api.munnaymedicinaestetica.com/api";
 
 // Helper genérico para requests
+type ApiError = Error & { status?: number };
+
 const apiRequest = async <T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -39,7 +41,9 @@ const apiRequest = async <T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(errorData.message || 'Error en la petición a la API');
+    const error = new Error(errorData.message || 'Error en la petición a la API') as ApiError;
+    error.status = response.status;
+    throw error;
   }
 
   if (response.status === 204) return {} as T;
@@ -273,8 +277,18 @@ export const bulkImportProductCategories = (categories: any[]): Promise<{ messag
   apiRequest<{ message: string; categories: ProductCategory[] }>('/config/product-categories/bulk', 'POST', categories);
 
 // ====== PRODUCT BRANDS ======
-export const getProductBrands = (): Promise<ProductBrand[]> => 
-  apiRequest<ProductBrand[]>('/config/product-brands', 'GET');
+export const getProductBrands = async (): Promise<ProductBrand[]> => {
+  try {
+    return await apiRequest<ProductBrand[]>('/config/product-brands', 'GET');
+  } catch (error) {
+    const status = (error as ApiError)?.status;
+    if (status === 404) {
+      console.warn('Endpoint /config/product-brands no disponible, devolviendo lista vacía.');
+      return [];
+    }
+    throw error;
+  }
+};
 export const saveProductBrand = (brand: ProductBrand): Promise<ProductBrand> =>
   brand.id && brand.id < 1000000
     ? apiRequest<ProductBrand>(`/config/product-brands/${brand.id}`, 'PUT', brand)
@@ -377,6 +391,9 @@ export const getPagosProductos = (params?: { nHistoria?: string; estadoPago?: st
     : '';
   return apiRequest<PagoProducto[]>(`/inventory/pagos${query}`, 'GET');
 };
+
+export const eliminarPagoProducto = (id: number): Promise<void> =>
+  apiRequest<void>(`/inventory/pagos/${id}`, 'DELETE');
 
 // Alertas
 export const getAlertas = (params?: { visto?: boolean; resuelto?: boolean }): Promise<AlertaStock[]> => {

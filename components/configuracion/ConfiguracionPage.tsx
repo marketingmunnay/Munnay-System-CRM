@@ -13,6 +13,32 @@ import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
 const UNIDADES_MEDIDA: UnidadMedida[] = ['unidades', 'cajas', 'paquetes', 'blister', 'ml', 'g', 'litros'];
 
+interface SettingsSection {
+    id: string;
+    label: string;
+    icon?: string;
+    parent?: string;
+}
+
+const SETTINGS_SECTIONS: SettingsSection[] = [
+    { id: 'negocio', label: 'Negocio', icon: 'storefront' },
+    { id: 'datos', label: 'Datos del negocio', parent: 'negocio' },
+    { id: 'origenes', label: 'Origen de clientes', parent: 'negocio' },
+    { id: 'metas', label: 'Metas estratégicas', parent: 'negocio' },
+    { id: 'importar-exportar', label: 'Importar / Exportar', parent: 'negocio' },
+
+    { id: 'operaciones', label: 'Operaciones', icon: 'inventory_2' },
+    { id: 'servicios', label: 'Servicios', parent: 'operaciones' },
+    { id: 'productos', label: 'Productos', parent: 'operaciones' },
+    { id: 'membresias', label: 'Membresías', parent: 'operaciones' },
+
+    { id: 'finanzas', label: 'Finanzas', icon: 'request_quote' },
+    { id: 'proveedores', label: 'Proveedores', parent: 'finanzas' },
+
+    { id: 'equipo', label: 'Equipo', icon: 'groups' },
+    { id: 'miembros', label: 'Miembros y roles', parent: 'equipo' },
+];
+
 const ProductosSection: FC<{
     products: Product[];
     productCategories: ProductCategory[];

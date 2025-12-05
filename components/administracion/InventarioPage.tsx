@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../services/api';
 import { MovimientoInventario, PagoProducto, AlertaStock, ConfiguracionProducto, InventarioReporteResponse } from '../../types';
-import { Package, Plus, AlertTriangle, TrendingUp, DollarSign, CheckCircle, Clock, Box } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, DollarSign, CheckCircle, Clock, Box, Eye, Edit3, Trash2, X } from 'lucide-react';
 import ConfiguracionInventarioModal from './ConfiguracionInventarioModal';
 import MovimientoInventarioModal from './MovimientoInventarioModal';
 import PagoParcialModal from './PagoParcialModal';
@@ -10,6 +10,109 @@ interface InventarioPageProps {
   productos: any[];
   onReload?: () => void;
 }
+
+interface PagoDetalleModalProps {
+  pago: PagoProducto;
+  onClose: () => void;
+}
+
+const PagoDetalleModal = ({ pago, onClose }: PagoDetalleModalProps) => {
+  const historial = pago.historialPagos ?? [];
+
+  const formatCurrency = (valor: number) => `S/ ${valor.toFixed(2)}`;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Detalle del Pago</h2>
+            <p className="text-sm text-gray-500">Historia: {pago.nHistoria}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Monto total</p>
+              <p className="text-lg font-semibold text-gray-900">{formatCurrency(pago.montoTotal)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Monto pagado</p>
+              <p className="text-lg font-semibold text-gray-900">{formatCurrency(pago.montoPagado)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Saldo pendiente</p>
+              <p className="text-lg font-semibold text-red-600">{formatCurrency(pago.saldoPendiente)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Estado de pago</p>
+              <p className="text-sm font-semibold text-gray-900 capitalize">{pago.estadoPago}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Estado de producto</p>
+              <p className="text-sm font-semibold text-gray-900 capitalize">{pago.estadoProducto.replace('_', ' ')}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Tipo</p>
+              <p className="text-sm font-semibold text-gray-900">{pago.esPrepago ? 'Prepago' : 'Pago en stock'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Fecha registro</p>
+              <p className="text-sm text-gray-700">{new Date(pago.fechaPago).toLocaleDateString('es-PE')}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase">Fecha entrega</p>
+              <p className="text-sm text-gray-700">{pago.fechaEntrega ? new Date(pago.fechaEntrega).toLocaleDateString('es-PE') : 'Pendiente'}</p>
+            </div>
+          </div>
+
+          {pago.observaciones && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase mb-1">Observaciones</p>
+              <p className="text-sm text-gray-700 whitespace-pre-line">{pago.observaciones}</p>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Historial de abonos</h3>
+            {historial.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Fecha</th>
+                      <th className="px-4 py-2 text-left">Monto</th>
+                      <th className="px-4 py-2 text-left">Método</th>
+                      <th className="px-4 py-2 text-left">Registrado por</th>
+                      <th className="px-4 py-2 text-left">Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {historial.map(item => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2">{new Date(item.fechaPago).toLocaleDateString('es-PE')}</td>
+                        <td className="px-4 py-2 font-medium">{formatCurrency(item.montoAbonado)}</td>
+                        <td className="px-4 py-2">{item.metodoPago}</td>
+                        <td className="px-4 py-2">{item.registradoPor || '—'}</td>
+                        <td className="px-4 py-2 text-gray-600">{item.observaciones || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Sin abonos registrados</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function InventarioPage({ productos, onReload }: InventarioPageProps) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'configuracion' | 'movimientos' | 'pagos' | 'alertas'>('dashboard');
@@ -25,6 +128,9 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [selectedConfiguracion, setSelectedConfiguracion] = useState<ConfiguracionProducto | null>(null);
   const [selectedProductoId, setSelectedProductoId] = useState<number | null>(null);
+  const [pagoEnEdicion, setPagoEnEdicion] = useState<PagoProducto | null>(null);
+  const [pagoDetalle, setPagoDetalle] = useState<PagoProducto | null>(null);
+  const [eliminandoPagoId, setEliminandoPagoId] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -90,7 +196,41 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
   };
 
   const handleCrearPago = () => {
+    setPagoEnEdicion(null);
     setShowPagoModal(true);
+  };
+
+  const handleEditarPago = (pago: PagoProducto) => {
+    setPagoEnEdicion(pago);
+    setShowPagoModal(true);
+  };
+
+  const handleVerPago = (pago: PagoProducto) => {
+    setPagoDetalle(pago);
+  };
+
+  const handleEliminarPago = async (pagoId: number) => {
+    if (!window.confirm('¿Deseas eliminar este registro de pago? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setEliminandoPagoId(pagoId);
+    try {
+      await api.eliminarPagoProducto(pagoId);
+      if (pagoDetalle?.id === pagoId) {
+        setPagoDetalle(null);
+      }
+      if (pagoEnEdicion?.id === pagoId) {
+        setPagoEnEdicion(null);
+        setShowPagoModal(false);
+      }
+      await loadData();
+    } catch (error) {
+      console.error('Error al eliminar el pago:', error);
+      alert('No se pudo eliminar el pago. Inténtalo nuevamente.');
+    } finally {
+      setEliminandoPagoId(null);
+    }
   };
 
   const handleMarcarAlertaVista = async (id: number) => {
@@ -430,6 +570,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado Pago</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado Producto</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -451,6 +592,32 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {new Date(pago.fechaPago).toLocaleDateString('es-PE')}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-2 text-sm">
+                    <button
+                      onClick={() => handleVerPago(pago)}
+                      className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span className="hidden sm:inline">Ver</span>
+                    </button>
+                    <button
+                      onClick={() => handleEditarPago(pago)}
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Editar</span>
+                    </button>
+                    <button
+                      onClick={() => handleEliminarPago(pago.id)}
+                      disabled={eliminandoPagoId === pago.id}
+                      className={`inline-flex items-center gap-1 text-red-600 hover:text-red-800 ${eliminandoPagoId === pago.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Eliminar</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -611,11 +778,23 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
       {showPagoModal && (
         <PagoParcialModal
           productos={productos}
-          onClose={() => setShowPagoModal(false)}
+          pagoExistente={pagoEnEdicion ?? undefined}
+          onClose={() => {
+            setShowPagoModal(false);
+            setPagoEnEdicion(null);
+          }}
           onSave={async () => {
             await loadData();
             setShowPagoModal(false);
+            setPagoEnEdicion(null);
           }}
+        />
+      )}
+
+      {pagoDetalle && (
+        <PagoDetalleModal
+          pago={pagoDetalle}
+          onClose={() => setPagoDetalle(null)}
         />
       )}
     </div>
