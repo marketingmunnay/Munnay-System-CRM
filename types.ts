@@ -507,6 +507,11 @@ export interface ProductCategory {
     nombre: string;
 }
 
+export interface ProductBrand {
+    id: number;
+    nombre: string;
+}
+
 export interface JobPosition {
     id: number;
     nombre: string;
@@ -528,7 +533,14 @@ export interface Service {
 export interface Product {
     id: number;
     nombre: string;
+    descripcion?: string;
     categoria: string;
+    marca?: string;
+    proveedorId?: number;
+    unidadMedida?: UnidadMedida;
+    valorMedida?: number;
+    precioCoste?: number;
+    precioTotal?: number;
     precio: number;
     // Campos de inventario desactivados hasta aplicar migración
     // tipo?: TipoProducto;

@@ -30,7 +30,7 @@ import TasksPage from './components/tasks/TasksPage';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
-    ServiceCategory, JobPosition, ProductCategory, MetaCampaign, EgresoCategory, Notification,
+    ServiceCategory, JobPosition, ProductCategory, ProductBrand, MetaCampaign, EgresoCategory, Notification,
     TipoProveedor,
     Goal, ComprobanteElectronico
 } from './types';
@@ -67,6 +67,7 @@ const App: React.FC = () => {
     const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
     const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
     const [egresoCategories, setEgresoCategories] = useState<EgresoCategory[]>([]);
+    const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
     const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [comprobantes, setComprobantes] = useState<ComprobanteElectronico[]>([]);
@@ -103,7 +104,7 @@ const App: React.FC = () => {
                 leadsData, campaignsData, ventasData, incidenciasData, 
                 egresosData, proveedoresData, usersData, rolesData,
                 businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
-                serviceCategoriesData, productCategoriesData, jobPositionsData,
+                serviceCategoriesData, productCategoriesData, productBrandsData, jobPositionsData,
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
@@ -111,7 +112,7 @@ const App: React.FC = () => {
                 api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
                 api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
                 api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
-                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getProductBrands?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
                 api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
                 api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
             ]);
@@ -130,6 +131,7 @@ const App: React.FC = () => {
             setMemberships(membershipsData);
             setServiceCategories(serviceCategoriesData);
             setProductCategories(productCategoriesData);
+            setProductBrands(productBrandsData);
             setJobPositions(jobPositionsData);
             setPublicaciones(publicacionesData);
             setSeguidores(seguidoresData);
@@ -272,6 +274,8 @@ const App: React.FC = () => {
     const handleDeleteServiceCategory = async (id: number) => { await api.deleteServiceCategory(id); await loadData(); };
     const handleSaveProductCategory = async (category: ProductCategory) => { await api.saveProductCategory(category); await loadData(); };
     const handleDeleteProductCategory = async (id: number) => { await api.deleteProductCategory(id); await loadData(); };
+    const handleSaveProductBrand = async (brand: ProductBrand) => { await api.saveProductBrand(brand); await loadData(); };
+    const handleDeleteProductBrand = async (id: number) => { await api.deleteProductBrand(id); await loadData(); };
     const handleSaveEgresoCategory = async (category: EgresoCategory) => { await api.saveEgresoCategory(category); await loadData(); };
     const handleDeleteEgresoCategory = async (id: number) => { await api.deleteEgresoCategory(id); await loadData(); };
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
@@ -451,6 +455,7 @@ const App: React.FC = () => {
                     memberships={memberships}
                     serviceCategories={serviceCategories}
                     productCategories={productCategories}
+                    productBrands={productBrands}
                     jobPositions={jobPositions}
                     proveedores={proveedores}
                     tiposProveedor={tiposProveedor}
@@ -474,6 +479,8 @@ const App: React.FC = () => {
                     onDeleteServiceCategory={handleDeleteServiceCategory}
                     onSaveProductCategory={handleSaveProductCategory}
                     onDeleteProductCategory={handleDeleteProductCategory}
+                    onSaveProductBrand={handleSaveProductBrand}
+                    onDeleteProductBrand={handleDeleteProductBrand}
                     onSaveJobPosition={handleSaveJobPosition}
                     onDeleteJobPosition={handleDeleteJobPosition}
                     onSaveProveedor={handleSaveProveedor}

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, FC, useEffect, useRef } from 'react';
-import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico } from '../../types';
+import type { User, Role, BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory, JobPosition, ProductCategory, ProductBrand, Proveedor, EgresoCategory, TipoProveedor, Goal, ComprobanteElectronico, UnidadMedida } from '../../types';
 import type { BulkImportEgresosResponse } from '../../services/api';
-import { PlusIcon, TrashIcon } from '../shared/Icons';
 import UsuarioFormModal from './UsuarioFormModal';
 import RolFormModal from './RolFormModal';
 import Modal from '../shared/Modal';
@@ -12,263 +11,404 @@ import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
-import { usePagination } from '../../utils/usePagination';
+const UNIDADES_MEDIDA: UnidadMedida[] = ['unidades', 'cajas', 'paquetes', 'blister', 'ml', 'g', 'litros'];
 
-const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
-    <span className={`material-symbols-outlined ${className}`}>{name}</span>
-);
-
-interface ConfiguracionPageProps {
-    users: User[];
-    roles: Role[];
-    businessInfo: BusinessInfo;
-    goals: Goal[];
-    clientSources: ClientSource[];
-    services: Service[];
+const ProductosSection: FC<{
     products: Product[];
-    memberships: Membership[];
-    serviceCategories: ServiceCategory[];
     productCategories: ProductCategory[];
-    jobPositions: JobPosition[];
+    productBrands: ProductBrand[];
     proveedores: Proveedor[];
-    tiposProveedor: TipoProveedor[];
-    egresoCategories: EgresoCategory[];
-    onSaveUser: (user: User) => void;
-    onDeleteUser: (userId: number) => void;
-    onSaveRole: (role: Role) => void;
-    onDeleteRole: (roleId: number) => void;
-    onSaveBusinessInfo: (info: BusinessInfo) => void;
-    onSaveGoal: (goal: Goal) => void;
-    onDeleteGoal: (goalId: number) => void;
-    onSaveClientSource: (source: ClientSource) => void;
-    onDeleteClientSource: (id: number) => void;
-    onSaveService: (service: Service) => void;
-    onDeleteService: (id: number) => void;
     onSaveProduct: (product: Product) => void;
     onDeleteProduct: (id: number) => void;
-    onSaveMembership: (membership: Membership) => void;
-    onDeleteMembership: (id: number) => void;
-    onSaveServiceCategory: (category: ServiceCategory) => void;
-    onDeleteServiceCategory: (id: number) => void;
     onSaveProductCategory: (category: ProductCategory) => void;
     onDeleteProductCategory: (id: number) => void;
-    onSaveJobPosition: (position: JobPosition) => void;
-    onDeleteJobPosition: (id: number) => void;
-    onSaveProveedor: (proveedor: Proveedor) => void;
-    onDeleteProveedor: (proveedorId: number) => void;
-    onSaveTipoProveedor: (tipo: TipoProveedor) => void;
-    onDeleteTipoProveedor: (id: number) => void;
-    onSaveEgresoCategory: (category: EgresoCategory) => void;
-    onDeleteEgresoCategory: (id: number) => void;
+    onSaveProductBrand: (brand: ProductBrand) => void;
+    onDeleteProductBrand: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-    comprobantes: ComprobanteElectronico[];
-    onImportCampaigns?: (campaigns: any[]) => Promise<void>;
-    onImportMetaCampaigns?: (metaCampaigns: any[]) => Promise<void>;
-    onImportLeads?: (leads: any[]) => Promise<void>;
-    onImportVentasExtra?: (ventas: any[]) => Promise<void>;
-    onImportIncidencias?: (incidencias: any[]) => Promise<void>;
-    onImportEgresos?: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
-    onImportProveedores?: (proveedores: any[]) => Promise<void>;
-    onImportPublicaciones?: (publicaciones: any[]) => Promise<void>;
-    onImportSeguidores?: (seguidores: any[]) => Promise<void>;
-    onImportComprobantes?: (comprobantes: any[]) => Promise<void>;
-    onImportServices?: (services: any[]) => Promise<void>;
-    onImportProducts?: (products: any[]) => Promise<void>;
-    onImportMemberships?: (memberships: any[]) => Promise<void>;
-    onImportServiceCategories?: (categories: any[]) => Promise<void>;
-    onImportProductCategories?: (categories: any[]) => Promise<void>;
-    onImportEgresoCategories?: (categories: any[]) => Promise<void>;
-    onImportJobPositions?: (positions: any[]) => Promise<void>;
-}
+}> = ({
+    products,
+    productCategories,
+    productBrands,
+    proveedores,
+    onSaveProduct,
+    onDeleteProduct,
+    onSaveProductCategory,
+    onDeleteProductCategory,
+    onSaveProductBrand,
+    onDeleteProductBrand,
+    requestConfirmation,
+}) => {
+    const [activeTab, setActiveTab] = useState<'productos' | 'categorias' | 'marcas'>('productos');
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
+    const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
+    const [isMarcaModalOpen, setIsMarcaModalOpen] = useState(false);
+    const [editingMarca, setEditingMarca] = useState<ProductBrand | null>(null);
 
-const SETTINGS_SECTIONS = [
-    { id: 'equipo', label: 'Gestión del Equipo', icon: 'groups' },
-    { id: 'miembros', label: 'Miembros del equipo', parent: 'equipo' },
-    { id: 'negocio', label: 'Configuración del Negocio', icon: 'store' },
-    { id: 'datos', label: 'Datos del negocio', parent: 'negocio' },
-    { id: 'proveedores', label: 'Proveedores', parent: 'negocio' },
-    { id: 'origenes', label: 'Origen de Clientes', parent: 'negocio' },
-    { id: 'servicios-productos', label: 'Servicios y Productos', icon: 'inventory_2' },
-    { id: 'servicios', label: 'Servicios', parent: 'servicios-productos' },
-    { id: 'productos', label: 'Productos', parent: 'servicios-productos' },
-    { id: 'membresias', label: 'Membresías', parent: 'servicios-productos' },
-    { id: 'metas', label: 'Metas y Objetivos', icon: 'flag' },
-    { id: 'importar-exportar', label: 'Importar / Exportar', icon: 'import_export' }
-];
+    const marcaOptions = useMemo(() => productBrands.map(brand => ({ label: brand.nombre, value: brand.nombre })), [productBrands]);
+    const proveedorOptions = useMemo(() => proveedores.map(prov => ({ label: prov.nombre, value: prov.id })), [proveedores]);
+    const proveedorLookup = useMemo(() => {
+        const map: Record<number, string> = {};
+        proveedores.forEach(prov => {
+            map[prov.id] = prov.nombre;
+        });
+        return map;
+    }, [proveedores]);
 
-const SimpleListManager: FC<{
-    title: string;
-    items: { id: number; nombre: string }[];
-    onSave: (item: { id: number; nombre: string }) => void;
-    onDelete: (id: number) => void;
-    requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ title, items, onSave, onDelete, requestConfirmation }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<{ id: number; nombre: string } | null>(null);
-
-    const handleOpenAdd = () => {
-        setEditingItem({ id: Date.now(), nombre: '' });
-        setIsModalOpen(true);
-    };
-
-    const handleOpenEdit = (item: { id: number; nombre: string }) => {
-        setEditingItem({ ...item });
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setEditingItem(null);
-        setIsModalOpen(false);
-    };
-
-    const handleSave = () => {
-        if (editingItem && editingItem.nombre.trim()) {
-            onSave(editingItem);
+    const handleOpenProductModal = (product?: Product) => {
+        if (product) {
+            setEditingProduct({
+                ...product,
+                precioCoste: product.precioCoste ?? 0,
+                precioTotal: product.precioTotal ?? product.precio,
+            });
+        } else {
+            setEditingProduct({
+                id: Date.now(),
+                nombre: '',
+                descripcion: '',
+                categoria: productCategories[0]?.nombre ?? '',
+                marca: productBrands[0]?.nombre ?? '',
+                proveedorId: proveedores[0]?.id,
+                unidadMedida: UNIDADES_MEDIDA[0],
+                valorMedida: 1,
+                precioCoste: 0,
+                precioTotal: 0,
+                precio: 0,
+            });
         }
-        handleCloseModal();
+        setIsProductModalOpen(true);
     };
 
-    const handleDelete = (item: { id: number; nombre: string }) => {
-         requestConfirmation(`¿Estás seguro de que quieres eliminar "${item.nombre}"?`, () => onDelete(item.id));
+    const handleCloseProductModal = () => {
+        setIsProductModalOpen(false);
+        setEditingProduct(null);
+    };
+
+    const handleSaveProduct = (product: Product) => {
+        onSaveProduct(product);
+        handleCloseProductModal();
+    };
+
+    const handleDeleteProduct = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar este producto?', () => onDeleteProduct(id));
+    };
+
+    const handleOpenCategoriaModal = (category?: ProductCategory) => {
+        setEditingCategoria(category ?? { id: Date.now(), nombre: '' });
+        setIsCategoriaModalOpen(true);
+    };
+
+    const handleSaveCategoria = () => {
+        if (!editingCategoria) return;
+        onSaveProductCategory(editingCategoria);
+        setIsCategoriaModalOpen(false);
+        setEditingCategoria(null);
+    };
+
+    const handleDeleteCategoria = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar esta categoría?', () => onDeleteProductCategory(id));
+    };
+
+    const handleOpenMarcaModal = (brand?: ProductBrand) => {
+        setEditingMarca(brand ?? { id: Date.now(), nombre: '' });
+        setIsMarcaModalOpen(true);
+    };
+
+    const handleSaveMarca = () => {
+        if (!editingMarca) return;
+        onSaveProductBrand(editingMarca);
+        setIsMarcaModalOpen(false);
+        setEditingMarca(null);
+    };
+
+    const handleDeleteMarca = (id: number) => {
+        requestConfirmation('¿Está seguro de eliminar esta marca?', () => onDeleteProductBrand(id));
     };
 
     return (
-        <div>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-black">{title}</h2>
-                <button onClick={handleOpenAdd} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225]"><PlusIcon className="mr-2"/>Añadir</button>
+                <h2 className="text-xl font-bold text-black">Gestión de Productos</h2>
+                <div className="flex gap-2">
+                    {activeTab === 'productos' && (
+                        <button
+                            onClick={() => handleOpenProductModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Producto
+                        </button>
+                    )}
+                    {activeTab === 'categorias' && (
+                        <button
+                            onClick={() => handleOpenCategoriaModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Categoría
+                        </button>
+                    )}
+                    {activeTab === 'marcas' && (
+                        <button
+                            onClick={() => handleOpenMarcaModal()}
+                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            Añadir Marca
+                        </button>
+                    )}
+                </div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-                <table className="w-full text-sm">
-                    <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th className="p-2">Nombre</th>
-                            <th className="p-2 w-28">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map(item => (
-                            <tr key={item.id} className="border-b">
-                                <td className="p-2 text-black">{item.nombre}</td>
-                                <td className="p-2">
-                                    <div className="flex items-center space-x-2">
-                                        <button onClick={() => handleOpenEdit(item)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
-                                            <GoogleIcon name="edit" className="text-lg" />
-                                        </button>
-                                        <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
-                                            <GoogleIcon name="delete" className="text-lg" />
-                                        </button>
-                                    </div>
-                                </td>
+
+            <div className="border-b border-gray-200 mb-4">
+                <nav className="-mb-px flex space-x-6">
+                    <button
+                        onClick={() => setActiveTab('productos')}
+                        className={`${activeTab === 'productos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Productos
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('categorias')}
+                        className={`${activeTab === 'categorias' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Categorías
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('marcas')}
+                        className={`${activeTab === 'marcas' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Marcas
+                    </button>
+                </nav>
+            </div>
+
+            {activeTab === 'productos' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Producto</th>
+                                <th className="text-left p-2">Categoría</th>
+                                <th className="text-left p-2">Marca</th>
+                                <th className="text-left p-2">Medida</th>
+                                <th className="text-left p-2">Proveedor</th>
+                                <th className="text-left p-2">Precio Coste</th>
+                                <th className="text-left p-2">Precio Total</th>
+                                <th className="text-left p-2">Precio Venta</th>
+                                <th className="text-left p-2">Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            {isModalOpen && editingItem && (
-                 <Modal
-                    isOpen={isModalOpen}
-                    onClose={handleCloseModal}
-                    title={items.some(i => i.id === editingItem.id) ? `Editar ${title.slice(0,-1)}` : `Añadir ${title.slice(0,-1)}`}
-                    maxWidthClass="max-w-md"
-                    footer={
-                        <div className="space-x-2">
-                            <button onClick={handleCloseModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
-                            <button onClick={handleSave} className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225]">Guardar</button>
-                        </div>
-                    }
+                        </thead>
+                        <tbody>
+                            {products.map(product => (
+                                <tr key={product.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">
+                                        <div className="font-medium text-gray-900">{product.nombre}</div>
+                                        {product.descripcion && <div className="text-xs text-gray-500">{product.descripcion}</div>}
+                                    </td>
+                                    <td className="p-2">{product.categoria || 'Sin categoría'}</td>
+                                    <td className="p-2">{product.marca || 'Sin marca'}</td>
+                                    <td className="p-2">{product.valorMedida ?? 1} {product.unidadMedida}</td>
+                                    <td className="p-2">{product.proveedorId ? proveedorLookup[product.proveedorId] : 'Sin proveedor'}</td>
+                                    <td className="p-2">S/ {(product.precioCoste ?? 0).toFixed(2)}</td>
+                                    <td className="p-2">S/ {(product.precioTotal ?? 0).toFixed(2)}</td>
+                                    <td className="p-2">
+                                        {product.precio === 0 ? (
+                                            <span className="text-green-600 font-medium">Gratis</span>
+                                        ) : (
+                                            `S/ ${(product.precio ?? 0).toFixed(2)}`
+                                        )}
+                                    </td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenProductModal(product)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteProduct(product.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'categorias' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre de la Categoría</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {productCategories.map(cat => (
+                                <tr key={cat.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{cat.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenCategoriaModal(cat)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteCategoria(cat.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {activeTab === 'marcas' && (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-2">Nombre de la Marca</th>
+                                <th className="text-left p-2">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {productBrands.map(brand => (
+                                <tr key={brand.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-2">{brand.nombre}</td>
+                                    <td className="p-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleOpenMarcaModal(brand)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteMarca(brand.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {isProductModalOpen && editingProduct && (
+                <CatalogFormModal
+                    isOpen={isProductModalOpen}
+                    onClose={handleCloseProductModal}
+                    onSave={handleSaveProduct}
+                    item={editingProduct}
+                    title={editingProduct?.id && products.find(p => p.id === editingProduct.id) ? 'Editar Producto' : 'Añadir Producto'}
+                    fields={[
+                        { name: 'nombre', label: 'Nombre del producto', type: 'text', required: true },
+                        { name: 'descripcion', label: 'Descripción', type: 'textarea', required: false },
+                        {
+                            name: 'unidadMedida',
+                            label: 'Tipo de medida',
+                            type: 'select',
+                            required: true,
+                            options: UNIDADES_MEDIDA.map(unidad => ({ label: unidad, value: unidad })),
+                        },
+                        { name: 'valorMedida', label: 'Valor de la medida', type: 'number', required: true },
+                        { name: 'precioCoste', label: 'Precio de coste', type: 'number', required: true },
+                        { name: 'precioTotal', label: 'Precio total', type: 'number', required: true },
+                        { name: 'precio', label: 'Precio de venta', type: 'number', required: true },
+                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
+                        {
+                            name: 'marca',
+                            label: 'Marca',
+                            type: 'select',
+                            required: true,
+                            options: marcaOptions,
+                            placeholder: productBrands.length ? 'Seleccionar marca' : 'Registra una marca primero',
+                        },
+                        {
+                            name: 'proveedorId',
+                            label: 'Proveedor',
+                            type: 'select',
+                            required: true,
+                            options: proveedorOptions,
+                            valueType: 'number',
+                            placeholder: proveedores.length ? 'Seleccionar proveedor' : 'Registra un proveedor',
+                        },
+                    ]}
+                    itemCategories={productCategories}
+                    categoryField="categoria"
+                />
+            )}
+
+            {isCategoriaModalOpen && editingCategoria && (
+                <Modal
+                    isOpen={isCategoriaModalOpen}
+                    onClose={() => setIsCategoriaModalOpen(false)}
+                    title={editingCategoria.id && productCategories.find(cat => cat.id === editingCategoria.id) ? 'Editar Categoría' : 'Añadir Categoría'}
                 >
-                    <div className="p-6">
-                        <label className="text-sm font-medium text-black">Nombre</label>
+                    <div className="p-6 space-y-4">
+                        <label className="block text-sm font-medium text-gray-700">Nombre de la Categoría</label>
                         <input
                             type="text"
-                            value={editingItem.nombre}
-                            onChange={(e) => setEditingItem({ ...editingItem, nombre: e.target.value })}
-                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mt-1 text-black"
+                            value={editingCategoria.nombre}
+                            onChange={e => setEditingCategoria({ ...editingCategoria, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2"
                         />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsCategoriaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={handleSaveCategoria} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
                     </div>
-                 </Modal>
+                </Modal>
             )}
-        </div>
-    );
-};
 
-const CatalogManager: FC<{
-    title: string;
-    items: any[];
-    onSave: (item: any) => void;
-    onDelete: (id: number) => void;
-    requestConfirmation: (message: string, onConfirm: () => void) => void;
-    fields: { name: keyof any, label: string, type: string, required?: boolean }[];
-    itemCategories?: { id: number, nombre: string }[];
-    categoryField?: string;
-}> = ({ title, items, onSave, onDelete, requestConfirmation, fields, itemCategories, categoryField = 'categoria' }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<any | null>(null);
-
-    const handleAdd = () => {
-        const initialItem = fields.reduce((acc, field) => {
-            acc[field.name] = field.type === 'number' ? 0 : '';
-            return acc;
-        }, { id: Date.now() } as any);
-        setEditingItem(initialItem);
-        setIsModalOpen(true);
-    };
-
-    const handleEdit = (item: any) => {
-        setEditingItem(item);
-        setIsModalOpen(true);
-    };
-
-    const handleSave = (item: any) => {
-        onSave(item);
-        setIsModalOpen(false);
-    };
-    
-    const handleDelete = (item: any) => {
-        requestConfirmation(`¿Estás seguro de que quieres eliminar "${item.nombre}"?`, () => onDelete(item.id));
-    };
-
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-black">{title}</h2>
-                <button onClick={handleAdd} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors"><PlusIcon className="mr-2"/>Añadir</button>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-                <table className="w-full text-sm">
-                    <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            {fields.map(f => <th key={String(f.name)} className="p-2">{f.label}</th>)}
-                            <th className="p-2 w-28">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map(item => (
-                            <tr key={item.id} className="border-b">
-                                {fields.map(f => <td key={`${item.id}-${String(f.name)}`} className="p-2 text-black">{item[f.name]}</td>)}
-                                <td>
-                                    <div className="flex items-center space-x-2">
-                                        <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar"><GoogleIcon name="edit" className="text-lg" /></button>
-                                        <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar"><GoogleIcon name="delete" className="text-lg" /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            {isModalOpen && (
-                <CatalogFormModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSave={handleSave}
-                    item={editingItem}
-                    title={editingItem?.id && items.find(i => i.id === editingItem.id) ? `Editar ${title.slice(0,-1)}` : `Añadir ${title}`}
-                    fields={fields}
-                    itemCategories={itemCategories}
-                    categoryField={categoryField}
-                />
+            {isMarcaModalOpen && editingMarca && (
+                <Modal
+                    isOpen={isMarcaModalOpen}
+                    onClose={() => setIsMarcaModalOpen(false)}
+                    title={editingMarca.id && productBrands.find(brand => brand.id === editingMarca.id) ? 'Editar Marca' : 'Añadir Marca'}
+                >
+                    <div className="p-6 space-y-4">
+                        <label className="block text-sm font-medium text-gray-700">Nombre de la Marca</label>
+                        <input
+                            type="text"
+                            value={editingMarca.nombre}
+                            onChange={e => setEditingMarca({ ...editingMarca, nombre: e.target.value })}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setIsMarcaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
+                            <button onClick={handleSaveMarca} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
@@ -851,207 +991,6 @@ const ServiciosSection: FC<{
     );
 };
 
-const ProductosSection: FC<{
-    products: Product[];
-    productCategories: ProductCategory[];
-    onSaveProduct: (product: Product) => void;
-    onDeleteProduct: (id: number) => void;
-    onSaveProductCategory: (category: ProductCategory) => void;
-    onDeleteProductCategory: (id: number) => void;
-    requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ products, productCategories, onSaveProduct, onDeleteProduct, onSaveProductCategory, onDeleteProductCategory, requestConfirmation }) => {
-    const [activeTab, setActiveTab] = useState('productos');
-    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
-    const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
-
-    const handleOpenProductModal = (product?: Product) => {
-        setEditingProduct(product || null);
-        setIsProductModalOpen(true);
-    };
-
-    const handleCloseProductModal = () => {
-        setIsProductModalOpen(false);
-        setEditingProduct(null);
-    };
-
-    const handleSaveProduct = (product: Product) => {
-        onSaveProduct(product);
-        handleCloseProductModal();
-    };
-
-    const handleDeleteProduct = (id: number) => {
-        requestConfirmation('¿Está seguro de eliminar este producto?', () => {
-            onDeleteProduct(id);
-        });
-    };
-
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-md border">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Gestión de Productos</h2>
-                <div className="flex gap-2">
-                    {activeTab === 'productos' && (
-                        <button
-                            onClick={() => handleOpenProductModal()}
-                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
-                        >
-                            <span className="material-symbols-outlined">add</span>
-                            Añadir Producto
-                        </button>
-                    )}
-                    {activeTab === 'categorias' && (
-                        <button
-                            onClick={() => { setEditingCategoria({ id: Date.now(), nombre: '' }); setIsCategoriaModalOpen(true); }}
-                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] flex items-center gap-2"
-                        >
-                            <span className="material-symbols-outlined">add</span>
-                            Añadir Categoría
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <div className="border-b border-gray-200 mb-4">
-                <nav className="-mb-px flex space-x-6">
-                    <button
-                        onClick={() => setActiveTab('productos')}
-                        className={`${activeTab === 'productos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Productos
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('categorias')}
-                        className={`${activeTab === 'categorias' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Categorías de Productos
-                    </button>
-                </nav>
-            </div>
-
-            {activeTab === 'productos' && (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left p-2">Nombre</th>
-                                <th className="text-left p-2">Categoría</th>
-                                <th className="text-left p-2">Precio</th>
-                                <th className="text-left p-2">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map((product) => (
-                                <tr key={product.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2">{product.nombre}</td>
-                                    <td className="p-2">{product.categoria}</td>
-                                    <td className="p-2">
-                                        {product.precio === 0 ? (
-                                            <span className="text-green-600 font-medium">Gratis</span>
-                                        ) : (
-                                            `S/ ${product.precio?.toFixed(2)}`
-                                        )}
-                                    </td>
-                                    <td className="p-2">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleOpenProductModal(product)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Editar"
-                                            >
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteProduct(product.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                                title="Eliminar"
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {activeTab === 'categorias' && (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left p-2">Nombre de la Categoría</th>
-                                <th className="text-left p-2">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {productCategories.map((cat) => (
-                                <tr key={cat.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2">{cat.nombre}</td>
-                                    <td className="p-2">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => { setEditingCategoria(cat); setIsCategoriaModalOpen(true); }}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Editar"
-                                            >
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => requestConfirmation('¿Está seguro de eliminar esta categoría?', () => onDeleteProductCategory(cat.id))}
-                                                className="text-red-600 hover:text-red-800"
-                                                title="Eliminar"
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {isProductModalOpen && (
-                <CatalogFormModal
-                    isOpen={isProductModalOpen}
-                    onClose={handleCloseProductModal}
-                    onSave={handleSaveProduct}
-                    item={editingProduct}
-                    title={editingProduct ? 'Editar Producto' : 'Añadir Producto'}
-                    fields={[
-                        { name: 'nombre', label: 'Nombre', type: 'text', required: true },
-                        { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'precio', label: 'Precio', type: 'number', required: true },
-                    ]}
-                    itemCategories={productCategories}
-                />
-            )}
-
-            {isCategoriaModalOpen && editingCategoria && (
-                <Modal isOpen={isCategoriaModalOpen} onClose={() => setIsCategoriaModalOpen(false)} title={editingCategoria.id < 1000000 ? 'Editar Categoría' : 'Añadir Categoría'}>
-                    <div className="p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la Categoría</label>
-                        <input
-                            type="text"
-                            value={editingCategoria.nombre}
-                            onChange={(e) => setEditingCategoria({ ...editingCategoria, nombre: e.target.value })}
-                            className="w-full border-black bg-[#f9f9fa] rounded-md p-2 mb-4"
-                        />
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setIsCategoriaModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancelar</button>
-                            <button onClick={() => { onSaveProductCategory(editingCategoria); setIsCategoriaModalOpen(false); }} className="px-4 py-2 bg-[#aa632d] text-white rounded-md">Guardar</button>
-                        </div>
-                    </div>
-                </Modal>
-            )}
-        </div>
-    );
-};
 
 const MembresiasSection: FC<{
     memberships: Membership[];
@@ -1515,10 +1454,14 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                 return <ProductosSection
                     products={props.products}
                     productCategories={props.productCategories}
+                    productBrands={props.productBrands}
+                    proveedores={props.proveedores}
                     onSaveProduct={props.onSaveProduct}
                     onDeleteProduct={props.onDeleteProduct}
                     onSaveProductCategory={props.onSaveProductCategory}
                     onDeleteProductCategory={props.onDeleteProductCategory}
+                    onSaveProductBrand={props.onSaveProductBrand}
+                    onDeleteProductBrand={props.onDeleteProductBrand}
                     requestConfirmation={props.requestConfirmation}
                 />;
             case 'membresias':

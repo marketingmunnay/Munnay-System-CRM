@@ -1,7 +1,7 @@
 import type { 
   Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
   BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
-  ProductCategory, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
+  ProductCategory, ProductBrand, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
   TipoProveedor, Goal, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
   PagoProducto, AlertaStock, InventarioReporteResponse
 } from '../types.ts';
@@ -271,6 +271,16 @@ export const deleteProductCategory = (id: number): Promise<void> =>
   apiRequest<void>(`/config/product-categories/${id}`, 'DELETE');
 export const bulkImportProductCategories = (categories: any[]): Promise<{ message: string; categories: ProductCategory[] }> =>
   apiRequest<{ message: string; categories: ProductCategory[] }>('/config/product-categories/bulk', 'POST', categories);
+
+// ====== PRODUCT BRANDS ======
+export const getProductBrands = (): Promise<ProductBrand[]> => 
+  apiRequest<ProductBrand[]>('/config/product-brands', 'GET');
+export const saveProductBrand = (brand: ProductBrand): Promise<ProductBrand> =>
+  brand.id && brand.id < 1000000
+    ? apiRequest<ProductBrand>(`/config/product-brands/${brand.id}`, 'PUT', brand)
+    : apiRequest<ProductBrand>('/config/product-brands', 'POST', brand);
+export const deleteProductBrand = (id: number): Promise<void> =>
+  apiRequest<void>(`/config/product-brands/${id}`, 'DELETE');
 
 // ====== EGRESO CATEGORIES ======
 export const getEgresoCategories = (): Promise<EgresoCategory[]> => 
