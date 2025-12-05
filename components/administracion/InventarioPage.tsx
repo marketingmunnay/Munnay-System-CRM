@@ -140,12 +140,11 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
     }
   };
 
-  const renderDashboard = () => {
-    const totalProductos = reporte?.resumen?.totalProductos ?? 0;
-    const valorInventario = reporte?.resumen ? reporte.resumen.totalValorInventario.toFixed(2) : '0.00';
-    const valorVenta = reporte?.resumen ? reporte.resumen.totalValorVenta.toFixed(2) : '0.00';
+  const totalProductos = reporte?.resumen?.totalProductos ?? 0;
+  const valorInventario = reporte?.resumen ? reporte.resumen.totalValorInventario.toFixed(2) : '0.00';
+  const valorVenta = reporte?.resumen ? reporte.resumen.totalValorVenta.toFixed(2) : '0.00';
 
-    return (
+  const renderDashboard = () => (
       <div className="space-y-6">
       {/* Resumen general */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -350,7 +349,6 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
       </div>
       </div>
     );
-  };
 
   const renderMovimientos = () => (
     <div className="space-y-6">

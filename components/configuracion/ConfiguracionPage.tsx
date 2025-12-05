@@ -45,6 +45,7 @@ const ProductosSection: FC<{
     const [editingCategoria, setEditingCategoria] = useState<ProductCategory | null>(null);
     const [isMarcaModalOpen, setIsMarcaModalOpen] = useState(false);
     const [editingMarca, setEditingMarca] = useState<ProductBrand | null>(null);
+    const isCustomBrand = (brand: ProductBrand) => brand.id >= 0;
 
     const marcaOptions = useMemo(() => productBrands.map(brand => ({ label: brand.nombre, value: brand.nombre })), [productBrands]);
     const proveedorOptions = useMemo(() => proveedores.map(prov => ({ label: prov.nombre, value: prov.id })), [proveedores]);
@@ -112,6 +113,9 @@ const ProductosSection: FC<{
     };
 
     const handleOpenMarcaModal = (brand?: ProductBrand) => {
+        if (brand && !isCustomBrand(brand)) {
+            return;
+        }
         setEditingMarca(brand ?? { id: Date.now(), nombre: '' });
         setIsMarcaModalOpen(true);
     };
@@ -124,6 +128,8 @@ const ProductosSection: FC<{
     };
 
     const handleDeleteMarca = (id: number) => {
+        const targetBrand = productBrands.find(brand => brand.id === id);
+        if (!targetBrand || !isCustomBrand(targetBrand)) return;
         requestConfirmation('¿Está seguro de eliminar esta marca?', () => onDeleteProductBrand(id));
     };
 
@@ -294,31 +300,42 @@ const ProductosSection: FC<{
                             </tr>
                         </thead>
                         <tbody>
-                            {productBrands.map(brand => (
-                                <tr key={brand.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2">{brand.nombre}</td>
-                                    <td className="p-2">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleOpenMarcaModal(brand)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Editar"
-                                            >
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteMarca(brand.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                                title="Eliminar"
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {productBrands.map(brand => {
+                                const brandIsCustom = isCustomBrand(brand);
+                                return (
+                                    <tr key={brand.id} className="border-b hover:bg-gray-50">
+                                        <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                                <span>{brand.nombre}</span>
+                                                {!brandIsCustom && <span className="text-xs text-gray-400">(automática)</span>}
+                                            </div>
+                                        </td>
+                                        <td className="p-2">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleOpenMarcaModal(brand)}
+                                                    disabled={!brandIsCustom}
+                                                    className={`text-blue-600 hover:text-blue-800 disabled:opacity-40 disabled:cursor-not-allowed`}
+                                                    title={brandIsCustom ? 'Editar' : 'Marcas automáticas se generan desde los productos'}
+                                                >
+                                                    <span className="material-symbols-outlined">edit</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteMarca(brand.id)}
+                                                    disabled={!brandIsCustom}
+                                                    className={`text-red-600 hover:text-red-800 disabled:opacity-40 disabled:cursor-not-allowed`}
+                                                    title={brandIsCustom ? 'Eliminar' : 'Marcas automáticas no se pueden eliminar'}
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
+                    <p className="text-xs text-gray-500 mt-3">Las marcas automáticas se generan desde los productos existentes. Las marcas personalizadas se guardan localmente en este navegador.</p>
                 </div>
             )}
 

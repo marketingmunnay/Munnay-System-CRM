@@ -37,6 +37,35 @@ import type {
 import * as api from './services/api';
 import { generateNotifications } from './services/notificationService';
 
+const CUSTOM_BRANDS_STORAGE_KEY = 'munnay.customProductBrands';
+
+const readCustomBrandsFromStorage = (): ProductBrand[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+        const raw = window.localStorage.getItem(CUSTOM_BRANDS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .filter((item: unknown): item is ProductBrand =>
+                typeof item === 'object' && item !== null &&
+                typeof (item as ProductBrand).nombre === 'string' &&
+                typeof (item as ProductBrand).id === 'number'
+            )
+            .map(item => ({ id: item.id, nombre: item.nombre }));
+    } catch {
+        return [];
+    }
+};
+
+const persistCustomBrandsToStorage = (brands: ProductBrand[]) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(CUSTOM_BRANDS_STORAGE_KEY, JSON.stringify(brands));
+    } catch {
+        // Ignore storage errors silently
+    }
+};
+
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -68,6 +97,7 @@ const App: React.FC = () => {
     const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
     const [egresoCategories, setEgresoCategories] = useState<EgresoCategory[]>([]);
     const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
+    const [customProductBrands, setCustomProductBrands] = useState<ProductBrand[]>(() => readCustomBrandsFromStorage());
     const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [comprobantes, setComprobantes] = useState<ComprobanteElectronico[]>([]);
@@ -96,6 +126,22 @@ const App: React.FC = () => {
         setConfirmationState(null);
     };
 
+    useEffect(() => {
+        const derivedBrandNames = Array.from(new Set(
+            products
+                .map(product => product.marca?.trim())
+                .filter((nombre): nombre is string => Boolean(nombre))
+        ));
+        const derivedBrands = derivedBrandNames.map((nombre, index) => ({
+            id: -(index + 1),
+            nombre,
+        }));
+        const uniqueCustomBrands = customProductBrands.filter(custom =>
+            !derivedBrandNames.some(name => name.toLowerCase() === custom.nombre.toLowerCase())
+        );
+        setProductBrands([...derivedBrands, ...uniqueCustomBrands]);
+    }, [products, customProductBrands]);
+
 
     const loadData = async () => {
         setLoading(true);
@@ -104,7 +150,7 @@ const App: React.FC = () => {
                 leadsData, campaignsData, ventasData, incidenciasData, 
                 egresosData, proveedoresData, usersData, rolesData,
                 businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
-                serviceCategoriesData, productCategoriesData, productBrandsData, jobPositionsData,
+                serviceCategoriesData, productCategoriesData, jobPositionsData,
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
@@ -112,7 +158,7 @@ const App: React.FC = () => {
                 api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
                 api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
                 api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
-                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getProductBrands?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
+                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
                 api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
                 api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
             ]);
@@ -131,7 +177,6 @@ const App: React.FC = () => {
             setMemberships(membershipsData);
             setServiceCategories(serviceCategoriesData);
             setProductCategories(productCategoriesData);
-            setProductBrands(productBrandsData);
             setJobPositions(jobPositionsData);
             setPublicaciones(publicacionesData);
             setSeguidores(seguidoresData);
@@ -184,6 +229,14 @@ const App: React.FC = () => {
             }
             setLoading(false);
         }
+    };
+
+    const updateCustomBrandState = (updater: (prev: ProductBrand[]) => ProductBrand[]) => {
+        setCustomProductBrands(prev => {
+            const next = updater(prev);
+            persistCustomBrandsToStorage(next);
+            return next;
+        });
     };
 
     useEffect(() => {
@@ -274,8 +327,28 @@ const App: React.FC = () => {
     const handleDeleteServiceCategory = async (id: number) => { await api.deleteServiceCategory(id); await loadData(); };
     const handleSaveProductCategory = async (category: ProductCategory) => { await api.saveProductCategory(category); await loadData(); };
     const handleDeleteProductCategory = async (id: number) => { await api.deleteProductCategory(id); await loadData(); };
-    const handleSaveProductBrand = async (brand: ProductBrand) => { await api.saveProductBrand(brand); await loadData(); };
-    const handleDeleteProductBrand = async (id: number) => { await api.deleteProductBrand(id); await loadData(); };
+    const handleSaveProductBrand = (brand: ProductBrand) => {
+        const normalizedName = brand.nombre.trim();
+        if (!normalizedName) return;
+        updateCustomBrandState(prev => {
+            const existingIndex = prev.findIndex(existing =>
+                existing.id === brand.id || existing.nombre.toLowerCase() === normalizedName.toLowerCase()
+            );
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = { ...updated[existingIndex], nombre: normalizedName };
+                return updated;
+            }
+            const newEntry: ProductBrand = {
+                id: brand.id >= 0 ? brand.id : Date.now(),
+                nombre: normalizedName,
+            };
+            return [...prev, newEntry];
+        });
+    };
+    const handleDeleteProductBrand = (id: number) => {
+        updateCustomBrandState(prev => prev.filter(brand => brand.id !== id));
+    };
     const handleSaveEgresoCategory = async (category: EgresoCategory) => { await api.saveEgresoCategory(category); await loadData(); };
     const handleDeleteEgresoCategory = async (id: number) => { await api.deleteEgresoCategory(id); await loadData(); };
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
