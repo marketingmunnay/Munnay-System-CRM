@@ -13,6 +13,10 @@ import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
 const UNIDADES_MEDIDA: UnidadMedida[] = ['unidades', 'cajas', 'paquetes', 'blister', 'ml', 'g', 'litros'];
 
+const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
+    <span className={`material-symbols-outlined ${className || ''}`.trim()}>{name}</span>
+);
+
 interface SettingsSection {
     id: string;
     label: string;
