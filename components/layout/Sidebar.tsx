@@ -45,6 +45,14 @@ const navItems: NavItem[] = [
         ]
     },
     {
+        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
+            { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
+            { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
+            { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
+            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
+        ]
+    },
+    {
         id: 'administracion',
         label: 'Administración',
         icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />,
@@ -52,14 +60,6 @@ const navItems: NavItem[] = [
              { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
              { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
              { id: 'administracion-inventario', label: 'Inventario', page: 'administracion-inventario' },
-        ]
-    },
-    {
-        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
-            { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
-            { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
-            { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
-            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
         ]
     },
     {
