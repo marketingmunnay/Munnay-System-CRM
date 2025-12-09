@@ -11,6 +11,7 @@ import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 import MembershipFormModal from './MembershipFormModal.tsx';
 import Pagination from '../shared/Pagination';
+import { usePagination } from '../../utils/usePagination';
 const UNIDADES_MEDIDA: UnidadMedida[] = ['unidades', 'cajas', 'paquetes', 'blister', 'ml', 'g', 'litros'];
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
@@ -42,6 +43,147 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     { id: 'equipo', label: 'Equipo', icon: 'groups' },
     { id: 'miembros', label: 'Miembros y roles', parent: 'equipo' },
 ];
+
+interface SimpleListManagerProps {
+    title: string;
+    items: ClientSource[];
+    onSave: (item: ClientSource) => Promise<void> | void;
+    onDelete: (id: number) => Promise<void> | void;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}
+
+const SimpleListManager: FC<SimpleListManagerProps> = ({ title, items, onSave, onDelete, requestConfirmation }) => {
+    const [search, setSearch] = useState('');
+    const [name, setName] = useState('');
+    const [editing, setEditing] = useState<ClientSource | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
+
+    const filteredItems = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        return term.length === 0 ? items : items.filter(item => item.nombre.toLowerCase().includes(term));
+    }, [items, search]);
+
+    const resetForm = () => {
+        setEditing(null);
+        setName('');
+    };
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        const trimmed = name.trim();
+        if (!trimmed) {
+            setFeedback({ kind: 'error', message: 'Ingresa un nombre válido.' });
+            return;
+        }
+
+        setIsSaving(true);
+        const payload: ClientSource = editing ? { ...editing, nombre: trimmed } : { id: Date.now(), nombre: trimmed };
+
+        try {
+            await Promise.resolve(onSave(payload));
+            setFeedback({ kind: 'success', message: editing ? 'Origen actualizado.' : 'Origen registrado.' });
+            resetForm();
+        } catch (error) {
+            console.error('Error guardando el origen de clientes:', error);
+            setFeedback({ kind: 'error', message: 'No se pudo guardar, intenta de nuevo.' });
+        } finally {
+            setIsSaving(false);
+            setTimeout(() => setFeedback(null), 2500);
+        }
+    };
+
+    const handleDelete = (item: ClientSource) => {
+        requestConfirmation(`¿Eliminar "${item.nombre}"?`, () => {
+            Promise.resolve(onDelete(item.id)).catch(error => console.error('Error eliminando el origen de clientes:', error));
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md border space-y-6">
+            <div className="flex flex-col gap-2">
+                <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Origen</p>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
+                    <div className="relative w-full max-w-xs">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-300">search</span>
+                        <input
+                            className="w-full rounded-2xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 focus:border-[#aa632d] focus:outline-none"
+                            placeholder="Buscar origen"
+                            value={search}
+                            onChange={event => setSearch(event.target.value)}
+                        />
+                    </div>
+                </div>
+                <p className="text-sm text-slate-500">Mantén actualizadas las fuentes de donde llegan los leads.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                        type="text"
+                        placeholder="Nombre del origen"
+                        value={name}
+                        onChange={event => setName(event.target.value)}
+                        className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-[#aa632d] focus:outline-none"
+                    />
+                    <div className="flex gap-2">
+                        {editing && (
+                            <button
+                                type="button"
+                                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+                                onClick={resetForm}
+                            >
+                                Cancelar
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            className="rounded-2xl bg-[#aa632d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#8e5225] disabled:opacity-50"
+                            disabled={isSaving}
+                        >
+                            {editing ? 'Actualizar' : 'Agregar'}
+                        </button>
+                    </div>
+                </div>
+                {feedback && (
+                    <p className={`text-sm font-semibold ${feedback.kind === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}>{feedback.message}</p>
+                )}
+            </form>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                {filteredItems.length === 0 && <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">Sin coincidencias</div>}
+                {filteredItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/90 px-4 py-3 shadow-sm">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-900">{item.nombre}</p>
+                            <p className="text-xs text-slate-400">ID #{item.id}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                className="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                                onClick={() => {
+                                    setEditing(item);
+                                    setName(item.nombre);
+                                }}
+                            >
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600"
+                                onClick={() => handleDelete(item)}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const ProductosSection: FC<{
     products: Product[];
