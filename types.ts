@@ -522,6 +522,86 @@ export interface Service {
     nombre: string;
     categoria: string;
     precio: number;
+    duracionMinutos?: number;
+    profesionalRequerido?: string;
+    notas?: string;
+}
+
+export interface Ambiente {
+    id: number;
+    nombre: string;
+    tipo: string;
+    estado: 'activo' | 'inactivo';
+    capacidad?: number;
+}
+
+export type AppointmentStatus = 'Booked' | 'Confirmed' | 'Completed' | 'Cancelled' | 'NoShow' | string;
+
+export interface AppointmentServiceItem {
+    serviceId: number;
+    nombre: string;
+    duracionMinutos: number;
+    precio: number;
+}
+
+export interface Appointment {
+    id: number;
+    leadId: number;
+    clienteNombre: string;
+    clienteDocumento?: string;
+    servicios: AppointmentServiceItem[];
+    fecha: string; // YYYY-MM-DD
+    horaInicio: string; // HH:mm
+    duracionMinutos: number;
+    profesionalId: string;
+    ambienteId?: number;
+    estado: AppointmentStatus;
+    origen: string;
+    notas?: string;
+    recurrenteId?: number;
+}
+
+export interface CreateAppointmentPayload {
+    leadId: number;
+    servicioIds: number[];
+    fecha: string;
+    horaInicio: string;
+    duracionMinutos: number;
+    profesionalId: string;
+    ambienteId?: number;
+    estado: AppointmentStatus;
+    origen: string;
+    notas?: string;
+    confirmarPor?: Array<'whatsapp' | 'email'>;
+    emitirComprobante?: boolean;
+    documento?: DocumentType;
+    numeroDocumento?: string;
+}
+
+export interface AvailabilityRequest {
+    fecha: string;
+    horaInicio: string;
+    duracionMinutos: number;
+    servicioIds: number[];
+    profesionalId?: string;
+    ambienteId?: number;
+}
+
+export interface AvailabilitySlot {
+    profesionalId: string;
+    ambienteId?: number;
+    disponible: boolean;
+    motivo?: string;
+    sugerencias?: Array<{ fecha: string; horaInicio: string; profesionalId?: string; ambienteId?: number }>;
+}
+
+export interface RecurringSeriesRequest {
+    baseAppointment: CreateAppointmentPayload;
+    frecuencia: 'diaria' | 'semanal' | 'mensual';
+    intervalo: number;
+    diasSemana?: string[];
+    fechaFin?: string;
+    sinFin?: boolean;
 }
 
 // DESACTIVADO HASTA APLICAR MIGRACIÓN

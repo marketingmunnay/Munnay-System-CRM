@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
-import { LeadStatus, Seller } from '../../types';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
+import { LeadStatus } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
+import AppointmentWizard from './AppointmentWizard';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -66,17 +67,99 @@ const durationToHeight = (startStr: string, endStr: string) => {
     return (diffMinutes / 60) * HOUR_HEIGHT;
 };
 
+const DEFAULT_LEAD_DURATION = 60;
+
+interface CalendarEvent {
+    id: string;
+    source: 'lead' | 'appointment';
+    originId: number;
+    fecha: string;
+    horaInicio: string;
+    horaFin: string;
+    resourceId: string;
+    cliente: string;
+    servicios: string[];
+    leadRef?: Lead;
+}
+
+const padTime = (value: number) => value.toString().padStart(2, '0');
+
+const addMinutesToTime = (timeStr: string, minutes: number) => {
+    const [hours, mins] = timeStr.split(':').map(Number);
+    const baseline = new Date();
+    baseline.setHours(hours, mins, 0, 0);
+    baseline.setMinutes(baseline.getMinutes() + minutes);
+    return `${padTime(baseline.getHours())}:${padTime(baseline.getMinutes())}`;
+};
+
+const buildClienteNombre = (nombres?: string, apellidos?: string) => {
+    const fullName = [nombres, apellidos].filter(Boolean).join(' ').trim();
+    return fullName.length > 0 ? fullName : 'Cliente sin nombre';
+};
+
+const leadToEvent = (lead: Lead): CalendarEvent | null => {
+    if (!lead.fechaHoraAgenda || !lead.recursoId) return null;
+    const parsed = parseDate(lead.fechaHoraAgenda);
+    if (!parsed) return null;
+    const fecha = formatDateForInput(parsed);
+    if (!fecha) return null;
+    const horaInicio = `${padTime(parsed.getHours())}:${padTime(parsed.getMinutes())}`;
+    const horaFin = addMinutesToTime(horaInicio, DEFAULT_LEAD_DURATION);
+    return {
+        id: `lead-${lead.id}`,
+        source: 'lead',
+        originId: lead.id,
+        fecha,
+        horaInicio,
+        horaFin,
+        resourceId: lead.recursoId,
+        cliente: buildClienteNombre(lead.nombres, lead.apellidos),
+        servicios: lead.servicios || [],
+        leadRef: lead,
+    };
+};
+
+const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
+    const horaFin = addMinutesToTime(appointment.horaInicio, appointment.duracionMinutos || DEFAULT_LEAD_DURATION);
+    return {
+        id: `appointment-${appointment.id}`,
+        source: 'appointment',
+        originId: appointment.id,
+        fecha: appointment.fecha,
+        horaInicio: appointment.horaInicio,
+        horaFin,
+        resourceId: appointment.profesionalId,
+        cliente: appointment.clienteNombre,
+        servicios: appointment.servicios?.map(item => item.nombre) || [],
+    };
+};
+
 
 const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
     const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [wizardDefaults, setWizardDefaults] = useState<{ date: Date; resourceId?: string } | null>(null);
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    useEffect(() => {
+        const leadEvents = (leads || [])
+            .filter(lead => lead.estado === LeadStatus.Agendado)
+            .map(leadToEvent)
+            .filter((event): event is CalendarEvent => Boolean(event));
+
+        setCalendarEvents(prev => {
+            const appointmentEvents = prev.filter(event => event.source === 'appointment');
+            return [...leadEvents, ...appointmentEvents];
+        });
+    }, [leads]);
 
     const handleDateChange = (days: number) => {
         setCurrentDate(prev => {
@@ -89,8 +172,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
     const handleToday = () => setCurrentDate(new Date());
     
     const handleAddClick = () => {
-        setEditingLead(null);
-        setIsModalOpen(true);
+        const baseDate = new Date(currentDate);
+        baseDate.setHours(9, 0, 0, 0);
+        setWizardDefaults({ date: baseDate });
+        setIsWizardOpen(true);
     }
     
     const handleEditAppointment = (appointment: Lead) => {
@@ -112,26 +197,16 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
 
         const isoDateTimeLocal = `${clickDate.getFullYear()}-${(clickDate.getMonth() + 1).toString().padStart(2, '0')}-${clickDate.getDate().toString().padStart(2, '0')}T${clickDate.getHours().toString().padStart(2, '0')}:${clickDate.getMinutes().toString().padStart(2, '0')}`;
 
-        const newLead: Partial<Lead> = {
-            id: Date.now(),
-            estado: LeadStatus.Agendado,
-            fechaHoraAgenda: isoDateTimeLocal,
-            recursoId: resourceId,
-            fechaLead: new Date().toISOString().split('T')[0],
-            montoPagado: 0,
-            servicios: [],
-            nombres: '',
-            apellidos: '',
-            numero: '',
-            vendedor: Seller.Vanesa,
-            sexo: 'F',
-            redSocial: 'Instagram',
-            categoria: '',
-            anuncio: '',
-        };
-        
-        setEditingLead(newLead as Lead);
-        setIsModalOpen(true);
+        setWizardDefaults({ date: clickDate, resourceId });
+        setIsWizardOpen(true);
+    };
+
+    const handleWizardAppointmentCreated = (appointment: Appointment) => {
+        setCalendarEvents(prev => {
+            const nextEvent = appointmentToEvent(appointment);
+            const filtered = prev.filter(event => !(event.source === 'appointment' && event.originId === appointment.id));
+            return [...filtered, nextEvent];
+        });
     };
     
     const handleSaveAndClose = async (lead: Lead) => {
@@ -149,17 +224,17 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
         }
     };
 
-    const { appointments, blocked } = useMemo(() => {
-        const selectedDateStr = formatDateForInput(currentDate);
-        const appointments = (leads || []).filter(lead => {
-            if (lead.estado !== LeadStatus.Agendado) return false;
-            if (!lead.fechaHoraAgenda) return false;
-            const leadDate = formatDateForInput(lead.fechaHoraAgenda);
-            return leadDate === selectedDateStr;
-        });
-        const blocked = BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr);
-        return { appointments, blocked };
-    }, [leads, currentDate]);
+    const selectedDateStr = useMemo(() => formatDateForInput(currentDate) ?? '', [currentDate]);
+
+    const eventsForSelectedDate = useMemo(() => {
+        if (!selectedDateStr) return [];
+        return calendarEvents.filter(event => event.fecha === selectedDateStr);
+    }, [calendarEvents, selectedDateStr]);
+
+    const blocked = useMemo(() => {
+        if (!selectedDateStr) return [];
+        return BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr);
+    }, [selectedDateStr]);
 
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -178,30 +253,25 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
 
     const currentTimePosition = timeToPosition(`${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`);
 
-    const AppointmentCard: React.FC<{ appointment: Lead }> = ({ appointment }) => {
-        if (!appointment.fechaHoraAgenda) return null;
+    const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
+        const top = timeToPosition(event.horaInicio);
+        const height = durationToHeight(event.horaInicio, event.horaFin);
 
-        const parsed = parseDate(appointment.fechaHoraAgenda);
-        if (!parsed) return null;
+        const handleClick = () => {
+            if (event.source === 'lead' && event.leadRef) {
+                handleEditAppointment(event.leadRef);
+            }
+        };
 
-        const startTime = `${parsed.getHours().toString().padStart(2, '0')}:${parsed.getMinutes().toString().padStart(2, '0')}`;
-        const appDate = new Date(parsed.getTime());
-        // Assuming 1 hour duration for all appointments as there is no end time in the model
-        appDate.setHours(appDate.getHours() + 1);
-        const endTime = `${appDate.getHours().toString().padStart(2, '0')}:${appDate.getMinutes().toString().padStart(2, '0')}`;
-
-        const top = timeToPosition(startTime);
-        const height = durationToHeight(startTime, endTime);
-    
         return (
             <div
-                onClick={() => handleEditAppointment(appointment)}
-                className={`absolute w-full p-2 rounded-lg text-xs overflow-hidden ${getServiceColor(appointment.servicios[0])} cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-offset-1 hover:ring-purple-400`}
+                onClick={handleClick}
+                className={`absolute w-full p-2 rounded-lg text-xs overflow-hidden ${getServiceColor(event.servicios[0] || event.source)} cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-offset-1 hover:ring-purple-400`}
                 style={{ top: `${top}px`, height: `${Math.max(height, 40)}px`, left: '2px', width: 'calc(100% - 4px)'}}
             >
-                <p className="font-bold truncate text-sm">{appointment.nombres} {appointment.apellidos}</p>
-                <p className="truncate text-gray-700">{appointment.servicios.join(', ')}</p>
-                <p className="absolute bottom-1 right-2 text-xs font-medium">{startTime} - {endTime}</p>
+                <p className="font-bold truncate text-sm">{event.cliente}</p>
+                <p className="truncate text-gray-700">{event.servicios.length > 0 ? event.servicios.join(', ') : 'Servicio pendiente'}</p>
+                <p className="absolute bottom-1 right-2 text-xs font-medium">{event.horaInicio} - {event.horaFin}</p>
             </div>
         );
     };
@@ -284,9 +354,11 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
                                 </div>
                             ))}
 
-                            {appointments.filter(a => a.recursoId === resource.id).map(app => (
-                                <AppointmentCard key={app.id} appointment={app} />
-                            ))}
+                            {eventsForSelectedDate
+                                .filter(event => event.resourceId === resource.id)
+                                .map(event => (
+                                    <AppointmentCard key={event.id} event={event} />
+                                ))}
 
                              {blocked.filter(b => b.recursoId === resource.id).map(block => (
                                 <BlockedTimeSlot key={block.id} block={block} />
@@ -301,7 +373,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
                     )}
                 </div>
             </div>
-             <LeadFormModal
+                 <LeadFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveAndClose}
@@ -314,6 +386,19 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
                 requestConfirmation={requestConfirmation}
                 onSaveComprobante={onSaveComprobante}
                 comprobantes={comprobantes}
+            />
+            <AppointmentWizard
+                isOpen={isWizardOpen}
+                onClose={() => {
+                    setIsWizardOpen(false);
+                    setWizardDefaults(null);
+                }}
+                services={services}
+                clientSources={clientSources}
+                onSaveLead={onSaveLead}
+                defaultDate={wizardDefaults?.date}
+                defaultResourceId={wizardDefaults?.resourceId}
+                onAppointmentCreated={handleWizardAppointmentCreated}
             />
         </div>
     );

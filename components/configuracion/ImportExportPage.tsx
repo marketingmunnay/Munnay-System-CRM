@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
-import { getEgresos } from '../../services/api';
+import { getCampaigns, getEgresos, getLeads, getMetaCampaigns } from '../../services/api';
 import type { BulkImportEgresosResponse } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
@@ -10,16 +10,90 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+const toCsvValue = (value: unknown): string => {
+    if (value === null || value === undefined) return '';
+    const stringValue = typeof value === 'string' ? value : value.toString();
+    return /[",\n]/.test(stringValue) ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
+};
+
+const downloadCsv = (filename: string, headers: string[], rows: (string | number | null | undefined)[][]) => {
+    const csvRows = rows.map(row => row.map(toCsvValue).join(','));
+    const csv = [headers.map(toCsvValue).join(','), ...csvRows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+const LEAD_HEADERS = [
+    'id',
+    'fechaLead',
+    'nombres',
+    'apellidos',
+    'numero',
+    'sexo',
+    'redSocial',
+    'anuncio',
+    'vendedor',
+    'estado',
+    'montoPagado',
+    'metodoPago',
+    'fechaHoraAgenda',
+    'servicios',
+    'categoria',
+    'fechaVolverLlamar',
+    'horaVolverLlamar',
+    'notas',
+    'nHistoria',
+    'birthDate',
+    'documentType',
+    'documentNumber',
+    'razonSocial',
+    'direccionFiscal'
+];
+
+const CAMPAIGN_HEADERS = ['id', 'nombreAnuncio', 'categoria', 'alcance', 'resultados', 'costoPorResultado', 'importeGastado', 'fecha'];
+
+const META_CAMPAIGN_HEADERS = ['id', 'nombre', 'fechaInicio', 'fechaFin', 'categoria'];
+
+const EGRESO_HEADERS = [
+    'id',
+    'fechaRegistro',
+    'fechaPago',
+    'proveedor',
+    'categoria',
+    'descripcion',
+    'tipoComprobante',
+    'serieComprobante',
+    'nComprobante',
+    'montoTotal',
+    'montoPagado',
+    'deuda',
+    'modoPago',
+    'tipoMoneda',
+    'observaciones',
+    'comprobantes'
+];
+
 interface ImportSectionProps {
     title: string;
     description: string;
     templateFilename: string;
     headers: string[];
     onImport: (file: File) => void;
+    exportConfig?: {
+        label?: string;
+        iconName?: string;
+        onExport: () => Promise<void> | void;
+    };
 }
 
-const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templateFilename, headers, onImport }) => {
+const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templateFilename, headers, onImport, exportConfig }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleDownloadTemplate = () => {
         const csvString = headers.join(',');
@@ -47,6 +121,16 @@ const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templ
         }
     };
 
+    const handleExportClick = async () => {
+        if (!exportConfig) return;
+        try {
+            setIsExporting(true);
+            await exportConfig.onExport();
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-md border">
             <h3 className="text-xl font-bold text-black flex items-center">
@@ -69,6 +153,16 @@ const ImportSection: React.FC<ImportSectionProps> = ({ title, description, templ
                     <GoogleIcon name="upload" className="mr-2"/>
                     Importar desde CSV
                 </button>
+                {exportConfig && (
+                    <button
+                        onClick={handleExportClick}
+                        disabled={isExporting}
+                        className="flex items-center bg-white text-[#aa632d] px-4 py-2 rounded-lg shadow-sm border border-[#aa632d] hover:bg-[#fff3eb] transition-colors text-sm font-medium disabled:opacity-70"
+                    >
+                        <GoogleIcon name={exportConfig.iconName || 'download'} className="mr-2"/>
+                        {isExporting ? 'Exportando…' : (exportConfig.label || 'Exportar CSV')}
+                    </button>
+                )}
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -858,6 +952,128 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
         }
     };
 
+    const exportLeadsCsv = async () => {
+        try {
+            const data = await getLeads();
+            if (!data || data.length === 0) {
+                alert('No hay leads para exportar.');
+                return;
+            }
+            const rows = data.map(lead => [
+                lead.id ?? '',
+                lead.fechaLead ?? '',
+                lead.nombres ?? '',
+                lead.apellidos ?? '',
+                lead.numero ?? '',
+                lead.sexo ?? '',
+                lead.redSocial ?? '',
+                lead.anuncio ?? '',
+                lead.vendedor ?? '',
+                lead.estado ?? '',
+                lead.montoPagado ?? '',
+                lead.metodoPago ?? '',
+                lead.fechaHoraAgenda ?? '',
+                (lead.servicios || []).join(';'),
+                lead.categoria ?? '',
+                lead.fechaVolverLlamar ?? '',
+                lead.horaVolverLlamar ?? '',
+                lead.notas ?? '',
+                lead.nHistoria ?? '',
+                lead.birthDate ?? '',
+                lead.documentType ?? '',
+                lead.documentNumber ?? '',
+                lead.razonSocial ?? '',
+                lead.direccionFiscal ?? ''
+            ]);
+            downloadCsv('leads_export.csv', LEAD_HEADERS, rows);
+        } catch (error) {
+            console.error('Error al exportar leads', error);
+            alert('Error al exportar leads. Revisa la consola.');
+        }
+    };
+
+    const exportCampaignsCsv = async () => {
+        try {
+            const data = await getCampaigns();
+            if (!data || data.length === 0) {
+                alert('No hay campañas para exportar.');
+                return;
+            }
+            const rows = data.map(campaign => [
+                campaign.id ?? '',
+                campaign.nombreAnuncio ?? '',
+                campaign.categoria ?? '',
+                campaign.alcance ?? '',
+                campaign.resultados ?? '',
+                campaign.costoPorResultado ?? '',
+                campaign.importeGastado ?? '',
+                campaign.fecha ?? ''
+            ]);
+            downloadCsv('campaigns_export.csv', CAMPAIGN_HEADERS, rows);
+        } catch (error) {
+            console.error('Error al exportar campañas', error);
+            alert('Error al exportar campañas. Revisa la consola.');
+        }
+    };
+
+    const exportMetaCampaignsCsv = async () => {
+        try {
+            const data = await getMetaCampaigns();
+            if (!data || data.length === 0) {
+                alert('No hay campañas meta para exportar.');
+                return;
+            }
+            const rows = data.map(campaign => [
+                campaign.id ?? '',
+                campaign.nombre ?? '',
+                campaign.fechaInicio ?? '',
+                campaign.fechaFin ?? '',
+                campaign.categoria ?? ''
+            ]);
+            downloadCsv('meta_campaigns_export.csv', META_CAMPAIGN_HEADERS, rows);
+        } catch (error) {
+            console.error('Error al exportar campañas meta', error);
+            alert('Error al exportar campañas meta. Revisa la consola.');
+        }
+    };
+
+    const exportEgresosCsv = async () => {
+        try {
+            const data = await getEgresos();
+            if (!data || data.length === 0) {
+                alert('No hay egresos para exportar.');
+                return;
+            }
+            const rows = data.map((egreso: any) => {
+                const comprobantes = Array.isArray(egreso.comprobantes)
+                    ? egreso.comprobantes.map((c: any) => c?.url || '').filter(Boolean).join(';')
+                    : '';
+                return [
+                    egreso.id ?? '',
+                    egreso.fechaRegistro ?? '',
+                    egreso.fechaPago ?? '',
+                    egreso.proveedor ?? '',
+                    egreso.categoria ?? '',
+                    egreso.descripcion ?? '',
+                    egreso.tipoComprobante ?? '',
+                    egreso.serieComprobante ?? '',
+                    egreso.nComprobante ?? '',
+                    egreso.montoTotal ?? '',
+                    egreso.montoPagado ?? '',
+                    egreso.deuda ?? '',
+                    egreso.modoPago ?? '',
+                    egreso.tipoMoneda ?? '',
+                    egreso.observaciones ?? '',
+                    comprobantes
+                ];
+            });
+            downloadCsv('egresos_export.csv', EGRESO_HEADERS, rows);
+        } catch (error) {
+            console.error('Error al exportar egresos', error);
+            alert('Error al exportar egresos. Revisa la consola.');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-black">Importación y Exportación de Datos</h2>
@@ -869,29 +1085,27 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 title="Pacientes / Leads"
                 description="Añade o actualiza la información de tus pacientes y leads desde un archivo CSV."
                 templateFilename="plantilla_pacientes.csv"
-                headers={[
-                    "id", "fechaLead", "nombres", "apellidos", "numero", "sexo", "redSocial", "anuncio", 
-                    "vendedor", "estado", "montoPagado", "metodoPago", "fechaHoraAgenda", "servicios", 
-                    "categoria", "fechaVolverLlamar", "horaVolverLlamar", "notas", "nHistoria", 
-                    "birthDate", "documentType", "documentNumber", "razonSocial", "direccionFiscal"
-                ]}
+                headers={LEAD_HEADERS}
                 onImport={(file) => handleFileImport(file, 'Pacientes')}
+                exportConfig={{ label: 'Exportar Leads', onExport: exportLeadsCsv }}
             />
             
             <ImportSection
                 title="Campañas (Campaigns)"
                 description="Importa registros de campañas publicitarias con sus métricas."
                 templateFilename="plantilla_campaigns.csv"
-                headers={["id", "nombreAnuncio", "categoria", "alcance", "resultados", "costoPorResultado", "importeGastado", "fecha"]}
+                headers={CAMPAIGN_HEADERS}
                 onImport={(file) => handleFileImport(file, 'Campañas')}
+                exportConfig={{ label: 'Exportar Campañas', onExport: exportCampaignsCsv }}
             />
 
             <ImportSection
                 title="Meta Campañas"
                 description="Importa campañas de Meta (Facebook/Instagram) con fechas de inicio y fin."
                 templateFilename="plantilla_meta_campaigns.csv"
-                headers={["id", "nombre", "fechaInicio", "fechaFin", "categoria"]}
+                headers={META_CAMPAIGN_HEADERS}
                 onImport={(file) => handleFileImport(file, 'Meta Campañas')}
+                exportConfig={{ label: 'Exportar Meta Campañas', onExport: exportMetaCampaignsCsv }}
             />
 
             <ImportSection
@@ -936,51 +1150,10 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 title="Egresos"
                 description="Importa registros de egresos (gastos) desde un CSV. Para comprobantes múltiples use la columna 'comprobantes' separando URLs por punto y coma (;)."
                 templateFilename="plantilla_egresos.csv"
-                headers={[
-                    "id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante",
-                    "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"
-                ]}
+                headers={EGRESO_HEADERS}
                 onImport={(file) => handleFileImport(file, 'Egresos')}
+                exportConfig={{ label: 'Exportar Egresos', onExport: exportEgresosCsv }}
             />
-
-            <div className="bg-white p-6 rounded-lg shadow-md border">
-                <h3 className="text-xl font-bold text-black flex items-center">
-                    <GoogleIcon name="download" className="mr-2 text-gray-500" /> Exportar Egresos
-                </h3>
-                <p className="text-sm text-gray-600 mt-2 mb-4">Descarga todos los egresos actuales en formato CSV.</p>
-                <div>
-                    <button
-                        onClick={async () => {
-                            try {
-                                const data = await getEgresos();
-                                if (!data || data.length === 0) {
-                                    alert('No hay egresos para exportar.');
-                                    return;
-                                }
-                                const headers = ["id", "fechaRegistro", "fechaPago", "proveedor", "categoria", "descripcion", "tipoComprobante", "serieComprobante", "nComprobante", "montoTotal", "montoPagado", "deuda", "modoPago", "tipoMoneda", "observaciones", "comprobantes"];
-                                const rows = data.map(e => {
-                                    const comprobantes = (e.comprobantes || []).map((c: any) => c.url).join(';');
-                                    return [e.id, e.fechaRegistro, e.fechaPago || '', e.proveedor, e.categoria, e.descripcion, e.tipoComprobante, e.serieComprobante || '', e.nComprobante || '', e.montoTotal, e.montoPagado, e.deuda, e.modoPago || '', e.tipoMoneda, e.observaciones || '', comprobantes].join(',');
-                                });
-                                const csv = [headers.join(','), ...rows].join('\n');
-                                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-                                const link = document.createElement('a');
-                                link.href = URL.createObjectURL(blob);
-                                link.download = 'egresos_export.csv';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            } catch (err) {
-                                console.error('Error exporting egresos', err);
-                                alert('Error al exportar egresos. Revisa la consola.');
-                            }
-                        }}
-                        className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors text-sm font-medium"
-                    >
-                        <GoogleIcon name="download" className="mr-2" /> Exportar Egresos
-                    </button>
-                </div>
-            </div>
 
             <ImportSection
                 title="Atenciones Diarias (Procedimientos)"

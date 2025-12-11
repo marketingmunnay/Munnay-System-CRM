@@ -3,7 +3,9 @@ import type {
   BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
   ProductCategory, ProductBrand, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
   TipoProveedor, Goal, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
-  PagoProducto, AlertaStock, InventarioReporteResponse
+  PagoProducto, AlertaStock, InventarioReporteResponse, Ambiente, Appointment,
+  CreateAppointmentPayload, AvailabilityRequest, AvailabilitySlot, RecurringSeriesRequest,
+  AppointmentStatus
 } from '../types.ts';
 
 export interface BulkImportEgresoResult {
@@ -28,7 +30,7 @@ type ApiError = Error & { status?: number };
 
 const apiRequest = async <T>(
   endpoint: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   body?: any
 ): Promise<T> => {
   const options: RequestInit = {
@@ -53,6 +55,10 @@ const apiRequest = async <T>(
 // ====== LEADS ======
 export const getLeads = (): Promise<Lead[]> => apiRequest<Lead[]>('/leads', 'GET');
 export const getLead = (id: number): Promise<Lead> => apiRequest<Lead>(`/leads/${id}`, 'GET');
+export const searchLeads = (query: string): Promise<Lead[]> => {
+  const search = new URLSearchParams({ q: query }).toString();
+  return apiRequest<Lead[]>(`/leads/search?${search}`, 'GET');
+};
 export const saveLead = (lead: Lead): Promise<Lead> =>
   // Database IDs are small autoincrement values (< 1000000), timestamps are much larger
   lead.id && lead.id < 1000000
@@ -412,3 +418,52 @@ export const resolverAlerta = (id: number): Promise<AlertaStock> =>
 // Reportes
 export const getReporteInventario = (): Promise<InventarioReporteResponse> =>
   apiRequest<InventarioReporteResponse>('/inventory/reporte', 'GET');
+
+// ====== CALENDARIO Y CITAS ======
+
+interface AvailabilityResponse {
+  isAvailable: boolean;
+  slots: AvailabilitySlot[];
+  suggestions: Array<{ fecha: string; horaInicio: string; profesionalId?: string; ambienteId?: number }>;
+}
+
+export const getAmbientes = (): Promise<Ambiente[]> =>
+  apiRequest<Ambiente[]>('/calendar/ambientes', 'GET');
+
+export const getAvailability = (params: AvailabilityRequest): Promise<AvailabilityResponse> => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (Array.isArray(value)) {
+      value.forEach(item => queryParams.append(key, String(item)));
+    } else {
+      queryParams.append(key, String(value));
+    }
+  });
+  const qs = queryParams.toString();
+  return apiRequest<AvailabilityResponse>(`/calendar/availability${qs ? `?${qs}` : ''}`, 'GET');
+};
+
+export const createAppointment = (payload: CreateAppointmentPayload): Promise<Appointment> =>
+  apiRequest<Appointment>('/calendar/appointments', 'POST', payload);
+
+export const updateAppointment = (id: number, payload: Partial<CreateAppointmentPayload>): Promise<Appointment> =>
+  apiRequest<Appointment>(`/calendar/appointments/${id}`, 'PUT', payload);
+
+export const updateAppointmentStatus = (id: number, status: AppointmentStatus): Promise<Appointment> =>
+  apiRequest<Appointment>(`/calendar/appointments/${id}/status`, 'PATCH', { status });
+
+export const rescheduleAppointment = (
+  id: number,
+  data: { fecha: string; horaInicio: string; duracionMinutos?: number; profesionalId?: string; ambienteId?: number }
+): Promise<Appointment> =>
+  apiRequest<Appointment>(`/calendar/appointments/${id}/reschedule`, 'POST', data);
+
+export const createRecurringSeries = (payload: RecurringSeriesRequest): Promise<Appointment[]> =>
+  apiRequest<Appointment[]>('/calendar/appointments/series', 'POST', payload);
+
+export const sendAppointmentConfirmation = (
+  appointmentId: number,
+  channels: Array<'whatsapp' | 'email'>
+): Promise<{ status: string }> =>
+  apiRequest<{ status: string }>(`/calendar/appointments/${appointmentId}/confirm`, 'POST', { channels });
