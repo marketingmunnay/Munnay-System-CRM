@@ -4,7 +4,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon } from '../shared/Icons';
+import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import AppointmentWizard from './AppointmentWizard';
 
 interface CalendarPageProps {
@@ -43,6 +43,15 @@ const serviceColors = [
   'bg-pink-100 border-l-4 border-pink-500 text-pink-800',
   'bg-indigo-100 border-l-4 border-indigo-500 text-indigo-800',
 ];
+
+const VIEW_OPTIONS = [
+        { id: 'day', label: 'Día' },
+        { id: '3days', label: '3 días' },
+        { id: 'week', label: 'Semana' },
+        { id: 'month', label: 'Mes' },
+] as const;
+
+type ViewMode = typeof VIEW_OPTIONS[number]['id'];
 
 const getServiceColor = (serviceName: string) => {
   let hash = 0;
@@ -134,32 +143,119 @@ const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
     };
 };
 
+const FILTER_SOURCE_OPTIONS: { id: CalendarEvent['source']; label: string; description: string }[] = [
+    { id: 'lead', label: 'Leads agendados', description: 'Reservas tomadas desde el módulo comercial' },
+    { id: 'appointment', label: 'Citas confirmadas', description: 'Bloques gestionados desde procedimientos' }
+];
 
-const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
-    const [currentDate, setCurrentDate] = useState(new Date('2023-11-05T12:00:00'));
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingLead, setEditingLead] = useState<Lead | null>(null);
-    const [currentTime, setCurrentTime] = useState(new Date());
-    const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [wizardDefaults, setWizardDefaults] = useState<{ date: Date; resourceId?: string } | null>(null);
-    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+interface FilterPanelProps {
+    open: boolean;
+    onClose: () => void;
+    visibleSources: CalendarEvent['source'][];
+    onToggleSource: (source: CalendarEvent['source']) => void;
+    services: Service[];
+}
 
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
-    }, []);
+const FiltersPanel: React.FC<FilterPanelProps> = ({ open, onClose, visibleSources, onToggleSource, services }) => {
+    const quickServices = services.slice(0, 6);
+    return (
+        <div className={`fixed inset-0 z-40 transition-opacity duration-200 ${open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}>
+            <div className="absolute inset-0 bg-slate-900/30" onClick={onClose} />
+            <aside className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-100 transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Filtros</p>
+                        <h3 className="text-xl font-semibold text-slate-900">Refinar agenda</h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                        <XMarkIcon className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="h-full overflow-y-auto px-6 py-6 space-y-6">
+                    <section>
+                        <p className="text-sm font-semibold text-slate-900">Estado de la cita</p>
+                        <div className="mt-3 space-y-3">
+                            {FILTER_SOURCE_OPTIONS.map(option => {
+                                const active = visibleSources.includes(option.id);
+                                return (
+                                    <button
+                                        key={option.id}
+                                        onClick={() => onToggleSource(option.id)}
+                                        className={`w-full text-left rounded-2xl border px-4 py-3 transition-colors ${active ? 'border-[#aa632d] bg-[#fff4ea]' : 'border-slate-200 hover:border-slate-300'}`}
+                                    >
+                                        <p className="text-sm font-semibold text-slate-900">{option.label}</p>
+                                        <p className="text-xs text-slate-500">{option.description}</p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </section>
+                    <section>
+                        <p className="text-sm font-semibold text-slate-900">Canal</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {['Call Center', 'WhatsApp', 'Web', 'Referido'].map(channel => (
+                                <span key={channel} className="px-3 py-1 text-xs font-semibold rounded-full border border-dashed border-slate-300 text-slate-500">
+                                    {channel}
+                                </span>
+                            ))}
+                        </div>
+                    </section>
+                    <section>
+                        <p className="text-sm font-semibold text-slate-900">Servicios populares</p>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                            {quickServices.map(service => (
+                                <div key={service.id} className="rounded-2xl border border-slate-200 p-3">
+                                    <p className="text-sm font-semibold text-slate-800 truncate">{service.nombre}</p>
+                                    <p className="text-xs text-slate-400">{service.duracionMinutos || 60} min</p>
+                                </div>
+                            ))}
+                            {quickServices.length === 0 && (
+                                <p className="text-xs text-slate-400 col-span-2">Aún no hay servicios configurados.</p>
+                            )}
+                        </div>
+                    </section>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-slate-700">Cerrar</button>
+                        <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-white rounded-2xl bg-[#aa632d] hover:bg-[#8e5225]">
+                            Aplicar filtros
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    );
+};
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, [isViewMenuOpen]);
 
-    useEffect(() => {
-        const leadEvents = (leads || [])
-            .filter(lead => lead.estado === LeadStatus.Agendado)
-            .map(leadToEvent)
-            .filter((event): event is CalendarEvent => Boolean(event));
-
-        setCalendarEvents(prev => {
-            const appointmentEvents = prev.filter(event => event.source === 'appointment');
-            return [...leadEvents, ...appointmentEvents];
+    const handleToggleResourceVisibility = (resourceId: string) => {
+        setVisibleResourceIds(prev => {
+            if (prev.includes(resourceId)) {
+                if (prev.length === 1) {
+                    return prev;
+                }
+                return prev.filter(id => id !== resourceId);
+            }
+            return [...prev, resourceId];
         });
-    }, [leads]);
+    };
+
+    const handleResetResourceVisibility = () => {
+        setVisibleResourceIds(RESOURCES.map(resource => resource.id));
+    };
+
+    const handleToggleSourceFilter = (source: CalendarEvent['source']) => {
+        setVisibleSources(prev => {
+            if (prev.includes(source)) {
+                if (prev.length === 1) {
+                    return prev;
+                }
+                return prev.filter(item => item !== source);
+            }
+            return [...prev, source];
+        });
+    };
 
     const handleDateChange = (days: number) => {
         setCurrentDate(prev => {
@@ -228,13 +324,13 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
 
     const eventsForSelectedDate = useMemo(() => {
         if (!selectedDateStr) return [];
-        return calendarEvents.filter(event => event.fecha === selectedDateStr);
-    }, [calendarEvents, selectedDateStr]);
+        return calendarEvents.filter(event => event.fecha === selectedDateStr && visibleSources.includes(event.source));
+    }, [calendarEvents, selectedDateStr, visibleSources]);
 
     const blocked = useMemo(() => {
         if (!selectedDateStr) return [];
-        return BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr);
-    }, [selectedDateStr]);
+        return BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr && visibleResourceIds.includes(b.recursoId));
+    }, [selectedDateStr, visibleResourceIds]);
 
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -252,10 +348,18 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
     }, [currentDate]);
 
     const currentTimePosition = timeToPosition(`${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`);
+    const primaryDateLabel = useMemo(() => currentDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }), [currentDate]);
+    const secondaryDateLabel = useMemo(() => currentDate.toLocaleDateString('es-ES', { year: 'numeric' }), [currentDate]);
+    const viewModeLabel = useMemo(() => VIEW_OPTIONS.find(option => option.id === viewMode)?.label ?? 'Día', [viewMode]);
+    const resourceColumnCount = Math.max(visibleResources.length, 1);
 
     const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
         const top = timeToPosition(event.horaInicio);
         const height = durationToHeight(event.horaInicio, event.horaFin);
+        const palette = event.source === 'lead'
+            ? 'bg-gradient-to-br from-[#fff6ee] via-white to-white border-[#f5c7a5]'
+            : 'bg-gradient-to-br from-[#ecfdf3] via-white to-white border-[#b4f0ce]';
+        const primaryService = event.servicios[0];
 
         const handleClick = () => {
             if (event.source === 'lead' && event.leadRef) {
@@ -266,12 +370,23 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
         return (
             <div
                 onClick={handleClick}
-                className={`absolute w-full p-2 rounded-lg text-xs overflow-hidden ${getServiceColor(event.servicios[0] || event.source)} cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-offset-1 hover:ring-purple-400`}
-                style={{ top: `${top}px`, height: `${Math.max(height, 40)}px`, left: '2px', width: 'calc(100% - 4px)'}}
+                className={`absolute w-full rounded-2xl border text-xs shadow-sm cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-xl ${palette}`}
+                style={{ top: `${top}px`, height: `${Math.max(height, 60)}px`, left: '4px', width: 'calc(100% - 8px)', padding: '0.75rem' }}
             >
-                <p className="font-bold truncate text-sm">{event.cliente}</p>
-                <p className="truncate text-gray-700">{event.servicios.length > 0 ? event.servicios.join(', ') : 'Servicio pendiente'}</p>
-                <p className="absolute bottom-1 right-2 text-xs font-medium">{event.horaInicio} - {event.horaFin}</p>
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                    <span>{event.source === 'lead' ? 'Lead' : 'Cita'}</span>
+                    <span className="font-semibold text-slate-600">{event.horaInicio} - {event.horaFin}</span>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-slate-900 truncate">{event.cliente}</p>
+                <p className="text-xs text-slate-600 truncate">
+                    {event.servicios.length > 0 ? event.servicios.join(', ') : 'Servicio pendiente'}
+                </p>
+                {primaryService && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 mt-1 bg-white/80 px-2 py-0.5 rounded-full border border-white/60 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#aa632d]" />
+                        {primaryService}
+                    </span>
+                )}
             </div>
         );
     };
@@ -282,8 +397,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
         return (
             <div
                 key={block.id}
-                className="absolute w-full p-2 rounded-lg text-xs overflow-hidden bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center"
-                style={{ top: `${top}px`, height: `${height}px`, left: '2px', width: 'calc(100% - 4px)'}}
+                className="absolute w-full p-2 rounded-2xl text-xs bg-slate-100/80 border border-dashed border-slate-300 text-slate-500 flex items-center justify-center backdrop-blur-sm"
+                style={{ top: `${top}px`, height: `${height}px`, left: '4px', width: 'calc(100% - 8px)'}}
             >
                  <p className="font-semibold">{block.titulo}</p>
             </div>
@@ -291,96 +406,216 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ leads, campaigns, metaCampa
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-            <header className="flex items-center justify-between p-4 border-b flex-shrink-0 bg-gray-50/50">
-                <div className="flex items-center space-x-4">
-                    <div className="flex items-center border bg-white rounded-md shadow-sm">
-                        <button onClick={() => handleDateChange(-1)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-l-md"><ChevronLeftIcon className="w-5 h-5"/></button>
-                        <button onClick={handleToday} className="px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 border-l border-r">Hoy</button>
-                        <button onClick={() => handleDateChange(1)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-r-md"><ChevronRightIcon className="w-5 h-5" /></button>
+        <div className="flex flex-col h-full gap-6 bg-slate-50 p-6 rounded-3xl overflow-hidden">
+            <section className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button onClick={handleToday} className="px-4 py-2 text-sm font-semibold rounded-2xl border border-slate-200 text-slate-700 hover:border-[#aa632d] hover:text-[#aa632d]">
+                            Hoy
+                        </button>
+                        <div className="flex items-center border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                            <button onClick={() => handleDateChange(-1)} className="p-2.5 text-slate-500 hover:bg-slate-50">
+                                <ChevronLeftIcon className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => handleDateChange(1)} className="p-2.5 text-slate-500 hover:bg-slate-50 border-l border-slate-100">
+                                <ChevronRightIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{secondaryDateLabel}</p>
+                            <h2 className="text-3xl font-semibold text-slate-900 capitalize">{primaryDateLabel}</h2>
+                        </div>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-800 tracking-tight capitalize">
-                        {currentDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </h2>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <button className="flex items-center px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-md hover:bg-gray-100 shadow-sm">
-                        <FunnelIcon className="w-4 h-4 mr-2"/>
-                        Todo el equipo
-                    </button>
-                    <button onClick={handleAddClick} className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-lg shadow hover:bg-[#8e5225] transition-colors">
-                        <PlusIcon className="mr-2 h-5 w-5" /> Agendar Cita
-                    </button>
-                </div>
-            </header>
-
-            <div className="flex border-b border-gray-200 flex-shrink-0 sticky top-0 bg-white z-10">
-                <div className="w-16 flex-shrink-0"></div>
-                <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${RESOURCES.length}, minmax(150px, 1fr))` }}>
-                    {RESOURCES.map(resource => (
-                        <div key={resource.id} className="text-center text-sm text-gray-700 p-2 border-l flex items-center justify-center space-x-2 h-16">
-                           {resource.type === 'personal' ? (
-                               <img src={resource.imageUrl} alt={resource.name} className="w-8 h-8 rounded-full object-cover"/>
-                           ) : (
-                               <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
-                                    <BuildingStorefrontIcon className="w-5 h-5 text-gray-500" />
-                               </div>
-                           )}
-                           <span className="font-semibold truncate">{resource.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex-1 flex overflow-auto">
-                <div className="w-16 text-right pr-2">
-                    {timeSlots.map(time => (
-                        <div key={time} className="text-xs text-gray-400 relative" style={{ height: `${HOUR_HEIGHT}px` }}>
-                            <span className="absolute -top-1.5">{time}</span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="flex-1 grid relative" style={{ gridTemplateColumns: `repeat(${RESOURCES.length}, minmax(150px, 1fr))` }}>
-                    {RESOURCES.map((resource) => (
-                        <div
-                            key={resource.id}
-                            className="relative border-l border-gray-100 group"
-                            onClick={(e) => handleSlotClick(resource.id, e)}
-                        >
-                            {timeSlots.slice(0, -1).map(time => (
-                                <div key={time} style={{ height: `${HOUR_HEIGHT}px` }} className="relative border-b border-gray-100">
-                                    <div className="absolute top-1/2 left-0 w-full border-b border-dashed border-gray-100"></div>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setIsFilterPanelOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-2xl hover:border-[#aa632d]">
+                            <FunnelIcon className="w-4 h-4" /> Filtros
+                        </button>
+                        <button className="p-2.5 text-slate-500 border border-slate-200 rounded-2xl hover:border-[#aa632d]">
+                            <Cog6ToothIcon className="w-5 h-5" />
+                        </button>
+                        <div className="relative" data-view-menu>
+                            <button
+                                onClick={() => setIsViewMenuOpen(prev => !prev)}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-slate-200 rounded-2xl hover:border-[#aa632d]"
+                            >
+                                <CalendarDaysIcon className="w-4 h-4 text-[#aa632d]" /> {viewModeLabel}
+                                <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+                            </button>
+                            {isViewMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-slate-100 bg-white shadow-lg z-10">
+                                    {VIEW_OPTIONS.map(option => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => {
+                                                setViewMode(option.id);
+                                                setIsViewMenuOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm ${option.id === viewMode ? 'text-[#aa632d] font-semibold bg-[#fff6ee]' : 'text-slate-600 hover:bg-slate-50'}`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
                                 </div>
-                            ))}
-
-                            {eventsForSelectedDate
-                                .filter(event => event.resourceId === resource.id)
-                                .map(event => (
-                                    <AppointmentCard key={event.id} event={event} />
-                                ))}
-
-                             {blocked.filter(b => b.recursoId === resource.id).map(block => (
-                                <BlockedTimeSlot key={block.id} block={block} />
-                             ))}
+                            )}
                         </div>
-                    ))}
-
-                    {isToday && currentTimePosition >= 0 && (
-                        <div className="absolute h-0.5 bg-red-500 z-10" style={{ top: `${currentTimePosition}px`, left: '0', right: 0 }}>
-                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full"></div>
+                        <button onClick={handleAddClick} className="inline-flex items-center gap-2 bg-[#aa632d] text-white px-4 py-2 rounded-2xl shadow-sm hover:bg-[#8e5225]">
+                            <PlusIcon className="w-5 h-5" /> Nueva cita
+                        </button>
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                    <button onClick={handleResetResourceVisibility} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-[#aa632d] hover:text-[#aa632d]">
+                        Todo el equipo y recursos
+                        <ChevronDownIcon className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs uppercase tracking-[0.3em] text-slate-400">{visibleResources.length} columnas activas</span>
+                </div>
+                <div className="space-y-3">
+                    <div className="flex gap-3 overflow-x-auto pb-1">
+                        {teamMembers.map(member => {
+                            const isActive = visibleResourceIds.includes(member.id);
+                            return (
+                                <button
+                                    key={member.id}
+                                    onClick={() => handleToggleResourceVisibility(member.id)}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all ${isActive ? 'border-[#aa632d] bg-[#fff6ee] shadow-sm' : 'border-transparent bg-slate-100 hover:bg-slate-200/60'}`}
+                                >
+                                    <span className="relative">
+                                        {member.imageUrl ? (
+                                            <img src={member.imageUrl} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
+                                        ) : (
+                                            <span className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-semibold text-slate-600">
+                                                {member.name.slice(0, 2)}
+                                            </span>
+                                        )}
+                                        {isActive && <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-emerald-400" />}
+                                    </span>
+                                    <div className="text-left">
+                                        <p className="text-sm font-semibold text-slate-900">{member.name}</p>
+                                        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Equipo</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {sharedSpaces.length > 0 && (
+                        <div className="flex gap-3 overflow-x-auto pt-3 border-t border-dashed border-slate-200">
+                            {sharedSpaces.map(space => {
+                                const isActive = visibleResourceIds.includes(space.id);
+                                return (
+                                    <button
+                                        key={space.id}
+                                        onClick={() => handleToggleResourceVisibility(space.id)}
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all ${isActive ? 'border-[#aa632d] bg-[#fff6ee]' : 'border-transparent bg-slate-100 hover:bg-slate-200/60'}`}
+                                    >
+                                        <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                            <BuildingStorefrontIcon className="w-5 h-5 text-slate-500" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-slate-900">{space.name}</p>
+                                            <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Recurso</p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
-            </div>
-                 <LeadFormModal
+            </section>
+
+            <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur">
+                    <div className="flex items-center gap-3">
+                        <CalendarDaysIcon className="w-5 h-5 text-[#aa632d]" />
+                        <div>
+                            <p className="text-sm font-semibold text-slate-900">{visibleResources.length} recursos visibles</p>
+                            <p className="text-xs text-slate-500">Vista · {viewModeLabel}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
+                        <div className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#f5c7a5]" /> Leads
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-300" /> Citas
+                        </div>
+                    </div>
+                </div>
+                <div className="flex border-b border-slate-100 flex-shrink-0">
+                    <div className="w-20 flex-shrink-0" />
+                    <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${resourceColumnCount}, minmax(180px, 1fr))` }}>
+                        {visibleResources.map(resource => (
+                            <div key={resource.id} className="text-center text-sm text-slate-700 px-4 py-3 border-l border-slate-100 flex items-center justify-center gap-3 h-20 bg-slate-50/60">
+                                {resource.type === 'personal' ? (
+                                    <img src={resource.imageUrl} alt={resource.name} className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-8 h-8 flex items-center justify-center bg-white rounded-full border border-slate-200">
+                                        <BuildingStorefrontIcon className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                )}
+                                <span className="font-semibold truncate">{resource.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex-1 flex overflow-auto bg-slate-50/60">
+                    <div className="w-20 text-right pr-3">
+                        {timeSlots.map(time => (
+                            <div key={time} className="text-[11px] text-slate-400 relative" style={{ height: `${HOUR_HEIGHT}px` }}>
+                                <span className="absolute -top-1.5 right-0">{time}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex-1 grid relative" style={{ gridTemplateColumns: `repeat(${resourceColumnCount}, minmax(180px, 1fr))` }}>
+                        {visibleResources.map((resource) => (
+                            <div
+                                key={resource.id}
+                                className="relative border-l border-slate-100 bg-white hover:bg-slate-50/40 transition-colors"
+                                onClick={(e) => handleSlotClick(resource.id, e)}
+                            >
+                                {timeSlots.slice(0, -1).map(time => (
+                                    <div key={time} style={{ height: `${HOUR_HEIGHT}px` }} className="relative border-b border-slate-100">
+                                        <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
+                                    </div>
+                                ))}
+
+                                {eventsForSelectedDate
+                                    .filter(event => event.resourceId === resource.id)
+                                    .map(event => (
+                                        <AppointmentCard key={event.id} event={event} />
+                                    ))}
+
+                                {blocked.filter(b => b.recursoId === resource.id).map(block => (
+                                    <BlockedTimeSlot key={block.id} block={block} />
+                                ))}
+                            </div>
+                        ))}
+
+                        {isToday && currentTimePosition >= 0 && (
+                            <div className="absolute h-0.5 bg-rose-500 z-10" style={{ top: `${currentTimePosition}px`, left: 0, right: 0 }}>
+                                <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-rose-500 rounded-full" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            <FiltersPanel
+                open={isFilterPanelOpen}
+                onClose={() => setIsFilterPanelOpen(false)}
+                visibleSources={visibleSources}
+                onToggleSource={handleToggleSourceFilter}
+                services={services}
+            />
+
+            <LeadFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveAndClose}
                 onDelete={onDeleteLead}
                 lead={editingLead}
-                     metaCampaigns={metaCampaigns}
-                     campaigns={campaigns}
+                metaCampaigns={metaCampaigns}
+                campaigns={campaigns}
                 clientSources={clientSources}
                 services={services}
                 requestConfirmation={requestConfirmation}
