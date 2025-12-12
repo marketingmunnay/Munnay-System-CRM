@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
-import { LeadStatus } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
@@ -89,6 +88,11 @@ interface CalendarEvent {
     cliente: string;
     servicios: string[];
     leadRef?: Lead;
+}
+
+interface WizardDefaults {
+    date: Date;
+    resourceId?: string;
 }
 
 const padTime = (value: number) => value.toString().padStart(2, '0');
@@ -225,6 +229,62 @@ const FiltersPanel: React.FC<FilterPanelProps> = ({ open, onClose, visibleSource
         </div>
     );
 };
+
+const CalendarPage: React.FC<CalendarPageProps> = ({
+    leads,
+    metaCampaigns,
+    campaigns,
+    onSaveLead,
+    onDeleteLead,
+    clientSources,
+    services,
+    requestConfirmation,
+    onSaveComprobante,
+    comprobantes,
+}) => {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [viewMode, setViewMode] = useState<ViewMode>('day');
+    const [visibleResourceIds, setVisibleResourceIds] = useState<string[]>(RESOURCES.map(resource => resource.id));
+    const [visibleSources, setVisibleSources] = useState<CalendarEvent['source'][]>(FILTER_SOURCE_OPTIONS.map(option => option.id));
+    const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+    const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingLead, setEditingLead] = useState<Lead | null>(null);
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
+
+    const teamMembers = useMemo(() => RESOURCES.filter(resource => resource.type === 'personal'), []);
+    const sharedSpaces = useMemo(() => RESOURCES.filter(resource => resource.type !== 'personal'), []);
+    const visibleResources = useMemo(
+        () => RESOURCES.filter(resource => visibleResourceIds.includes(resource.id)),
+        [visibleResourceIds]
+    );
+
+    useEffect(() => {
+        setCalendarEvents(prevEvents => {
+            const appointmentEvents = prevEvents.filter(event => event.source === 'appointment');
+            const leadEvents = leads
+                .map(leadToEvent)
+                .filter((event): event is CalendarEvent => event !== null);
+            return [...leadEvents, ...appointmentEvents];
+        });
+    }, [leads]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!isViewMenuOpen) return;
+        const handleClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest('[data-view-menu]')) return;
+            setIsViewMenuOpen(false);
+        };
         window.addEventListener('click', handleClick);
         return () => window.removeEventListener('click', handleClick);
     }, [isViewMenuOpen]);
@@ -272,7 +332,7 @@ const FiltersPanel: React.FC<FilterPanelProps> = ({ open, onClose, visibleSource
         baseDate.setHours(9, 0, 0, 0);
         setWizardDefaults({ date: baseDate });
         setIsWizardOpen(true);
-    }
+    };
     
     const handleEditAppointment = (appointment: Lead) => {
         setEditingLead(appointment);
@@ -291,8 +351,6 @@ const FiltersPanel: React.FC<FilterPanelProps> = ({ open, onClose, visibleSource
         const clickDate = new Date(currentDate);
         clickDate.setHours(hour, roundedMinute, 0, 0);
 
-        const isoDateTimeLocal = `${clickDate.getFullYear()}-${(clickDate.getMonth() + 1).toString().padStart(2, '0')}-${clickDate.getDate().toString().padStart(2, '0')}T${clickDate.getHours().toString().padStart(2, '0')}:${clickDate.getMinutes().toString().padStart(2, '0')}`;
-
         setWizardDefaults({ date: clickDate, resourceId });
         setIsWizardOpen(true);
     };
@@ -307,16 +365,13 @@ const FiltersPanel: React.FC<FilterPanelProps> = ({ open, onClose, visibleSource
     
     const handleSaveAndClose = async (lead: Lead) => {
         await onSaveLead(lead);
-        // Update editingLead with the latest data after save
         if (lead.id && editingLead) {
-            // Find the updated lead from the leads array after the save operation
-            // This ensures the modal shows the latest data
             setTimeout(() => {
                 const updatedLead = leads.find(l => l.id === lead.id);
                 if (updatedLead) {
                     setEditingLead(updatedLead);
                 }
-            }, 100); // Small delay to ensure the parent data is updated
+            }, 100);
         }
     };
 
