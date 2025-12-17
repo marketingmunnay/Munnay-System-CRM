@@ -188,21 +188,34 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                             type="date" 
                             name="fechaAgenda" 
                             value={(() => {
-                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
-                                    return formData.fechaHoraAgenda.split('T')[0];
+                                if (!formData.fechaHoraAgenda) return '';
+                                try {
+                                    const fecha = new Date(formData.fechaHoraAgenda);
+                                    if (isNaN(fecha.getTime())) return '';
+                                    const y = fecha.getFullYear();
+                                    const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
+                                    const d = fecha.getDate().toString().padStart(2, '0');
+                                    return `${y}-${m}-${d}`;
+                                } catch {
+                                    return '';
                                 }
-                                if (typeof formData.fechaHoraAgenda === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(formData.fechaHoraAgenda)) {
-                                    return formData.fechaHoraAgenda;
-                                }
-                                return new Date().toISOString().split('T')[0];
                             })()} 
                             onChange={(e) => {
                                 const fecha = e.target.value;
-                                const horaActual = formData.fechaHoraAgenda?.split('T')[1]?.substring(0,5) || '12:00';
+                                let horaActual = '12:00';
+                                if (formData.fechaHoraAgenda) {
+                                    try {
+                                        const fechaExistente = new Date(formData.fechaHoraAgenda);
+                                        if (!isNaN(fechaExistente.getTime())) {
+                                            horaActual = `${fechaExistente.getHours().toString().padStart(2, '0')}:${fechaExistente.getMinutes().toString().padStart(2, '0')}`;
+                                        }
+                                    } catch {}
+                                }
+                                const nuevaFecha = new Date(`${fecha}T${horaActual}:00`);
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
-                                        value: `${fecha}T${horaActual}` 
+                                        value: nuevaFecha.toISOString()
                                     } 
                                 } as any);
                             }} 
@@ -214,21 +227,39 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <label className="text-sm font-medium">Hora de Agenda</label>
                         <select 
                             name="horaAgenda" 
-                            value={typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T') ? (formData.fechaHoraAgenda.split('T')[1]?.substring(0,5) || '') : ''} 
+                            value={(() => {
+                                if (!formData.fechaHoraAgenda) return '';
+                                try {
+                                    const fecha = new Date(formData.fechaHoraAgenda);
+                                    if (isNaN(fecha.getTime())) return '';
+                                    const h = fecha.getHours().toString().padStart(2, '0');
+                                    const m = (Math.floor(fecha.getMinutes() / 15) * 15).toString().padStart(2, '0');
+                                    return `${h}:${m}`;
+                                } catch {
+                                    return '';
+                                }
+                            })()} 
                             onChange={(e) => {
                                 const hora = e.target.value;
-                                let fechaActual = '';
-                                if (typeof formData.fechaHoraAgenda === 'string' && formData.fechaHoraAgenda.includes('T')) {
-                                    fechaActual = formData.fechaHoraAgenda.split('T')[0];
-                                } else if (typeof formData.fechaHoraAgenda === 'string') {
-                                    fechaActual = formData.fechaHoraAgenda;
+                                let fechaBase: Date;
+                                if (formData.fechaHoraAgenda) {
+                                    try {
+                                        fechaBase = new Date(formData.fechaHoraAgenda);
+                                        if (isNaN(fechaBase.getTime())) {
+                                            fechaBase = new Date();
+                                        }
+                                    } catch {
+                                        fechaBase = new Date();
+                                    }
                                 } else {
-                                    fechaActual = new Date().toISOString().split('T')[0];
+                                    fechaBase = new Date();
                                 }
+                                const [horas, minutos] = hora.split(':').map(Number);
+                                fechaBase.setHours(horas, minutos, 0, 0);
                                 handleChange({ 
                                     target: { 
                                         name: 'fechaHoraAgenda', 
-                                        value: `${fechaActual}T${hora}` 
+                                        value: fechaBase.toISOString()
                                     } 
                                 } as any);
                             }}
@@ -236,7 +267,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
                         >
                             <option value="">Seleccionar hora...</option>
-                            {Array.from({ length: 48 }, (_, i) => {
+                            {Array.from({ length: 96 }, (_, i) => {
                                 const hour = Math.floor(i / 4);
                                 const minute = (i % 4) * 15;
                                 const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;

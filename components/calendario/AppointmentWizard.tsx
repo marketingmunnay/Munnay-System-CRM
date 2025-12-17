@@ -429,36 +429,31 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     setError(null);
     setIsSubmitting(true);
     try {
-      const payload: CreateAppointmentPayload = {
-        leadId: selectedLead.id,
-        servicioIds: selectedServiceIds,
-        fecha: selectedDate,
-        horaInicio: startTime,
-        duracionMinutos: totalDuration,
-        profesionalId: selectedProfesionalId || '',
-        ambienteId: selectedAmbienteId ?? undefined,
-        estado: estadoInicial,
-        origen,
-        notas,
-        confirmarPor: selectedChannels,
-        emitirComprobante,
-        documento: (selectedLead.documentType || leadForm.documentType) ?? DocumentType.DNI,
-        numeroDocumento:
-          selectedLead.documentNumber || leadForm.documentNumber || undefined
+      // Construir la fecha y hora de agenda
+      const fechaHoraAgenda = new Date(`${selectedDate}T${startTime}:00`);
+      
+      // Obtener nombres de servicios seleccionados
+      const serviciosSeleccionados = selectedServiceIds
+        .map(id => services.find(s => s.id === id)?.nombre)
+        .filter((nombre): nombre is string => Boolean(nombre));
+
+      // Actualizar el lead con los datos de agenda
+      const updatedLead: Lead = {
+        ...selectedLead,
+        fechaHoraAgenda: fechaHoraAgenda.toISOString(),
+        recursoId: selectedProfesionalId || '',
+        servicios: serviciosSeleccionados.length > 0 ? serviciosSeleccionados : selectedLead.servicios,
+        estado: LeadStatus.Agendado,
+        notas: notas || selectedLead.notas,
+        documentType: selectedLead.documentType || leadForm.documentType,
+        documentNumber: selectedLead.documentNumber || leadForm.documentNumber || undefined,
       };
-      const appointment = await createAppointment(payload);
-      if (selectedChannels.length > 0) {
-        try {
-          await sendAppointmentConfirmation(appointment.id, selectedChannels);
-        } catch (notifyErr) {
-          console.warn('No se pudo enviar confirmación', notifyErr);
-        }
-      }
-      onAppointmentCreated?.(appointment);
+
+      await onSaveLead(updatedLead);
       onClose();
     } catch (err) {
-      console.error('Error creando cita', err);
-      setError('No pudimos crear la cita. Verifica los datos o intenta más tarde.');
+      console.error('Error agendando cita', err);
+      setError('No pudimos agendar la cita. Verifica los datos o intenta más tarde.');
     } finally {
       setIsSubmitting(false);
     }
