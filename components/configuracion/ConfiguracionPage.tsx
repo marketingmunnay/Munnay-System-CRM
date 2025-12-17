@@ -604,15 +604,21 @@ const ProductosSection: FC<{
 };
 
 
+const MAX_LOGIN_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+
 const BusinessInfoSection: FC<{
     businessInfo: BusinessInfo;
     onSaveBusinessInfo: (info: BusinessInfo) => void;
 }> = ({ businessInfo, onSaveBusinessInfo }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<BusinessInfo>(businessInfo);
+    const [imageError, setImageError] = useState('');
+    const [loginImageMode, setLoginImageMode] = useState<'file' | 'url'>('file');
+    const loginImageInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         setFormData(businessInfo);
+        setImageError('');
     }, [businessInfo]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -620,7 +626,53 @@ const BusinessInfoSection: FC<{
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const readFileAsDataUrl = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleLoginImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        setImageError('');
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            setImageError('Selecciona un archivo de imagen válido.');
+            event.target.value = '';
+            return;
+        }
+
+        if (file.size > MAX_LOGIN_IMAGE_BYTES) {
+            setImageError('La imagen debe pesar menos de 2 MB.');
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            const dataUrl = await readFileAsDataUrl(file);
+            setFormData(prev => ({ ...prev, loginImageUrl: dataUrl }));
+        } catch (error) {
+            console.error('No se pudo leer la imagen seleccionada', error);
+            setImageError('Ocurrió un error al procesar la imagen. Intenta con otro archivo.');
+        } finally {
+            event.target.value = '';
+        }
+    };
+
+    const handleRemoveLoginImage = () => {
+        setFormData(prev => ({ ...prev, loginImageUrl: '' }));
+        setImageError('');
+        if (loginImageInputRef.current) {
+            loginImageInputRef.current.value = '';
+        }
+    };
+
     const handleSave = () => {
+        if (imageError) return;
         onSaveBusinessInfo(formData);
         setIsEditing(false);
     };
@@ -656,8 +708,78 @@ const BusinessInfoSection: FC<{
                             <input type="url" name="logoUrl" value={formData.logoUrl || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md p-2"/>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">URL Imagen Login</label>
-                            <input type="url" name="loginImageUrl" value={formData.loginImageUrl || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md p-2"/>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen Login</label>
+                            <div className="flex gap-2 text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLoginImageMode('file');
+                                        setImageError('');
+                                    }}
+                                    className={`px-3 py-1 rounded-full border ${loginImageMode === 'file' ? 'bg-[#aa632d] text-white border-[#aa632d]' : 'text-gray-600 border-gray-300 hover:border-gray-400'}`}
+                                >
+                                    Importar imagen
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLoginImageMode('url')}
+                                    className={`px-3 py-1 rounded-full border ${loginImageMode === 'url' ? 'bg-[#374151] text-white border-[#374151]' : 'text-gray-600 border-gray-300 hover:border-gray-400'}`}
+                                >
+                                    Usar enlace
+                                </button>
+                            </div>
+                            <input
+                                ref={loginImageInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLoginImageUpload}
+                                className="hidden"
+                                style={{ display: 'none' }}
+                            />
+                            {loginImageMode === 'file' ? (
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-3">
+                                    <div className="flex flex-col gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => loginImageInputRef.current?.click()}
+                                            className="px-4 py-2 bg-[#aa632d] text-white rounded-md hover:bg-[#8e5225] w-full sm:w-auto"
+                                        >
+                                            {formData.loginImageUrl ? 'Cambiar imagen' : 'Seleccionar archivo'}
+                                        </button>
+                                        <p className="text-xs text-gray-500">Formatos permitidos: JPG, PNG, WEBP. Máximo 2 MB.</p>
+                                        {imageError && <p className="text-xs text-red-600">{imageError}</p>}
+                                    </div>
+                                    {formData.loginImageUrl && (
+                                        <div className="relative">
+                                            <img
+                                                src={formData.loginImageUrl}
+                                                alt="Vista previa login"
+                                                className="h-28 w-40 object-cover rounded-md border"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveLoginImage}
+                                                className="absolute -top-2 -right-2 bg-white text-red-600 border border-red-200 rounded-full p-1 shadow"
+                                                aria-label="Eliminar imagen"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="mt-3">
+                                    <input
+                                        type="url"
+                                        name="loginImageUrl"
+                                        value={formData.loginImageUrl || ''}
+                                        onChange={handleChange}
+                                        placeholder="https://..."
+                                        className="w-full border-black bg-[#f9f9fa] rounded-md p-2"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Pega la URL de la imagen alojada. Usa esta opción solo si tu archivo ya está hospedado.</p>
+                                </div>
+                            )}
                         </div>
                         <div className="md:col-span-2 flex justify-end space-x-2 mt-4">
                             <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>

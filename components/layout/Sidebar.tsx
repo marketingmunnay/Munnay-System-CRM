@@ -97,6 +97,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
         return filterRecursively(navItems);
     }, [permissions]);
 
+    const topLevelMenuIds = useMemo(
+        () => filteredNavItems.filter(item => item.subItems).map(item => item.id),
+        [filteredNavItems]
+    );
+
     const isSubItemActive = (item: NavItem): boolean => {
         if (item.page && item.page === currentPage) {
             return true;
@@ -124,14 +129,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
         };
         const ancestors = findAncestors(navItems, currentPage);
         if (ancestors) {
-            setOpenMenus(prev => [...new Set([...prev, ...ancestors])]);
+            setOpenMenus(prev => {
+                const next = [...new Set([...prev, ...ancestors])];
+                const activeTopLevel = ancestors.find(id => topLevelMenuIds.includes(id));
+                if (!activeTopLevel) {
+                    return next;
+                }
+                return next.filter(menuId => !topLevelMenuIds.includes(menuId) || menuId === activeTopLevel);
+            });
         }
-    }, [currentPage]);
+    }, [currentPage, topLevelMenuIds]);
     
     const toggleMenu = (id: string) => {
-        setOpenMenus(prev => 
-            prev.includes(id) ? prev.filter(menuId => menuId !== id) : [...prev, id]
-        );
+        setOpenMenus(prev => {
+            const isOpen = prev.includes(id);
+            const isTopLevel = topLevelMenuIds.includes(id);
+
+            if (isOpen) {
+                return prev.filter(menuId => menuId !== id);
+            }
+
+            if (isTopLevel) {
+                const preservedNested = prev.filter(menuId => !topLevelMenuIds.includes(menuId));
+                return [...preservedNested, id];
+            }
+
+            return [...prev, id];
+        });
     };
 
     return (
