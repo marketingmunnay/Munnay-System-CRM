@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Goal, Personal, User } from '../../types.ts';
-import { GoalArea, GoalUnit, GoalObjective } from '../../types.ts';
+import { GoalArea, GoalUnit, GoalObjective, GoalAreaLabels, GoalObjectiveLabels } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 
 interface GoalFormModalProps {
@@ -161,8 +161,8 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
-                            {Object.values(GoalArea).map(area => (
-                                <option key={area} value={area}>{area}</option>
+                            {(Object.values(GoalArea) as GoalArea[]).map(area => (
+                                <option key={area} value={area}>{GoalAreaLabels[area]}</option>
                             ))}
                         </select>
                     </div>
@@ -194,8 +194,8 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                         required
                         className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                     >
-                        {Object.values(GoalObjective).map(obj => (
-                            <option key={obj} value={obj}>{obj}</option>
+                        {(Object.values(GoalObjective) as GoalObjective[]).map(obj => (
+                            <option key={obj} value={obj}>{GoalObjectiveLabels[obj]}</option>
                         ))}
                     </select>
                 </div>

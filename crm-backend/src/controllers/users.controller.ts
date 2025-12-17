@@ -4,36 +4,79 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; 
 // import { Address, EmergencyContact, User } from '@prisma/client';
 
+const safeUserSelect = {
+  id: true,
+  nombres: true,
+  apellidos: true,
+  usuario: true,
+  rolId: true,
+  avatarUrl: true,
+  position: true,
+  documentType: true,
+  documentNumber: true,
+  phone: true,
+  email: true,
+  birthDate: true,
+  startDate: true,
+  addresses: true,
+  emergencyContacts: true,
+  reconocimientosRecibidos: true,
+  salary: true,
+  contractType: true,
+  maritalStatus: true,
+  sex: true,
+} as const;
+
+const extractBearerToken = (req: Request): string | null => {
+  const header = req.headers.authorization;
+  if (!header) return null;
+  const value = Array.isArray(header) ? header[0] : header;
+  if (typeof value !== 'string') return null;
+  if (!value.toLowerCase().startsWith('bearer ')) return null;
+  const token = value.slice(7).trim();
+  return token.length > 0 ? token : null;
+};
+
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
-      select: {
-        id: true,
-        nombres: true,
-        apellidos: true,
-        usuario: true,
-        rolId: true,
-        avatarUrl: true,
-        position: true,
-        documentType: true,
-        documentNumber: true,
-        phone: true,
-        email: true,
-        birthDate: true,
-        startDate: true,
-        addresses: true,
-        emergencyContacts: true,
-        reconocimientosRecibidos: true,
-        salary: true,
-        contractType: true,
-        maritalStatus: true,
-        sex: true,
-      },
+      select: safeUserSelect,
     });
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  const token = extractBearerToken(req);
+  if (!token) {
+    return res.status(401).json({ message: 'Token de autenticación requerido' });
+  }
+
+  let payload: { id: number; rolId?: number };
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET || 'secret_key') as { id: number; rolId?: number };
+  } catch (error) {
+    console.error('Token inválido en /users/me:', error);
+    return res.status(401).json({ message: 'Token inválido' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: safeUserSelect,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error al obtener el usuario autenticado:', error);
+    return res.status(500).json({ message: 'Error fetching current user', error: (error as Error).message });
   }
 };
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import type { Goal, User } from '../../types.ts';
-import { GoalArea } from '../../types.ts';
+import { GoalArea, GoalAreaLabels, GoalObjectiveLabels } from '../../types.ts';
 import GoalFormModal from './GoalFormModal.tsx';
 import { PlusIcon } from '../shared/Icons.tsx';
 import { formatDateForDisplay } from '../../utils/time.ts';
@@ -83,11 +83,11 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
             </div>
 
             <div className="space-y-6">
-                {Object.values(GoalArea).map(area => (
+                {(Object.values(GoalArea) as GoalArea[]).map(area => (
                     <div key={area}>
                         <h3 className="text-lg font-semibold text-black mb-3 flex items-center">
                              <GoogleIcon name={areaIcons[area]} className="mr-2 text-gray-500" />
-                             {area}
+                             {GoalAreaLabels[area]}
                         </h3>
                         <div className="bg-white p-3 rounded-lg shadow">
                             <table className="w-full text-xs">
@@ -105,7 +105,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
                                     {(groupedGoals[area] || []).map(goal => (
                                         <tr key={goal.id} className="border-b last:border-b-0">
                                             <td className="px-2 py-1.5 font-medium text-black">{goal.name}</td>
-                                            <td className="px-2 py-1.5 text-gray-600">{goal.objective}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">{GoalObjectiveLabels[goal.objective]}</td>
                                             <td className="px-2 py-1.5 text-gray-600">{goal.personal || 'General'}</td>
                                             <td className="px-2 py-1.5 text-gray-600">
                                                 {goal.startDate ? formatDateForDisplay(goal.startDate) : 'N/A'} - {goal.endDate ? formatDateForDisplay(goal.endDate) : 'N/A'}

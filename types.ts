@@ -696,8 +696,8 @@ export enum GoalUnit {
 
 export enum GoalArea {
     Comercial = 'Comercial',
-    Administracion = 'Administración',
-    Recepcion = 'Recepción',
+    Administracion = 'Administracion',
+    Recepcion = 'Recepcion',
     Procedimientos = 'Procedimientos',
 }
 
@@ -706,11 +706,11 @@ export enum GoalObjective {
     Leads = 'Leads',
     Agendados = 'Agendados',
     Asistidos = 'Asistidos',
-    CostoPorResultado = 'Costo por Resultado',
-    VentasServicios = 'Ventas de Servicios',
-    VentasProductos = 'Ventas de Productos',
+    CostoPorResultado = 'CostoPorResultado',
+    VentasServicios = 'VentasServicios',
+    VentasProductos = 'VentasProductos',
     Recuperados = 'Recuperados',
-    ConversionLeads = 'Conversión de Leads',
+    ConversionLeads = 'ConversionLeads',
     ROI = 'ROI',
     
     // Social Media
@@ -720,15 +720,44 @@ export enum GoalObjective {
     Engagement = 'Engagement',
 
     // Reception & Procedures
-    CierreEvaluaciones = 'Cierre de Evaluaciones',
-    AceptacionTratamientos = 'Aceptación de Tratamientos',
-    EfectividadTratamientos = 'Efectividad de Tratamientos',
-    SeguimientosCompletados = 'Seguimientos Completados',
+    CierreEvaluaciones = 'CierreEvaluaciones',
+    AceptacionTratamientos = 'AceptacionTratamientos',
+    EfectividadTratamientos = 'EfectividadTratamientos',
+    SeguimientosCompletados = 'SeguimientosCompletados',
 
     // Administration
-    RotacionPersonal = 'Rotación de Personal',
-    NivelStock = 'Nivel de Stock',
+    RotacionPersonal = 'RotacionPersonal',
+    NivelStock = 'NivelStock',
 }
+
+export const GoalAreaLabels: Record<GoalArea, string> = {
+    [GoalArea.Comercial]: 'Comercial',
+    [GoalArea.Administracion]: 'Administración',
+    [GoalArea.Recepcion]: 'Recepción',
+    [GoalArea.Procedimientos]: 'Procedimientos',
+};
+
+export const GoalObjectiveLabels: Record<GoalObjective, string> = {
+    [GoalObjective.Leads]: 'Leads',
+    [GoalObjective.Agendados]: 'Agendados',
+    [GoalObjective.Asistidos]: 'Asistidos',
+    [GoalObjective.CostoPorResultado]: 'Costo por Resultado',
+    [GoalObjective.VentasServicios]: 'Ventas de Servicios',
+    [GoalObjective.VentasProductos]: 'Ventas de Productos',
+    [GoalObjective.Recuperados]: 'Recuperados',
+    [GoalObjective.ConversionLeads]: 'Conversión de Leads',
+    [GoalObjective.ROI]: 'ROI',
+    [GoalObjective.Seguidores]: 'Seguidores',
+    [GoalObjective.Visualizaciones]: 'Visualizaciones',
+    [GoalObjective.Alcance]: 'Alcance',
+    [GoalObjective.Engagement]: 'Engagement',
+    [GoalObjective.CierreEvaluaciones]: 'Cierre de Evaluaciones',
+    [GoalObjective.AceptacionTratamientos]: 'Aceptación de Tratamientos',
+    [GoalObjective.EfectividadTratamientos]: 'Efectividad de Tratamientos',
+    [GoalObjective.SeguimientosCompletados]: 'Seguimientos Completados',
+    [GoalObjective.RotacionPersonal]: 'Rotación de Personal',
+    [GoalObjective.NivelStock]: 'Nivel de Stock',
+};
 
 export interface Goal {
     id: number;
