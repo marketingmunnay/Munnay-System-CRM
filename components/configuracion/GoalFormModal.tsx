@@ -19,8 +19,19 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 // Helper function to convert Date to YYYY-MM-DD string for input[type="date"]
 const formatDateForInput = (date: string | Date | undefined): string => {
     if (!date) return '';
+    if (typeof date === 'string' && date.length === 10 && date.includes('-')) {
+        return date;
+    }
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toISOString().split('T')[0];
+};
+
+const toIsoDateString = (value: string): string => {
+    if (!value) return new Date().toISOString();
+    if (value.includes('T')) {
+        return new Date(value).toISOString();
+    }
+    return new Date(`${value}T00:00:00`).toISOString();
 };
 
 const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, goal, users }) => {
@@ -55,10 +66,10 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
-        
+
         let finalValue: string | number | undefined = value;
         if (type === 'number') {
-            finalValue = Number(value);
+            finalValue = value === '' ? undefined : Number(value);
         }
         if (name === 'personal' && value === '') {
             finalValue = undefined;
@@ -66,7 +77,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
 
         setFormData(prev => ({
             ...prev,
-            [name]: finalValue
+            [name]: finalValue,
         }));
     };
 
@@ -76,7 +87,12 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
             alert('Nombre, área, fecha de inicio y fecha de fin son requeridos.');
             return;
         }
-        onSave(formData as Goal);
+        const payload: Goal = {
+            ...(formData as Goal),
+            startDate: toIsoDateString(formData.startDate as string),
+            endDate: toIsoDateString(formData.endDate as string),
+        };
+        onSave(payload);
     };
 
     return (
@@ -113,7 +129,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="startDate"
                             name="startDate"
-                            value={formatDateForInput(formData.startDate instanceof Date && !isNaN(formData.startDate.getTime()) ? formData.startDate : new Date())}
+                            value={formData.startDate ? formatDateForInput(formData.startDate) : ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -126,7 +142,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="endDate"
                             name="endDate"
-                            value={formatDateForInput(formData.endDate instanceof Date && !isNaN(formData.endDate.getTime()) ? formData.endDate : new Date())}
+                            value={formData.endDate ? formatDateForInput(formData.endDate) : ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -190,7 +206,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="number"
                             id="value"
                             name="value"
-                            value={formData.value || 0}
+                            value={formData.value ?? ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"

@@ -13,8 +13,8 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 interface MetasPageProps {
     goals: Goal[];
     users: User[];
-    onSaveGoal: (goal: Goal) => void;
-    onDeleteGoal: (goalId: number) => void;
+    onSaveGoal: (goal: Goal) => Promise<void> | void;
+    onDeleteGoal: (goalId: number) => Promise<void> | void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
@@ -39,15 +39,26 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDelet
         setIsModalOpen(true);
     };
 
-    const handleSaveAndClose = (goal: Goal) => {
-        onSaveGoal(goal);
-        setIsModalOpen(false);
+    const handleSaveAndClose = async (goal: Goal) => {
+        try {
+            await Promise.resolve(onSaveGoal(goal));
+            setIsModalOpen(false);
+            setEditingGoal(null);
+        } catch (error) {
+            console.error('Error al guardar la meta:', error);
+            alert('No se pudo guardar la meta. Inténtalo nuevamente.');
+        }
     };
     
     const handleDeleteGoalWithConfirmation = (goal: Goal) => {
         requestConfirmation(
             `¿Estás seguro de que quieres eliminar la meta "${goal.name}"?`,
-            () => onDeleteGoal(goal.id)
+            () => {
+                Promise.resolve(onDeleteGoal(goal.id)).catch(error => {
+                    console.error('Error al eliminar la meta:', error);
+                    alert('No se pudo eliminar la meta. Inténtalo nuevamente.');
+                });
+            }
         );
     };
 

@@ -70,7 +70,6 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
   };
   
   const handlePermissionChange = (pageId: Page) => {
-    if (pageId === 'dashboard') return; // Cannot uncheck dashboard
     setFormData(prev => {
         const currentPermissions = prev.permissions || [];
         const newPermissions = currentPermissions.includes(pageId)
@@ -172,7 +171,6 @@ const RolFormModal: React.FC<RolFormModalProps> = ({ isOpen, onClose, onSave, ro
                                                 type="checkbox"
                                                 checked={formData.permissions?.includes(page.id)}
                                                 onChange={() => handlePermissionChange(page.id)}
-                                                disabled={page.id === 'dashboard'}
                                                 className="h-4 w-4 rounded border-gray-300 text-[#aa632d] focus:ring-[#aa632d] disabled:opacity-50"
                                             />
                                         </div>

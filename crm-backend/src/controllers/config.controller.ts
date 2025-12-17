@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { promises as fs } from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 // FIX: Added model types from @prisma/client
 // import { Prisma, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico, BusinessInfo } from '@prisma/client';
 
@@ -55,6 +58,52 @@ const createCrudHandlers = (modelName: string) => {
     };
 };
 
+const DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9+.\-]+);base64,(.+)$/;
+const BRANDING_UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'branding');
+
+const ensureBrandingDir = async () => {
+    await fs.mkdir(BRANDING_UPLOAD_DIR, { recursive: true });
+};
+
+const resolvePublicBaseUrl = (req: Request): string => {
+    const configured = process.env.PUBLIC_API_URL?.trim();
+    if (configured) {
+        return configured.replace(/\/$/, '');
+    }
+    const host = req.get('host') || 'localhost';
+    const protocol = req.protocol || 'http';
+    return `${protocol}://${host}`.replace(/\/$/, '');
+};
+
+const decodeDataUrlImage = async (req: Request, dataUrl: string): Promise<string> => {
+    const match = DATA_URL_REGEX.exec(dataUrl);
+    if (!match) {
+        return dataUrl;
+    }
+
+    try {
+        const mimeType = match[1];
+        const base64 = match[2];
+        const buffer = Buffer.from(base64, 'base64');
+        const extension = (() => {
+            const mimeExtension = mimeType.split('/')[1] || 'png';
+            return mimeExtension === 'jpeg' ? 'jpg' : mimeExtension;
+        })();
+
+        await ensureBrandingDir();
+        const uniqueId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(8).toString('hex');
+        const fileName = `login-${Date.now()}-${uniqueId}.${extension}`;
+        const filePath = path.join(BRANDING_UPLOAD_DIR, fileName);
+        await fs.writeFile(filePath, buffer);
+
+        const baseUrl = resolvePublicBaseUrl(req);
+        return `${baseUrl}/uploads/branding/${fileName}`;
+    } catch (error) {
+        console.error('No se pudo procesar la imagen del login:', error);
+        return dataUrl;
+    }
+};
+
 // --- Business Info (special case) ---
 export const getBusinessInfo = async (req: Request, res: Response) => {
     try {
@@ -84,6 +133,9 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
 export const updateBusinessInfo = async (req: Request, res: Response) => {
     const { id: _, ...data } = req.body; // Exclude id from update data
     try {
+        if (typeof data.loginImageUrl === 'string' && data.loginImageUrl.startsWith('data:image/')) {
+            data.loginImageUrl = await decodeDataUrlImage(req, data.loginImageUrl);
+        }
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
         const updatedInfo = await prisma.businessInfo.upsert({
