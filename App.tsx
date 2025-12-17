@@ -482,6 +482,14 @@ const App: React.FC = () => {
         if (currentUser.id === 0) {
             return ['general', 'marketing', 'recepcion', 'procedimientos', 'finanzas', 'rrhh'];
         }
+        
+        // Usar dashboardMetrics configurados en el rol
+        const metrics = currentUserDashboardMetrics;
+        if (metrics && metrics.length > 0) {
+            return metrics;
+        }
+        
+        // Fallback: derivar de permisos de páginas si no hay dashboardMetrics configurados
         const tabs: string[] = [];
         const perms = currentUserPermissions;
         
@@ -494,7 +502,7 @@ const App: React.FC = () => {
         if (perms.some(p => p.startsWith('rrhh-'))) tabs.push('rrhh');
         
         return tabs;
-    }, [currentUser, currentUserPermissions]);
+    }, [currentUser, currentUserPermissions, currentUserDashboardMetrics]);
     
     const handleSetCurrentPage = (page: Page) => {
         if (page === 'dashboard' || currentUserPermissions.includes(page)) {
