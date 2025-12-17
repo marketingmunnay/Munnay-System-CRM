@@ -146,6 +146,16 @@ const App: React.FC = () => {
     useEffect(() => {
         let isMounted = true;
         const restoreSession = async () => {
+            // Cargar businessInfo para la página de login (sin autenticación)
+            try {
+                const info = await api.getBusinessInfo?.();
+                if (isMounted && info) {
+                    setBusinessInfo(info);
+                }
+            } catch (err) {
+                console.warn('No se pudo cargar businessInfo para login:', err);
+            }
+
             const storedToken = api.getAuthToken?.();
             if (!storedToken) {
                 setAuthChecked(true);
