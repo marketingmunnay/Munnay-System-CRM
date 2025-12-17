@@ -107,6 +107,16 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Update editingLead when leads array changes (e.g., after save)
+    React.useEffect(() => {
+        if (editingLead && isModalOpen) {
+            const updatedLead = leads.find(l => l.id === editingLead.id);
+            if (updatedLead && JSON.stringify(updatedLead) !== JSON.stringify(editingLead)) {
+                setEditingLead(updatedLead);
+            }
+        }
+    }, [leads, editingLead?.id, isModalOpen]);
+
     const filteredLeads = useMemo(() => {
         // Normalizar fechas del filtro a solo fecha (YYYY-MM-DD)
         const fromDate = dateRange.from || null;
@@ -115,8 +125,9 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         const results = (fromDate === null && toDate === null)
             ? [...leads]
             : leads.filter(lead => {
-                // Obtener la fecha del lead normalizada a YYYY-MM-DD
-                const leadDateStr = formatDateForInput(lead.fechaLead) || formatDateForInput(lead.fechaHoraAgenda);
+                // Para leads agendados, usar fechaHoraAgenda; para otros, usar fechaLead
+                // Priorizar fechaHoraAgenda si existe (para citas agendadas)
+                const leadDateStr = formatDateForInput(lead.fechaHoraAgenda) || formatDateForInput(lead.fechaLead);
                 if (!leadDateStr) {
                     return false;
                 }
@@ -158,17 +169,10 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
 
     const handleSaveLead = async (leadToSave: Lead) => {
         await onSaveLead(leadToSave);
-        // Update editingLead with the latest data after save
-        if (leadToSave.id && editingLead) {
-            // Find the updated lead from the leads array after the save operation
-            // This ensures the modal shows the latest data
-            setTimeout(() => {
-                const updatedLead = leads.find(l => l.id === leadToSave.id);
-                if (updatedLead) {
-                    setEditingLead(updatedLead);
-                }
-            }, 100); // Small delay to ensure the parent data is updated
-        }
+        // The onSaveLead already calls loadData() and awaits it
+        // After this point, the leads array should be updated
+        // Don't manually update editingLead - let the useEffect in LeadFormModal handle it
+        // The parent will pass the updated lead prop
     };
     
     const handleApplyDateFilter = (dates: { from: string, to: string }) => {

@@ -2509,6 +2509,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 nombres: dataToSave.nombres,
                 apellidos: dataToSave.apellidos,
                 estado: dataToSave.estado,
+                fechaHoraAgenda: dataToSave.fechaHoraAgenda,
+                recursoId: dataToSave.recursoId,
                 tratamientos: dataToSave.tratamientos?.length || 0,
                 procedimientos: dataToSave.procedimientos?.length || 0,
                 seguimientos: dataToSave.seguimientos?.length || 0

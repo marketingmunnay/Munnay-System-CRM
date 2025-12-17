@@ -286,6 +286,8 @@ export const updateLead = async (req: Request, res: Response) => {
 
   console.log('🔍 DEBUGGING: UpdateLead received:', {
     leadId: id,
+    fechaHoraAgenda: req.body.fechaHoraAgenda,
+    recursoId: req.body.recursoId,
     procedimientos: procedimientos ? procedimientos.length : 'undefined',
     procedimientosData: procedimientos,
     estadoRecepcion: req.body.estadoRecepcion,
@@ -434,6 +436,14 @@ export const updateLead = async (req: Request, res: Response) => {
       finalEstadoRecepcionUpdate = 'Agendado';
     }
 
+    // Parse and log fechaHoraAgenda for debugging
+    const parsedFechaHoraAgenda = parseDate(leadData.fechaHoraAgenda);
+    console.log('📅 DEBUGGING fechaHoraAgenda:', {
+      original: leadData.fechaHoraAgenda,
+      parsed: parsedFechaHoraAgenda,
+      type: typeof leadData.fechaHoraAgenda
+    });
+
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
@@ -443,7 +453,7 @@ export const updateLead = async (req: Request, res: Response) => {
         vendedor: leadData.vendedor ? mapSeller(leadData.vendedor) : existingLead?.vendedor,
         metodoPago: leadData.metodoPago !== undefined ? (mapMetodoPago(leadData.metodoPago) as any) : existingLead?.metodoPago,
         fechaLead: finalFechaLead,
-        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
+        fechaHoraAgenda: parsedFechaHoraAgenda,
         fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
         birthDate: parseDate(leadData.birthDate, true),
         estadoRecepcion: finalEstadoRecepcionUpdate,
