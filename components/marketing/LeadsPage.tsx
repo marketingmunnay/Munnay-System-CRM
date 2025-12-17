@@ -36,15 +36,6 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
     [LeadStatus.Perdido]: 'text-rose-600 bg-rose-100',
 };
 
-const toDateOnlyTimestamp = (value?: string | Date | null): number | null => {
-    if (!value) return null;
-    const normalized = formatDateForInput(value);
-    if (!normalized) return null;
-    const parsed = new Date(`${normalized}T00:00:00`);
-    const time = parsed.getTime();
-    return Number.isNaN(time) ? null : time;
-};
-
 const LeadsTable: React.FC<{ leads: Lead[]; onEdit: (lead: Lead) => void }> = ({ leads, onEdit }) => {
     return (
         <div className="bg-white p-6 rounded-3xl shadow border border-slate-100">
@@ -117,20 +108,23 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredLeads = useMemo(() => {
-        const fromTimestamp = dateRange.from ? new Date(`${dateRange.from}T00:00:00`).getTime() : null;
-        const toTimestamp = dateRange.to ? new Date(`${dateRange.to}T23:59:59`).getTime() : null;
+        // Normalizar fechas del filtro a solo fecha (YYYY-MM-DD)
+        const fromDate = dateRange.from || null;
+        const toDate = dateRange.to || null;
 
-        const results = (fromTimestamp === null && toTimestamp === null)
+        const results = (fromDate === null && toDate === null)
             ? [...leads]
             : leads.filter(lead => {
-                const leadTimestamp = toDateOnlyTimestamp(lead.fechaLead) ?? toDateOnlyTimestamp(lead.fechaHoraAgenda);
-                if (leadTimestamp === null) {
+                // Obtener la fecha del lead normalizada a YYYY-MM-DD
+                const leadDateStr = formatDateForInput(lead.fechaLead) || formatDateForInput(lead.fechaHoraAgenda);
+                if (!leadDateStr) {
                     return false;
                 }
-                if (fromTimestamp !== null && leadTimestamp < fromTimestamp) {
+                // Comparación de strings en formato YYYY-MM-DD funciona correctamente
+                if (fromDate !== null && leadDateStr < fromDate) {
                     return false;
                 }
-                if (toTimestamp !== null && leadTimestamp > toTimestamp) {
+                if (toDate !== null && leadDateStr > toDate) {
                     return false;
                 }
                 return true;
