@@ -426,6 +426,7 @@ export interface User {
     usuario: string;
     password?: string;
     rolId: number;
+    role?: Role | null;
     avatarUrl: string;
     position?: string;
     

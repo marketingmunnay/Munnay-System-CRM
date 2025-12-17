@@ -248,6 +248,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [visibleSources, setVisibleSources] = useState<CalendarEvent['source'][]>(FILTER_SOURCE_OPTIONS.map(option => option.id));
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
     const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+    const [isResourceMenuOpen, setIsResourceMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -288,6 +289,18 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         window.addEventListener('click', handleClick);
         return () => window.removeEventListener('click', handleClick);
     }, [isViewMenuOpen]);
+
+    useEffect(() => {
+        if (!isResourceMenuOpen) return;
+        const handleClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest('[data-resource-menu]')) return;
+            setIsResourceMenuOpen(false);
+        };
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, [isResourceMenuOpen]);
 
     const handleToggleResourceVisibility = (resourceId: string) => {
         setVisibleResourceIds(prev => {
@@ -519,62 +532,73 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                    <button onClick={handleResetResourceVisibility} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-[#aa632d] hover:text-[#aa632d]">
-                        Todo el equipo y recursos
-                        <ChevronDownIcon className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs uppercase tracking-[0.3em] text-slate-400">{visibleResources.length} columnas activas</span>
-                </div>
-                <div className="space-y-3">
-                    <div className="flex gap-3 overflow-x-auto pb-1">
-                        {teamMembers.map(member => {
-                            const isActive = visibleResourceIds.includes(member.id);
-                            return (
-                                <button
-                                    key={member.id}
-                                    onClick={() => handleToggleResourceVisibility(member.id)}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all ${isActive ? 'border-[#aa632d] bg-[#fff6ee] shadow-sm' : 'border-transparent bg-slate-100 hover:bg-slate-200/60'}`}
-                                >
-                                    <span className="relative">
-                                        {member.imageUrl ? (
-                                            <img src={member.imageUrl} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
-                                        ) : (
-                                            <span className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-semibold text-slate-600">
-                                                {member.name.slice(0, 2)}
-                                            </span>
-                                        )}
-                                        {isActive && <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-emerald-400" />}
-                                    </span>
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-slate-900">{member.name}</p>
-                                        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Equipo</p>
+                    <div className="relative" data-resource-menu>
+                        <button
+                            onClick={() => setIsResourceMenuOpen(prev => !prev)}
+                            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-[#aa632d] hover:text-[#aa632d]"
+                        >
+                            Seleccionar recursos
+                            <ChevronDownIcon
+                                className={`w-4 h-4 transition-transform ${isResourceMenuOpen ? 'rotate-180 text-[#aa632d]' : 'text-slate-400'}`}
+                            />
+                        </button>
+                        {isResourceMenuOpen && (
+                            <div className="absolute z-20 mt-2 w-64 rounded-2xl border border-slate-100 bg-white shadow-xl p-4 space-y-4">
+                                {teamMembers.length > 0 && (
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Equipo</p>
+                                        <div className="mt-2 space-y-1">
+                                            {teamMembers.map(member => {
+                                                const isActive = visibleResourceIds.includes(member.id);
+                                                return (
+                                                    <label key={member.id} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isActive}
+                                                            onChange={() => handleToggleResourceVisibility(member.id)}
+                                                            className="rounded border-slate-300 text-[#aa632d] focus:ring-[#aa632d]"
+                                                        />
+                                                        <span className="flex-1 truncate">{member.name}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {sharedSpaces.length > 0 && (
-                        <div className="flex gap-3 overflow-x-auto pt-3 border-t border-dashed border-slate-200">
-                            {sharedSpaces.map(space => {
-                                const isActive = visibleResourceIds.includes(space.id);
-                                return (
+                                )}
+                                {sharedSpaces.length > 0 && (
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Recursos</p>
+                                        <div className="mt-2 space-y-1">
+                                            {sharedSpaces.map(space => {
+                                                const isActive = visibleResourceIds.includes(space.id);
+                                                return (
+                                                    <label key={space.id} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isActive}
+                                                            onChange={() => handleToggleResourceVisibility(space.id)}
+                                                            className="rounded border-slate-300 text-[#aa632d] focus:ring-[#aa632d]"
+                                                        />
+                                                        <span className="flex-1 truncate">{space.name}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 pt-1">
                                     <button
-                                        key={space.id}
-                                        onClick={() => handleToggleResourceVisibility(space.id)}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all ${isActive ? 'border-[#aa632d] bg-[#fff6ee]' : 'border-transparent bg-slate-100 hover:bg-slate-200/60'}`}
+                                        onClick={handleResetResourceVisibility}
+                                        className="text-xs font-semibold text-[#aa632d] hover:text-[#8e5225]"
                                     >
-                                        <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center">
-                                            <BuildingStorefrontIcon className="w-5 h-5 text-slate-500" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="text-sm font-semibold text-slate-900">{space.name}</p>
-                                            <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Recurso</p>
-                                        </div>
+                                        Seleccionar todo
                                     </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                                    <span className="text-[11px] text-slate-400 flex-1 text-right">{visibleResources.length} activos</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <span className="text-xs uppercase tracking-[0.3em] text-slate-400">{visibleResources.length} recursos activos</span>
                 </div>
             </section>
 

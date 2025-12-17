@@ -1,67 +1,174 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "../shared/Icons.tsx";
 
 interface LoginPageProps {
-  onLogin: (usuario: string, password?: string) => void;
+  onLogin: (usuario: string, password?: string) => Promise<void> | void;
   error: string;
   logoUrl?: string;
   loginImageUrl?: string;
 }
 
-// ✅ Solo Next.js: usa NEXT_PUBLIC_API_URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1920";
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginImageUrl }) => {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const navigate = useNavigate();
+  const heroImage = loginImageUrl || FALLBACK_IMAGE;
 
-  const defaultImage =
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=2070";
-  const finalLoginImageUrl = loginImageUrl || defaultImage;
+  useEffect(() => {
+    const remembered = localStorage.getItem("munnay.rememberedUser");
+    if (remembered) {
+      setUsuario(remembered);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-
     try {
-      const res = await fetch(`${API_URL}/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario, password }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Credenciales inválidas");
+      await onLogin(usuario.trim(), password);
+      if (rememberMe) {
+        localStorage.setItem("munnay.rememberedUser", usuario.trim());
+      } else {
+        localStorage.removeItem("munnay.rememberedUser");
       }
-
-      const data = await res.json();
-      console.log("Login exitoso:", data);
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-
-      onLogin(usuario, password);
-      navigate("/dashboard");
     } catch (err) {
-      console.error("Error en login:", err);
+      console.error("Error al iniciar sesión", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: `url(${finalLoginImageUrl})` }}
-    >
-      {/* ... resto del JSX igual ... */}
+    <div className="relative min-h-screen bg-slate-950">
+      <img
+        src={heroImage}
+        alt="Login background"
+        className="absolute inset-0 h-full w-full object-cover opacity-60"
+      />
+      <div className="absolute inset-0 bg-slate-900/70" />
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="grid w-full max-w-5xl overflow-hidden rounded-[32px] bg-white/90 shadow-2xl backdrop-blur-lg md:grid-cols-[440px,1fr]">
+          <div className="p-8 sm:p-10 md:p-12 bg-white">
+            <div className="flex flex-col gap-6">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Munnay logo" className="h-10 object-contain" />
+              ) : (
+                <p className="text-xl font-semibold tracking-[0.4em] text-[#b9784a]">
+                  MUNNAY
+                </p>
+              )}
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                  Bienvenido de vuelta
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+                  Inicia sesión para continuar
+                </h1>
+                <p className="mt-2 text-sm text-slate-500">
+                  Ingresa tus credenciales corporativas para acceder al panel.
+                </p>
+              </div>
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Usuario</label>
+                  <input
+                    type="text"
+                    value={usuario}
+                    onChange={(e) => setUsuario(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-[#b9784a] focus:ring-2 focus:ring-[#b9784a]/20"
+                    placeholder="usuario@munnay"
+                    autoComplete="username"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Contraseña</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-12 text-slate-900 outline-none transition focus:border-[#b9784a] focus:ring-2 focus:ring-[#b9784a]/20"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-slate-300 text-[#b9784a] focus:ring-[#b9784a]"
+                    />
+                    Recuérdame
+                  </label>
+                  <button type="button" className="font-semibold text-[#b9784a] hover:text-[#a3653c]">
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full rounded-2xl bg-slate-900 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Ingresando..." : "Iniciar Sesión"}
+                </button>
+              </form>
+            </div>
+          </div>
+          <div className="relative hidden overflow-hidden md:block">
+            <img src={heroImage} alt="Clinica Munnay" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/80" />
+            <div className="relative flex h-full flex-col justify-between p-10 text-white">
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-[0.5em] text-white/70">Munnay</p>
+                <h2 className="text-3xl font-semibold leading-tight">Tu belleza, nuestra inspiración</h2>
+                <p className="max-w-sm text-sm text-white/80">
+                  Protocolos personalizados, profesionales certificados y tecnología de punta para cada tratamiento estético.
+                </p>
+              </div>
+              <div className="rounded-3xl bg-white/15 p-6 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.4em] text-white/70">Nuestros servicios</p>
+                <ul className="mt-3 space-y-2 text-sm text-white">
+                  <li>• Rejuvenecimiento y Botox</li>
+                  <li>• Eliminación de verrugas y lunares</li>
+                  <li>• Depilación láser y rinomodelación</li>
+                  <li>• Aumento de labios y armonización</li>
+                </ul>
+                <div className="mt-4 space-y-1 text-sm text-white/80">
+                  <p>munnay.medicinaestetica</p>
+                  <p>Av. Vía de Evitamiento Sur #346 - Cajamarca</p>
+                  <p>Reservas: 934 605 022</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

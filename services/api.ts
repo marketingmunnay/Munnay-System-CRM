@@ -22,8 +22,217 @@ export interface BulkImportEgresosResponse {
   egresos: BulkImportEgresoResult[];
 }
 
+export interface LoginResponse {
+  token: string;
+  user: User;
+  refreshToken?: string;
+  expiresIn?: number;
+}
+
+interface RefreshResponse {
+  token: string;
+  refreshToken?: string;
+  expiresIn?: number;
+}
+
 // URL del backend en producción (Render)
 const API_URL = "https://api.munnaymedicinaestetica.com/api";
+
+const AUTH_TOKEN_KEY = 'munnay.authToken';
+const AUTH_TOKEN_EXP_KEY = 'munnay.authTokenExpiresAt';
+const REFRESH_TOKEN_KEY = 'munnay.authRefreshToken';
+const TOKEN_EXP_SKEW_MS = 30 * 1000; // Renovar 30s antes de expirar
+const isBrowser = typeof window !== 'undefined';
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const safeDecodeBase64 = (input: string): string | null => {
+  if (!input) return null;
+  try {
+    const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.length % 4 === 0 ? normalized : normalized + '='.repeat(4 - (normalized.length % 4));
+    if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+      return window.atob(padded);
+    }
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(padded, 'base64').toString('binary');
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const deriveExpiryFromToken = (token: string): number | null => {
+  const [, payload] = token.split('.');
+  if (!payload) return null;
+  const decoded = safeDecodeBase64(payload);
+  if (!decoded) return null;
+  try {
+    const parsed = JSON.parse(decoded);
+    if (typeof parsed?.exp === 'number') {
+      return parsed.exp * 1000;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const persistExpiry = (token: string, expiresInSeconds?: number) => {
+  if (!isBrowser) return;
+  try {
+    if (expiresInSeconds && expiresInSeconds > 0) {
+      const expiresAt = Date.now() + expiresInSeconds * 1000;
+      window.localStorage.setItem(AUTH_TOKEN_EXP_KEY, expiresAt.toString());
+      return;
+    }
+    const derived = deriveExpiryFromToken(token);
+    if (derived) {
+      window.localStorage.setItem(AUTH_TOKEN_EXP_KEY, derived.toString());
+    } else {
+      window.localStorage.removeItem(AUTH_TOKEN_EXP_KEY);
+    }
+  } catch (error) {
+    console.warn('No fue posible calcular la expiración del token', error);
+  }
+};
+
+const clearExpiry = () => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.removeItem(AUTH_TOKEN_EXP_KEY);
+  } catch (error) {
+    console.warn('No fue posible eliminar la expiración almacenada', error);
+  }
+};
+
+export const getAuthTokenExpiry = (): number | null => {
+  if (!isBrowser) return null;
+  try {
+    const raw = window.localStorage.getItem(AUTH_TOKEN_EXP_KEY);
+    if (!raw) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+export const isAuthTokenExpired = (): boolean => {
+  const expiresAt = getAuthTokenExpiry();
+  if (!expiresAt) return false;
+  return Date.now() >= (expiresAt - TOKEN_EXP_SKEW_MS);
+};
+
+export const getAuthToken = (): string | null => {
+  if (!isBrowser) return null;
+  try {
+    return window.localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch (error) {
+    console.warn('No fue posible leer el token almacenado', error);
+    return null;
+  }
+};
+
+export const setAuthToken = (token: string, expiresInSeconds?: number) => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+    persistExpiry(token, expiresInSeconds);
+  } catch (error) {
+    console.warn('No fue posible guardar el token', error);
+  }
+};
+
+export const clearAuthToken = () => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    clearExpiry();
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.warn('No fue posible eliminar el token', error);
+  }
+};
+
+export const getRefreshToken = (): string | null => {
+  if (!isBrowser) return null;
+  try {
+    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+};
+
+export const setRefreshToken = (token: string) => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } catch (error) {
+    console.warn('No fue posible guardar el refresh token', error);
+  }
+};
+
+export const clearRefreshToken = () => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.warn('No fue posible eliminar el refresh token', error);
+  }
+};
+
+const performRefreshRequest = async (refreshToken: string): Promise<string | null> => {
+  try {
+    const response = await fetch(`${API_URL}/users/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Refresh token inválido (${response.status})`);
+    }
+
+    const data: RefreshResponse = await response.json();
+    setAuthToken(data.token, data.expiresIn);
+    if (data.refreshToken) {
+      setRefreshToken(data.refreshToken);
+    }
+    return data.token;
+  } catch (error) {
+    console.error('No se pudo refrescar el token', error);
+    clearAuthToken();
+    return null;
+  }
+};
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  const storedRefresh = getRefreshToken();
+  if (!storedRefresh) {
+    clearAuthToken();
+    return null;
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshed = await performRefreshRequest(storedRefresh);
+      refreshPromise = null;
+      return refreshed;
+    })();
+  }
+  return refreshPromise;
+};
+
+const ensureValidToken = async (): Promise<string | null> => {
+  const token = getAuthToken();
+  if (!token) return null;
+  if (!isAuthTokenExpired()) {
+    return token;
+  }
+  return refreshAccessToken();
+};
 
 // Helper genérico para requests
 type ApiError = Error & { status?: number };
@@ -33,15 +242,27 @@ const apiRequest = async <T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   body?: any
 ): Promise<T> => {
+  const requiresAuth = endpoint !== '/users/login' && endpoint !== '/users/refresh';
+  const token = requiresAuth ? await ensureValidToken() : getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const options: RequestInit = {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
   };
   if (body) options.body = JSON.stringify(body);
 
   const response = await fetch(`${API_URL}${endpoint}`, options);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthToken();
+    }
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
     const error = new Error(errorData.message || 'Error en la petición a la API') as ApiError;
     error.status = response.status;
@@ -185,6 +406,12 @@ export const saveUser = (user: User): Promise<User> =>
     : apiRequest<User>('/users', 'POST', user);
 export const deleteUser = (id: number): Promise<void> =>
   apiRequest<void>(`/users/${id}`, 'DELETE');
+
+export const login = (usuario: string, password: string): Promise<LoginResponse> =>
+  apiRequest<LoginResponse>('/users/login', 'POST', { usuario, password });
+
+export const getCurrentUser = (): Promise<User> =>
+  apiRequest<User>('/users/me', 'GET');
 
 // ====== ROLES ======
 export const getRoles = (): Promise<Role[]> => 

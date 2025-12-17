@@ -70,9 +70,10 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     
-    // Auth states - Authentication disabled, default user with full permissions
-    const [isAuthenticated, setIsAuthenticated] = useState(true);
+    // Auth states
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [authChecked, setAuthChecked] = useState(false);
 
     // Data states
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -102,7 +103,7 @@ const App: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [comprobantes, setComprobantes] = useState<ComprobanteElectronico[]>([]);
     
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [loginError, setLoginError] = useState('');
 
     const [confirmationState, setConfirmationState] = useState<{
@@ -141,6 +142,41 @@ const App: React.FC = () => {
         );
         setProductBrands([...derivedBrands, ...uniqueCustomBrands]);
     }, [products, customProductBrands]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const restoreSession = async () => {
+            const storedToken = api.getAuthToken?.();
+            if (!storedToken) {
+                setAuthChecked(true);
+                return;
+            }
+            try {
+                const user = await api.getCurrentUser();
+                if (!isMounted) return;
+                setCurrentUser(user);
+                setIsAuthenticated(true);
+            } catch (error) {
+                console.error('Error al validar la sesión guardada', error);
+                api.clearAuthToken?.();
+                if (isMounted) {
+                    setLoginError('Tu sesión expiró. Vuelve a iniciar sesión.');
+                    setIsAuthenticated(false);
+                    setCurrentUser(null);
+                }
+            } finally {
+                if (isMounted) {
+                    setAuthChecked(true);
+                }
+            }
+        };
+
+        restoreSession();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
 
     const loadData = async () => {
@@ -190,43 +226,16 @@ const App: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to load data", error);
+            const status = (error as { status?: number })?.status;
+            if (status === 401) {
+                setLoginError('Tu sesión expiró. Vuelve a iniciar sesión.');
+                handleLogout();
+            }
             // Set minimal business info on error
             if (!businessInfo) {
                 setBusinessInfo({ nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
             }
         } finally {
-            // Always set up a default admin user with full permissions (authentication disabled)
-            if (!currentUser) {
-                const allPermissions: Page[] = [
-                    'dashboard', 'calendario', 'tareas', 'marketing-campanas', 'marketing-leads',
-                    'redes-sociales-publicaciones', 'redes-sociales-seguidores',
-                    'recepcion-agendados', 'recepcion-ventas-extra', 'recepcion-incidencias',
-                    'procedimientos-atenciones', 'procedimientos-seguimiento', 'procedimientos-ventas-extra',
-                    'procedimientos-incidencias', 'pacientes-historia', 'finanzas-egresos',
-                    'finanzas-facturacion', 'administracion-inventario', 'rrhh-perfiles', 'informes', 'configuracion'
-                ];
-                
-                const defaultUser: User = {
-                    id: 0,
-                    nombres: 'Usuario',
-                    apellidos: 'Administrador',
-                    usuario: 'admin',
-                    rolId: 1,
-                    avatarUrl: '',
-                    permissions: [
-                        'calendario', 'tareas', 'marketing-campanas', 'marketing-leads', 
-                        'redes-sociales-publicaciones', 'redes-sociales-seguidores',
-                        'procedimientos-ventas-extra', 'recepcion-agendados', 
-                        'recepcion-ventas-extra', 'recepcion-incidencias',
-                        'finanzas-egresos', 'finanzas-facturacion', 'administracion-inventario', 'rrhh-perfiles',
-                        'procedimientos-atenciones', 'procedimientos-seguimiento',
-                        'procedimientos-incidencias', 'pacientes-historia', 
-                        'informes', 'configuracion'
-                    ],
-                };
-                
-                setCurrentUser(defaultUser);
-            }
             setLoading(false);
         }
     };
@@ -240,8 +249,9 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
+        if (!isAuthenticated) return;
         loadData();
-    }, []);
+    }, [isAuthenticated]);
 
     // Handlers for data manipulation
     const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
@@ -354,52 +364,87 @@ const App: React.FC = () => {
     const handleSaveJobPosition = async (position: JobPosition) => { await api.saveJobPosition(position); await loadData(); };
     const handleDeleteJobPosition = async (id: number) => { await api.deleteJobPosition(id); await loadData(); };
 
-    const handleLogin = (username: string, password?: string) => {
+    const handleLogin = async (username: string, password?: string) => {
+        if (!password) {
+            setLoginError('Ingresa tu contraseña.');
+            return;
+        }
         setLoginError('');
-        const userFound = users.find(u => u.usuario.toLowerCase() === username.toLowerCase());
-        if (userFound) {
-            // Check password if it exists on the user object
-            if (userFound.password && userFound.password !== password) {
-                 setLoginError('Usuario o contraseña incorrectos.');
-                 return;
+        try {
+            const response = await api.login(username, password);
+            api.setAuthToken?.(response.token, response.expiresIn);
+            if (response.refreshToken) {
+                api.setRefreshToken?.(response.refreshToken);
+            } else {
+                api.clearRefreshToken?.();
             }
-            setCurrentUser(userFound);
+            setCurrentUser(response.user);
             setIsAuthenticated(true);
             setCurrentPage('dashboard');
-        } else {
-            setLoginError('Usuario o contraseña incorrectos.');
+        } catch (error) {
+            const status = (error as { status?: number })?.status;
+            if (status === 401) {
+                setLoginError('Usuario o contraseña incorrectos.');
+            } else {
+                setLoginError('No se pudo iniciar sesión. Inténtalo nuevamente.');
+            }
+            api.clearAuthToken?.();
+            api.clearRefreshToken?.();
+            setIsAuthenticated(false);
+            setCurrentUser(null);
+            throw error;
         }
     };
 
     const handleLogout = () => {
+        api.clearAuthToken?.();
         setIsAuthenticated(false);
         setCurrentUser(null);
+        setCurrentPage('dashboard');
     };
 
     const currentUserPermissions = useMemo(() => {
-        if (!currentUser) return [];
-        // If user has permissions directly (our default user), use those
-        if (currentUser.permissions && currentUser.permissions.length > 0) {
-            return currentUser.permissions;
-        }
-        // Otherwise try to find from roles
-        if (roles.length > 0) {
-            const userRole = roles.find(role => role.id === currentUser.rolId);
-            return userRole ? userRole.permissions : [];
-        }
-        return [];
+        if (!currentUser) return ['dashboard'];
+
+        const basePermissions = new Set<Page>(['dashboard']);
+        const directPermissions = currentUser.permissions && currentUser.permissions.length > 0
+            ? currentUser.permissions
+            : undefined;
+        const rolePermissions = currentUser.role?.permissions && currentUser.role.permissions.length > 0
+            ? currentUser.role.permissions
+            : undefined;
+        const fallbackRolePermissions = !directPermissions && !rolePermissions && roles.length > 0
+            ? roles.find(role => role.id === currentUser.rolId)?.permissions
+            : undefined;
+
+        (directPermissions || rolePermissions || fallbackRolePermissions || []).forEach(permission => {
+            if (permission) {
+                basePermissions.add(permission);
+            }
+        });
+
+        return Array.from(basePermissions);
     }, [currentUser, roles]);
 
     const currentUserDashboardMetrics = useMemo(() => {
         if (!currentUser) return [];
-        // Return all metrics by default for our default admin user
-        if (currentUser.id === 0) {
-            return ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+
+        const DEFAULT_METRICS = ['leads', 'campaigns', 'egresos', 'ventas', 'incidencias', 'seguidores', 'publicaciones'];
+        if (currentUser.role?.dashboardMetrics && currentUser.role.dashboardMetrics.length > 0) {
+            return currentUser.role.dashboardMetrics;
         }
+
         if (roles.length > 0) {
             const userRole = roles.find(role => role.id === currentUser.rolId);
-            return userRole ? userRole.dashboardMetrics || [] : [];
+            if (userRole?.dashboardMetrics?.length) {
+                return userRole.dashboardMetrics;
+            }
         }
+
+        if (currentUser.id === 0) {
+            return DEFAULT_METRICS;
+        }
+
         return [];
     }, [currentUser, roles]);
 
@@ -425,11 +470,11 @@ const App: React.FC = () => {
     }, [currentUser, currentUserPermissions]);
     
     const handleSetCurrentPage = (page: Page) => {
-        if (currentUserPermissions.includes(page)) {
+        if (page === 'dashboard' || currentUserPermissions.includes(page)) {
             setCurrentPage(page);
-        } else {
-            setCurrentPage('dashboard'); // Fallback to dashboard
+            return;
         }
+        setCurrentPage('dashboard');
     };
 
     // Notification Handlers
@@ -609,14 +654,24 @@ const App: React.FC = () => {
         }
     };
     
+    if (!authChecked) {
+        return <div className="w-screen h-screen flex items-center justify-center">Validando sesión...</div>;
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <LoginPage
+                onLogin={handleLogin}
+                error={loginError}
+                logoUrl={businessInfo?.logoUrl}
+                loginImageUrl={businessInfo?.loginImageUrl}
+            />
+        );
+    }
+
     if (loading) {
          return <div className="w-screen h-screen flex items-center justify-center">Cargando sistema...</div>;
     }
-
-    // Authentication disabled - go directly to dashboard
-    // if (!isAuthenticated) {
-    //     return <LoginPage onLogin={handleLogin} error={loginError} logoUrl={businessInfo?.logoUrl} loginImageUrl={businessInfo?.loginImageUrl} />;
-    // }
 
     return (
         <div className="flex h-screen bg-gray-100">
