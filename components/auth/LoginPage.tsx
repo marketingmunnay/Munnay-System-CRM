@@ -51,9 +51,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
       <img
         src={heroImage}
         alt="Login background"
-        className="absolute inset-0 h-full w-full object-cover opacity-60"
+        className="absolute inset-0 h-full w-full object-cover scale-105 blur-xl"
       />
-      <div className="absolute inset-0 bg-slate-900/70" />
+      <div className="absolute inset-0 bg-slate-900/60" />
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
         <div className="grid w-full max-w-5xl overflow-hidden rounded-[32px] bg-white/90 shadow-2xl backdrop-blur-lg md:grid-cols-[440px,1fr]">
           <div className="p-8 sm:p-10 md:p-12 bg-white">
@@ -141,13 +141,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
             </div>
           </div>
           <div className="relative hidden overflow-hidden md:block">
-            <img src={heroImage} alt="Fondo de login" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90" />
-            <div className="relative flex h-full items-end justify-end p-8">
-              <div className="rounded-3xl bg-black/40 px-6 py-4 backdrop-blur-lg">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/80">Portal Corporativo</p>
-              </div>
-            </div>
+            <img
+              src={heroImage}
+              alt="Fondo de login"
+              className="absolute inset-0 h-full w-full object-cover scale-105 blur-md"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black/80 backdrop-blur-lg" />
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 // Moved formatFechaHora to top-level scope
                                                     {/* formatFechaHora ahora solo se llama desde JSX, definida en el scope superior */}
-import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types';
+import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership, User } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
@@ -37,7 +37,28 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
 // Puestos permitidos para el campo Profesional
-const PUESTOS_PROFESIONAL = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería'];
+const PROFESSIONAL_POSITION_LABELS = ['Tec. Enfermera', 'Médico', 'Lic. en Enfermería', 'Procedimientos'];
+const PROFESSIONAL_KEYWORDS = ['proced', 'medic', 'doctor', 'enfer'];
+
+const normalizeText = (value?: string) => (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const PROFESSIONAL_WHITELIST = new Set(PROFESSIONAL_POSITION_LABELS.map(normalizeText));
+
+const matchesProfessionalProfile = (value?: string) => {
+    if (!value) return false;
+    const normalized = normalizeText(value);
+    return PROFESSIONAL_WHITELIST.has(normalized) || PROFESSIONAL_KEYWORDS.some(keyword => normalized.includes(keyword));
+};
+
+const isProfessionalUser = (user: Partial<User>) => {
+    if (matchesProfessionalProfile(user.position)) {
+        return true;
+    }
+    return matchesProfessionalProfile(user.role?.nombre);
+};
 
 // Puestos permitidos para el campo Vendedor
 const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
@@ -2152,9 +2173,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
-        return users
-            .filter((user: any) => user.position && PUESTOS_PROFESIONAL.includes(user.position))
-            .map((user: any) => `${user.nombres} ${user.apellidos}`);
+        const professionals = users
+            .filter((user: User) => isProfessionalUser(user))
+            .map((user: User) => `${user.nombres} ${user.apellidos}`.trim())
+            .filter(Boolean);
+        return Array.from(new Set(professionals));
     }, [users]);
 
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }

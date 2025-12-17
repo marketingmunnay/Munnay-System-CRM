@@ -623,6 +623,9 @@ const BusinessInfoSection: FC<{
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        if (name === 'loginImageUrl') {
+            setImageError('');
+        }
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -722,7 +725,10 @@ const BusinessInfoSection: FC<{
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setLoginImageMode('url')}
+                                    onClick={() => {
+                                        setLoginImageMode('url');
+                                        setImageError('');
+                                    }}
                                     className={`px-3 py-1 rounded-full border ${loginImageMode === 'url' ? 'bg-[#374151] text-white border-[#374151]' : 'text-gray-600 border-gray-300 hover:border-gray-400'}`}
                                 >
                                     Usar enlace
