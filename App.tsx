@@ -327,7 +327,19 @@ const App: React.FC = () => {
     const handleDeleteComprobante = async (comprobanteId: number) => { await api.deleteComprobante(comprobanteId); await loadData(); };
     
     // Business Config Handlers
-    const handleSaveBusinessInfo = async (info: BusinessInfo) => { await api.saveBusinessInfo(info); await loadData(); };
+    const handleSaveBusinessInfo = async (info: BusinessInfo) => { 
+        console.log('=== APP.TSX handleSaveBusinessInfo ===');
+        console.log('BusinessInfo a guardar:', info);
+        console.log('loginImageUrl:', info.loginImageUrl);
+        try {
+            const result = await api.saveBusinessInfo(info); 
+            console.log('Respuesta del backend:', result);
+            await loadData(); 
+            console.log('Datos recargados');
+        } catch (error) {
+            console.error('ERROR guardando BusinessInfo:', error);
+        }
+    };
     const handleSaveGoal = async (goal: Goal) => { await api.saveGoal(goal); await loadData(); };
     const handleDeleteGoal = async (goalId: number) => { await api.deleteGoal(goalId); await loadData(); };
     const handleSaveClientSource = async (source: ClientSource) => { await api.saveClientSource(source); await loadData(); };

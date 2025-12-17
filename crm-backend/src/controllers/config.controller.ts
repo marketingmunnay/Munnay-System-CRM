@@ -132,9 +132,14 @@ export const getBusinessInfo = async (req: Request, res: Response) => {
 
 export const updateBusinessInfo = async (req: Request, res: Response) => {
     const { id: _, ...data } = req.body; // Exclude id from update data
+    console.log('=== UPDATE BUSINESS INFO ===');
+    console.log('Datos recibidos:', JSON.stringify(data, null, 2));
+    console.log('loginImageUrl recibido:', data.loginImageUrl ? `${data.loginImageUrl.substring(0, 100)}...` : 'vacío');
     try {
         if (typeof data.loginImageUrl === 'string' && data.loginImageUrl.startsWith('data:image/')) {
+            console.log('Procesando imagen base64...');
             data.loginImageUrl = await decodeDataUrlImage(req, data.loginImageUrl);
+            console.log('Imagen procesada, nueva URL:', data.loginImageUrl);
         }
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
@@ -152,8 +157,10 @@ export const updateBusinessInfo = async (req: Request, res: Response) => {
                 loginImageUrl: data.loginImageUrl || '',
             },
         });
+        console.log('BusinessInfo actualizado:', updatedInfo);
         res.status(200).json(updatedInfo);
     } catch (error) {
+        console.error('ERROR actualizando BusinessInfo:', error);
         res.status(500).json({ message: 'Error updating business info', error: (error as Error).message });
     }
 };

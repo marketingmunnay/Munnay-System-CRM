@@ -675,7 +675,14 @@ const BusinessInfoSection: FC<{
     };
 
     const handleSave = () => {
-        if (imageError) return;
+        console.log('=== GUARDANDO BUSINESS INFO ===');
+        console.log('formData:', formData);
+        console.log('loginImageUrl:', formData.loginImageUrl);
+        console.log('imageError:', imageError);
+        if (imageError) {
+            console.log('Abortando: hay error de imagen');
+            return;
+        }
         onSaveBusinessInfo(formData);
         setIsEditing(false);
     };

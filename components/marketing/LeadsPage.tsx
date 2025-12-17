@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import KanbanView from './KanbanView.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
-import { PlusIcon, MagnifyingGlassIcon, EyeIcon, CalendarIcon, ClockIcon, UserIcon, CurrencyDollarIcon } from '../shared/Icons.tsx';
+import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
 import DateRangeFilter from '../shared/DateRangeFilter.tsx';
@@ -36,7 +36,16 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
     [LeadStatus.Perdido]: 'text-rose-600 bg-rose-100',
 };
 
-const LeadsTable: React.FC<{ leads: Lead[]; onEdit: (lead: Lead) => void; onPreview: (lead: Lead) => void }> = ({ leads, onEdit, onPreview }) => {
+const toDateOnlyTimestamp = (value?: string | Date | null): number | null => {
+    if (!value) return null;
+    const normalized = formatDateForInput(value);
+    if (!normalized) return null;
+    const parsed = new Date(`${normalized}T00:00:00`);
+    const time = parsed.getTime();
+    return Number.isNaN(time) ? null : time;
+};
+
+const LeadsTable: React.FC<{ leads: Lead[]; onEdit: (lead: Lead) => void }> = ({ leads, onEdit }) => {
     return (
         <div className="bg-white p-6 rounded-3xl shadow border border-slate-100">
             <div className="overflow-x-auto">
@@ -57,10 +66,9 @@ const LeadsTable: React.FC<{ leads: Lead[]; onEdit: (lead: Lead) => void; onPrev
                         {leads.map(lead => (
                             <tr
                                 key={lead.id}
-                                onClick={() => onPreview(lead)}
-                                className="bg-white border-b last:border-0 hover:bg-[#fff4ea] cursor-pointer transition-colors"
+                                className="bg-white border-b last:border-0 hover:bg-[#fff4ea] transition-colors"
                             >
-                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead || new Date())}</td>
+                                <td className="px-6 py-4">{formatDateForDisplay(lead.fechaLead || lead.fechaHoraAgenda || new Date())}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                     {lead.nombres} {lead.apellidos}
                                 </th>
@@ -107,30 +115,29 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedLeadPreview, setSelectedLeadPreview] = useState<Lead | null>(null);
 
     const filteredLeads = useMemo(() => {
-        let results = leads;
+        const fromTimestamp = dateRange.from ? new Date(`${dateRange.from}T00:00:00`).getTime() : null;
+        const toTimestamp = dateRange.to ? new Date(`${dateRange.to}T23:59:59`).getTime() : null;
 
-        if (dateRange.from || dateRange.to) {
-            results = results.filter(lead => {
-                if (!lead.fechaLead) return false;
-
-                const leadDate = formatDateForInput(lead.fechaLead);
-
-                if (!leadDate) return false;
-                if (dateRange.from && leadDate < dateRange.from) {
+        const results = (fromTimestamp === null && toTimestamp === null)
+            ? [...leads]
+            : leads.filter(lead => {
+                const leadTimestamp = toDateOnlyTimestamp(lead.fechaLead) ?? toDateOnlyTimestamp(lead.fechaHoraAgenda);
+                if (leadTimestamp === null) {
                     return false;
                 }
-                if (dateRange.to && leadDate > dateRange.to) {
+                if (fromTimestamp !== null && leadTimestamp < fromTimestamp) {
+                    return false;
+                }
+                if (toTimestamp !== null && leadTimestamp > toTimestamp) {
                     return false;
                 }
                 return true;
             });
-        }
 
         if (viewMode === 'table' && searchTerm) {
-            results = results.filter(lead =>
+            return results.filter(lead =>
                 `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 lead.numero.includes(searchTerm) ||
                 lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,33 +147,15 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         return results;
     }, [leads, dateRange, viewMode, searchTerm]);
 
-    useEffect(() => {
-        if (filteredLeads.length === 0) {
-            setSelectedLeadPreview(null);
-            return;
-        }
-        setSelectedLeadPreview(prev => {
-            if (prev && filteredLeads.some(lead => lead.id === prev.id)) {
-                return prev;
-            }
-            return filteredLeads[0];
-        });
-    }, [filteredLeads]);
-
-    const handleSelectLead = (lead: Lead, openModal = false) => {
-        setSelectedLeadPreview(lead);
-        if (openModal) {
-            setEditingLead(lead);
-            setIsModalOpen(true);
-        }
-    };
-
     const handleAddLead = () => {
         setEditingLead(null);
         setIsModalOpen(true);
     };
 
-    const handleEditLead = (lead: Lead) => handleSelectLead(lead, true);
+    const handleEditLead = (lead: Lead) => {
+        setEditingLead(lead);
+        setIsModalOpen(true);
+    };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -246,7 +235,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
              <StatCard title="Tasa de Agendados" value={`${porcentajeAgendados}%`} icon={<GoogleIcon name="percent" className="text-purple-500" />} iconBgClass="bg-purple-100" />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-4">
             <section className="space-y-4">
                 <div className="bg-white p-4 rounded-2xl shadow flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="relative w-full md:w-auto">
@@ -270,13 +259,11 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
                 </div>
 
                 {viewMode === 'kanban' ? (
-                    <KanbanView leads={filteredLeads} onCardClick={(lead) => handleSelectLead(lead, true)} />
+                    <KanbanView leads={filteredLeads} onCardClick={handleEditLead} />
                 ) : (
-                    <LeadsTable leads={filteredLeads} onEdit={handleEditLead} onPreview={(lead) => handleSelectLead(lead, false)} />
+                    <LeadsTable leads={filteredLeads} onEdit={handleEditLead} />
                 )}
             </section>
-
-            <LeadInsightPanel lead={selectedLeadPreview} onEdit={(lead) => handleSelectLead(lead, true)} />
         </div>
 
         <LeadFormModal
@@ -296,111 +283,6 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
             comprobantes={comprobantes}
                 />
         </div>
-    );
-};
-
-const LeadInsightPanel: React.FC<{ lead: Lead | null; onEdit: (lead: Lead) => void }> = ({ lead, onEdit }) => {
-    if (!lead) {
-        return (
-            <aside className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center text-slate-500">
-                <p className="text-sm font-semibold">Selecciona un lead</p>
-                <p className="text-xs mt-1">Previsualiza detalles, seguimiento y próximos compromisos.</p>
-            </aside>
-        );
-    }
-
-    const agendaLabel = lead.fechaHoraAgenda
-        ? new Date(lead.fechaHoraAgenda).toLocaleString('es-PE', {
-            day: '2-digit',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-        : 'Sin agenda';
-
-    const nextCallLabel = lead.fechaVolverLlamar
-        ? `${formatDateForDisplay(lead.fechaVolverLlamar)} · ${lead.horaVolverLlamar || '—'}`
-        : 'No programada';
-
-    const lastCalls = [...(lead.registrosLlamada || [])]
-        .sort((a, b) => (b.numeroLlamada || 0) - (a.numeroLlamada || 0))
-        .slice(0, 3);
-
-    return (
-        <aside className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4 sticky top-24">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Lead seleccionado</p>
-                    <h3 className="text-xl font-semibold text-slate-900">{lead.nombres} {lead.apellidos}</h3>
-                    <p className="text-sm text-slate-500">{lead.numero} · {lead.email || 'Sin correo'}</p>
-                </div>
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${STATUS_COLORS[lead.estado]}`}>
-                    {lead.estado}
-                </span>
-            </div>
-
-            <div className="grid gap-3">
-                <div className="rounded-2xl border border-slate-200 p-4 flex justify-between items-center">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Próxima llamada</p>
-                        <p className="text-sm font-semibold text-slate-800">{nextCallLabel}</p>
-                    </div>
-                    <ClockIcon className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="rounded-2xl border border-slate-200 p-4 flex justify-between items-center">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Agenda</p>
-                        <p className="text-sm font-semibold text-slate-800">{agendaLabel}</p>
-                        <p className="text-xs text-slate-500">{lead.recursoId ? `Recurso: ${lead.recursoId}` : 'Sin recurso asignado'}</p>
-                    </div>
-                    <CalendarIcon className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="rounded-2xl border border-slate-200 p-4 flex justify-between items-center">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Finanzas</p>
-                        <p className="text-sm font-semibold text-slate-800">Pagó S/ {(lead.montoPagado || 0).toFixed(2)}</p>
-                        <p className="text-xs text-slate-500">Deuda pendiente: S/ {(lead.deudaCita || 0).toFixed(2)}</p>
-                    </div>
-                    <CurrencyDollarIcon className="w-5 h-5 text-slate-400" />
-                </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Servicio de interés</p>
-                <p className="text-sm font-semibold text-slate-800 mt-1">
-                    {lead.servicios?.length ? lead.servicios.join(', ') : 'Sin definir'}
-                </p>
-                {lead.observacionesGenerales && (
-                    <p className="text-xs text-slate-500 mt-2">{lead.observacionesGenerales}</p>
-                )}
-            </div>
-
-            <div>
-                <p className="text-sm font-semibold text-slate-700">Seguimiento reciente</p>
-                <div className="mt-2 space-y-2">
-                    {lastCalls.length === 0 && (
-                        <p className="text-xs text-slate-400">Aún no registras llamadas.</p>
-                    )}
-                    {lastCalls.map(entry => (
-                        <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                            <div>
-                                <p className="font-semibold text-slate-800">Llamada #{entry.numeroLlamada}</p>
-                                <p>{entry.estadoLlamada}</p>
-                            </div>
-                            <span className="text-[11px] text-slate-400">{entry.duracionLlamada}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <button
-                type="button"
-                onClick={() => onEdit(lead)}
-                className="w-full rounded-2xl bg-[#0f172a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1a2846]"
-            >
-                Abrir ficha completa
-            </button>
-        </aside>
     );
 };
 

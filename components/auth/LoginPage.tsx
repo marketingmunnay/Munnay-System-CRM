@@ -144,9 +144,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
             <img
               src={heroImage}
               alt="Fondo de login"
-              className="absolute inset-0 h-full w-full object-cover scale-105 blur-md"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black/80 backdrop-blur-lg" />
           </div>
         </div>
       </div>
