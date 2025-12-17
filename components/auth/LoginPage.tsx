@@ -141,29 +141,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, logoUrl, loginIma
             </div>
           </div>
           <div className="relative hidden overflow-hidden md:block">
-            <img src={heroImage} alt="Clinica Munnay" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/80" />
-            <div className="relative flex h-full flex-col justify-between p-10 text-white">
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-[0.5em] text-white/70">Munnay</p>
-                <h2 className="text-3xl font-semibold leading-tight">Tu belleza, nuestra inspiración</h2>
-                <p className="max-w-sm text-sm text-white/80">
-                  Protocolos personalizados, profesionales certificados y tecnología de punta para cada tratamiento estético.
-                </p>
-              </div>
-              <div className="rounded-3xl bg-white/15 p-6 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/70">Nuestros servicios</p>
-                <ul className="mt-3 space-y-2 text-sm text-white">
-                  <li>• Rejuvenecimiento y Botox</li>
-                  <li>• Eliminación de verrugas y lunares</li>
-                  <li>• Depilación láser y rinomodelación</li>
-                  <li>• Aumento de labios y armonización</li>
-                </ul>
-                <div className="mt-4 space-y-1 text-sm text-white/80">
-                  <p>munnay.medicinaestetica</p>
-                  <p>Av. Vía de Evitamiento Sur #346 - Cajamarca</p>
-                  <p>Reservas: 934 605 022</p>
-                </div>
+            <img src={heroImage} alt="Fondo de login" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90" />
+            <div className="relative flex h-full items-end justify-end p-8">
+              <div className="rounded-3xl bg-black/40 px-6 py-4 backdrop-blur-lg">
+                <p className="text-xs uppercase tracking-[0.4em] text-white/80">Portal Corporativo</p>
               </div>
             </div>
           </div>
