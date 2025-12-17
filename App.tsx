@@ -316,7 +316,12 @@ const App: React.FC = () => {
         }
     };
     const handleDeleteUser = async (userId: number) => { await api.deleteUser(userId); await loadData(); };
-    const handleSaveRole = async (role: Role) => { await api.saveRole(role); await loadData(); };
+    const handleSaveRole = async (role: Role) => {
+        const exists = roles.some(r => r.id === role.id);
+        const payload = exists ? role : { ...role, id: undefined };
+        await api.saveRole(payload);
+        await loadData();
+    };
     const handleDeleteRole = async (roleId: number) => { await api.deleteRole(roleId); await loadData(); };
     const handleSaveComprobante = async (comprobante: ComprobanteElectronico) => { await api.saveComprobante(comprobante); await loadData(); };
     const handleDeleteComprobante = async (comprobanteId: number) => { await api.deleteComprobante(comprobanteId); await loadData(); };

@@ -416,10 +416,20 @@ export const getCurrentUser = (): Promise<User> =>
 // ====== ROLES ======
 export const getRoles = (): Promise<Role[]> => 
   apiRequest<Role[]>('/roles', 'GET');
-export const saveRole = (role: Role): Promise<Role> =>
-  role.id && role.id < 1000000
-    ? apiRequest<Role>(`/roles/${role.id}`, 'PUT', role)
-    : apiRequest<Role>('/roles', 'POST', role);
+
+type RolePayload = Partial<Role> & { id?: number };
+
+export const saveRole = (role: RolePayload): Promise<Role> => {
+  const hasPersistedId = typeof role.id === 'number' && role.id > 0;
+
+  if (hasPersistedId) {
+    return apiRequest<Role>(`/roles/${role.id}`, 'PUT', role);
+  }
+
+  const { id: _tempId, ...createData } = role;
+  return apiRequest<Role>('/roles', 'POST', createData);
+};
+
 export const deleteRole = (id: number): Promise<void> =>
   apiRequest<void>(`/roles/${id}`, 'DELETE');
 
