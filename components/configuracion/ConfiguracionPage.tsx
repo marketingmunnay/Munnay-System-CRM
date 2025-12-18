@@ -1199,13 +1199,23 @@ const ServiciosSection: FC<{
                                 <th className="text-left p-2">Nombre</th>
                                 <th className="text-left p-2">Categoría</th>
                                 <th className="text-left p-2">Precio</th>
+                                <th className="text-left p-2">Duración</th>
                                 <th className="text-left p-2">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {services.map((service) => (
                                 <tr key={service.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-2">{service.nombre}</td>
+                                    <td className="p-2">
+                                        <div>
+                                            <span className="font-medium">{service.nombre}</span>
+                                            {service.descripcion && (
+                                                <p className="text-xs text-gray-500 truncate max-w-xs" title={service.descripcion}>
+                                                    {service.descripcion}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-2">{service.categoria}</td>
                                     <td className="p-2">
                                         {service.precio === 0 ? (
@@ -1213,6 +1223,12 @@ const ServiciosSection: FC<{
                                         ) : (
                                             `S/ ${service.precio?.toFixed(2)}`
                                         )}
+                                    </td>
+                                    <td className="p-2">
+                                        {service.duracionMinutos >= 60 
+                                            ? `${Math.floor(service.duracionMinutos / 60)}h ${service.duracionMinutos % 60 > 0 ? `${service.duracionMinutos % 60}min` : ''}`
+                                            : `${service.duracionMinutos} min`
+                                        }
                                     </td>
                                     <td className="p-2">
                                         <div className="flex gap-2">
@@ -1287,7 +1303,9 @@ const ServiciosSection: FC<{
                     fields={[
                         { name: 'nombre', label: 'Nombre', type: 'text', required: true },
                         { name: 'categoria', label: 'Categoría', type: 'text', required: true },
-                        { name: 'precio', label: 'Precio', type: 'number', required: true },
+                        { name: 'precio', label: 'Precio (S/)', type: 'number', required: true },
+                        { name: 'duracionMinutos', label: 'Duración (minutos)', type: 'number', required: true },
+                        { name: 'descripcion', label: 'Descripción', type: 'textarea', required: false },
                     ]}
                     itemCategories={serviceCategories}
                     categoryField="categoria"

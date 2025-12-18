@@ -559,10 +559,12 @@ model JobPosition {
 }
 
 model Service {
-  id        Int    @id @default(autoincrement())
-  nombre    String @unique
-  categoria String
-  precio    Float
+  id               Int     @id @default(autoincrement())
+  nombre           String  @unique
+  categoria        String
+  precio           Float
+  duracionMinutos  Int     @default(60)
+  descripcion      String? @db.Text
 }
 
 // ENUM DESACTIVADO HASTA APLICAR MIGRACIÓN

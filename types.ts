@@ -523,7 +523,8 @@ export interface Service {
     nombre: string;
     categoria: string;
     precio: number;
-    duracionMinutos?: number;
+    duracionMinutos: number;
+    descripcion?: string;
     profesionalRequerido?: string;
     notas?: string;
 }
