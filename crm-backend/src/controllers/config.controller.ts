@@ -172,11 +172,69 @@ export const createClientSource = clientSourceHandlers.create;
 export const updateClientSource = clientSourceHandlers.update;
 export const deleteClientSource = clientSourceHandlers.delete;
 
-// Services - Custom handlers para manejar campos opcionales (duracionMinutos, descripcion)
+// Helper para verificar si columna existe en tabla Service
+const checkServiceColumnsExist = async (): Promise<boolean> => {
+    try {
+        const result: any[] = await prisma.$queryRaw`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'Service' AND column_name = 'duracionMinutos'
+        `;
+        return result.length > 0;
+    } catch {
+        return false;
+    }
+};
+
+// Migración automática para agregar columnas de Service si no existen
+export const migrateServiceColumns = async (req: Request, res: Response) => {
+    try {
+        // Verificar si las columnas ya existen
+        const columnsExist = await checkServiceColumnsExist();
+        if (columnsExist) {
+            res.status(200).json({ message: 'Columns already exist', migrated: false });
+            return;
+        }
+        
+        // Agregar columnas faltantes
+        await prisma.$executeRaw`
+            ALTER TABLE "Service" 
+            ADD COLUMN IF NOT EXISTS "duracionMinutos" INTEGER NOT NULL DEFAULT 60
+        `;
+        await prisma.$executeRaw`
+            ALTER TABLE "Service" 
+            ADD COLUMN IF NOT EXISTS "descripcion" TEXT
+        `;
+        
+        console.log('Service columns migrated successfully');
+        res.status(200).json({ message: 'Columns migrated successfully', migrated: true });
+    } catch (error) {
+        console.error('Error migrating service columns:', error);
+        res.status(500).json({ message: 'Error migrating columns', error: (error as Error).message });
+    }
+};
+
+// Services - Custom handlers con fallback para cuando columnas no existen
 export const getServices = async (req: Request, res: Response) => {
     try {
-        const services = await prisma.service.findMany();
-        res.status(200).json(services);
+        const columnsExist = await checkServiceColumnsExist();
+        
+        if (columnsExist) {
+            const services = await prisma.service.findMany();
+            res.status(200).json(services);
+        } else {
+            // Fallback: query solo con columnas básicas
+            const services: any[] = await prisma.$queryRaw`
+                SELECT id, nombre, categoria, precio FROM "Service"
+            `;
+            // Agregar valores por defecto
+            const servicesWithDefaults = services.map(s => ({
+                ...s,
+                duracionMinutos: 60,
+                descripcion: null
+            }));
+            res.status(200).json(servicesWithDefaults);
+        }
     } catch (error) {
         res.status(500).json({ message: 'Error fetching services', error: (error as Error).message });
     }
@@ -185,16 +243,32 @@ export const getServices = async (req: Request, res: Response) => {
 export const createService = async (req: Request, res: Response) => {
     const { id, ...data } = req.body;
     try {
-        // Asegurar que duracionMinutos tenga un valor por defecto
-        const serviceData = {
-            nombre: data.nombre,
-            categoria: data.categoria,
-            precio: parseFloat(data.precio) || 0,
-            duracionMinutos: parseInt(data.duracionMinutos) || 60,
-            descripcion: data.descripcion || null,
-        };
-        const newService = await prisma.service.create({ data: serviceData });
-        res.status(201).json(newService);
+        const columnsExist = await checkServiceColumnsExist();
+        
+        if (columnsExist) {
+            const serviceData = {
+                nombre: data.nombre,
+                categoria: data.categoria,
+                precio: parseFloat(data.precio) || 0,
+                duracionMinutos: parseInt(data.duracionMinutos) || 60,
+                descripcion: data.descripcion || null,
+            };
+            const newService = await prisma.service.create({ data: serviceData });
+            res.status(201).json(newService);
+        } else {
+            // Fallback: insertar solo campos básicos
+            const result: any[] = await prisma.$queryRaw`
+                INSERT INTO "Service" (nombre, categoria, precio)
+                VALUES (${data.nombre}, ${data.categoria}, ${parseFloat(data.precio) || 0})
+                RETURNING id, nombre, categoria, precio
+            `;
+            const newService = {
+                ...result[0],
+                duracionMinutos: 60,
+                descripcion: null
+            };
+            res.status(201).json(newService);
+        }
     } catch (error) {
         console.error('Error creating service:', error);
         res.status(500).json({ message: 'Error creating service', error: (error as Error).message });
@@ -205,19 +279,38 @@ export const updateService = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const { id: _, ...data } = req.body;
     try {
-        // Solo actualizar campos que existen
-        const updateData: any = {};
-        if (data.nombre !== undefined) updateData.nombre = data.nombre;
-        if (data.categoria !== undefined) updateData.categoria = data.categoria;
-        if (data.precio !== undefined) updateData.precio = parseFloat(data.precio) || 0;
-        if (data.duracionMinutos !== undefined) updateData.duracionMinutos = parseInt(data.duracionMinutos) || 60;
-        if (data.descripcion !== undefined) updateData.descripcion = data.descripcion || null;
+        const columnsExist = await checkServiceColumnsExist();
         
-        const updatedService = await prisma.service.update({ 
-            where: { id }, 
-            data: updateData 
-        });
-        res.status(200).json(updatedService);
+        if (columnsExist) {
+            const updateData: any = {};
+            if (data.nombre !== undefined) updateData.nombre = data.nombre;
+            if (data.categoria !== undefined) updateData.categoria = data.categoria;
+            if (data.precio !== undefined) updateData.precio = parseFloat(data.precio) || 0;
+            if (data.duracionMinutos !== undefined) updateData.duracionMinutos = parseInt(data.duracionMinutos) || 60;
+            if (data.descripcion !== undefined) updateData.descripcion = data.descripcion || null;
+            
+            const updatedService = await prisma.service.update({ 
+                where: { id }, 
+                data: updateData 
+            });
+            res.status(200).json(updatedService);
+        } else {
+            // Fallback: actualizar solo campos básicos
+            const result: any[] = await prisma.$queryRaw`
+                UPDATE "Service" 
+                SET nombre = ${data.nombre}, 
+                    categoria = ${data.categoria}, 
+                    precio = ${parseFloat(data.precio) || 0}
+                WHERE id = ${id}
+                RETURNING id, nombre, categoria, precio
+            `;
+            const updatedService = {
+                ...result[0],
+                duracionMinutos: 60,
+                descripcion: null
+            };
+            res.status(200).json(updatedService);
+        }
     } catch (error) {
         console.error('Error updating service:', error);
         res.status(500).json({ message: 'Error updating service', error: (error as Error).message });

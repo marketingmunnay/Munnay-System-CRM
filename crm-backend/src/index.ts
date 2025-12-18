@@ -5,8 +5,53 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import apiRouter from './api';
+import prisma from './lib/prisma';
 
 dotenv.config();
+
+// ========== AUTO-MIGRATION: Agregar columnas faltantes a Service ==========
+const runAutoMigrations = async () => {
+  try {
+    console.log('[Migration] Checking for missing columns in Service table...');
+    
+    // Verificar si la columna duracionMinutos existe
+    const columns: any[] = await prisma.$queryRaw`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'Service' AND column_name = 'duracionMinutos'
+    `;
+    
+    if (columns.length === 0) {
+      console.log('[Migration] Adding duracionMinutos column to Service...');
+      await prisma.$executeRaw`
+        ALTER TABLE "Service" 
+        ADD COLUMN IF NOT EXISTS "duracionMinutos" INTEGER NOT NULL DEFAULT 60
+      `;
+      console.log('[Migration] duracionMinutos column added successfully');
+    }
+    
+    // Verificar si la columna descripcion existe
+    const descColumns: any[] = await prisma.$queryRaw`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'Service' AND column_name = 'descripcion'
+    `;
+    
+    if (descColumns.length === 0) {
+      console.log('[Migration] Adding descripcion column to Service...');
+      await prisma.$executeRaw`
+        ALTER TABLE "Service" 
+        ADD COLUMN IF NOT EXISTS "descripcion" TEXT
+      `;
+      console.log('[Migration] descripcion column added successfully');
+    }
+    
+    console.log('[Migration] Auto-migration completed');
+  } catch (error) {
+    console.error('[Migration] Error running auto-migrations:', error);
+    // No detenemos el servidor si falla la migración
+  }
+};
 
 const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
@@ -88,7 +133,14 @@ app.get('/health', (_req, res) => {
 // ✅ API routes
 app.use('/api', apiRouter);
 
-// ✅ Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// ✅ Start server con auto-migración
+const startServer = async () => {
+  // Ejecutar migraciones automáticas antes de iniciar
+  await runAutoMigrations();
+  
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();

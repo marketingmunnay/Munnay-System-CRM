@@ -192,6 +192,13 @@ const App: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
+            // Ejecutar migración de Service columns antes de cargar datos
+            try {
+                await api.migrateServiceColumns?.();
+            } catch (migrationError) {
+                console.log('Service columns migration check:', migrationError);
+            }
+            
             const [
                 leadsData, campaignsData, ventasData, incidenciasData, 
                 egresosData, proveedoresData, usersData, rolesData,

@@ -459,6 +459,10 @@ export const saveClientSource = (source: ClientSource): Promise<ClientSource> =>
 export const deleteClientSource = (id: number): Promise<void> =>
   apiRequest<void>(`/config/client-sources/${id}`, 'DELETE');
 
+// ====== MIGRATIONS ======
+export const migrateServiceColumns = (): Promise<{ message: string; migrated: boolean }> =>
+  apiRequest<{ message: string; migrated: boolean }>('/config/migrate-service-columns', 'POST');
+
 // ====== SERVICES ======
 export const getServices = (): Promise<Service[]> => 
   apiRequest<Service[]>('/config/services', 'GET');

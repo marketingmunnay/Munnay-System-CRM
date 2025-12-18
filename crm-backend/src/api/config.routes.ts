@@ -3,6 +3,9 @@ import * as controller from '../controllers/config.controller';
 
 const router = Router();
 
+// Migrations
+router.post('/migrate-service-columns', controller.migrateServiceColumns);
+
 // Business Info
 router.get('/business-info', controller.getBusinessInfo);
 router.put('/business-info', controller.updateBusinessInfo);
