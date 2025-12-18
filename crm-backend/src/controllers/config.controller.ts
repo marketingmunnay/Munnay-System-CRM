@@ -172,12 +172,67 @@ export const createClientSource = clientSourceHandlers.create;
 export const updateClientSource = clientSourceHandlers.update;
 export const deleteClientSource = clientSourceHandlers.delete;
 
-// Services
-const serviceHandlers = createCrudHandlers('service');
-export const getServices = serviceHandlers.getAll;
-export const createService = serviceHandlers.create;
-export const updateService = serviceHandlers.update;
-export const deleteService = serviceHandlers.delete;
+// Services - Custom handlers para manejar campos opcionales (duracionMinutos, descripcion)
+export const getServices = async (req: Request, res: Response) => {
+    try {
+        const services = await prisma.service.findMany();
+        res.status(200).json(services);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching services', error: (error as Error).message });
+    }
+};
+
+export const createService = async (req: Request, res: Response) => {
+    const { id, ...data } = req.body;
+    try {
+        // Asegurar que duracionMinutos tenga un valor por defecto
+        const serviceData = {
+            nombre: data.nombre,
+            categoria: data.categoria,
+            precio: parseFloat(data.precio) || 0,
+            duracionMinutos: parseInt(data.duracionMinutos) || 60,
+            descripcion: data.descripcion || null,
+        };
+        const newService = await prisma.service.create({ data: serviceData });
+        res.status(201).json(newService);
+    } catch (error) {
+        console.error('Error creating service:', error);
+        res.status(500).json({ message: 'Error creating service', error: (error as Error).message });
+    }
+};
+
+export const updateService = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { id: _, ...data } = req.body;
+    try {
+        // Solo actualizar campos que existen
+        const updateData: any = {};
+        if (data.nombre !== undefined) updateData.nombre = data.nombre;
+        if (data.categoria !== undefined) updateData.categoria = data.categoria;
+        if (data.precio !== undefined) updateData.precio = parseFloat(data.precio) || 0;
+        if (data.duracionMinutos !== undefined) updateData.duracionMinutos = parseInt(data.duracionMinutos) || 60;
+        if (data.descripcion !== undefined) updateData.descripcion = data.descripcion || null;
+        
+        const updatedService = await prisma.service.update({ 
+            where: { id }, 
+            data: updateData 
+        });
+        res.status(200).json(updatedService);
+    } catch (error) {
+        console.error('Error updating service:', error);
+        res.status(500).json({ message: 'Error updating service', error: (error as Error).message });
+    }
+};
+
+export const deleteService = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    try {
+        await prisma.service.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting service', error: (error as Error).message });
+    }
+};
 
 // Products - Custom handlers para campos opcionales
 export const getProducts = async (req: Request, res: Response) => {

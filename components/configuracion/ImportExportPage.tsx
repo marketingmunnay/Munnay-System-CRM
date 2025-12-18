@@ -279,7 +279,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
             },
             'Servicios': {
                 required: ['nombre', 'categoria'],
-                numeric: ['precio']
+                numeric: ['precio', 'duracionMinutos']
             },
             'Productos': {
                 required: ['nombre', 'categoria'],
@@ -566,6 +566,8 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                         const value = values[index];
                         if (header === 'precio') {
                             service[header] = parseFloat(value) || 0;
+                        } else if (header === 'duracionMinutos') {
+                            service[header] = parseInt(value) || 60; // Default 60 minutos
                         } else {
                             service[header] = value;
                         }
@@ -1112,7 +1114,7 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 title="Servicios"
                 description="Importa tu catálogo de servicios."
                 templateFilename="plantilla_servicios.csv"
-                headers={["id", "nombre", "categoria", "precio"]}
+                headers={["id", "nombre", "categoria", "precio", "duracionMinutos", "descripcion"]}
                 onImport={(file) => handleFileImport(file, 'Servicios')}
             />
 
