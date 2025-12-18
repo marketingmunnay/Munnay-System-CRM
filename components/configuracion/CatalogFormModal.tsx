@@ -26,8 +26,20 @@ const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, 
     const [formData, setFormData] = useState<any>(item || {});
 
     useEffect(() => {
-        setFormData(item || {});
-    }, [item]);
+        // Inicializar formData con valores por defecto para campos numéricos
+        const initialData = { ...item } || {};
+        fields.forEach(field => {
+            if (field.type === 'number' && (initialData[field.name] === undefined || initialData[field.name] === null)) {
+                // Valor por defecto para duracionMinutos
+                if (field.name === 'duracionMinutos') {
+                    initialData[field.name] = 60;
+                } else {
+                    initialData[field.name] = 0;
+                }
+            }
+        });
+        setFormData(initialData);
+    }, [item, fields]);
 
     const handleFieldChange = (field: CatalogField, rawValue: string) => {
         const shouldCastNumber = field.type === 'number' || field.valueType === 'number';
