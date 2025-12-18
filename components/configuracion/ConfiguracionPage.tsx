@@ -44,6 +44,72 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     { id: 'miembros', label: 'Miembros y roles', parent: 'equipo' },
 ];
 
+interface ConfiguracionPageProps {
+    businessInfo: BusinessInfo | null;
+    onSaveBusinessInfo: (info: BusinessInfo) => void;
+    users: User[];
+    roles: Role[];
+    jobPositions: JobPosition[];
+    onSaveUser: (user: User) => void;
+    onDeleteUser: (id: number) => void;
+    onSaveRole: (role: Role) => void;
+    onDeleteRole: (id: number) => void;
+    onSaveJobPosition: (position: JobPosition) => void;
+    onDeleteJobPosition: (id: number) => void;
+    proveedores: Proveedor[];
+    tiposProveedor: TipoProveedor[];
+    egresoCategories: EgresoCategory[];
+    onSaveProveedor: (proveedor: Proveedor) => void;
+    onDeleteProveedor: (id: number) => void;
+    onSaveTipoProveedor: (tipo: TipoProveedor) => void;
+    onDeleteTipoProveedor: (id: number) => void;
+    onSaveEgresoCategory: (category: EgresoCategory) => void;
+    onDeleteEgresoCategory: (id: number) => void;
+    clientSources: ClientSource[];
+    onSaveClientSource: (source: ClientSource) => void;
+    onDeleteClientSource: (id: number) => void;
+    services: Service[];
+    serviceCategories: ServiceCategory[];
+    onSaveService: (service: Service) => void;
+    onDeleteService: (id: number) => void;
+    onSaveServiceCategory: (category: ServiceCategory) => void;
+    onDeleteServiceCategory: (id: number) => void;
+    products: Product[];
+    productCategories: ProductCategory[];
+    productBrands: ProductBrand[];
+    onSaveProduct: (product: Product) => void;
+    onDeleteProduct: (id: number) => void;
+    onSaveProductCategory: (category: ProductCategory) => void;
+    onDeleteProductCategory: (id: number) => void;
+    onSaveProductBrand: (brand: ProductBrand) => void;
+    onDeleteProductBrand: (id: number) => void;
+    memberships: Membership[];
+    onSaveMembership: (membership: Membership) => void;
+    onDeleteMembership: (id: number) => void;
+    goals: Goal[];
+    onSaveGoal: (goal: Goal) => void;
+    onDeleteGoal: (id: number) => void;
+    comprobantes: ComprobanteElectronico[];
+    onImportCampaigns: (campaigns: any[]) => Promise<void>;
+    onImportMetaCampaigns: (campaigns: any[]) => Promise<void>;
+    onImportLeads: (leads: any[]) => Promise<void>;
+    onImportVentasExtra: (ventas: any[]) => Promise<void>;
+    onImportIncidencias: (incidencias: any[]) => Promise<void>;
+    onImportEgresos: (egresos: any[]) => Promise<BulkImportEgresosResponse>;
+    onImportProveedores: (proveedores: any[]) => Promise<void>;
+    onImportPublicaciones: (publicaciones: any[]) => Promise<void>;
+    onImportSeguidores: (seguidores: any[]) => Promise<void>;
+    onImportComprobantes: (comprobantes: any[]) => Promise<void>;
+    onImportServices: (services: any[]) => Promise<void>;
+    onImportProducts: (products: any[]) => Promise<void>;
+    onImportMemberships: (memberships: any[]) => Promise<void>;
+    onImportServiceCategories: (categories: any[]) => Promise<void>;
+    onImportProductCategories: (categories: any[]) => Promise<void>;
+    onImportEgresoCategories: (categories: any[]) => Promise<void>;
+    onImportJobPositions: (positions: any[]) => Promise<void>;
+    requestConfirmation: (message: string, onConfirm: () => void) => void;
+}
+
 interface SimpleListManagerProps {
     title: string;
     items: ClientSource[];
@@ -220,11 +286,11 @@ const ProductosSection: FC<{
     const isCustomBrand = (brand: ProductBrand) => brand.id >= 0;
 
     const marcaOptions = useMemo(() => productBrands.map(brand => ({ label: brand.nombre, value: brand.nombre })), [productBrands]);
-    const proveedorOptions = useMemo(() => proveedores.map(prov => ({ label: prov.nombre, value: prov.id })), [proveedores]);
+    const proveedorOptions = useMemo(() => proveedores.map(prov => ({ label: prov.razonSocial, value: prov.id })), [proveedores]);
     const proveedorLookup = useMemo(() => {
         const map: Record<number, string> = {};
         proveedores.forEach(prov => {
-            map[prov.id] = prov.nombre;
+            map[prov.id] = prov.razonSocial;
         });
         return map;
     }, [proveedores]);
