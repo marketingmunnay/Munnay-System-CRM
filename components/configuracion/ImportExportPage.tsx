@@ -329,13 +329,16 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
 
         // Validate data rows
         dataRows.forEach((row, index) => {
-            const values = row.split(',').map(v => v.trim());
+            let values = row.split(',').map(v => v.trim());
             const rowNumber = index + 2; // +2 because index starts at 0 and we skip header
 
-            // Check if row has enough columns
-            if (values.length !== headers.length) {
-                errors.push(`Fila ${rowNumber}: Tiene ${values.length} columnas pero se esperaban ${headers.length}.`);
-                return;
+            // Si hay más columnas de las necesarias, solo tomar las primeras N
+            if (values.length > headers.length) {
+                values = values.slice(0, headers.length);
+            }
+            // Si hay menos columnas, rellenar con vacío
+            if (values.length < headers.length) {
+                values = values.concat(Array(headers.length - values.length).fill(''));
             }
 
             // Validate numeric fields

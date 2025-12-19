@@ -38,6 +38,9 @@ router.delete('/memberships/:id', controller.deleteMembership);
 // Service Categories
 router.get('/service-categories', controller.getServiceCategories);
 router.post('/service-categories', controller.createServiceCategory);
+
+// Bulk import de servicios
+router.post('/services/bulk', controller.bulkImportServices);
 router.put('/service-categories/:id', controller.updateServiceCategory);
 router.delete('/service-categories/:id', controller.deleteServiceCategory);
 

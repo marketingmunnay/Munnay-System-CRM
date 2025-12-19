@@ -187,6 +187,66 @@ const checkServiceColumnsExist = async (): Promise<boolean> => {
 };
 
 // Migración automática para agregar columnas de Service si no existen
+// Bulk import de servicios
+export const bulkImportServices = async (req: Request, res: Response) => {
+    const servicios = req.body;
+    if (!Array.isArray(servicios)) {
+        return res.status(400).json({ message: 'Se esperaba un array de servicios' });
+    }
+
+    const results: any[] = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < servicios.length; i++) {
+        const servicio = servicios[i];
+        try {
+            // Validar campos requeridos
+            if (!servicio.nombre || !servicio.categoria || servicio.precio === undefined) {
+                throw new Error('Faltan campos requeridos: nombre, categoria, precio');
+            }
+
+            // Si existen las columnas adicionales, las usamos
+            const columnsExist = await checkServiceColumnsExist?.();
+            let newService;
+            if (columnsExist) {
+                newService = await prisma.service.create({
+                    data: {
+                        nombre: servicio.nombre,
+                        categoria: servicio.categoria,
+                        precio: parseFloat(servicio.precio) || 0,
+                        duracionMinutos: parseInt(servicio.duracionMinutos) || 60,
+                        descripcion: servicio.descripcion || null,
+                    }
+                });
+            } else {
+                // Solo los campos básicos
+                const result: any[] = await prisma.$queryRaw`
+                    INSERT INTO "Service" (nombre, categoria, precio)
+                    VALUES (${servicio.nombre}, ${servicio.categoria}, ${parseFloat(servicio.precio) || 0})
+                    RETURNING id, nombre, categoria, precio
+                `;
+                newService = {
+                    ...result[0],
+                    duracionMinutos: 60,
+                    descripcion: null
+                };
+            }
+            results.push({ success: true, index: i, data: newService });
+            successCount++;
+        } catch (error) {
+            results.push({ success: false, index: i, error: (error as Error).message });
+            errorCount++;
+        }
+    }
+
+    res.status(200).json({
+        message: `Importación completada: ${successCount} exitosos, ${errorCount} errores`,
+        successCount,
+        errorCount,
+        servicios: results
+    });
+};
 export const migrateServiceColumns = async (req: Request, res: Response) => {
     try {
         // Verificar si las columnas ya existen
