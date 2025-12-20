@@ -43,11 +43,13 @@ export const getExpenseById = async (req: Request, res: Response) => {
 export const createExpense = async (req: Request, res: Response) => {
   const { id, fechaRegistro, fechaPago, ...data } = req.body;
   
-  // Helper para parsear fechas correctamente
+  // Helper para parsear fechas correctamente (como local, no UTC)
   const parseDate = (dateStr: string | undefined): Date | undefined => {
     if (!dateStr || dateStr === 'undefined' || dateStr === '') return undefined;
-    const date = new Date(dateStr + 'T00:00:00');
-    return isNaN(date.getTime()) ? undefined : date;
+    // Crear fecha local (YYYY-MM-DD)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return undefined;
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
   };
   
   try {
@@ -78,11 +80,13 @@ export const updateExpense = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { id: _, fechaRegistro, fechaPago, ...data } = req.body; // Exclude id from update data
   
-  // Helper para parsear fechas correctamente
+  // Helper para parsear fechas correctamente (como local, no UTC)
   const parseDate = (dateStr: string | undefined): Date | undefined => {
     if (!dateStr || dateStr === 'undefined' || dateStr === '') return undefined;
-    const date = new Date(dateStr + 'T00:00:00');
-    return isNaN(date.getTime()) ? undefined : date;
+    // Crear fecha local (YYYY-MM-DD)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return undefined;
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
   };
   
   try {
