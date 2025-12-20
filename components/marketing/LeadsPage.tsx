@@ -4,7 +4,7 @@ import StatCard from '../dashboard/StatCard.tsx';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon } from '../shared/Icons.tsx';
 // FIX: Changed to named import
 import { LeadFormModal } from './LeadFormModal';
-import DateRangeFilter from '../shared/DateRangeFilter.tsx';
+import AdvancedDateFilter from '../shared/AdvancedDateFilter.tsx';
 import { formatDateForDisplay, formatDateForInput } from '../../utils/time.ts';
 import type { Lead, MetaCampaign, ClientSource, Service, ComprobanteElectronico, Campaign, Membership } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
@@ -104,7 +104,11 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
     const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
-    const [dateRange, setDateRange] = useState({ from: '', to: '' });
+        const [dateFilters, setDateFilters] = useState<{
+            creadoEl?: { from: string; to: string };
+            actualizadoEl?: { from: string; to: string };
+            agendadoEl?: { from: string; to: string };
+        }>({});
     const [searchTerm, setSearchTerm] = useState('');
 
     // Update editingLead when leads array changes (e.g., after save)
@@ -117,40 +121,47 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         }
     }, [leads, editingLead?.id, isModalOpen]);
 
-    const filteredLeads = useMemo(() => {
-        // Normalizar fechas del filtro a solo fecha (YYYY-MM-DD)
-        const fromDate = dateRange.from || null;
-        const toDate = dateRange.to || null;
-
-        const results = (fromDate === null && toDate === null)
-            ? [...leads]
-            : leads.filter(lead => {
-                // Para leads agendados, usar fechaHoraAgenda; para otros, usar fechaLead
-                // Priorizar fechaHoraAgenda si existe (para citas agendadas)
-                const leadDateStr = formatDateForInput(lead.fechaHoraAgenda) || formatDateForInput(lead.fechaLead);
-                if (!leadDateStr) {
-                    return false;
-                }
-                // Comparación de strings en formato YYYY-MM-DD funciona correctamente
-                if (fromDate !== null && leadDateStr < fromDate) {
-                    return false;
-                }
-                if (toDate !== null && leadDateStr > toDate) {
-                    return false;
-                }
-                return true;
-            });
-
-        if (viewMode === 'table' && searchTerm) {
-            return results.filter(lead =>
-                `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.numero.includes(searchTerm) ||
-                lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-        
-        return results;
-    }, [leads, dateRange, viewMode, searchTerm]);
+        const filteredLeads = useMemo(() => {
+            let results = [...leads];
+            // Filtro avanzado: Creado el
+            if (dateFilters.creadoEl && (dateFilters.creadoEl.from || dateFilters.creadoEl.to)) {
+                results = results.filter(lead => {
+                    const created = lead.fechaLead ? formatDateForInput(lead.fechaLead) : '';
+                    if (!created) return false;
+                    if (dateFilters.creadoEl?.from && created < dateFilters.creadoEl.from) return false;
+                    if (dateFilters.creadoEl?.to && created > dateFilters.creadoEl.to) return false;
+                    return true;
+                });
+            }
+            // Filtro avanzado: Actualizado el
+            if (dateFilters.actualizadoEl && (dateFilters.actualizadoEl.from || dateFilters.actualizadoEl.to)) {
+                results = results.filter(lead => {
+                    const updated = lead.updatedAt ? formatDateForInput(lead.updatedAt) : '';
+                    if (!updated) return false;
+                    if (dateFilters.actualizadoEl?.from && updated < dateFilters.actualizadoEl.from) return false;
+                    if (dateFilters.actualizadoEl?.to && updated > dateFilters.actualizadoEl.to) return false;
+                    return true;
+                });
+            }
+            // Filtro avanzado: Agendado el
+            if (dateFilters.agendadoEl && (dateFilters.agendadoEl.from || dateFilters.agendadoEl.to)) {
+                results = results.filter(lead => {
+                    const agendado = lead.fechaHoraAgenda ? formatDateForInput(lead.fechaHoraAgenda) : '';
+                    if (!agendado) return false;
+                    if (dateFilters.agendadoEl?.from && agendado < dateFilters.agendadoEl.from) return false;
+                    if (dateFilters.agendadoEl?.to && agendado > dateFilters.agendadoEl.to) return false;
+                    return true;
+                });
+            }
+            if (viewMode === 'table' && searchTerm) {
+                return results.filter(lead =>
+                    `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    lead.numero.includes(searchTerm) ||
+                    lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            return results;
+        }, [leads, dateFilters, viewMode, searchTerm]);
 
     const handleAddLead = () => {
         setEditingLead(null);
@@ -175,9 +186,14 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
         // The parent will pass the updated lead prop
     };
     
-    const handleApplyDateFilter = (dates: { from: string, to: string }) => {
-        setDateRange(dates);
-    };
+
+        const handleApplyAdvancedDateFilter = (filters: {
+            creadoEl?: { from: string; to: string };
+            actualizadoEl?: { from: string; to: string };
+            agendadoEl?: { from: string; to: string };
+        }) => {
+            setDateFilters(filters);
+        };
 
     const {
         totalLeads,
@@ -215,8 +231,8 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Pipeline</p>
                 <h1 className="text-3xl font-bold text-slate-900">Gestión de Leads</h1>
             </div>
-            <div className="flex items-center space-x-3 mt-4 md:mt-0">
-                <DateRangeFilter onApply={handleApplyDateFilter} />
+            <div className="flex flex-col md:flex-row gap-2 md:items-end mt-4 md:mt-0">
+                <AdvancedDateFilter onApply={handleApplyAdvancedDateFilter} />
                 <button 
                     onClick={handleAddLead}
                     className="flex items-center bg-[#aa632d] text-white px-4 py-2 rounded-xl shadow hover:bg-[#8e5225] transition-colors"

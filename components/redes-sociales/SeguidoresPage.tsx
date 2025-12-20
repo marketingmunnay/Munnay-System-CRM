@@ -6,7 +6,7 @@ import DateRangeFilter from '../shared/DateRangeFilter.tsx';
 import { PlusIcon, MagnifyingGlassIcon } from '../shared/Icons.tsx';
 import SeguidorFormModal from './SeguidorFormModal.tsx';
 import StatCard from '../dashboard/StatCard.tsx';
-import { formatDateForDisplay } from '../../utils/time.ts';
+import { formatDateForDisplay, formatDateTimeForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -44,7 +44,7 @@ const SeguidoresTable: React.FC<{ seguidores: Seguidor[], onEdit: (seg: Seguidor
                     <tbody>
                         {seguidores.map(s => (
                             <tr key={s.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{formatDateForDisplay(s.fecha)}</td>
+                                <td className="px-6 py-4">{formatDateTimeForDisplay(s.fecha)}</td>
                                 <th scope="row" className="px-6 py-4 font-medium text-gray-900">{s.cuenta}</th>
                                 <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${redSocialBadgeColors[s.redSocial]}`}>{s.redSocial}</span></td>
                                 <td className="px-6 py-4">{s.seguidores.toLocaleString('es-PE')}</td>

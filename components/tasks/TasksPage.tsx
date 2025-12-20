@@ -1,4 +1,6 @@
+
 import React, { useMemo, useState } from 'react';
+import { formatDateTimeForDisplay } from '../../utils/time';
 
 type TaskStatus = 'backlog' | 'in-progress' | 'review' | 'done';
 type TaskPriority = 'alta' | 'media' | 'baja';
@@ -186,9 +188,8 @@ const getDaysUntil = (isoDate: string) => {
 	return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
-const formatShortDate = (isoDate: string) => {
-	return new Date(isoDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
-};
+
+// Reemplazado por formato unificado con hora
 
 const TasksPage: React.FC = () => {
 	const [tasks, setTasks] = useState<TaskItem[]>(sampleTasks);
@@ -462,7 +463,7 @@ const TasksPage: React.FC = () => {
 																<p className="text-xs uppercase tracking-[0.4em] text-slate-300">{task.id}</p>
 																<p className="text-base font-semibold text-slate-900">{task.title}</p>
 															</div>
-															<span className="text-xs font-semibold text-slate-400">{formatShortDate(task.dueDate)}</span>
+															<span className="text-xs font-semibold text-slate-400">{formatDateTimeForDisplay(task.dueDate)}</span>
 														</div>
 														<div className="mt-3 flex flex-wrap gap-2">
 															{task.tags.map(tag => (
