@@ -6,11 +6,17 @@ export const getExpenses = async (req: Request, res: Response) => {
   try {
     const expenses = await prisma.egreso.findMany();
     
-    // Formatear fechas a YYYY-MM-DD para compatibilidad con inputs type="date"
+    // Formatear fechas a YYYY-MM-DD (local, no UTC)
+    const formatLocalDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = (date.getMonth() + 1).toString().padStart(2, '0');
+      const d = date.getDate().toString().padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
     const formattedExpenses = expenses.map(expense => ({
       ...expense,
-      fechaRegistro: expense.fechaRegistro.toISOString().split('T')[0],
-      fechaPago: expense.fechaPago ? expense.fechaPago.toISOString().split('T')[0] : undefined,
+      fechaRegistro: formatLocalDate(expense.fechaRegistro),
+      fechaPago: expense.fechaPago ? formatLocalDate(expense.fechaPago) : undefined,
     }));
     
     res.status(200).json(formattedExpenses);
@@ -27,11 +33,17 @@ export const getExpenseById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
     
-    // Formatear fechas a YYYY-MM-DD
+    // Formatear fechas a YYYY-MM-DD (local, no UTC)
+    const formatLocalDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = (date.getMonth() + 1).toString().padStart(2, '0');
+      const d = date.getDate().toString().padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
     const formattedExpense = {
       ...expense,
-      fechaRegistro: expense.fechaRegistro.toISOString().split('T')[0],
-      fechaPago: expense.fechaPago ? expense.fechaPago.toISOString().split('T')[0] : undefined,
+      fechaRegistro: formatLocalDate(expense.fechaRegistro),
+      fechaPago: expense.fechaPago ? formatLocalDate(expense.fechaPago) : undefined,
     };
     
     res.status(200).json(formattedExpense);
@@ -62,11 +74,17 @@ export const createExpense = async (req: Request, res: Response) => {
       },
     });
     
-    // Formatear fechas en la respuesta
+    // Formatear fechas en la respuesta (local, no UTC)
+    const formatLocalDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = (date.getMonth() + 1).toString().padStart(2, '0');
+      const d = date.getDate().toString().padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
     const formattedExpense = {
       ...newExpense,
-      fechaRegistro: newExpense.fechaRegistro.toISOString().split('T')[0],
-      fechaPago: newExpense.fechaPago ? newExpense.fechaPago.toISOString().split('T')[0] : undefined,
+      fechaRegistro: formatLocalDate(newExpense.fechaRegistro),
+      fechaPago: newExpense.fechaPago ? formatLocalDate(newExpense.fechaPago) : undefined,
     };
     
     res.status(201).json(formattedExpense);
@@ -102,11 +120,17 @@ export const updateExpense = async (req: Request, res: Response) => {
       },
     });
     
-    // Formatear fechas en la respuesta
+    // Formatear fechas en la respuesta (local, no UTC)
+    const formatLocalDate = (date: Date) => {
+      const y = date.getFullYear();
+      const m = (date.getMonth() + 1).toString().padStart(2, '0');
+      const d = date.getDate().toString().padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
     const formattedExpense = {
       ...updatedExpense,
-      fechaRegistro: updatedExpense.fechaRegistro.toISOString().split('T')[0],
-      fechaPago: updatedExpense.fechaPago ? updatedExpense.fechaPago.toISOString().split('T')[0] : undefined,
+      fechaRegistro: formatLocalDate(updatedExpense.fechaRegistro),
+      fechaPago: updatedExpense.fechaPago ? formatLocalDate(updatedExpense.fechaPago) : undefined,
     };
     
     res.status(200).json(formattedExpense);
