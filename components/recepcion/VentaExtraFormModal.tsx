@@ -30,8 +30,11 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
   const [formData, setFormData] = useState<Partial<VentaExtra>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pacienteEncontrado, setPacienteEncontrado] = useState<Lead | null>(null);
-  const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | 'Membresía' | ''>('');
-  const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [saleType, setSaleType] = useState<'Servicio' | 'Productos' | 'Membresía' | ''>('');
+    const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
+    const [showNuevoPacienteModal, setShowNuevoPacienteModal] = useState(false);
+    const [nuevoPaciente, setNuevoPaciente] = useState<Partial<Lead>>({ nombres: '', apellidos: '', nHistoria: '' });
+    const [nuevoPacienteError, setNuevoPacienteError] = useState<string>('');
 
   const serviceCategoriesAndItems = useMemo(() => {
     return services.reduce((acc, s) => {
@@ -135,8 +138,8 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             nombrePaciente: `${foundPatient.nombres} ${foundPatient.apellidos}`
         }));
     } else {
-        alert("Paciente no encontrado. Verifique el N° de historia.");
         setPacienteEncontrado(null);
+        setShowNuevoPacienteModal(true);
     }
   };
 
@@ -296,38 +299,113 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
         </div>
       }
     >
-      <div className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <fieldset className="border p-4 rounded-md">
-                <legend className="text-md font-bold px-2 text-black">1. Buscar Paciente</legend>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
-                    <div className="md:col-span-2">
-                        <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia)</label>
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="text"
-                                id="patientSearch"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="flex-grow border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
-                                disabled={!!pacienteEncontrado}
-                                placeholder="Ingrese N° historia"
-                            />
-                            {!pacienteEncontrado ? (
-                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>
-                            ) : (
-                                <button type="button" onClick={handleResetSearch} className="px-4 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</button>
-                            )}
-                        </div>
-                    </div>
-                    {pacienteEncontrado && (
-                        <div>
-                             <p className="mb-1 text-sm font-medium text-gray-700">Paciente</p>
-                             <p className="border bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 font-semibold text-gray-900">{pacienteEncontrado.nombres} {pacienteEncontrado.apellidos}</p>
-                        </div>
-                    )}
-                </div>
-            </fieldset>
+            <div className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                        <fieldset className="border p-4 rounded-md">
+                                <legend className="text-md font-bold px-2 text-black">1. Buscar Paciente</legend>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
+                                        <div className="md:col-span-2">
+                                                <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia)</label>
+                                                <div className="flex items-center space-x-2">
+                                                        <input
+                                                                type="text"
+                                                                id="patientSearch"
+                                                                value={searchTerm}
+                                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                                className="flex-grow border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
+                                                                disabled={!!pacienteEncontrado}
+                                                                placeholder="Ingrese N° historia"
+                                                        />
+                                                        {!pacienteEncontrado ? (
+                                                                <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>
+                                                        ) : (
+                                                                <button type="button" onClick={handleResetSearch} className="px-4 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</button>
+                                                        )}
+                                                </div>
+                                                {/* Si no se encuentra paciente, mostrar opción de registrar */}
+                                                {!pacienteEncontrado && showNuevoPacienteModal && (
+                                                    <div className="mt-4">
+                                                        <button type="button" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" onClick={() => setShowNuevoPacienteModal(true)}>
+                                                            Registrar Nuevo Paciente
+                                                        </button>
+                                                    </div>
+                                                )}
+                                        </div>
+                                        {pacienteEncontrado && (
+                                                <div>
+                                                         <p className="mb-1 text-sm font-medium text-gray-700">Paciente</p>
+                                                         <p className="border bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 font-semibold text-gray-900">{pacienteEncontrado.nombres} {pacienteEncontrado.apellidos}</p>
+                                                </div>
+                                        )}
+                                </div>
+                        </fieldset>
+                        {/* Modal para registrar nuevo paciente */}
+                        {showNuevoPacienteModal && (
+                            <Modal isOpen={showNuevoPacienteModal} onClose={() => setShowNuevoPacienteModal(false)} title="Registrar Nuevo Paciente">
+                                <form className="space-y-4 p-4" onSubmit={e => { e.preventDefault(); }}>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Nombres *</label>
+                                        <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.nombres || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, nombres: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Apellidos *</label>
+                                        <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.apellidos || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, apellidos: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">N° Historia *</label>
+                                        <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.nHistoria || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, nHistoria: e.target.value })} required />
+                                    </div>
+                                    {nuevoPacienteError && <div className="text-red-600 text-sm">{nuevoPacienteError}</div>}
+                                    <div className="flex justify-end space-x-2 mt-4">
+                                        <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => setShowNuevoPacienteModal(false)}>Cancelar</button>
+                                        <button type="button" className="px-4 py-2 bg-green-600 text-white rounded" onClick={() => {
+                                            // Validar campos
+                                            if (!nuevoPaciente.nombres?.trim() || !nuevoPaciente.apellidos?.trim() || !nuevoPaciente.nHistoria?.trim()) {
+                                                setNuevoPacienteError('Todos los campos son obligatorios.');
+                                                return;
+                                            }
+                                            // Validar que no exista el N° de historia
+                                            if (pacientes.some(p => p.nHistoria?.toLowerCase() === (nuevoPaciente.nHistoria || '').toLowerCase())) {
+                                                setNuevoPacienteError('Ya existe un paciente con ese N° de historia.');
+                                                return;
+                                            }
+                                            // Crear paciente básico
+                                            const nuevoId = Date.now();
+                                            const paciente: Lead = {
+                                                id: nuevoId,
+                                                fechaLead: new Date().toISOString().split('T')[0],
+                                                nombres: nuevoPaciente.nombres!,
+                                                apellidos: nuevoPaciente.apellidos!,
+                                                numero: '',
+                                                sexo: 'F',
+                                                redSocial: '',
+                                                anuncio: '',
+                                                vendedor: 'Vanesa',
+                                                estado: 'Nuevo',
+                                                montoPagado: 0,
+                                                servicios: [],
+                                                categoria: '',
+                                                nHistoria: nuevoPaciente.nHistoria!,
+                                            };
+                                            setPacienteEncontrado(paciente);
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                pacienteId: paciente.id,
+                                                nHistoria: paciente.nHistoria,
+                                                nombrePaciente: `${paciente.nombres} ${paciente.apellidos}`
+                                            }));
+                                            setShowNuevoPacienteModal(false);
+                                            setNuevoPaciente({ nombres: '', apellidos: '', nHistoria: '' });
+                                            setNuevoPacienteError('');
+                                            // Llamar callback para guardar en la lista principal si es necesario
+                                            if (typeof onSaveLead === 'function') {
+                                                onSaveLead(paciente);
+                                            }
+                                        }}>Registrar</button>
+                                    </div>
+                                </form>
+                            </Modal>
+                        )}
 
             <fieldset className="border p-4 rounded-md disabled:opacity-50" disabled={formIsDisabled}>
                  <legend className="text-md font-bold px-2 text-black">2. Detalles de la Venta</legend>

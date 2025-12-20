@@ -562,7 +562,15 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 const services = [];
 
                 for (let i = 0; i < dataRows.length; i++) {
-                    const values = dataRows[i].split(',').map(v => v.trim());
+                    let values = dataRows[i].split(',').map(v => v.trim());
+                    // Si hay más columnas de las necesarias, solo tomar las primeras N
+                    if (values.length > headers.length) {
+                        values = values.slice(0, headers.length);
+                    }
+                    // Si hay menos columnas, rellenar con vacío
+                    if (values.length < headers.length) {
+                        values = values.concat(Array(headers.length - values.length).fill(''));
+                    }
                     const service: any = {};
 
                     headers.forEach((header, index) => {
