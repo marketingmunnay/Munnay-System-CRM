@@ -123,12 +123,17 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
   const handlePatientSearch = () => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) {
-        alert("Por favor, ingrese un N° de historia.");
+        alert("Por favor, ingrese un dato para buscar (N° historia, nombre, teléfono o DNI).");
         return;
     }
-    const foundPatient = pacientes.find(p => 
-        (p.nHistoria && p.nHistoria.toLowerCase() === term)
-    );
+    const foundPatient = pacientes.find(p => {
+        return (
+            (p.nHistoria && p.nHistoria.toLowerCase() === term) ||
+            (`${p.nombres} ${p.apellidos}`.toLowerCase().includes(term)) ||
+            (p.numero && p.numero.replace(/\s+/g, '').includes(term)) ||
+            (p.documentNumber && p.documentNumber.toLowerCase().includes(term))
+        );
+    });
     if (foundPatient) {
         setPacienteEncontrado(foundPatient);
         setFormData(prev => ({
@@ -305,16 +310,16 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                 <legend className="text-md font-bold px-2 text-black">1. Buscar Paciente</legend>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 items-end">
                                         <div className="md:col-span-2">
-                                                <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia)</label>
+                                                <label htmlFor="patientSearch" className="mb-1 text-sm font-medium text-gray-700">Buscar Paciente (N° Historia, nombre, teléfono o DNI)</label>
                                                 <div className="flex items-center space-x-2">
                                                         <input
-                                                                type="text"
-                                                                id="patientSearch"
-                                                                value={searchTerm}
-                                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                                className="flex-grow border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
-                                                                disabled={!!pacienteEncontrado}
-                                                                placeholder="Ingrese N° historia"
+                                                            type="text"
+                                                            id="patientSearch"
+                                                            value={searchTerm}
+                                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                                            className="flex-grow border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
+                                                            disabled={!!pacienteEncontrado}
+                                                            placeholder="Ingrese N° historia, nombre, teléfono o DNI"
                                                         />
                                                         {!pacienteEncontrado ? (
                                                                 <button type="button" onClick={handlePatientSearch} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Buscar</button>
@@ -355,18 +360,31 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                         <label className="block text-sm font-medium text-gray-700">N° Historia *</label>
                                         <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.nHistoria || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, nHistoria: e.target.value })} required />
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Teléfono *</label>
+                                        <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.numero || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, numero: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">DNI *</label>
+                                        <input type="text" className="w-full border rounded p-2" value={nuevoPaciente.documentNumber || ''} onChange={e => setNuevoPaciente({ ...nuevoPaciente, documentNumber: e.target.value })} required />
+                                    </div>
                                     {nuevoPacienteError && <div className="text-red-600 text-sm">{nuevoPacienteError}</div>}
                                     <div className="flex justify-end space-x-2 mt-4">
                                         <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => setShowNuevoPacienteModal(false)}>Cancelar</button>
                                         <button type="button" className="px-4 py-2 bg-green-600 text-white rounded" onClick={() => {
                                             // Validar campos
-                                            if (!nuevoPaciente.nombres?.trim() || !nuevoPaciente.apellidos?.trim() || !nuevoPaciente.nHistoria?.trim()) {
+                                            if (!nuevoPaciente.nombres?.trim() || !nuevoPaciente.apellidos?.trim() || !nuevoPaciente.nHistoria?.trim() || !nuevoPaciente.numero?.trim() || !nuevoPaciente.documentNumber?.trim()) {
                                                 setNuevoPacienteError('Todos los campos son obligatorios.');
                                                 return;
                                             }
                                             // Validar que no exista el N° de historia
                                             if (pacientes.some(p => p.nHistoria?.toLowerCase() === (nuevoPaciente.nHistoria || '').toLowerCase())) {
                                                 setNuevoPacienteError('Ya existe un paciente con ese N° de historia.');
+                                                return;
+                                            }
+                                            // Validar que no exista el DNI
+                                            if (pacientes.some(p => p.documentNumber && p.documentNumber.toLowerCase() === (nuevoPaciente.documentNumber || '').toLowerCase())) {
+                                                setNuevoPacienteError('Ya existe un paciente con ese DNI.');
                                                 return;
                                             }
                                             // Crear paciente básico
@@ -376,7 +394,8 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                                 fechaLead: new Date().toISOString().split('T')[0],
                                                 nombres: nuevoPaciente.nombres!,
                                                 apellidos: nuevoPaciente.apellidos!,
-                                                numero: '',
+                                                numero: nuevoPaciente.numero!,
+                                                documentNumber: nuevoPaciente.documentNumber!,
                                                 sexo: 'F',
                                                 redSocial: '',
                                                 anuncio: '',
@@ -395,7 +414,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                                                 nombrePaciente: `${paciente.nombres} ${paciente.apellidos}`
                                             }));
                                             setShowNuevoPacienteModal(false);
-                                            setNuevoPaciente({ nombres: '', apellidos: '', nHistoria: '' });
+                                            setNuevoPaciente({ nombres: '', apellidos: '', nHistoria: '', numero: '', documentNumber: '' });
                                             setNuevoPacienteError('');
                                             // Llamar callback para guardar en la lista principal si es necesario
                                             if (typeof onSaveLead === 'function') {
