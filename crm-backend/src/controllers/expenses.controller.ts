@@ -1,3 +1,16 @@
+// Endpoint temporal para ver fechas crudas de los últimos 10 egresos
+export const getRawEgresoDates = async (req: Request, res: Response) => {
+  try {
+    const egresos = await prisma.egreso.findMany({
+      orderBy: { id: 'desc' },
+      take: 10,
+      select: { id: true, fechaRegistro: true, fechaPago: true }
+    });
+    res.status(200).json(egresos);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching raw egreso dates', error: (error as Error).message });
+  }
+};
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 // import { Egreso } from '@prisma/client';
