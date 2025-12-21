@@ -196,17 +196,25 @@ const PacienteDetailView: React.FC<{ isOpen: boolean, onClose: () => void, pacie
                     <div className="space-y-3">
                         <h3 className="font-semibold text-gray-800 text-base border-b pb-2">Información Personal</h3>
                         <div className="space-y-3 text-sm pt-2">
-                             <div className="flex items-center text-gray-700">
+                            <div className="flex items-center text-gray-700">
                                 <GoogleIcon name="cake" className="text-lg mr-3 text-gray-400"/> 
                                 <span>{calculateAge(paciente.birthDate)} años</span>
                             </div>
-                             <div className="flex items-center text-gray-700">
+                            <div className="flex items-center text-gray-700">
                                 <GoogleIcon name="calendar_month" className="text-lg mr-3 text-gray-400"/> 
                                 <span>{paciente.birthDate ? formatDateForDisplay(paciente.birthDate) : 'N/A'}</span>
                             </div>
                             <div className="flex items-center text-gray-700">
                                 <GoogleIcon name={paciente.sexo === 'F' ? 'female' : 'male'} className="text-lg mr-3 text-gray-400"/> 
                                 <span>{paciente.sexo === 'F' ? 'Femenino' : 'Masculino'}</span>
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                                <GoogleIcon name="event" className="text-lg mr-3 text-purple-500"/>
+                                <span>
+                                    {paciente.fechaHoraAgenda
+                                        ? require('../../utils/time.ts').formatDateTimeForDisplay(paciente.fechaHoraAgenda)
+                                        : 'Sin cita agendada'}
+                                </span>
                             </div>
                         </div>
                     </div>
