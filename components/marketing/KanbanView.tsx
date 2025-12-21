@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDateForDisplay } from '../../utils/time';
+import { formatDateForDisplay, formatDateTimeForDisplay } from '../../utils/time';
 import type { Lead } from '../../types';
 import { LeadStatus } from '../../types';
 import { ClockIcon, CurrencyDollarIcon, UserIcon } from '../shared/Icons';
@@ -52,19 +52,9 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => (
             <span>{formatDateForDisplay(lead.fechaLead || new Date())}</span>
         </div>
         {lead.fechaHoraAgenda && (
-             <div className="mt-2 flex items-center text-xs text-blue-700 font-medium bg-blue-100 p-1 rounded">
+            <div className="mt-2 flex items-center text-xs text-blue-700 font-medium bg-blue-100 p-1 rounded">
                 <ClockIcon className="mr-1.5 h-3 w-3"/>
-                <span>
-                    {(() => {
-                        try {
-                            const fecha = new Date(lead.fechaHoraAgenda);
-                            if (isNaN(fecha.getTime())) return 'Fecha pendiente';
-                            return fecha.toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                        } catch {
-                            return 'Fecha pendiente';
-                        }
-                    })()}
-                </span>
+                <span>{formatDateTimeForDisplay(lead.fechaHoraAgenda)}</span>
             </div>
         )}
     </div>
