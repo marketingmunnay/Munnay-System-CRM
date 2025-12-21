@@ -534,7 +534,7 @@ const TasksPage: React.FC = () => {
 										</div>
 										<div className="grid grid-cols-2 gap-3">
 											<input
-												type="date"
+												type="datetime-local"
 												value={newTask.dueDate}
 												onChange={e => handleNewTaskChange('dueDate', e.target.value)}
 												className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#0f172a] focus:outline-none"
