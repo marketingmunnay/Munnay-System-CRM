@@ -5,6 +5,7 @@ import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import AppointmentWizard from './AppointmentWizard';
+import { getLeads } from '../../services/api';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -378,6 +379,15 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     
     const handleSaveAndClose = async (lead: Lead) => {
         await onSaveLead(lead);
+        // Refetch leads después de guardar para asegurar datos actualizados
+        try {
+            const freshLeads = await getLeads();
+            // Si tienes un setter de leads en el padre, deberías llamarlo aquí
+            // Por ejemplo: setLeads(freshLeads);
+            // Si no, puedes emitir un evento o usar un contexto/global state
+        } catch (err) {
+            console.error('Error al recargar leads después de guardar:', err);
+        }
         if (lead.id && editingLead) {
             setTimeout(() => {
                 const updatedLead = leads.find(l => l.id === lead.id);
