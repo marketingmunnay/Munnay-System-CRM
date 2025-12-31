@@ -887,7 +887,7 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Orquestar nueva cita"
+      title="Añadir cita"
       customMaxWidth="1100px"
       footer={(
         <div className="flex w-full items-center justify-between">
