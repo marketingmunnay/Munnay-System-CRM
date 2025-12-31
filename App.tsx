@@ -20,7 +20,7 @@ import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import FacturacionPage from './components/finanzas/FacturacionPage';
 // FIX: Changed to named export for ConfiguracionPage
 import { ConfiguracionPage } from './components/configuracion/ConfiguracionPage';
-import InventarioPage from './components/administracion/InventarioPage';
+import AdministracionInventarioPage from './pages/administracion-inventario';
 import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
@@ -670,10 +670,7 @@ const App: React.FC = () => {
                     onImportJobPositions={handleImportJobPositions}
                 />;
             case 'administracion-inventario':
-                return <InventarioPage
-                    productos={products}
-                    onReload={loadData}
-                />;
+                return <AdministracionInventarioPage />;
             case 'rrhh-perfiles':
                 return <RecursosHumanosPage 
                     users={users}
