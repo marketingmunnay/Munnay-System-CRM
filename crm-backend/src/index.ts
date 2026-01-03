@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import apiRouter from './api';
 import prisma from './lib/prisma';
+import fs from 'fs';
+import https from 'https';
+import http from 'http';
 
 dotenv.config();
 
@@ -55,6 +58,7 @@ const runAutoMigrations = async () => {
 
 const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
+const HTTP_PORT = process.env.HTTP_PORT || 8080;
 
 // ✅ Lista de orígenes permitidos en producción
 const defaultAllowedOrigins = [
@@ -133,14 +137,41 @@ app.get('/health', (_req, res) => {
 // ✅ API routes
 app.use('/api', apiRouter);
 
-// ✅ Start server con auto-migración
+
+// ✅ Start server con soporte HTTP y HTTPS
 const startServer = async () => {
-  // Ejecutar migraciones automáticas antes de iniciar
   await runAutoMigrations();
-  
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+
+  // Leer certificados SSL
+  let credentials = undefined;
+  try {
+    const key = fs.readFileSync(path.join(__dirname, '..', 'key.pem'), 'utf8');
+    const cert = fs.readFileSync(path.join(__dirname, '..', 'cert.pem'), 'utf8');
+    credentials = { key, cert };
+  } catch (err) {
+    console.error('No se pudieron cargar los certificados SSL (key.pem, cert.pem). Solo se iniciará HTTP.');
+  }
+
+  if (credentials) {
+    // Servidor HTTPS
+    https.createServer(credentials, app).listen(PORT, () => {
+      console.log(`Servidor HTTPS corriendo en el puerto ${PORT}`);
+    });
+
+    // Servidor HTTP que redirige a HTTPS
+    http.createServer((req, res) => {
+      const host = req.headers['host'] ? req.headers['host'].replace(/:\d+$/, ':' + PORT) : '';
+      res.writeHead(301, { "Location": `https://${host}${req.url}` });
+      res.end();
+    }).listen(HTTP_PORT, () => {
+      console.log(`Servidor HTTP (redirecciona a HTTPS) en el puerto ${HTTP_PORT}`);
+    });
+  } else {
+    // Solo HTTP si no hay certificados
+    app.listen(HTTP_PORT, () => {
+      console.log(`Servidor HTTP corriendo en el puerto ${HTTP_PORT}`);
+    });
+  }
 };
 
 startServer();
