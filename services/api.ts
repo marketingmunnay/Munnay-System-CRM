@@ -36,7 +36,7 @@ interface RefreshResponse {
 }
 
 // URL del backend en producción (Render)
-const API_URL = "https://api.munnaymedicinaestetica.com/api";
+const API_URL = "http://157.173.119.186:4000/api";
 
 const AUTH_TOKEN_KEY = 'munnay.authToken';
 const AUTH_TOKEN_EXP_KEY = 'munnay.authTokenExpiresAt';
