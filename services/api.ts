@@ -35,8 +35,9 @@ interface RefreshResponse {
   expiresIn?: number;
 }
 
-// URL del backend en producción (Render)
-const API_URL = "http://157.173.119.186:4000/api";
+// Base URL del backend. Preferir variable de entorno Vite.
+// Ejemplo: VITE_API_URL="https://crm.munnaymedicinaestetica.com/api"
+const API_URL = (import.meta as any)?.env?.VITE_API_URL || "http://157.173.119.186:4000/api";
 
 const AUTH_TOKEN_KEY = 'munnay.authToken';
 const AUTH_TOKEN_EXP_KEY = 'munnay.authTokenExpiresAt';

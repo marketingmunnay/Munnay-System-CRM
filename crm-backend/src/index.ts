@@ -60,6 +60,20 @@ const app: express.Application = express();
 const PORT = process.env.PORT || 4000;
 const HTTP_PORT = process.env.HTTP_PORT || 8080;
 
+// Helper: mask DB URL (hide password), show host:port and database
+const maskDatabaseTarget = (url?: string): string => {
+  if (!url) return 'unknown';
+  try {
+    const u = new URL(url);
+    const host = u.hostname || 'unknown-host';
+    const port = u.port || '5432';
+    const db = (u.pathname || '/').replace('/', '') || 'unknown-db';
+    return `${host}:${port}/${db}`;
+  } catch {
+    return 'invalid-url';
+  }
+};
+
 // ✅ Lista de orígenes permitidos en producción
 const defaultAllowedOrigins = [
   'https://mcc.munnaymedicinaestetica.com',
@@ -126,12 +140,25 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// Log database target (masked) to help diagnose connectivity issues
+console.log('[DB] Target:', maskDatabaseTarget(process.env.DATABASE_URL));
+
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
 // ✅ Health check
 app.get('/health', (_req, res) => {
   res.status(200).send('CRM Munnay Backend is running!');
+});
+
+// ✅ DB health check
+app.get('/health/db', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ ok: true });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error?.message || 'Unknown error' });
+  }
 });
 
 // ✅ API routes
