@@ -357,10 +357,15 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
 
-        const totalMinutesFromStart = (y / HOUR_HEIGHT) * 60;
-        const hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
-        const minute = Math.floor(totalMinutesFromStart % 60);
-        const roundedMinute = Math.round(minute / 15) * 15;
+        const totalMinutesFromStart = Math.max(0, Math.min((y / HOUR_HEIGHT) * 60, (END_HOUR - START_HOUR) * 60));
+        let hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
+        let minute = Math.floor(totalMinutesFromStart % 60);
+        let roundedMinute = Math.round(minute / 15) * 15;
+        if (roundedMinute === 60) {
+            hour += 1;
+            roundedMinute = 0;
+        }
+        hour = Math.max(START_HOUR, Math.min(hour, END_HOUR));
 
         const clickDate = new Date(currentDate);
         clickDate.setHours(hour, roundedMinute, 0, 0);
@@ -379,23 +384,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     
     const handleSaveAndClose = async (lead: Lead) => {
         await onSaveLead(lead);
-        // Refetch leads después de guardar para asegurar datos actualizados
-        try {
-            const freshLeads = await getLeads();
-            // Si tienes un setter de leads en el padre, deberías llamarlo aquí
-            // Por ejemplo: setLeads(freshLeads);
-            // Si no, puedes emitir un evento o usar un contexto/global state
-        } catch (err) {
-            console.error('Error al recargar leads después de guardar:', err);
-        }
-        if (lead.id && editingLead) {
-            setTimeout(() => {
-                const updatedLead = leads.find(l => l.id === lead.id);
-                if (updatedLead) {
-                    setEditingLead(updatedLead);
-                }
-            }, 100);
-        }
+        setIsModalOpen(false);
+        setEditingLead(null);
     };
 
     const selectedDateStr = useMemo(() => formatDateForInput(currentDate) ?? '', [currentDate]);

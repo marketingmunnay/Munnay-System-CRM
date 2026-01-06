@@ -135,7 +135,7 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     if (channels.email) defaults.push('email');
     return defaults;
   });
-  const [emitirComprobante, setEmitirComprobante] = useState(true);
+  const [emitirComprobante, setEmitirComprobante] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [discountType, setDiscountType] = useState<'none' | 'percent' | 'amount'>('none');
@@ -450,6 +450,35 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
       };
 
       await onSaveLead(updatedLead);
+
+      // Crear cita en backend (comprobantes desactivados)
+      const payload: CreateAppointmentPayload = {
+        leadId: updatedLead.id,
+        servicioIds: selectedServiceIds,
+        fecha: selectedDate,
+        horaInicio: startTime,
+        duracionMinutos: totalDuration,
+        profesionalId: selectedProfesionalId || '',
+        ambienteId: selectedAmbienteId ?? undefined,
+        estado: estadoInicial,
+        origen,
+        notas,
+        emitirComprobante: false,
+      };
+
+      const appointment = await createAppointment(payload);
+
+      // Enviar confirmaciones si hay canales seleccionados
+      if (selectedChannels.length > 0) {
+        try {
+          await sendAppointmentConfirmation(appointment.id, selectedChannels);
+        } catch (confirmErr) {
+          console.warn('No se pudo enviar confirmación de cita:', confirmErr);
+        }
+      }
+
+      // Notificar al calendario
+      onAppointmentCreated?.(appointment);
       onClose();
     } catch (err) {
       console.error('Error agendando cita', err);
@@ -856,14 +885,15 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 opacity-60">
         <input
           id="emitir-comprobante"
           type="checkbox"
           checked={emitirComprobante}
           onChange={e => setEmitirComprobante(e.target.checked)}
+          disabled
         />
-        <label htmlFor="emitir-comprobante" className="text-sm text-slate-600">Emitir comprobante inmediato</label>
+        <label htmlFor="emitir-comprobante" className="text-sm text-slate-600">Emitir comprobante inmediato (desactivado)</label>
       </div>
     </div>
   );

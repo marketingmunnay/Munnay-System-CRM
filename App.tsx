@@ -271,8 +271,23 @@ const App: React.FC = () => {
     }, [isAuthenticated]);
 
     // Handlers for data manipulation
-    const handleSaveLead = async (lead: Lead) => { await api.saveLead(lead); await loadData(); };
-    const handleDeleteLead = async (leadId: number) => { await api.deleteLead(leadId); await loadData(); };
+    const handleSaveLead = async (lead: Lead) => {
+        const saved = await api.saveLead(lead);
+        setLeads(prev => {
+            const idx = prev.findIndex(l => l.id === saved.id);
+            const next = idx >= 0 ? (() => { const arr = [...prev]; arr[idx] = saved; return arr; })() : [saved, ...prev];
+            setNotifications(generateNotifications({ leads: next, egresos }));
+            return next;
+        });
+    };
+    const handleDeleteLead = async (leadId: number) => {
+        await api.deleteLead(leadId);
+        setLeads(prev => {
+            const next = prev.filter(l => l.id !== leadId);
+            setNotifications(generateNotifications({ leads: next, egresos }));
+            return next;
+        });
+    };
     const handleSaveCampaign = async (campaign: Campaign) => { await api.saveCampaign(campaign); await loadData(); };
     const handleDeleteCampaign = async (campaignId: number) => { await api.deleteCampaign(campaignId); await loadData(); };
     const handleImportCampaigns = async (campaigns: any[]) => { await api.bulkImportCampaigns(campaigns); await loadData(); };
