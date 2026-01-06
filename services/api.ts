@@ -36,8 +36,17 @@ interface RefreshResponse {
 }
 
 // Base URL del backend. Preferir variable de entorno Vite.
-// Ejemplo: VITE_API_URL="https://crm.munnaymedicinaestetica.com/api"
-const API_URL = (import.meta as any)?.env?.VITE_API_URL || "http://157.173.119.186:4000/api";
+// Si no termina en "/api", se agrega automáticamente para evitar 404.
+const RAW_API_BASE: string = ((import.meta as any)?.env?.VITE_API_URL as string)
+  || (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://157.173.119.186:4000');
+const API_URL = (() => {
+  try {
+    const trimmed = RAW_API_BASE.replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  } catch {
+    return RAW_API_BASE;
+  }
+})();
 
 const AUTH_TOKEN_KEY = 'munnay.authToken';
 const AUTH_TOKEN_EXP_KEY = 'munnay.authTokenExpiresAt';
