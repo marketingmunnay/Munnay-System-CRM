@@ -5,7 +5,7 @@ module.exports = {
       script: 'dist/index.js',
       env: {
         NODE_ENV: 'production',
-        HTTP_PORT: process.env.HTTP_PORT || 400,
+        HTTP_PORT: process.env.HTTP_PORT || 4000,
         // Si usas HTTPS directo con certificados locales, establece PORT en lugar de HTTP_PORT
         // PORT: 4000,
         DATABASE_URL: process.env.DATABASE_URL || 'postgresql://munnay_admin:munnay2024@localhost:5432/munnay_db',

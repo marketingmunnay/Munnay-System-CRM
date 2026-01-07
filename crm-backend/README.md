@@ -49,7 +49,7 @@ Si `health/db` falla con "Can't reach database server":
 
 ## Reverse proxy (Nginx) sugerido
 
-Ejemplo básico para exponer el backend en 80/443 y proxy a `127.0.0.1:400`:
+Ejemplo básico para exponer el backend en 80/443 y proxy a `127.0.0.1:4000`:
 
 ```
 server {
@@ -57,7 +57,7 @@ server {
 	server_name _;
 
 	location / {
-		proxy_pass http://127.0.0.1:400;
+		proxy_pass http://127.0.0.1:4000;
 		proxy_set_header Host $host;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
