@@ -399,17 +399,16 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Remover ID y campos no soportados por el modelo actual de Prisma
-        // El frontend envía muchos campos (descripcion, marca, etc) que aún no están en la BD de producción
-        const { nombre, categoria, precio } = req.body;
+        const { id, movimientos, ...data } = req.body;
         
-        // Solo usar campos que existen en el schema.prisma actual (nombre, categoria, precio)
+        // Ahora usamos todos los datos recibidos
         const newProduct = await prisma.product.create({ 
             data: {
-                nombre,
-                categoria,
-                precio: Number(precio)
-            }
+                ...data,
+                precio: Number(data.precio),
+                costoCompra: data.costoCompra ? Number(data.costoCompra) : undefined,
+                precioVenta: data.precioVenta ? Number(data.precioVenta) : undefined
+            } 
         });
         res.status(201).json(newProduct);
     } catch (error) {
@@ -421,16 +420,16 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, categoria, precio } = req.body;
+        const { id: _, movimientos, ...data } = req.body;
         
-        // Solo usar campos que existen en el schema.prisma actual
         const updatedProduct = await prisma.product.update({ 
             where: { id }, 
             data: {
-                nombre,
-                categoria,
-                precio: Number(precio)
-            }
+                ...data,
+                precio: Number(data.precio),
+                costoCompra: data.costoCompra ? Number(data.costoCompra) : undefined,
+                precioVenta: data.precioVenta ? Number(data.precioVenta) : undefined
+            } 
         });
         res.status(200).json(updatedProduct);
     } catch (error) {
