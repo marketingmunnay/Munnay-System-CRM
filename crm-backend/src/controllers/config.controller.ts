@@ -399,11 +399,18 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Remover ID y campos de inventario deshabilitados
-        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
+        // Remover ID y campos no soportados por el modelo actual de Prisma
+        // El frontend envía muchos campos (descripcion, marca, etc) que aún no están en la BD de producción
+        const { nombre, categoria, precio } = req.body;
         
-        // Solo usar campos básicos (nombre, categoria, precio)
-        const newProduct = await prisma.product.create({ data });
+        // Solo usar campos que existen en el schema.prisma actual (nombre, categoria, precio)
+        const newProduct = await prisma.product.create({ 
+            data: {
+                nombre,
+                categoria,
+                precio: Number(precio)
+            }
+        });
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Error creating product:', error);
@@ -414,13 +421,16 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
-        // Remover ID y campos de inventario deshabilitados
-        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
+        const { nombre, categoria, precio } = req.body;
         
-        // Solo usar campos básicos (nombre, categoria, precio)
+        // Solo usar campos que existen en el schema.prisma actual
         const updatedProduct = await prisma.product.update({ 
             where: { id }, 
-            data 
+            data: {
+                nombre,
+                categoria,
+                precio: Number(precio)
+            }
         });
         res.status(200).json(updatedProduct);
     } catch (error) {
