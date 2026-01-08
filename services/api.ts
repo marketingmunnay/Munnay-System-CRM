@@ -41,7 +41,11 @@ const RAW_API_BASE: string = ((import.meta as any)?.env?.VITE_API_URL as string)
   || (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://157.173.119.186:4000');
 const API_URL = (() => {
   try {
-    const trimmed = RAW_API_BASE.replace(/\/+$/, '');
+    let trimmed = RAW_API_BASE.replace(/\/+$/, '');
+    // Asegurar que tenga protocolo
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        trimmed = `https://${trimmed}`;
+    }
     return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
   } catch {
     return RAW_API_BASE;
