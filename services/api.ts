@@ -37,8 +37,7 @@ interface RefreshResponse {
 
 // Base URL del backend. Preferir variable de entorno Vite.
 // Si no termina en "/api", se agrega automáticamente para evitar 404.
-const RAW_API_BASE: string = ((import.meta as any)?.env?.VITE_API_URL as string)
-  || (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://157.173.119.186:4000');
+const RAW_API_BASE: string = ((import.meta as any)?.env?.VITE_API_URL as string) || '/api';
 const API_URL = (() => {
   try {
     let trimmed = RAW_API_BASE.replace(/\/+$/, '');
