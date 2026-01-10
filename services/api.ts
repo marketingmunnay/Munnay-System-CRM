@@ -42,7 +42,13 @@ const RAW_API_BASE: string = ((import.meta as any)?.env?.VITE_API_URL as string)
 const API_URL = (() => {
   try {
     let trimmed = RAW_API_BASE.replace(/\/+$/, '');
-    // Asegurar que tenga protocolo
+    
+    // Si empieza con /, es una ruta relativa (ej: /api), no forzar protocolo
+    if (trimmed.startsWith('/')) {
+        return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+    }
+
+    // Asegurar que tenga protocolo si no es relativa
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
         trimmed = `https://${trimmed}`;
     }
