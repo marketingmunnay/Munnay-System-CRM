@@ -4,12 +4,11 @@ Sistema de gestión de relaciones con clientes (CRM) para Munnay Medicina Estét
 
 ## 🚀 Deployment
 
-### Render.com (Recomendado)
+### VPS / Servidor Propio
 
-1. Fork este repositorio en GitHub
-2. Conecta tu repositorio a Render.com
-3. Usa el archivo `render.yaml` para configuración automática
-4. Configura las variables de entorno necesarias (ver `.env.example`)
+El proyecto está configurado para ejecutarse en un servidor usando Docker y Docker Compose, o manualmente con Node.js y PM2.
+
+Asegúrate de configurar las variables de entorno en el servidor.
 
 ### Docker
 
