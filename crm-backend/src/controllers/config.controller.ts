@@ -107,26 +107,43 @@ const decodeDataUrlImage = async (req: Request, dataUrl: string): Promise<string
 // --- Business Info (special case) ---
 export const getBusinessInfo = async (req: Request, res: Response) => {
     try {
+        console.log('[BusinessInfo] Fetching info...');
         // Assuming there's only one record, or we fetch the first one.
         let info = await prisma.businessInfo.findFirst();
+        
         if (!info) {
+            console.log('[BusinessInfo] No info found. Creating default...');
              // Create a default if it doesn't exist
-            info = await prisma.businessInfo.create({
-                data: {
-                    id: 1, // Explicitly set ID if it's not autoincrement
-                    nombre: 'Munnay System',
-                    ruc: '12345678901',
-                    direccion: 'Av. Principal 123',
-                    telefono: '987654321',
-                    email: 'info@munnay.com',
-                    logoUrl: 'https://i.imgur.com/JmZt2eU.png',
-                    loginImageUrl: ''
-                }
-            });
+            try {
+                info = await prisma.businessInfo.create({
+                    data: {
+                        id: 1, // Explicitly set ID if it's not autoincrement
+                        nombre: 'Munnay System',
+                        ruc: '12345678901',
+                        direccion: 'Av. Principal 123',
+                        telefono: '987654321',
+                        email: 'info@munnay.com',
+                        logoUrl: 'https://i.imgur.com/JmZt2eU.png',
+                        loginImageUrl: ''
+                    }
+                });
+                console.log('[BusinessInfo] Default info created successfully.');
+            } catch (createError) {
+                console.error('[BusinessInfo] Error creating default info:', createError);
+                // Si falla la creación (ej. race condition o constraint), intentamos buscar de nuevo
+                info = await prisma.businessInfo.findFirst();
+                if (!info) throw createError;
+            }
         }
         res.status(200).json(info);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching business info', error: (error as Error).message });
+        console.error('[BusinessInfo] Critical error:', error);
+        // Enviamos el error detallado en el mensaje para que el frontend lo pueda mostrar/loguear
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        res.status(500).json({ 
+            message: `Error fetching business info: ${errorMessage}`,
+            error: errorMessage 
+        });
     }
 };
 

@@ -80,7 +80,6 @@ const defaultAllowedOrigins = [
   'https://crm.munnaymedicinaestetica.com',
   'https://munnay-system-crm.vercel.app',
   'https://munnay-system.vercel.app',
-  'https://munnay-crm-frontend.onrender.com',
   'http://localhost:4173',
   'http://localhost:3000',
   'http://localhost:5173'
@@ -196,7 +195,6 @@ const startServer = async () => {
     });
   } else {
     // Solo HTTP si no hay certificados
-    // En Render, process.env.PORT es el puerto principal donde debemos escuchar
     const listenPort = process.env.PORT || HTTP_PORT;
     app.listen(listenPort, () => {
       console.log(`Servidor HTTP corriendo en el puerto ${listenPort}`);
