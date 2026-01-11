@@ -577,6 +577,7 @@ model Product {
   nombre         String   @unique
   categoria      String
   precio         Float
+  descripcion    String?  @db.Text
   
   // CAMPOS ACTIVADOS
   createdAt      DateTime @default(now())
