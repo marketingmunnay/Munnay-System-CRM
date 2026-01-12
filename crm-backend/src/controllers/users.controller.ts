@@ -10,6 +10,7 @@ const safeUserSelect = {
   apellidos: true,
   usuario: true,
   rolId: true,
+  rol: { include: { permissions: true } }, // Include permission info
   avatarUrl: true,
   position: true,
   documentType: true,
@@ -73,7 +74,14 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    return res.status(200).json(user);
+    // Map 'rol' to 'role' because frontend expects 'role'
+    const { rol, ...userData } = user as any;
+    const responseUser = {
+      ...userData,
+      role: rol
+    };
+
+    return res.status(200).json(responseUser);
   } catch (error) {
     console.error('Error al obtener el usuario autenticado:', error);
     return res.status(500).json({ message: 'Error fetching current user', error: (error as Error).message });
@@ -307,7 +315,10 @@ export const loginUser = async (req: Request, res: Response) => {
   const { usuario, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { usuario } });
+    const user = await prisma.user.findUnique({ 
+        where: { usuario },
+        include: { rol: true } 
+    });
     if (!user) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
@@ -317,7 +328,13 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, rol, ...userWithoutPassword } = user;
+
+    // Map 'rol' to 'role' because frontend expects 'role'
+    const responseUser = {
+      ...userWithoutPassword,
+      role: rol
+    };
 
     // 🔑 Generar token JWT
     const token = jwt.sign(
@@ -328,7 +345,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     return res.json({
       message: 'Login exitoso',
-      user: userWithoutPassword,
+      user: responseUser,
       token,
     });
   } catch (error) {
