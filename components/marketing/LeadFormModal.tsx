@@ -75,7 +75,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaLead" 
-                            value={formatDateForInput(formData.fechaLead || new Date()) || ''} 
+                            value={formatDateForInputField(formData.fechaLead) || new Date().toISOString().split('T')[0]} 
                             onChange={handleChange} 
                             className="w-full bg-[#f9f9fa] p-2" 
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -2380,7 +2380,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 vendedor: mapSellerFront(lead.vendedor), 
                 estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
                 // Format date fields for input[type="date"]
-                fechaLead: formatDateForInputField(lead.fechaLead),
+                fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
                 fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
                 birthDate: formatDateForInputField(lead.birthDate),
                 fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
