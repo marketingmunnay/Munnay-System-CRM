@@ -84,6 +84,10 @@ export function formatDateForInput(date: string | Date | null | undefined): stri
 
 // Función para formatear fecha para mostrar en tablas (DD/MM/YYYY)
 export function formatDateForDisplay(date: string | Date | null | undefined): string {
+  // If date is invalid or missing, create a date fallback if possible or return specific string
+  // If strict mode is needed, we would return '-'
+  if (!date || date === 'undefined' || date === 'null') return '-';
+
   const parsedDate = parseDate(date);
   if (!parsedDate) return '-';
   
@@ -97,6 +101,8 @@ export function formatDateForDisplay(date: string | Date | null | undefined): st
 
 // Función para formatear fecha y hora para mostrar en tablas
 export function formatDateTimeForDisplay(date: string | Date | null | undefined): string {
+  if (!date || date === 'undefined' || date === 'null') return '-';
+
   const parsedDate = parseDate(date);
   if (!parsedDate) return '-';
   
