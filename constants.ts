@@ -50,6 +50,7 @@ export const ALL_PAGES_CONFIG: { id: Page; label: string; group: string }[] = [
     { id: 'recepcion-agendados', label: 'Asistidos', group: 'Administración' },
     { id: 'recepcion-ventas-extra', label: 'Ventas Recepción', group: 'Administración' },
     { id: 'recepcion-incidencias', label: 'Incidencias (Recepción)', group: 'Administración' },
+    { id: 'administracion-inventario', label: 'Inventario', group: 'Administración' },
     { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', group: 'Procedimientos' },
     { id: 'procedimientos-seguimiento', label: 'Seguimiento', group: 'Procedimientos' },
     { id: 'procedimientos-ventas-extra', label: 'Ventas (Procedimientos)', group: 'Procedimientos' },
