@@ -136,7 +136,13 @@ export const createLead = async (req: Request, res: Response) => {
       if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
       
       try {
-        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // FIX: Si debemos agregar hora a una fecha (fechaLead, fechaVolverLlamar),
+        // forzar zona horaria de Perú (-05:00) para evitar que caiga en el día anterior por conversión a UTC.
+        // Ej: "2026-01-13" -> "2026-01-13T00:00:00-05:00" -> UTC 05:00 (Mismo día)
+        const dateValue = addTime 
+            ? new Date(dateStr + 'T00:00:00-05:00') 
+            : new Date(dateStr);
+        
         // Check if date is valid
         if (isNaN(dateValue.getTime())) return defaultValue;
         return dateValue;
@@ -303,7 +309,10 @@ export const updateLead = async (req: Request, res: Response) => {
       if (!dateStr || dateStr === '' || dateStr === 'undefined') return undefined;
       
       try {
-        const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
+        // FIX: Force Peru Timezone (-05:00) when adding time to date-only strings
+        const dateValue = addTime 
+            ? new Date(dateStr + 'T00:00:00-05:00') 
+            : new Date(dateStr);
         // Check if date is valid
         if (isNaN(dateValue.getTime())) return undefined;
         return dateValue;
