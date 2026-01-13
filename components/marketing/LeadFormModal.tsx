@@ -63,6 +63,38 @@ const isProfessionalUser = (user: Partial<User>) => {
 // Puestos permitidos para el campo Vendedor
 const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
 
+// Helper function to format date fields for input[type="date"]
+const formatDateForInputField = (dateValue: any): string => {
+    if (!dateValue) return '';
+    
+    // If it's already a string in YYYY-MM-DD format, return as is
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+    }
+    
+    // If it's a string with time (ISO format), extract date part
+    if (typeof dateValue === 'string' && dateValue.includes('T')) {
+        return dateValue.split('T')[0];
+    }
+    
+    // If it's a Date object, format it
+    if (dateValue instanceof Date) {
+        return dateValue.toISOString().split('T')[0];
+    }
+    
+    // Try to parse as date and format
+    try {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+        }
+    } catch (e) {
+        // Invalid date, return empty string
+    }
+    
+    return '';
+};
+
 const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2237,38 +2269,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
         return list;
     }, [users]);
-
-    // Helper function to format date fields for input[type="date"]
-    const formatDateForInputField = (dateValue: any): string => {
-        if (!dateValue) return '';
-        
-        // If it's already a string in YYYY-MM-DD format, return as is
-        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-            return dateValue;
-        }
-        
-        // If it's a string with time (ISO format), extract date part
-        if (typeof dateValue === 'string' && dateValue.includes('T')) {
-            return dateValue.split('T')[0];
-        }
-        
-        // If it's a Date object, format it
-        if (dateValue instanceof Date) {
-            return dateValue.toISOString().split('T')[0];
-        }
-        
-        // Try to parse as date and format
-        try {
-            const date = new Date(dateValue);
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0];
-            }
-        } catch (e) {
-            // Invalid date, return empty string
-        }
-        
-        return '';
-    };
 
     // Frontend mapping helper: normalize any incoming vendedor string to Seller token
     const mapSellerFront = (value: any): string => {
