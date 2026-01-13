@@ -210,8 +210,10 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
         allAtenciones
             .sort((a, b) => {
                 // Sort by date and time to get most recent first
-                const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
-                const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
+                // Append -05:00 to ensure we are sorting closely to Peru Time logic, 
+                // avoiding issues where browser local time shifts the day.
+                const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}:00-05:00`);
+                const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}:00-05:00`);
                 return dateB.getTime() - dateA.getTime(); // Most recent first
             })
             .forEach(atencion => {
@@ -223,8 +225,8 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
 
         // Convert back to array and sort by date/time
         return Array.from(groupedByPatient.values()).sort((a, b) => {
-            const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}`);
-            const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}`);
+            const dateA = new Date(`${a.procedure.fechaAtencion}T${a.procedure.horaInicio}:00-05:00`);
+            const dateB = new Date(`${b.procedure.fechaAtencion}T${b.procedure.horaInicio}:00-05:00`);
             return dateA.getTime() - dateB.getTime();
         });
 

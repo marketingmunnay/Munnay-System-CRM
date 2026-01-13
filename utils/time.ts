@@ -40,11 +40,11 @@ export function parseDate(dateStr: string | Date | null | undefined, isDateOnly 
     // Si es solo fecha (YYYY-MM-DD) y queremos solo fecha
     else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/) && isDateOnly) {
       // Para fechas sin hora, usar mediodía en zona horaria de Perú para evitar problemas de timezone
-      parsedDate = new Date(dateStr + 'T12:00:00');
+      parsedDate = new Date(dateStr + 'T12:00:00-05:00');
     }
     // Si es solo fecha pero queremos mantener la hora actual
     else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      parsedDate = new Date(dateStr + 'T00:00:00');
+      parsedDate = new Date(dateStr + 'T00:00:00-05:00');
     }
     // Si es otro formato, intentar parsear directamente
     else {
