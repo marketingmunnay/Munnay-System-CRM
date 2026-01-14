@@ -481,7 +481,14 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                     </div>
                      <div>
                         <label htmlFor="metodoPago" className="mb-1 text-sm font-medium text-gray-700">Método de Pago</label>
-                        <select id="metodoPago" name="metodoPago" value={formData.metodoPago || ''} onChange={handleChange} className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black">
+                        <select 
+                            id="metodoPago" 
+                            name="metodoPago" 
+                            value={formData.metodoPago || ''} 
+                            onChange={(e) => setFormData(prev => ({ ...prev, metodoPago: e.target.value as MetodoPago }))} 
+                            className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
+                        >
+                            <option value="">Seleccionar...</option>
                             {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                         </select>
                     </div>
