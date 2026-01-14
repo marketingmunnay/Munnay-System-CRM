@@ -78,8 +78,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
     const filteredNavItems = useMemo(() => {
         const userPermissions = new Set(['dashboard', ...permissions]);
 
-        // Forzar que 'administracion-inventario' siempre esté visible
-        const forceVisiblePages = new Set(['administracion-inventario']);
+        // Forzar que 'administracion-inventario' y 'auditoria-logs' siempre estén visibles
+        const forceVisiblePages = new Set(['administracion-inventario', 'auditoria-logs']);
 
         const filterRecursively = (items: NavItem[]): NavItem[] => {
             return items
