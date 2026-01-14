@@ -69,6 +69,7 @@ const navItems: NavItem[] = [
     },
     { id: 'informes', label: 'Informes', icon: <GoogleIcon name="bar_chart_4_bars" className="text-xl" />, page: 'informes' },
     { id: 'configuracion', label: 'Configuración', icon: <GoogleIcon name="settings" className="text-xl" />, page: 'configuracion' },
+    { id: 'auditoria', label: 'Logs del Sistema', icon: <GoogleIcon name="receipt_long" className="text-xl" />, page: 'auditoria-logs' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, isCollapsed, permissions, businessInfo }) => {

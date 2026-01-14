@@ -25,6 +25,7 @@ import InformesPage from './components/informes/InformesPage';
 import LoginPage from './components/auth/LoginPage';
 import ConfirmationModal from './components/shared/ConfirmationModal';
 import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPage';
+import AuditLogsPage from './components/audit/AuditLogsPage';
 import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
 import TasksPage from './components/tasks/TasksPage';
 import type { 
@@ -688,6 +689,8 @@ const App: React.FC = () => {
                     publicaciones={publicaciones}
                     seguidores={seguidores}
                 />;
+            case 'auditoria-logs':
+                return <AuditLogsPage />;
             default:
                 return <Dashboard {...dashboardProps} />;
         }

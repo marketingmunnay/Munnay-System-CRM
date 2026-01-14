@@ -21,7 +21,8 @@ export type Page =
     'administracion-inventario' |
     'rrhh-perfiles' |
     'informes' |
-    'configuracion';
+    'configuracion' |
+    'auditoria-logs';
 
 export enum LeadStatus {
     Nuevo = 'Nuevo',
@@ -476,6 +477,17 @@ export interface Role {
     nombre: string;
     permissions: Page[];
     dashboardMetrics: string[];
+}
+
+export interface SystemLog {
+  id: number;
+  fecha: string;
+  usuario: string; // Nombre del usuario
+  usuarioId: number;
+  accion: 'crear' | 'editar' | 'eliminar' | 'login' | 'otro';
+  modulo: string; // Ej: 'Leads', 'Ventas', 'Inventario'
+  detalles: string;
+  ip?: string;
 }
 
 export interface BusinessInfo {
