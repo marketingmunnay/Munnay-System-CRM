@@ -196,7 +196,7 @@ export const getMovimientos = async (req: Request, res: Response) => {
 // ========================================
 
 export const crearPagoProducto = async (req: Request, res: Response) => {
-  const { productoId, nHistoria, montoTotal, montoPagado, esPrepago, observaciones } = req.body;
+  const { productoId, nHistoria, montoTotal, montoPagado, esPrepago, observaciones, entregarAhora } = req.body;
   
   try {
     // Validar producto existe
@@ -224,10 +224,17 @@ export const crearPagoProducto = async (req: Request, res: Response) => {
     }
     
     let estadoProducto: string;
+    let fechaEntrega: Date | null = null;
+
     if (esPrepago || config.stockActual === 0) {
       estadoProducto = 'pendiente_stock';
     } else if (estadoPago === 'completado') {
-      estadoProducto = 'pendiente_entrega';
+      if (entregarAhora) {
+        estadoProducto = 'entregado';
+        fechaEntrega = new Date();
+      } else {
+        estadoProducto = 'pendiente_entrega';
+      }
     } else {
       estadoProducto = 'reservado';
     }
@@ -242,7 +249,8 @@ export const crearPagoProducto = async (req: Request, res: Response) => {
         estadoPago,
         estadoProducto,
         esPrepago,
-        observaciones
+        observaciones,
+        fechaEntrega // Add fechaEntrega
       }
     });
     
@@ -260,28 +268,54 @@ export const crearPagoProducto = async (req: Request, res: Response) => {
     }
     
     // Si es prepago o no hay stock, no reservar físicamente
-    // Si hay stock y es pago completo, reservar
+    // Si hay stock y es pago completo:
     if (!esPrepago && config.stockActual > 0 && estadoPago === 'completado') {
-      await prisma.movimientoInventario.create({
-        data: {
-          configuracionProductoId: config.id,
-          tipoMovimiento: 'reserva',
-          cantidad: 1,
-          stockAnterior: config.stockActual,
-          stockNuevo: config.stockActual - 1,
-          precioVenta: montoTotal,
-          motivo: `Reserva para ${nHistoria}`,
-          referencia: pagoProducto.id.toString(),
-          creadoPor: req.body.usuario || 'Sistema'
+        if (entregarAhora) {
+             // Entrega Inmediata: Descontar stock con movimiento 'salida'
+            await prisma.movimientoInventario.create({
+                data: {
+                  configuracionProductoId: config.id,
+                  tipoMovimiento: 'salida',
+                  cantidad: 1,
+                  stockAnterior: config.stockActual,
+                  stockNuevo: config.stockActual - 1,
+                  precioVenta: montoTotal,
+                  motivo: `Venta directa a ${nHistoria}`,
+                  referencia: pagoProducto.id.toString(),
+                  creadoPor: req.body.usuario || 'Sistema'
+                }
+            });
+
+            await prisma.configuracionProducto.update({
+                where: { id: config.id },
+                data: { stockActual: config.stockActual - 1 }
+            });
+
+            await verificarAlertas(config.id);
+
+        } else {
+             // Reserva Normal
+            await prisma.movimientoInventario.create({
+                data: {
+                  configuracionProductoId: config.id,
+                  tipoMovimiento: 'reserva',
+                  cantidad: 1,
+                  stockAnterior: config.stockActual,
+                  stockNuevo: config.stockActual - 1,
+                  precioVenta: montoTotal,
+                  motivo: `Reserva para ${nHistoria}`,
+                  referencia: pagoProducto.id.toString(),
+                  creadoPor: req.body.usuario || 'Sistema'
+                }
+              });
+              
+              await prisma.configuracionProducto.update({
+                where: { id: config.id },
+                data: { stockActual: config.stockActual - 1 }
+              });
+              
+              await verificarAlertas(config.id);
         }
-      });
-      
-      await prisma.configuracionProducto.update({
-        where: { id: config.id },
-        data: { stockActual: config.stockActual - 1 }
-      });
-      
-      await verificarAlertas(config.id);
     }
     
     res.status(201).json(pagoProducto);
@@ -409,7 +443,6 @@ export const entregarProducto = async (req: Request, res: Response) => {
       });
     }
     
-    // Validar que haya stock (si no es prepago)
     const config = await prisma.configuracionProducto.findUnique({ 
       where: { productoId: pagoProducto.productoId } 
     });
@@ -418,30 +451,59 @@ export const entregarProducto = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Configuración de producto no encontrada' });
     }
     
-    // Si el estado es "pendiente_stock", no se puede entregar
-    if (pagoProducto.estadoProducto === 'pendiente_stock') {
-      return res.status(400).json({ message: 'El producto aún no está disponible en stock' });
-    }
-    
     // Si el estado es "entregado", ya fue entregado
     if (pagoProducto.estadoProducto === 'entregado') {
       return res.status(400).json({ message: 'El producto ya fue entregado anteriormente' });
     }
-    
-    // Registrar entrega (salida del inventario)
-    await prisma.movimientoInventario.create({
-      data: {
-        configuracionProductoId: config.id,
-        tipoMovimiento: 'salida',
-        cantidad: 1,
-        stockAnterior: config.stockActual,
-        stockNuevo: config.stockActual,
-        precioVenta: pagoProducto.montoTotal,
-        motivo: `Entrega a ${pagoProducto.nHistoria}`,
-        referencia: id.toString(),
-        creadoPor: entregadoPor || 'Sistema'
-      }
-    });
+
+    // Lógica diferenciada segun estado previo
+    if (pagoProducto.estadoProducto === 'pendiente_stock') {
+        // Estaba esperando stock. Verificamos disponibilidad actual.
+        if (config.stockActual <= 0) {
+            return res.status(400).json({ message: 'No hay stock físico para entregar este producto pendiente.' });
+        }
+
+        // Si hay Stock, procedemos a descontar y entregar
+        await prisma.movimientoInventario.create({
+            data: {
+              configuracionProductoId: config.id,
+              tipoMovimiento: 'salida',
+              cantidad: 1,
+              stockAnterior: config.stockActual,
+              stockNuevo: config.stockActual - 1,
+              precioVenta: pagoProducto.montoTotal,
+              motivo: `Entrega de pendiente_stock a ${pagoProducto.nHistoria}`,
+              referencia: id.toString(),
+              creadoPor: entregadoPor || 'Sistema'
+            }
+          });
+          
+          await prisma.configuracionProducto.update({
+            where: { id: config.id },
+            data: { stockActual: config.stockActual - 1 }
+          });
+    } else {
+        // Estado 'pendiente_entrega' o 'reservado' (si es que la lógica lo permite)
+        // Se asume que en 'pendiente_entrega' el stock YA fue descontado/reservado.
+        // Solo registramos la salida física (sin cambio de stock neto si ya estaba reservado)
+        
+        // NOTA: Si estaba reservado, el stock fisico ya bajó.
+        // Registramos salida como confirmación.
+        
+        await prisma.movimientoInventario.create({
+            data: {
+              configuracionProductoId: config.id,
+              tipoMovimiento: 'salida',
+              cantidad: 1,
+              stockAnterior: config.stockActual,
+              stockNuevo: config.stockActual, // No cambia porque ya se descontó en reserva
+              precioVenta: pagoProducto.montoTotal,
+              motivo: `Entrega confirmada a ${pagoProducto.nHistoria}`,
+              referencia: id.toString(),
+              creadoPor: entregadoPor || 'Sistema'
+            }
+          });
+    }
     
     // Actualizar estado
     const pagoActualizado = await prisma.pagoProducto.update({

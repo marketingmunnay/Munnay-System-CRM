@@ -435,13 +435,33 @@ export const createProduct = async (req: Request, res: Response) => {
         
         const newProduct = await prisma.product.create({ data });
 
+        // Crear automáticamente la configuración de inventario
+        try {
+            await prisma.configuracionProducto.create({
+                data: {
+                    productoId: newProduct.id,
+                    stockActual: 0,
+                    stockMinimo: 5,
+                    unidadMedida: data.unidadMedida || 'unidades',
+                    costoUnitario: newProduct.precioCoste || 0,
+                    aplicaIGV: true,
+                    igvPorcentaje: 18,
+                    alertasActivas: true,
+                    equivalenciaBase: 1
+                }
+            });
+        } catch (invError) {
+            console.error('Warning: Error auto-creating inventory config:', invError);
+            // Non-blocking error
+        }
+
         // Audit Log Success
         await createAuditLog({
             usuarioId: 1, 
             usuario: 'Usuario',
             accion: 'crear',
             modulo: 'Configuracion',
-            detalles: `Producto creado: ${newProduct.nombre}`,
+            detalles: `Producto creado: ${newProduct.nombre} (con inventario activado)`,
             metadata: { productId: newProduct.id, data }
         });
 
