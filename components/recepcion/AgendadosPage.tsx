@@ -111,10 +111,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
 // Kanban Column Component
 const KanbanColumn: React.FC<{ title: string; color: string; textColor: string; children: React.ReactNode; count: number }> = ({ title, color, textColor, children, count }) => (
     <div className="bg-gray-100 rounded-lg w-full md:w-72 flex-shrink-0">
-        <div className={`p-3 flex justify-between items{
-        const date = parseDate(dateTimeString);
-        return date ? date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
-    }
+        <div className={`p-3 flex justify-between items-center ${color} rounded-t-lg`}>
             <h3 className={`font-semibold ${textColor} text-sm`}>{title}</h3>
             <span className={`${textColor} text-sm font-bold bg-black/10 rounded-full px-2 py-0.5`}>{count}</span>
         </div>
