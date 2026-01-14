@@ -1915,7 +1915,14 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
             case 'agenda-recursos':
             case 'agenda-estados':
             case 'agenda-bloqueos':
-                return <CitasConfigPage />;
+                const mapTab: Record<string, string> = {
+                    'agenda': 'general',
+                    'agenda-general': 'general',
+                    'agenda-recursos': 'resources',
+                    'agenda-estados': 'statuses',
+                    'agenda-bloqueos': 'blocks'
+                };
+                return <CitasConfigPage initialTab={mapTab[activeSection] || 'general'} />;
             default:
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;
         }

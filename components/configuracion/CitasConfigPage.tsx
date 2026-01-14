@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2, X, AlertCircle } from 'lucide-react';
+import { getUsers } from '../../services/api';
+import type { User } from '../../types';
 
 interface Resource {
   id: string;
   name: string;
+  type: 'personal' | 'infrastructure';
   description?: string;
   imageUrl?: string;
+  userId?: number; // Linked user for personal resources
 }
 
 interface AppointmentStatusConfig {
@@ -13,6 +17,12 @@ interface AppointmentStatusConfig {
   name: string;
   color: string;
   icon: string;
+}
+
+interface CancellationReason {
+  id: string;
+  reason: string;
+  requiresNote: boolean;
 }
 
 const ZONES = [
@@ -28,10 +38,10 @@ const DAYS = [
   { value: 6, label: 'Sábado' },
 ];
 
-const MOCK_RESOURCES = [
-    { id: '1', name: 'Dra. Marilia', description: 'Especialista Facial' },
-    { id: '2', name: 'Dra. Sofía', description: 'Dermatología' },
-    { id: '3', name: 'Cabina 1', description: 'Sala de procedimientos' },
+const MOCK_RESOURCES: Resource[] = [
+    { id: '1', name: 'Dra. Marilia', type: 'personal', description: 'Especialista Facial' },
+    { id: '2', name: 'Dra. Sofía', type: 'personal', description: 'Dermatología' },
+    { id: '3', name: 'Cabina 1', type: 'infrastructure', description: 'Sala de procedimientos' },
 ];
 
 const MOCK_STATUSES = [
@@ -40,8 +50,20 @@ const MOCK_STATUSES = [
   { id: 'cancelled', name: 'Cancelado', color: '#EF4444', icon: 'x' },
 ];
 
-export default function CitasConfigPage() {
-  const [activeTab, setActiveTab] = useState('general');
+const MOCK_CANCELLATION_REASONS: CancellationReason[] = [
+  { id: '1', reason: 'Cliente solicitó cancelar', requiresNote: false },
+  { id: '2', reason: 'No se presentó (No Show)', requiresNote: true },
+  { id: '3', reason: 'Médico no disponible', requiresNote: true },
+];
+
+export default function CitasConfigPage({ initialTab = 'general' }: { initialTab?: string }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+  
+  // Sync if initialTab changes (optional, but good if parent changes it)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   // General Config
   const [timezone, setTimezone] = useState('America/Lima');
   const [timeFormat, setTimeFormat] = useState('12h');
@@ -49,15 +71,79 @@ export default function CitasConfigPage() {
   
   // Resources
   const [resources, setResources] = useState<Resource[]>(MOCK_RESOURCES);
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   
   // Statuses
   const [statuses, setStatuses] = useState<AppointmentStatusConfig[]>(MOCK_STATUSES);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [editingStatus, setEditingStatus] = useState<AppointmentStatusConfig | null>(null);
+
+  // Cancellation Reasons
+  const [cancellationReasons, setCancellationReasons] = useState<CancellationReason[]>(MOCK_CANCELLATION_REASONS);
+  const [isCancellationModalOpen, setIsCancellationModalOpen] = useState(false);
+  const [editingCancellationReason, setEditingCancellationReason] = useState<CancellationReason | null>(null);
   
   // Online Booking
   const [onlineBookingEnabled, setOnlineBookingEnabled] = useState(false);
 
   // Closure Dates
   const [closureDates, setClosureDates] = useState<{start: string, end: string, reason: string}[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'resources') {
+      getUsers().then(setUsers).catch(console.error);
+    }
+  }, [activeTab]);
+
+  const handleSaveResource = (resource: Resource) => {
+    if (editingResource) {
+      setResources(prev => prev.map(r => r.id === resource.id ? resource : r));
+    } else {
+      setResources(prev => [...prev, { ...resource, id: Date.now().toString() }]);
+    }
+    setIsResourceModalOpen(false);
+    setEditingResource(null);
+  };
+
+  const handleDeleteResource = (id: string) => {
+    if (window.confirm('¿Estás seguro de eliminar este recurso?')) {
+      setResources(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
+  const handleSaveStatus = (status: AppointmentStatusConfig) => {
+      if (editingStatus) {
+        setStatuses(prev => prev.map(s => s.id === status.id ? status : s));
+      } else {
+        setStatuses(prev => [...prev, { ...status, id: Date.now().toString() }]);
+      }
+      setIsStatusModalOpen(false);
+      setEditingStatus(null);
+  };
+
+    const handleDeleteStatus = (id: string) => {
+      if (window.confirm('¿Estás seguro de eliminar este estado?')) {
+        setStatuses(prev => prev.filter(s => s.id !== id));
+      }
+    };
+
+    const handleSaveCancellationReason = (reason: CancellationReason) => {
+      if (editingCancellationReason) {
+        setCancellationReasons(prev => prev.map(r => r.id === reason.id ? reason : r));
+      } else {
+        setCancellationReasons(prev => [...prev, { ...reason, id: Date.now().toString() }]);
+      }
+      setIsCancellationModalOpen(false);
+      setEditingCancellationReason(null);
+  };
+
+  const handleDeleteCancellationReason = (id: string) => {
+     if (window.confirm('¿Estás seguro de eliminar este motivo de cancelación?')) {
+      setCancellationReasons(prev => prev.filter(r => r.id !== id));
+    }
+  };
 
   const tabs = [
     { id: 'general', label: 'Hora y Calendario', icon: Clock },
@@ -147,7 +233,12 @@ export default function CitasConfigPage() {
                 <h3 className="text-lg font-medium text-gray-900">Personal y Recursos</h3>
                 <p className="text-sm text-gray-500">Gestiona quiénes o qué espacios pueden recibir citas.</p>
               </div>
-              <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <button 
+                onClick={() => {
+                  setEditingResource(null);
+                  setIsResourceModalOpen(true);
+                }}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <Plus className="w-4 h-4" />
                 Nuevo Recurso
               </button>
@@ -162,14 +253,84 @@ export default function CitasConfigPage() {
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{res.name}</h4>
                     <p className="text-sm text-gray-500">{res.description}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${res.type === 'personal' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                      {res.type === 'personal' ? 'Personal' : 'Infraestructura'}
+                    </span>
                   </div>
                   <div className="flex gap-1">
-                    <button className="p-1 text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
-                    <button className="p-1 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => {
+                        setEditingResource(res);
+                        setIsResourceModalOpen(true);
+                      }}
+                      className="p-1 text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => handleDeleteResource(res.id)}
+                      className="p-1 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               ))}
             </div>
+
+            {isResourceModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                   <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">
+                      {editingResource ? 'Editar Recurso' : 'Nuevo Recurso'}
+                    </h3>
+                    <button onClick={() => setIsResourceModalOpen(false)}><X className="w-5 h-5 text-gray-500" /></button>
+                  </div>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const newResource: Resource = {
+                      id: editingResource?.id || Date.now().toString(),
+                      name: formData.get('name') as string,
+                      type: formData.get('type') as 'personal' | 'infrastructure',
+                      description: formData.get('description') as string,
+                      userId: formData.get('userId') ? Number(formData.get('userId')) : undefined
+                    };
+                    handleSaveResource(newResource);
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Tipo</label>
+                        <select name="type" defaultValue={editingResource?.type || 'personal'} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                          <option value="personal">Personal</option>
+                          <option value="infrastructure">Infraestructura</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                        <input name="name" required defaultValue={editingResource?.name} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                      </div>
+
+                       <div>
+                        <label className="block text-sm font-medium text-gray-700">Usuario Vinculado (Opcional)</label>
+                        <select name="userId" defaultValue={editingResource?.userId || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                           <option value="">Ninguno</option>
+                           {users.map(u => (
+                             <option key={u.id} value={u.id}>{u.nombres} {u.apellidos}</option>
+                           ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                        <input name="description" defaultValue={editingResource?.description} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                      </div>
+
+                      <div className="flex justify-end gap-2 mt-6">
+                        <button type="button" onClick={() => setIsResourceModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -180,7 +341,12 @@ export default function CitasConfigPage() {
                   <h3 className="text-lg font-medium text-gray-900">Estados de Citas</h3>
                   <p className="text-sm text-gray-500">Configura los estados y colores para diferenciar citas.</p>
                 </div>
-                <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={() => {
+                    setEditingStatus(null);
+                    setIsStatusModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                   <Plus className="w-4 h-4" />
                   Nuevo Estado
                 </button>
@@ -190,14 +356,150 @@ export default function CitasConfigPage() {
                    <div key={st.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
                      <div className="flex items-center gap-3">
                        <div className="w-6 h-6 rounded border flex items-center justify-center" style={{backgroundColor: st.color}}>
-                          {/* Placeholder for icon rendering logic */}
+                          <div className="w-3 h-3 bg-white rounded-full opacity-50"></div>
                        </div>
                        <span className="font-medium text-gray-900">{st.name}</span>
                      </div>
-                     <button className="text-gray-400 hover:text-gray-600"><Edit2 className="w-4 h-4" /></button>
+                     <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            setEditingStatus(st);
+                            setIsStatusModalOpen(true);
+                          }}
+                          className="text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteStatus(st.id)}
+                          className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" />
+                        </button>
+                     </div>
                    </div>
                  ))}
                </div>
+
+                <div className="pt-8 border-t">
+                    <div className="flex justify-between items-center mb-4">
+                        <div>
+                        <h3 className="text-lg font-medium text-gray-900">Motivos de Cancelación</h3>
+                        <p className="text-sm text-gray-500">Razones predefinidas para cancelar citas.</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setEditingCancellationReason(null);
+                            setIsCancellationModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        <Plus className="w-4 h-4" />
+                        Agregar Motivo
+                        </button>
+                    </div>
+                    <div className="space-y-3 max-w-xl">
+                        {cancellationReasons.map(reason => (
+                        <div key={reason.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-gray-400" />
+                                <div>
+                                    <span className="font-medium text-gray-900 block">{reason.reason}</span>
+                                    {reason.requiresNote && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Requiere nota</span>}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button 
+                                onClick={() => {
+                                    setEditingCancellationReason(reason);
+                                    setIsCancellationModalOpen(true);
+                                }}
+                                className="text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                onClick={() => handleDeleteCancellationReason(reason.id)}
+                                className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+
+               {isStatusModalOpen && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">
+                          {editingStatus ? 'Editar Estado' : 'Nuevo Estado'}
+                        </h3>
+                         <button onClick={() => setIsStatusModalOpen(false)}><X className="w-5 h-5 text-gray-500" /></button>
+                      </div>
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const newStatus: AppointmentStatusConfig = {
+                          id: editingStatus?.id || Date.now().toString(),
+                          name: formData.get('name') as string,
+                          color: formData.get('color') as string,
+                          icon: 'circle' // Default icon logic to be improved
+                        };
+                        handleSaveStatus(newStatus);
+                      }}>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Nombre del Estado</label>
+                            <input name="name" required defaultValue={editingStatus?.name} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Color</label>
+                            <div className="flex gap-2 mt-1">
+                                <input type="color" name="color" defaultValue={editingStatus?.color || '#000000'} className="h-10 w-20 p-1 rounded border border-gray-300" />
+                                <input type="text" disabled value="Selecciona un color" className="flex-1 bg-gray-100 border border-gray-300 rounded px-3 text-sm text-gray-500 flex items-center"/>
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 mt-6">
+                            <button type="button" onClick={() => setIsStatusModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {isCancellationModalOpen && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">
+                          {editingCancellationReason ? 'Editar Motivo' : 'Nuevo Motivo'}
+                        </h3>
+                         <button onClick={() => setIsCancellationModalOpen(false)}><X className="w-5 h-5 text-gray-500" /></button>
+                      </div>
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const newReason: CancellationReason = {
+                          id: editingCancellationReason?.id || Date.now().toString(),
+                          reason: formData.get('reason') as string,
+                          requiresNote: formData.get('requiresNote') === 'on'
+                        };
+                        handleSaveCancellationReason(newReason);
+                      }}>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Motivo</label>
+                            <input name="reason" required defaultValue={editingCancellationReason?.reason} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2" placeholder="Ej: No se presentó" />
+                          </div>
+                           <div className="flex items-center gap-2">
+                             <input type="checkbox" name="requiresNote" id="requiresNote" defaultChecked={editingCancellationReason?.requiresNote} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                             <label htmlFor="requiresNote" className="text-sm text-gray-700">Requiere nota explicativa obligatoria</label>
+                          </div>
+                          <div className="flex justify-end gap-2 mt-6">
+                            <button type="button" onClick={() => setIsCancellationModalOpen(false)} className="px-4 py-2 border rounded-md hover:bg-gray-50">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Guardar</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
             </div>
         )}
         

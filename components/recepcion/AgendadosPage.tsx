@@ -3,6 +3,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
 import * as api from '../../services/api';
+import { parseDate } from '../../utils/time';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { RESOURCES } from '../../constants';
@@ -59,6 +60,18 @@ interface KanbanCardProps {
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
     const resourceName = getResourceName(lead.recursoId);
+    
+    const formattedDate = useMemo(() => {
+        if (!lead.fechaHoraAgenda) return null;
+        const date = parseDate(lead.fechaHoraAgenda);
+        if (!date) return 'Fecha inválida';
+        return date.toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+    }, [lead.fechaHoraAgenda]);
+
+    const displayName = useMemo(() => {
+        const full = `${lead.nombres || ''} ${lead.apellidos || ''}`.trim();
+        return full || 'Sin Nombre';
+    }, [lead.nombres, lead.apellidos]);
 
     return (
         <div
@@ -66,7 +79,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
             className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 cursor-pointer hover:shadow-md hover:border-purple-400 transition-all"
         >
             <div className="flex justify-between items-start">
-                <h4 className="font-bold text-gray-800 text-sm">{lead.nombres} {lead.apellidos}</h4>
+                <h4 className="font-bold text-gray-800 text-sm">{displayName}</h4>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full bg-purple-100 text-purple-700`}>
                     {lead.categoria}
                 </span>
@@ -84,10 +97,10 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
                     </div>
                 )}
             </div>
-            {lead.fechaHoraAgenda && (
+            {formattedDate && (
                  <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
                     <ClockIcon className="mr-1.5 h-3 w-3"/>
-                    <span>{new Date(lead.fechaHoraAgenda).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    <span>{formattedDate}</span>
                 </div>
             )}
         </div>
@@ -98,7 +111,10 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
 // Kanban Column Component
 const KanbanColumn: React.FC<{ title: string; color: string; textColor: string; children: React.ReactNode; count: number }> = ({ title, color, textColor, children, count }) => (
     <div className="bg-gray-100 rounded-lg w-full md:w-72 flex-shrink-0">
-        <div className={`p-3 flex justify-between items-center rounded-t-lg ${color}`}>
+        <div className={`p-3 flex justify-between items{
+        const date = parseDate(dateTimeString);
+        return date ? date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
+    }
             <h3 className={`font-semibold ${textColor} text-sm`}>{title}</h3>
             <span className={`${textColor} text-sm font-bold bg-black/10 rounded-full px-2 py-0.5`}>{count}</span>
         </div>

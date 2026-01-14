@@ -64,8 +64,11 @@ const getProcedimientoStatus = (lead: Lead, procedure: Procedure): AtencionStatu
     // If reception says 'Atendido' show it in Atendido column (no seguimiento yet)
     const estado = normalizeReception(lead.estadoRecepcion);
     if (estado === ReceptionStatus.Atendido) return AtencionStatus.Atendido;
+    
+    // FIX: If reception says 'Por Atender', it should be in Por Atender column
+    if (estado === ReceptionStatus.PorAtender) return AtencionStatus.PorAtender;
 
-    // If procedure exists but reception not 'Atendido', consider it En Seguimiento
+    // If procedure exists but reception not 'Atendido' or 'Por Atender', consider it En Seguimiento
     return AtencionStatus.EnSeguimiento;
 };
 
@@ -171,25 +174,45 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
     const filteredAtenciones = useMemo(() => {
         let allAtenciones: Atencion[] = [];
 
-        // Filter leads that have accepted treatments and procedures
-        const relevantLeads = leads.filter(lead => {
+        leads.forEach(lead => {
             const estado = normalizeReception(lead.estadoRecepcion);
-            const hasTreatments = lead.tratamientos && lead.tratamientos.length > 0;
             const hasProcedures = lead.procedimientos && lead.procedimientos.length > 0;
-            // Include leads that accepted treatment OR leads that are in Por Atender reception status
-            return (lead.aceptoTratamiento === 'Si' || estado === ReceptionStatus.PorAtender)
-                && hasTreatments && hasProcedures;
-        });
+            
+            // 1. Existing Procedures
+            if (hasProcedures && (lead.aceptoTratamiento === 'Si' || estado === ReceptionStatus.PorAtender || estado === ReceptionStatus.Atendido)) {
+                lead.procedimientos!.forEach(procedure => {
+                    allAtenciones.push({
+                        lead,
+                        procedure,
+                        status: getProcedimientoStatus(lead, procedure)
+                    });
+                });
+            }
+            // 2. Virtual Procedure for 'Por Atender' leads with no procedures yet
+            else if (estado === ReceptionStatus.PorAtender && !hasProcedures) {
+                // Create a placeholder procedure so it shows up on the board
+                const dateObj = lead.fechaHoraAgenda ? new Date(lead.fechaHoraAgenda) : new Date();
+                const fakeTime = dateObj.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+                
+                const fakeProcedure: Procedure = {
+                    id: -1 * lead.id, // Negative ID to avoid collision
+                    fechaAtencion: dateObj.toISOString().split('T')[0],
+                    personal: 'No Asignado' as any,
+                    horaInicio: fakeTime,
+                    horaFin: '',
+                    tratamientoId: 0,
+                    nombreTratamiento: lead.servicios?.length ? lead.servicios.join(', ') : 'Consulta',
+                    sesionNumero: 1,
+                    asistenciaMedica: false,
+                    observacion: 'Pendiente de registro'
+                };
 
-        // Flatten procedures into individual 'Atencion' objects
-        relevantLeads.forEach(lead => {
-            lead.procedimientos?.forEach(procedure => {
                 allAtenciones.push({
                     lead,
-                    procedure,
-                    status: getProcedimientoStatus(lead, procedure)
+                    procedure: fakeProcedure,
+                    status: AtencionStatus.PorAtender
                 });
-            });
+            }
         });
 
         // Apply date range filter based on procedure date

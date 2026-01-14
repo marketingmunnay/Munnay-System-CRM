@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { createAuditLog } from './audit.controller';
 // FIX: Added model types from @prisma/client
 // import { Prisma, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico, BusinessInfo } from '@prisma/client';
 
@@ -399,14 +400,49 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Remover ID y campos de inventario deshabilitados
-        const { id, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
+        // Extraer campos y asegurar que solo enviamos los definidos en el esquema Prisma actual
+        // El esquema actual solo soporta: nombre, categoria, precio
+        // Otros campos como marca, proveedorId, descripcion, etc. deben ser agregados al esquema primero
+        const { nombre, categoria, precio } = req.body;
         
-        // Solo usar campos básicos (nombre, categoria, precio)
+        // Validar campos requeridos
+        if (!nombre || !categoria || precio === undefined) {
+             return res.status(400).json({ message: 'Nombre, categoría y precio son obligatorios' });
+        }
+
+        const data = {
+            nombre, 
+            categoria, 
+            // Asegurarse de que precio sea un número
+            precio: Number(precio)
+        };
+        
         const newProduct = await prisma.product.create({ data });
+
+        // Audit Log Success
+        await createAuditLog({
+            usuarioId: 1, // TODO: Get real user ID from auth middleware
+            usuario: 'Usuario',
+            accion: 'crear',
+            modulo: 'Configuracion',
+            detalles: `Producto creado: ${newProduct.nombre}`,
+            metadata: { productId: newProduct.id, data }
+        });
+
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Error creating product:', error);
+
+        // Audit Log Error
+        await createAuditLog({
+            usuarioId: 1, // Fallback to Admin
+            usuario: 'Sistema',
+            accion: 'error',
+            modulo: 'Configuracion',
+            detalles: `Error al crear producto: ${(error as Error).message}`,
+            metadata: { error: (error as Error).stack, body: req.body }
+        });
+
         res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
     }
 };
@@ -414,17 +450,44 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
-        // Remover ID y campos de inventario deshabilitados
-        const { id: _, tipo, costoCompra, precioVenta, stockActual, stockMinimo, stockCritico, movimientos, ...data } = req.body;
         
-        // Solo usar campos básicos (nombre, categoria, precio)
+        // Extraer solo campos permitidos por el esquema actual
+        const { nombre, categoria, precio } = req.body;
+        
+        const data: any = {};
+        if (nombre) data.nombre = nombre;
+        if (categoria) data.categoria = categoria;
+        if (precio !== undefined) data.precio = Number(precio);
+
         const updatedProduct = await prisma.product.update({ 
             where: { id }, 
             data 
         });
+
+        // Audit Log Success
+        await createAuditLog({
+            usuarioId: 1, // TODO: Get real user ID from auth middleware
+            usuario: 'Usuario',
+            accion: 'editar',
+            modulo: 'Configuracion',
+            detalles: `Producto actualizado: ${updatedProduct.nombre}`,
+            metadata: { productId: id, changes: data }
+        });
+
         res.status(200).json(updatedProduct);
     } catch (error) {
         console.error('Error updating product:', error);
+
+        // Audit Log Error
+        await createAuditLog({
+            usuarioId: 1, // Fallback to Admin
+            usuario: 'Sistema',
+            accion: 'error',
+            modulo: 'Configuracion',
+            detalles: `Error al actualizar producto: ${(error as Error).message}`,
+            metadata: { productId: req.params.id, error: (error as Error).stack }
+        });
+
         res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
     }
 };
