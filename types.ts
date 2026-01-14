@@ -259,6 +259,9 @@ export interface VentaExtra {
     metodoPago: MetodoPago;
     deuda: number;
     fechaPagoDeuda?: string;
+    entregado?: boolean;
+    fechaEntrega?: string;
+    productoId?: number;
 }
 
 export interface Incidencia {

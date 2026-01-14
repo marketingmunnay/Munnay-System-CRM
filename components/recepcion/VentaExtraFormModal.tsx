@@ -112,6 +112,8 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                 montoPagado: 0,
                 metodoPago: MetodoPago.Efectivo,
                 deuda: 0,
+                entregado: false,
+                productoId: undefined
             });
             setSaleType('');
             setSearchTerm('');
@@ -189,10 +191,13 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             let selectedItem;
             if (saleType === 'Servicio') {
                 selectedItem = services.find(s => s.nombre === value);
+                newState.productoId = undefined;
             } else if (saleType === 'Productos') {
                 selectedItem = products.find(p => p.nombre === value);
+                newState.productoId = selectedItem?.id;
             } else if (saleType === 'Membresía') {
                 selectedItem = memberships.find(m => m.nombre === value);
+                newState.productoId = undefined;
             }
             newState.precio = selectedItem ? selectedItem.precio : 0;
         }
@@ -481,6 +486,20 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                         </select>
                     </div>
                  </div>
+                 {saleType === 'Productos' && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={formData.entregado || false}
+                                onChange={(e) => setFormData(prev => ({ ...prev, entregado: e.target.checked }))}
+                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                            />
+                            <span className="font-semibold text-green-900">¿Producto entregado al cliente?</span>
+                        </label>
+                        <p className="ml-7 text-xs text-green-700 mt-1">Marcar esta opción descontará el stock inmediatamente si hay disponible.</p>
+                    </div>
+                 )}
                  <div className="flex justify-between items-center mt-4 p-3 bg-gray-50 rounded-md border">
                     <p className="text-sm font-semibold text-gray-700">Deuda Pendiente:</p>
                     <p className={`text-lg font-bold ${formData.deuda && formData.deuda > 0 ? 'text-red-600' : 'text-green-600'}`}>

@@ -28,11 +28,51 @@ export const getVentaById = async (req: Request, res: Response) => {
 
 export const createVenta = async (req: Request, res: Response) => {
   const { id, fechaVenta, ...data } = req.body;
+  
+  // Extract inventory specific fields
+  const { productoId, entregado, fechaEntrega, categoria } = data;
+
   try {
+    // Inventory Logic: If it is a Product Sale and marked as Delivered
+    if (productoId && entregado) {
+       const config = await prisma.configuracionProducto.findUnique({
+          where: { productoId: parseInt(productoId) }
+       });
+       
+       if (config) {
+          if (config.stockActual <= 0) {
+             return res.status(400).json({ message: 'No hay stock disponible para entregar este producto inmediatamente.' });
+          }
+          
+          // Deduct Stock
+          await prisma.movimientoInventario.create({
+            data: {
+              configuracionProductoId: config.id,
+              tipoMovimiento: 'salida',
+              cantidad: 1,
+              stockAnterior: config.stockActual,
+              stockNuevo: config.stockActual - 1,
+              precioVenta: data.montoPagado || 0, // Or precio total
+              motivo: `Venta Extra (Recepción) ${data.codigoVenta || ''}`,
+              referencia: 'VentaExtra',
+              creadoPor: 'Sistema' // TODO: Get user from req
+            }
+          });
+
+          await prisma.configuracionProducto.update({
+             where: { id: config.id },
+             data: { stockActual: config.stockActual - 1 }
+          });
+       }
+    }
+
     const newVenta = await prisma.ventaExtra.create({
       data: {
         ...data,
         fechaVenta: new Date(fechaVenta),
+        entregado: entregado || false,
+        fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : (entregado ? new Date() : null),
+        productoId: productoId ? parseInt(productoId) : null
       },
     });
     res.status(201).json(newVenta);
