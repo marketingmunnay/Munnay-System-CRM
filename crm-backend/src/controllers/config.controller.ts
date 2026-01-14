@@ -400,28 +400,44 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Extraer campos y asegurar que solo enviamos los definidos en el esquema Prisma actual
-        // El esquema actual solo soporta: nombre, categoria, precio
-        // Otros campos como marca, proveedorId, descripcion, etc. deben ser agregados al esquema primero
-        const { nombre, categoria, precio } = req.body;
+        // Campos que vienen del frontend
+        const { 
+            nombre, 
+            categoria,
+            precio, // Precio venta
+            marca,
+            proveedorId,
+            descripcion,
+            unidadMedida,
+            valorMedida,
+            precioCoste,
+            precioTotal 
+        } = req.body;
         
-        // Validar campos requeridos
-        if (!nombre || !categoria || precio === undefined) {
-             return res.status(400).json({ message: 'Nombre, categoría y precio son obligatorios' });
+        // Validar campos obligatorios básicos
+        if (!nombre || !categoria) {
+             return res.status(400).json({ message: 'Nombre y categoría son obligatorios' });
         }
 
+        // Preparar data para Prisma con los nuevos campos
         const data = {
             nombre, 
             categoria, 
-            // Asegurarse de que precio sea un número
-            precio: Number(precio)
+            precio: Number(precio || 0),
+            marca: marca || null,
+            proveedorId: proveedorId ? Number(proveedorId) : null,
+            descripcion: descripcion || null,
+            unidadMedida: unidadMedida || null,
+            valorMedida: valorMedida ? Number(valorMedida) : null,
+            precioCoste: precioCoste ? Number(precioCoste) : null,
+            precioTotal: precioTotal ? Number(precioTotal) : null
         };
         
         const newProduct = await prisma.product.create({ data });
 
         // Audit Log Success
         await createAuditLog({
-            usuarioId: 1, // TODO: Get real user ID from auth middleware
+            usuarioId: 1, 
             usuario: 'Usuario',
             accion: 'crear',
             modulo: 'Configuracion',
@@ -435,7 +451,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
         // Audit Log Error
         await createAuditLog({
-            usuarioId: 1, // Fallback to Admin
+            usuarioId: 1, 
             usuario: 'Sistema',
             accion: 'error',
             modulo: 'Configuracion',
@@ -451,13 +467,33 @@ export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = parseInt(req.params.id);
         
-        // Extraer solo campos permitidos por el esquema actual
-        const { nombre, categoria, precio } = req.body;
+        // Campos que vienen del frontend
+        const { 
+            nombre, 
+            categoria,
+            precio,
+            marca,
+            proveedorId,
+            descripcion,
+            unidadMedida,
+            valorMedida,
+            precioCoste,
+            precioTotal
+        } = req.body;
         
         const data: any = {};
         if (nombre) data.nombre = nombre;
         if (categoria) data.categoria = categoria;
         if (precio !== undefined) data.precio = Number(precio);
+        
+        // Nuevos campos opcionales
+        if (marca !== undefined) data.marca = marca;
+        if (proveedorId !== undefined) data.proveedorId = proveedorId ? Number(proveedorId) : null;
+        if (descripcion !== undefined) data.descripcion = descripcion;
+        if (unidadMedida !== undefined) data.unidadMedida = unidadMedida;
+        if (valorMedida !== undefined) data.valorMedida = valorMedida ? Number(valorMedida) : null;
+        if (precioCoste !== undefined) data.precioCoste = precioCoste ? Number(precioCoste) : null; 
+        if (precioTotal !== undefined) data.precioTotal = precioTotal ? Number(precioTotal) : null;
 
         const updatedProduct = await prisma.product.update({ 
             where: { id }, 
@@ -466,7 +502,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
         // Audit Log Success
         await createAuditLog({
-            usuarioId: 1, // TODO: Get real user ID from auth middleware
+            usuarioId: 1, 
             usuario: 'Usuario',
             accion: 'editar',
             modulo: 'Configuracion',
@@ -480,7 +516,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
         // Audit Log Error
         await createAuditLog({
-            usuarioId: 1, // Fallback to Admin
+            usuarioId: 1, 
             usuario: 'Sistema',
             accion: 'error',
             modulo: 'Configuracion',
