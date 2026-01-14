@@ -191,7 +191,13 @@ export const AtencionesDiariasPage: React.FC<AtencionesDiariasPageProps> = ({ le
             // 2. Virtual Procedure for 'Por Atender' leads with no procedures yet
             else if (estado === ReceptionStatus.PorAtender && !hasProcedures) {
                 // Create a placeholder procedure so it shows up on the board
-                const dateObj = lead.fechaHoraAgenda ? new Date(lead.fechaHoraAgenda) : new Date();
+                let dateObj = lead.fechaHoraAgenda ? new Date(lead.fechaHoraAgenda) : new Date();
+                
+                // Fallback if date is invalid
+                if (isNaN(dateObj.getTime())) {
+                    dateObj = new Date();
+                }
+
                 const fakeTime = dateObj.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
                 
                 const fakeProcedure: Procedure = {
