@@ -588,11 +588,11 @@ model Service {
   descripcion      String? @db.Text
 }
 
-// ENUM DESACTIVADO HASTA APLICAR MIGRACIÓN
-// enum TipoProducto {
-//   venta
-//   insumo
-// }
+// ENUM ACTIVADO PARA EVITAR ERROR DE PERMISOS EN PRODUCCION
+enum TipoProducto {
+  venta
+  insumo
+}
 
 model Product {
   id             Int      @id @default(autoincrement())
@@ -609,9 +609,9 @@ model Product {
   precioCoste    Float?
   precioTotal    Float?
   
-  // CAMPOS DESACTIVADOS (no existen en BD de producción)
-  // createdAt      DateTime @default(now())
-  // updatedAt      DateTime @updatedAt
+  // CAMPOS ACTIVADOS (existen en BD de producción)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   // tipo           TipoProducto?
   // costoCompra    Float?
   // precioVenta    Float?
