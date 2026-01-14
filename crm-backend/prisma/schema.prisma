@@ -42,6 +42,8 @@ enum MetodoPago {
   Efectivo
   Tarjeta
   Transferencia
+  TransferenciaBCP
+  TransferenciaInterbank
   Yape
   Plin
 }

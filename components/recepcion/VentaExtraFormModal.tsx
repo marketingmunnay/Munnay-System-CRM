@@ -489,7 +489,13 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
                             className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black"
                         >
                             <option value="">Seleccionar...</option>
-                            {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
+                            <option value={MetodoPago.Efectivo}>Efectivo</option>
+                            <option value={MetodoPago.Tarjeta}>Tarjeta</option>
+                            <option value={MetodoPago.Yape}>Yape</option>
+                            <option value={MetodoPago.Plin}>Plin</option>
+                            <option value={MetodoPago.Transferencia}>Transferencia (Otro)</option>
+                            <option value={MetodoPago.TransferenciaBCP}>Transferencia BCP</option>
+                            <option value={MetodoPago.TransferenciaInterbank}>Transferencia Interbank</option>
                         </select>
                     </div>
                  </div>
