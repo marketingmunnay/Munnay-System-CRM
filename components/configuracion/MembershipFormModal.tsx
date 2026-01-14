@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Membership, MembershipService, Service } from '../../types.ts';
+import type { Membership, MembershipService, Service, ServiceCategory } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon, PlusIcon } from '../shared/Icons.tsx';
 
@@ -13,6 +13,7 @@ interface MembershipFormModalProps {
     onSave: (membership: Membership) => void;
     membership: Membership | null;
     services: Service[];
+    serviceCategories: ServiceCategory[]; // Recibir categorías
 }
 
 const MembershipFormModal: React.FC<MembershipFormModalProps> = ({ 
@@ -20,7 +21,8 @@ const MembershipFormModal: React.FC<MembershipFormModalProps> = ({
     onClose, 
     onSave, 
     membership, 
-    services 
+    services,
+    serviceCategories = []
 }) => {
     const [formData, setFormData] = useState<Partial<Membership>>({
         nombre: '',
@@ -197,7 +199,7 @@ const MembershipFormModal: React.FC<MembershipFormModalProps> = ({
                                     <div className="grid grid-cols-3 gap-3 pr-8">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 mb-1">
-                                                Servicio <span className="text-red-500">*</span>
+                                                Servicio / Categoría <span className="text-red-500">*</span>
                                             </label>
                                             <select
                                                 value={servicio.servicioNombre}
@@ -205,10 +207,21 @@ const MembershipFormModal: React.FC<MembershipFormModalProps> = ({
                                                 className="w-full border border-gray-300 rounded-md p-2 text-sm"
                                                 required
                                             >
-                                                <option value="">Seleccionar servicio...</option>
-                                                {services.map((s) => (
-                                                    <option key={s.id} value={s.nombre}>{s.nombre}</option>
-                                                ))}
+                                                <option value="">Seleccionar...</option>
+                                                <optgroup label="Categorías">
+                                                    {serviceCategories.map((cat) => (
+                                                        <option key={`cat-${cat.id}`} value={`CAT:${cat.nombre}`}>
+                                                            📁 {cat.nombre} (Cualquier servicio)
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
+                                                <optgroup label="Servicios Específicos">
+                                                    {services.map((s) => (
+                                                        <option key={`srv-${s.id}`} value={s.nombre}>
+                                                            ✨ {s.nombre}
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
                                             </select>
                                         </div>
                                         

@@ -1410,10 +1410,11 @@ const ServiciosSection: FC<{
 const MembresiasSection: FC<{
     memberships: Membership[];
     services: Service[];
+    serviceCategories: ServiceCategory[]; // Add categories
     onSaveMembership: (membership: Membership) => void;
     onDeleteMembership: (id: number) => void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
-}> = ({ memberships, services, onSaveMembership, onDeleteMembership, requestConfirmation }) => {
+}> = ({ memberships, services, serviceCategories, onSaveMembership, onDeleteMembership, requestConfirmation }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMembership, setEditingMembership] = useState<Membership | null>(null);
 
@@ -1514,6 +1515,7 @@ const MembresiasSection: FC<{
                     onSave={handleSave}
                     membership={editingMembership}
                     services={services}
+                    serviceCategories={serviceCategories} // Pass categories
                 />
             )}
         </div>
@@ -1883,6 +1885,7 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                 return <MembresiasSection
                     memberships={props.memberships}
                     services={props.services}
+                    serviceCategories={props.serviceCategories} // Pass categories
                     onSaveMembership={props.onSaveMembership}
                     onDeleteMembership={props.onDeleteMembership}
                     requestConfirmation={props.requestConfirmation}
