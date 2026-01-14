@@ -10,6 +10,7 @@ import MetasPage from './MetasPage';
 import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
 import MembershipFormModal from './MembershipFormModal.tsx';
+import CitasConfigPage from './CitasConfigPage';
 import Pagination from '../shared/Pagination';
 import { usePagination } from '../../utils/usePagination';
 const UNIDADES_MEDIDA: UnidadMedida[] = ['unidades', 'cajas', 'paquetes', 'blister', 'ml', 'g', 'litros'];
@@ -31,6 +32,12 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     { id: 'origenes', label: 'Origen de clientes', parent: 'negocio' },
     { id: 'metas', label: 'Metas estratégicas', parent: 'negocio' },
     { id: 'importar-exportar', label: 'Importar / Exportar', parent: 'negocio' },
+
+    { id: 'agenda', label: 'Gestión de Citas', icon: 'calendar_month' },
+    { id: 'agenda-general', label: 'General y Horarios', parent: 'agenda' },
+    { id: 'agenda-recursos', label: 'Recursos / Staff', parent: 'agenda' },
+    { id: 'agenda-estados', label: 'Estados y Cancelaciones', parent: 'agenda' },
+    { id: 'agenda-bloqueos', label: 'Bloqueos y Reservas', parent: 'agenda' },
 
     { id: 'operaciones', label: 'Operaciones', icon: 'inventory_2' },
     { id: 'servicios', label: 'Servicios', parent: 'operaciones' },
@@ -1903,6 +1910,12 @@ const ConfiguracionPage: React.FC<ConfiguracionPageProps> = (props) => {
                     onImportEgresoCategories={props.onImportEgresoCategories}
                     onImportJobPositions={props.onImportJobPositions}
                 />;
+            case 'agenda':
+            case 'agenda-general':
+            case 'agenda-recursos':
+            case 'agenda-estados':
+            case 'agenda-bloqueos':
+                return <CitasConfigPage />;
             default:
                 return <BusinessInfoSection businessInfo={props.businessInfo} onSaveBusinessInfo={props.onSaveBusinessInfo} />;
         }

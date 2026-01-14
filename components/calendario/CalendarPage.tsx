@@ -89,6 +89,7 @@ interface CalendarEvent {
     cliente: string;
     servicios: string[];
     leadRef?: Lead;
+    appointmentRef?: Appointment;
 }
 
 interface WizardDefaults {
@@ -145,6 +146,7 @@ const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
         resourceId: appointment.profesionalId,
         cliente: appointment.clienteNombre,
         servicios: appointment.servicios?.map(item => item.nombre) || [],
+        appointmentRef: appointment,
     };
 };
 
@@ -434,9 +436,29 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
         const top = timeToPosition(event.horaInicio);
         const height = durationToHeight(event.horaInicio, event.horaFin);
-        const palette = event.source === 'lead'
+        
+        // Configuración de colores dinámica basada en estado
+        const status = event.source === 'lead' ? event.leadRef?.estado : event.appointmentRef?.estado;
+        const statusKey = String(status || '').toLowerCase().replace(/ /g, '_');
+        
+        const statusStyles: Record<string, string> = {
+            'nuevo': 'bg-sky-50 border-sky-200 text-sky-800',
+            'seguimiento': 'bg-yellow-50 border-yellow-200 text-yellow-800',
+            'por_pagar': 'bg-orange-50 border-orange-200 text-orange-800',
+            'agendado': 'bg-green-50 border-green-200 text-green-800',
+            'perdido': 'bg-rose-50 border-rose-200 text-rose-800',
+            'programada': 'bg-blue-50 border-blue-200 text-blue-800',
+            'confirmada': 'bg-emerald-50 border-emerald-200 text-emerald-800',
+            'en_proceso': 'bg-purple-50 border-purple-200 text-purple-800',
+            'finalizada': 'bg-gray-100 border-gray-300 text-gray-700',
+            'cancelada': 'bg-red-50 border-red-200 text-red-800',
+            'no_asistio': 'bg-red-100 border-red-300 text-red-900',
+        };
+
+        const palette = statusStyles[statusKey] || (event.source === 'lead'
             ? 'bg-gradient-to-br from-[#fff6ee] via-white to-white border-[#f5c7a5]'
-            : 'bg-gradient-to-br from-[#ecfdf3] via-white to-white border-[#b4f0ce]';
+            : 'bg-gradient-to-br from-[#ecfdf3] via-white to-white border-[#b4f0ce]');
+            
         const primaryService = event.servicios[0];
 
         const handleClick = () => {

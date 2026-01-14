@@ -5,7 +5,7 @@ import type {
   TipoProveedor, Goal, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
   PagoProducto, AlertaStock, InventarioReporteResponse, Ambiente, Appointment,
   CreateAppointmentPayload, AvailabilityRequest, AvailabilitySlot, RecurringSeriesRequest,
-  AppointmentStatus
+  AppointmentStatus, SystemLog
 } from '../types.ts';
 
 export interface BulkImportEgresoResult {
@@ -708,3 +708,15 @@ export const sendAppointmentConfirmation = (
   channels: Array<'whatsapp' | 'email'>
 ): Promise<{ status: string }> =>
   apiRequest<{ status: string }>(`/calendar/appointments/${appointmentId}/confirm`, 'POST', { channels });
+
+// ====== AUDITORÍA Y LOGS ======
+
+export const getSystemLogs = (range?: 'hoy' | 'semana' | 'mes', module?: string, search?: string): Promise<SystemLog[]> => {
+  const queryParams = new URLSearchParams();
+  if (range) queryParams.append('range', range);
+  if (module) queryParams.append('module', module);
+  if (search) queryParams.append('search', search);
+
+  const queryString = queryParams.toString();
+  return apiRequest<SystemLog[]>(`/audit${queryString ? `?${queryString}` : ''}`, 'GET');
+};

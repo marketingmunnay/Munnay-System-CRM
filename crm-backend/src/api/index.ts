@@ -16,6 +16,7 @@ import aiRouter from './ai.routes';
 import tipoCambioRouter from './tipoCambio.routes';
 import movimientosStockRouter from './movimientosStock.routes';
 import inventoryRouter from './inventory.routes';
+import auditRouter from './audit.routes';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/ai', aiRouter);
 router.use('/tipo-cambio', tipoCambioRouter);
 router.use('/movimientos-stock', movimientosStockRouter);
 router.use('/inventory', inventoryRouter);
+router.use('/audit', auditRouter);
 // FIX: Add comprobantes router to be handled by the API.
 router.use('/config/comprobantes', comprobantesRouter);
 
