@@ -29,7 +29,8 @@ export default function PagoParcialModal({
     montoPagado: 0,
     metodoPago: 'Efectivo',
     esPrepago: false,
-    observaciones: ''
+    observaciones: '',
+    entregarAhora: false
   });
 
   const [formAbonar, setFormAbonar] = useState({
@@ -268,6 +269,21 @@ export default function PagoParcialModal({
           Marca esta opción si el cliente paga antes de tener el producto en stock
         </p>
       </div>
+
+      {/* Entregar ahora - solo si pago completo y no es prepago */}
+      {formCrear.montoPagado >= formCrear.montoTotal && !formCrear.esPrepago && (
+          <div>
+            <label className="flex items-center space-x-2 cursor-pointer bg-green-50 p-2 rounded border border-green-200">
+              <input
+                type="checkbox"
+                checked={formCrear.entregarAhora}
+                onChange={(e) => setFormCrear({ ...formCrear, entregarAhora: e.target.checked })}
+                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span className="text-sm font-bold text-green-800">Entregar producto ahora (Salida Inmediata)</span>
+            </label>
+          </div>
+      )}
 
       {/* Observaciones */}
       <div>
