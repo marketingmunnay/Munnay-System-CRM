@@ -80,7 +80,7 @@ export default function ConfiguracionInventarioModal({
     }
   };
 
-  const productoSeleccionado = productos.find(p => p.id === formData.productoId);
+  const productoSeleccionado = (productos || []).find(p => p.id === formData.productoId);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -114,7 +114,7 @@ export default function ConfiguracionInventarioModal({
               required
             >
               <option value={0}>Seleccionar producto...</option>
-              {productos.map(producto => (
+              {(productos || []).map(producto => (
                 <option key={producto.id} value={producto.id}>
                   {producto.nombre} - {producto.categoria}
                 </option>

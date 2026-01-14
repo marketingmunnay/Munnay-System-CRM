@@ -150,7 +150,7 @@ export default function PagoParcialModal({
     }
   };
 
-  const productoSeleccionado = productos.find(p => p.id === formCrear.productoId);
+  const productoSeleccionado = (productos || []).find(p => p.id === formCrear.productoId);
 
   const renderCrear = () => (
     <form onSubmit={handleCrearPago} className="space-y-6">
@@ -169,7 +169,7 @@ export default function PagoParcialModal({
           value={formCrear.productoId}
           onChange={(e) => {
             const prodId = parseInt(e.target.value);
-            const prod = productos.find(p => p.id === prodId);
+            const prod = (productos || []).find(p => p.id === prodId);
             setFormCrear({
               ...formCrear,
               productoId: prodId,
@@ -180,7 +180,7 @@ export default function PagoParcialModal({
           required
         >
           <option value={0}>Seleccionar producto...</option>
-          {productos.map(prod => (
+          {(productos || []).map(prod => (
             <option key={prod.id} value={prod.id}>
               {prod.nombre} - S/ {prod.precio.toFixed(2)}
             </option>

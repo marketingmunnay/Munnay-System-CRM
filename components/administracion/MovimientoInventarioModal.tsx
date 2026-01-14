@@ -24,7 +24,7 @@ export default function MovimientoInventarioModal({
   onClose,
   onSave
 }: MovimientoInventarioModalProps) {
-  const configInicial = configuraciones.find(c => c.productoId === productoIdInicial);
+  const configInicial = (configuraciones || []).find(c => c.productoId === productoIdInicial);
 
   const [formData, setFormData] = useState({
     configuracionProductoId: configInicial?.id || 0,
@@ -40,7 +40,7 @@ export default function MovimientoInventarioModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const configuracionSeleccionada = configuraciones.find(
+  const configuracionSeleccionada = (configuraciones || []).find(
     c => c.id === formData.configuracionProductoId
   );
 
@@ -118,7 +118,7 @@ export default function MovimientoInventarioModal({
               value={formData.configuracionProductoId}
               onChange={(e) => {
                 const configId = parseInt(e.target.value);
-                const config = configuraciones.find(c => c.id === configId);
+                const config = (configuraciones || []).find(c => c.id === configId);
                 setFormData({
                   ...formData,
                   configuracionProductoId: configId,
@@ -129,7 +129,7 @@ export default function MovimientoInventarioModal({
               required
             >
               <option value={0}>Seleccionar producto...</option>
-              {configuraciones.map(config => (
+              {(configuraciones || []).map(config => (
                 <option key={config.id} value={config.id}>
                   Producto ID: {config.productoId} - Stock: {config.stockActual} {config.unidadMedida}
                 </option>
