@@ -61,6 +61,7 @@ export const ALL_PAGES_CONFIG: { id: Page; label: string; group: string }[] = [
     { id: 'rrhh-perfiles', label: 'Perfiles de Equipo', group: 'Recursos Humanos' },
     { id: 'informes', label: 'Informes', group: 'Reportes' },
     { id: 'configuracion', label: 'Configuración del Sistema', group: 'Administración' },
+    { id: 'auditoria-logs', label: 'Logs del Sistema', group: 'Administración' },
 ];
 
 export const DASHBOARD_METRICS_CONFIG: { id: string; label: string }[] = [
