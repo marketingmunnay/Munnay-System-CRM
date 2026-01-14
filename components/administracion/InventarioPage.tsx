@@ -451,7 +451,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
           </thead>
           <tbody className="divide-y divide-gray-200">
             {(reporte?.reporte ?? []).map((item) => {
-              const config = configuraciones.find(c => c.productoId === item.productoId);
+              const config = configuraciones?.find(c => c.productoId === item.productoId);
               return (
                 <tr key={item.productoId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">{item.productoNombre}</td>

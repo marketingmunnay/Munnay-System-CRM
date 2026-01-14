@@ -70,6 +70,50 @@ const mapMetodoPago = (value: any): string | undefined => {
   };
   return map[cleaned] ?? undefined;
 };
+
+// Helper: Parse a "YYYY-MM-DD" string into a Date object using local time (integers)
+// This mirrors the strategy in expenses.controller.ts to avoid timezone offset shifts.
+const parseLocalDate = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return null;
+  // If it comes as full ISO, split it
+  const cleanStr = dateStr.toString().split('T')[0]; 
+  const parts = cleanStr.split('-');
+  if (parts.length < 3) return null;
+  
+  const [year, month, day] = parts.map(Number);
+  // Check valid parts
+  if (!year || !month || !day) return null;
+
+  // Create Date (Month is 0-indexed)
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+};
+
+// Helper: Format a Date object to "YYYY-MM-DD" string using local time methods
+const formatLocalDate = (date: Date | string | null | undefined): string | null => {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper: Process lead object for response (BigInt conversion + Date formatting)
+const processLeadForResponse = (lead: any): any => {
+  const converted = convertBigInts(lead);
+  
+  // Format Date-Only fields to strings
+  if (converted.fechaLead) converted.fechaLead = formatLocalDate(lead.fechaLead);
+  if (converted.fechaVolverLlamar) converted.fechaVolverLlamar = formatLocalDate(lead.fechaVolverLlamar);
+  if (converted.birthDate) converted.birthDate = formatLocalDate(lead.birthDate);
+
+  // Note: fechaHoraAgenda is a Timestamp, generally we leave it as ISO or handle separately.
+  // If we wanted to stabilize it, we could, but the main issues were with "Day Shifting" on purely Date fields.
+
+  return converted;
+};
+
 // FIX: Removed unused model imports that were causing errors.
 // import { Lead, Treatment, Procedure, RegistroLlamada, Seguimiento, Alergia, Membership, ComprobanteElectronico } from '@prisma/client';
 
@@ -91,7 +135,10 @@ export const getLeads = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(200).json(convertBigInts(leads));
+
+    // Process each lead to format dates and BigInts
+    const processedLeads = leads.map(processLeadForResponse);
+    res.status(200).json(processedLeads);
   } catch (error) {
     console.error("Error fetching leads:", error);
     res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
@@ -117,7 +164,9 @@ export const getLeadById = async (req: Request, res: Response) => {
     if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
-    res.status(200).json(convertBigInts(lead));
+    
+    // Process lead
+    res.status(200).json(processLeadForResponse(lead));
   } catch (error) {
     console.error(`Error fetching lead ${id}:`, error);
     res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
@@ -131,24 +180,11 @@ export const createLead = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    // Helper function to safely parse dates for creation
-    const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
-      if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
-      
-      try {
-        // FIX: Si debemos agregar hora a una fecha (fechaLead, fechaVolverLlamar),
-        // forzar zona horaria de Perú (-05:00) para evitar que caiga en el día anterior por conversión a UTC.
-        // Ej: "2026-01-13" -> "2026-01-13T00:00:00-05:00" -> UTC 05:00 (Mismo día)
-        const dateValue = addTime 
-            ? new Date(dateStr + 'T00:00:00-05:00') 
-            : new Date(dateStr);
-        
-        // Check if date is valid
-        if (isNaN(dateValue.getTime())) return defaultValue;
-        return dateValue;
-      } catch {
-        return defaultValue;
-      }
+    // Helper to safely parse DateTime strings (keeps time info, unlike parseLocalDate)
+    const parseDateTime = (dateStr: any): Date | undefined => {
+      if (!dateStr) return undefined;
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? undefined : d;
     };
 
     // Helper function to normalize ReceptionStatus values to valid enum tokens or undefined
@@ -187,10 +223,10 @@ export const createLead = async (req: Request, res: Response) => {
         vendedor: mapSeller(leadData.vendedor),
         metodoPago: mapMetodoPago(leadData.metodoPago) as any,
         estadoRecepcion: finalEstadoRecepcionCreate,
-        fechaLead: parseDate(leadData.fechaLead, true, new Date()),
-        fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
-        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
-        birthDate: parseDate(leadData.birthDate, true),
+        fechaLead: parseLocalDate(leadData.fechaLead) || new Date(),
+        fechaHoraAgenda: parseDateTime(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseLocalDate(leadData.fechaVolverLlamar),
+        birthDate: parseLocalDate(leadData.birthDate),
         // Handle relation for memberships if needed
         membresiasAdquiridas: {
           connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
@@ -209,7 +245,7 @@ export const createLead = async (req: Request, res: Response) => {
         // Create procedimientos if provided
         procedimientos: procedimientos && procedimientos.length > 0 ? {
           create: procedimientos.map((p: any) => ({
-            fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+            fechaAtencion: parseLocalDate(p.fechaAtencion) || new Date(),
             personal: p.personal || '',
             horaInicio: p.horaInicio || '',
             horaFin: p.horaFin || '',
@@ -233,7 +269,7 @@ export const createLead = async (req: Request, res: Response) => {
         // Create seguimientos if provided
         seguimientos: seguimientos && seguimientos.length > 0 ? {
           create: seguimientos.map((s: any) => ({
-            fecha: parseDate(s.fecha, true, new Date()),
+            fecha: parseLocalDate(s.fecha) || new Date(),
             procedimientoId: s.procedimientoId,
             dolor: s.dolor || false,
             hinchazon: s.hinchazon || false,
@@ -257,7 +293,7 @@ export const createLead = async (req: Request, res: Response) => {
           create: pagosRecepcion.map((p: any) => ({
             monto: p.monto,
             metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
-            fechaPago: parseDate(p.fechaPago) || new Date(),
+            fechaPago: parseLocalDate(p.fechaPago) || new Date(),
             observacion: p.observacion,
           }))
         } : undefined,
@@ -272,7 +308,8 @@ export const createLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(201).json(convertBigInts(newLead));
+    // Use the process helper to return formatted dates
+    res.status(201).json(processLeadForResponse(newLead));
   } catch (error) {
     console.error("Error creating lead:", error);
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
@@ -303,22 +340,11 @@ export const updateLead = async (req: Request, res: Response) => {
   });
 
   try {
-    // Helper function to safely parse dates
-    const parseDate = (dateStr: any, addTime: boolean = false): Date | null | undefined => {
-      if (dateStr === null) return null;
-      if (!dateStr || dateStr === '' || dateStr === 'undefined') return undefined;
-      
-      try {
-        // FIX: Force Peru Timezone (-05:00) when adding time to date-only strings
-        const dateValue = addTime 
-            ? new Date(dateStr + 'T00:00:00-05:00') 
-            : new Date(dateStr);
-        // Check if date is valid
-        if (isNaN(dateValue.getTime())) return undefined;
-        return dateValue;
-      } catch {
-        return undefined;
-      }
+    // Helper to safely parse DateTime strings
+    const parseDateTime = (dateStr: any): Date | undefined => {
+      if (!dateStr || dateStr === 'undefined') return undefined;
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? undefined : d;
     };
 
     // Helper function to normalize enum values (remove spaces)
@@ -344,7 +370,7 @@ export const updateLead = async (req: Request, res: Response) => {
       where: { id: id }
     });
 
-    const parsedFechaLead = parseDate(leadData.fechaLead, true);
+    const parsedFechaLead = parseLocalDate(leadData.fechaLead);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead?.fechaLead;
 
     // Handle treatments: Try to update existing treatments; if update fails because the record
@@ -446,7 +472,7 @@ export const updateLead = async (req: Request, res: Response) => {
     }
 
     // Parse and log fechaHoraAgenda for debugging
-    const parsedFechaHoraAgenda = parseDate(leadData.fechaHoraAgenda);
+    const parsedFechaHoraAgenda = parseDateTime(leadData.fechaHoraAgenda);
     console.log('📅 DEBUGGING fechaHoraAgenda:', {
       original: leadData.fechaHoraAgenda,
       parsed: parsedFechaHoraAgenda,
@@ -463,8 +489,8 @@ export const updateLead = async (req: Request, res: Response) => {
         metodoPago: leadData.metodoPago !== undefined ? (mapMetodoPago(leadData.metodoPago) as any) : existingLead?.metodoPago,
         fechaLead: finalFechaLead,
         fechaHoraAgenda: parsedFechaHoraAgenda,
-        fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
-        birthDate: parseDate(leadData.birthDate, true),
+        fechaVolverLlamar: parseLocalDate(leadData.fechaVolverLlamar),
+        birthDate: parseLocalDate(leadData.birthDate),
         estadoRecepcion: finalEstadoRecepcionUpdate,
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
@@ -505,7 +531,7 @@ export const updateLead = async (req: Request, res: Response) => {
           const createdProc = await prisma.procedure.create({
             data: {
               leadId: id,
-              fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
+              fechaAtencion: parseLocalDate(p.fechaAtencion) || new Date(),
               personal: p.personal || '',
               horaInicio: p.horaInicio || '',
               horaFin: p.horaFin || '',
@@ -539,7 +565,7 @@ export const updateLead = async (req: Request, res: Response) => {
               leadId: id,
               procedimientoId: mappedProcId,
               nombreProcedimiento: s.nombreProcedimiento,
-              fechaSeguimiento: parseDate(s.fechaSeguimiento, true) || new Date(),
+              fechaSeguimiento: parseLocalDate(s.fechaSeguimiento) || new Date(),
               personal: s.personal,
               inflamacion: s.inflamacion,
               ampollas: s.ampollas,
@@ -566,7 +592,7 @@ export const updateLead = async (req: Request, res: Response) => {
               leadId: id,
               monto: p.monto,
               metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
-              fechaPago: parseDate(p.fechaPago) || new Date(),
+              fechaPago: parseLocalDate(p.fechaPago) || new Date(),
               observacion: p.observacion,
             }
           });
@@ -589,7 +615,7 @@ export const updateLead = async (req: Request, res: Response) => {
         comprobantes: true,
       }
     });
-    res.status(200).json(convertBigInts(refreshedLead));
+    res.status(200).json(processLeadForResponse(refreshedLead));
   } catch (error: any) {
     console.error(`❌ Error updating lead ${id}:`, {
       message: error.message,

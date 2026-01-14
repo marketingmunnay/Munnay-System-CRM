@@ -40,9 +40,9 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
   const [formData, setFormData] = useState<Partial<Egreso>>({});
 
   // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
-  const filteredProveedores = formData.categoria 
+  const filteredProveedores = (formData.categoria && proveedores)
     ? proveedores.filter(p => p.categoriaEgreso === formData.categoria)
-    : proveedores;
+    : (proveedores || []);
 
   useEffect(() => {
     if (isOpen) {
@@ -84,7 +84,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     }
 
     // Si cambia la categoría, resetear el proveedor si el actual no está en la nueva lista filtrada
-    if (name === 'categoria' && formData.proveedor) {
+    if (name === 'categoria' && formData.proveedor && proveedores) {
         const proveedoresDisponibles = proveedores.filter(p => p.categoriaEgreso === value);
         const proveedorActualDisponible = proveedoresDisponibles.find(p => p.razonSocial === formData.proveedor);
         if (!proveedorActualDisponible) {
@@ -94,7 +94,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     }
 
     // Calcular automáticamente la fecha de pago cuando se selecciona un proveedor
-    if (name === 'proveedor' && value) {
+    if (name === 'proveedor' && value && proveedores) {
         const proveedorSeleccionado = proveedores.find(p => p.razonSocial === value);
         if (proveedorSeleccionado?.diasCredito && formData.fechaRegistro) {
             const fechaRegistro = new Date(formData.fechaRegistro);
@@ -219,7 +219,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     <div className="flex flex-col">
                         <label htmlFor="fechaPago" className="mb-1 text-sm font-medium text-gray-700">
                             Fecha de Pago <span className="text-gray-400 text-xs">(Opcional)</span>
-                            {formData.proveedor && proveedores.find(p => p.razonSocial === formData.proveedor)?.diasCredito && (
+                            {formData.proveedor && proveedores && proveedores.find(p => p.razonSocial === formData.proveedor)?.diasCredito && (
                                 <span className="ml-2 text-xs text-green-600">
                                     <GoogleIcon name="schedule" className="text-xs" /> Auto-calculada
                                 </span>
