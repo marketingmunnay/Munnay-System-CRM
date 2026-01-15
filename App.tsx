@@ -438,8 +438,42 @@ const App: React.FC = () => {
         setCurrentPage('dashboard');
     };
 
-    const currentUserPermissions = useMemo(() => {
+    const currentUserPermissions = useMemo<Page[]>(() => {
         if (!currentUser) return ['dashboard'];
+
+        // Fallback for Admin (rolId === 1 or id === 0)
+        // Also check if any loaded role with user's rolId is 'Administrador'
+        const userRole = roles.find(r => r.id === currentUser.rolId);
+        const isAdmin = currentUser.rolId === 1 || 
+                        currentUser.id === 0 || 
+                        (userRole && userRole.nombre.toLowerCase().includes('admin'));
+
+        if (isAdmin) {
+             return [
+                'dashboard', 
+                'calendario', 
+                'tareas', 
+                'marketing-campanas', 
+                'marketing-leads', 
+                'redes-sociales-publicaciones', 
+                'redes-sociales-seguidores',
+                'recepcion-agendados', 
+                'recepcion-ventas-extra', 
+                'recepcion-incidencias', 
+                'procedimientos-atenciones', 
+                'procedimientos-seguimiento', 
+                'procedimientos-ventas-extra', 
+                'procedimientos-incidencias', 
+                'pacientes-historia',
+                'finanzas-egresos', 
+                'finanzas-facturacion', 
+                'administracion-inventario',
+                'rrhh-perfiles', 
+                'informes', 
+                'configuracion', 
+                'auditoria-logs'
+             ];
+        }
 
         const basePermissions = new Set<Page>(['dashboard']);
         const directPermissions = currentUser.permissions && currentUser.permissions.length > 0
