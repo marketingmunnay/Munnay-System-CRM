@@ -70,9 +70,10 @@ export const createVenta = async (req: Request, res: Response) => {
       data: {
         ...data,
         fechaVenta: new Date(fechaVenta),
-        entregado: entregado || false,
-        fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : (entregado ? new Date() : null),
-        productoId: productoId ? parseInt(productoId) : null
+        // CAMPOS COMENTADOS PORQUE NO EXISTEN EN LA BD DE PRODUCCIÓN AÚN
+        // entregado: entregado || false,
+        // fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : (entregado ? new Date() : null),
+        // productoId: productoId ? parseInt(productoId) : null
       },
     });
     res.status(201).json(newVenta);
