@@ -200,6 +200,16 @@ const App: React.FC = () => {
                 console.log('Service columns migration check:', migrationError);
             }
             
+            const safeFetch = async <T,>(fn: (() => Promise<T>) | undefined, fallback: T, name: string): Promise<T> => {
+                if (!fn) return fallback;
+                try {
+                    return await fn();
+                } catch (error) {
+                    console.error(`Error loading ${name}:`, error);
+                    return fallback;
+                }
+            };
+
             const [
                 leadsData, campaignsData, ventasData, incidenciasData, 
                 egresosData, proveedoresData, usersData, rolesData,
@@ -208,13 +218,29 @@ const App: React.FC = () => {
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
                 tiposProveedorData, goalsData, comprobantesData
             ] = await Promise.all([
-                api.getLeads?.() || Promise.resolve([]), api.getCampaigns?.() || Promise.resolve([]), api.getVentasExtra?.() || Promise.resolve([]),
-                api.getIncidencias?.() || Promise.resolve([]), api.getEgresos?.() || Promise.resolve([]), api.getProveedores?.() || Promise.resolve([]),
-                api.getUsers?.() || Promise.resolve([]), api.getRoles?.() || Promise.resolve([]), api.getBusinessInfo?.() || Promise.resolve(null),
-                api.getClientSources?.() || Promise.resolve([]), api.getServices?.() || Promise.resolve([]), api.getProducts?.() || Promise.resolve([]), api.getMemberships?.() || Promise.resolve([]),
-                api.getServiceCategories?.() || Promise.resolve([]), api.getProductCategories?.() || Promise.resolve([]), api.getJobPositions?.() || Promise.resolve([]),
-                api.getPublicaciones?.() || Promise.resolve([]), api.getSeguidores?.() || Promise.resolve([]), api.getMetaCampaigns?.() || Promise.resolve([]), api.getEgresoCategories?.() || Promise.resolve([]),
-                api.getTiposProveedor?.() || Promise.resolve([]), api.getGoals?.() || Promise.resolve([]), api.getComprobantes?.() || Promise.resolve([])
+                safeFetch(api.getLeads, [], 'leads'),
+                safeFetch(api.getCampaigns, [], 'campaigns'),
+                safeFetch(api.getVentasExtra, [], 'ventasExtra'),
+                safeFetch(api.getIncidencias, [], 'incidencias'),
+                safeFetch(api.getEgresos, [], 'egresos'),
+                safeFetch(api.getProveedores, [], 'proveedores'),
+                safeFetch(api.getUsers, [], 'users'),
+                safeFetch(api.getRoles, [], 'roles'),
+                safeFetch(api.getBusinessInfo, null, 'businessInfo'),
+                safeFetch(api.getClientSources, [], 'clientSources'),
+                safeFetch(api.getServices, [], 'services'),
+                safeFetch(api.getProducts, [], 'products'),
+                safeFetch(api.getMemberships, [], 'memberships'),
+                safeFetch(api.getServiceCategories, [], 'serviceCategories'),
+                safeFetch(api.getProductCategories, [], 'productCategories'),
+                safeFetch(api.getJobPositions, [], 'jobPositions'),
+                safeFetch(api.getPublicaciones, [], 'publicaciones'),
+                safeFetch(api.getSeguidores, [], 'seguidores'),
+                safeFetch(api.getMetaCampaigns, [], 'metaCampaigns'),
+                safeFetch(api.getEgresoCategories, [], 'egresoCategories'),
+                safeFetch(api.getTiposProveedor, [], 'tiposProveedor'),
+                safeFetch(api.getGoals, [], 'goals'),
+                safeFetch(api.getComprobantes, [], 'comprobantes')
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
