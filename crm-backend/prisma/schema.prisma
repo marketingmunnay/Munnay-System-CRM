@@ -347,10 +347,6 @@ model VentaExtra {
   fechaPagoDeuda  DateTime?
   paciente        Lead       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   comprobante     ComprobanteElectronico?
-
-  entregado       Boolean    @default(false)
-  fechaEntrega    DateTime?
-  productoId      Int?
 }
 
 model Incidencia {
