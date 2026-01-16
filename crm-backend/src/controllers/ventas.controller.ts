@@ -69,6 +69,7 @@ export const createVenta = async (req: Request, res: Response) => {
     const newVenta = await prisma.ventaExtra.create({
       data: {
         ...cleanData,
+        categoria: categoria || 'Venta', // Asegurar que categoria siempre tenga valor
         fechaVenta: new Date(fechaVenta),
         // CAMPOS COMENTADOS PORQUE NO EXISTEN EN LA BD DE PRODUCCIÓN AÚN
         // entregado: entregado || false,
