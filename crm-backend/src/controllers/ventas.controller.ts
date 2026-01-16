@@ -119,3 +119,38 @@ export const deleteVenta = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting venta', error: (error as Error).message });
   }
 };
+
+export const bulkCreateVentas = async (req: Request, res: Response) => {
+  const ventas = req.body;
+  
+  if (!Array.isArray(ventas)) {
+    return res.status(400).json({ message: 'Input must be an array of ventas' });
+  }
+
+  try {
+    const createdVentas = await prisma.$transaction(
+      ventas.map((venta: any) => {
+          // Clean invalid fields and ensure date formatting
+          const { id, fechaVenta, productoId, entregado, fechaEntrega, categoria, ...cleanData } = venta;
+          
+          return prisma.ventaExtra.create({
+            data: {
+                ...cleanData,
+                 categoria: categoria || 'Venta',
+                 fechaVenta: new Date(fechaVenta),
+                 // Explicitly exclude problematic fields as we did in createVenta
+            }
+          });
+      })
+    );
+    
+    res.status(201).json({ 
+        message: 'Ventas imported successfully', 
+        count: createdVentas.length,
+        ventas: createdVentas
+    });
+  } catch (error) {
+    console.error('Error importing ventas:', error);
+    res.status(500).json({ message: 'Error importing ventas', error: (error as Error).message });
+  }
+};
