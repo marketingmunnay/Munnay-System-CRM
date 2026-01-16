@@ -30,7 +30,7 @@ export const createVenta = async (req: Request, res: Response) => {
   const { id, fechaVenta, ...data } = req.body;
   
   // Extract inventory specific fields
-  const { productoId, entregado, fechaEntrega, categoria } = data;
+  const { productoId, entregado, fechaEntrega, categoria, ...cleanData } = data;
 
   try {
     // Inventory Logic: If it is a Product Sale and marked as Delivered
@@ -68,7 +68,7 @@ export const createVenta = async (req: Request, res: Response) => {
 
     const newVenta = await prisma.ventaExtra.create({
       data: {
-        ...data,
+        ...cleanData,
         fechaVenta: new Date(fechaVenta),
         // CAMPOS COMENTADOS PORQUE NO EXISTEN EN LA BD DE PRODUCCIÓN AÚN
         // entregado: entregado || false,
@@ -86,11 +86,15 @@ export const createVenta = async (req: Request, res: Response) => {
 export const updateVenta = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const { id: _, fechaVenta, ...data } = req.body; // Exclude id from update data
+  
+  // Clean data to remove fields not present in current DB schema
+  const { productoId, entregado, fechaEntrega, ...cleanData } = data;
+
   try {
     const updatedVenta = await prisma.ventaExtra.update({
       where: { id: id },
       data: {
-        ...data,
+        ...cleanData,
         fechaVenta: fechaVenta ? new Date(fechaVenta) : undefined,
       },
     });
