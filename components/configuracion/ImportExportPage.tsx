@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import type { ComprobanteElectronico } from '../../types.ts';
-import { getCampaigns, getEgresos, getLeads, getMetaCampaigns } from '../../services/api';
+import { getCampaigns, getEgresos, getLeads, getMetaCampaigns, getVentasExtra } from '../../services/api';
 import type { BulkImportEgresosResponse } from '../../services/api';
 import ImportProgressModal from '../shared/ImportProgressModal';
 import Modal from '../shared/Modal';
@@ -76,6 +76,11 @@ const EGRESO_HEADERS = [
     'tipoMoneda',
     'observaciones',
     'comprobantes'
+];
+
+const VENTAS_HEADERS = [
+    "id", "codigoVenta", "fechaVenta", "nHistoria", "servicio", "categoria", 
+    "precio", "montoPagado", "metodoPago", "deuda", "fechaPagoDeuda"
 ];
 
 interface ImportSectionProps {
@@ -1087,6 +1092,33 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
         }
     };
 
+    const exportVentasCsv = async () => {
+        try {
+            const data = await getVentasExtra();
+            if (!data || data.length === 0) {
+                alert('No hay ventas para exportar.');
+                return;
+            }
+            const rows = data.map(venta => [
+                venta.id ?? '',
+                venta.codigoVenta ?? '',
+                venta.fechaVenta ?? '',
+                venta.nHistoria ?? '',
+                venta.servicio ?? '',
+                venta.categoria ?? '',
+                venta.precio ?? '',
+                venta.montoPagado ?? '',
+                venta.metodoPago ?? '',
+                venta.deuda ?? '',
+                venta.fechaPagoDeuda ?? ''
+            ]);
+            downloadCsv('ventas_export.csv', VENTAS_HEADERS, rows);
+        } catch (error) {
+            console.error('Error al exportar ventas', error);
+            alert('Error al exportar ventas. Revisa la consola.');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-black">Importación y Exportación de Datos</h2>
@@ -1141,11 +1173,9 @@ const ImportExportPage: React.FC<ImportExportPageProps> = ({
                 title="Ventas"
                 description="Importa registros de ventas adicionales (recuperados)."
                 templateFilename="plantilla_ventas.csv"
-                headers={[
-                    "id", "codigoVenta", "fechaVenta", "nHistoria", "servicio", "categoria", 
-                    "precio", "montoPagado", "metodoPago", "deuda", "fechaPagoDeuda"
-                ]}
+                headers={VENTAS_HEADERS}
                 onImport={(file) => handleFileImport(file, 'Ventas')}
+                exportConfig={{ label: 'Exportar Ventas', onExport: exportVentasCsv }}
             />
 
             <ImportSection
