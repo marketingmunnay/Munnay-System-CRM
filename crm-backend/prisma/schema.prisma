@@ -606,7 +606,7 @@ model Product {
   precioTotal    Float?
   
   // CAMPOS ACTIVADOS (existen en BD de producción)
-  createdAt      DateTime @default(now())
+  // createdAt      DateTime @default(now())
   // updatedAt      DateTime @default(now()) @updatedAt
   // tipo           TipoProducto?
   // costoCompra    Float?
