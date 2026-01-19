@@ -17,6 +17,7 @@ import tipoCambioRouter from './tipoCambio.routes';
 import movimientosStockRouter from './movimientosStock.routes';
 import inventoryRouter from './inventory.routes';
 import auditRouter from './audit.routes';
+import shiftsRouter from './shifts.routes';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/publicaciones', publicacionesRouter);
 router.use('/seguidores', seguidoresRouter);
 router.use('/ventas-extra', ventasRouter);
 router.use('/incidencias', incidenciasRouter);
+router.use('/shifts', shiftsRouter);
 router.use('/proveedores', proveedoresRouter);
 router.use('/users', usersRouter);
 router.use('/config', configRouter);

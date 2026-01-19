@@ -347,6 +347,10 @@ model VentaExtra {
   fechaPagoDeuda  DateTime?
   paciente        Lead       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   comprobante     ComprobanteElectronico?
+
+  entregado       Boolean    @default(false)
+  fechaEntrega    DateTime?
+  productoId      Int?
 }
 
 model Incidencia {
@@ -486,6 +490,7 @@ model User {
   reconocimientosOtorgados   Reconocimiento[]     @relation("OtorgadoPor")
   reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
   logs                       AuditLog[]
+  shifts                     Shift[]
 }
 
 model Address {
@@ -534,6 +539,7 @@ model BusinessInfo {
   email         String
   logoUrl       String
   loginImageUrl String?
+  timezone      String @default("America/Lima")
 }
 
 model Goal {
@@ -783,3 +789,18 @@ model AlertaStock {
 
   @@map("alertastock")
 }
+
+model Shift {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date 
+  timeBlocks   Json     // Array of objects: { start: string, end: string, id: string }
+  location     String   @default("Principal")
+  isDayOff     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
