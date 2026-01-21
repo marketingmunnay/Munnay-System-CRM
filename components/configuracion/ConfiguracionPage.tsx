@@ -9,6 +9,7 @@ import ProveedorFormModal from '../finanzas/ProveedorFormModal';
 import MetasPage from './MetasPage';
 import CatalogFormModal from './CatalogFormModal'; // Import CatalogFormModal
 import MiembroEquipoFormModal from './MiembroEquipoFormModal.tsx';
+import WeeklyShiftScheduler from './shifts/WeeklyShiftScheduler';
 import MembershipFormModal from './MembershipFormModal.tsx';
 import CitasConfigPage from './CitasConfigPage';
 import Pagination from '../shared/Pagination';
@@ -1636,8 +1637,20 @@ const MiembrosEquipoSection: FC<{
                     >
                         Puestos de Trabajo
                     </button>
+                    <button
+                        onClick={() => setActiveTab('turnos')}
+                        className={`${activeTab === 'turnos' ? 'border-[#aa632d] text-[#aa632d]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                        Gestión de Turnos
+                    </button>
                 </nav>
             </div>
+
+            {activeTab === 'turnos' && (
+                <div className="h-[calc(100vh-300px)] min-h-[500px]">
+                    <WeeklyShiftScheduler />
+                </div>
+            )}
 
             {activeTab === 'miembros' && (
                 <div className="overflow-x-auto">

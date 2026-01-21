@@ -237,7 +237,7 @@ const ensureValidToken = async (): Promise<string | null> => {
 // Helper genérico para requests
 type ApiError = Error & { status?: number };
 
-const apiRequest = async <T>(
+export const apiRequest = async <T>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   body?: any

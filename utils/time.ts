@@ -5,8 +5,13 @@ const WEEK = DAY * 7;
 const MONTH = DAY * 30;
 const YEAR = DAY * 365;
 
-// Configuración de zona horaria para Perú
-const PERU_TIMEZONE = 'America/Lima';
+// Configuración de zona horaria dinámica
+const getSystemTimezone = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('systemTimezone') || 'America/Lima';
+  }
+  return 'America/Lima';
+};
 
 export function formatDistanceToNow(date: Date): string {
   const seconds = Math.round((new Date().getTime() - date.getTime()) / 1000);
@@ -95,7 +100,7 @@ export function formatDateForDisplay(date: string | Date | null | undefined): st
     day: '2-digit',
     month: '2-digit', 
     year: 'numeric',
-    timeZone: PERU_TIMEZONE
+    timeZone: getSystemTimezone()
   });
 }
 
@@ -108,16 +113,12 @@ export function formatDateTimeForDisplay(date: string | Date | null | undefined)
   
   return parsedDate.toLocaleString('es-PE', {
     day: '2-digit',
-    month: '2-digit',
+    month: '2-digit', 
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZone: PERU_TIMEZONE
-  });
-}
-
-// Función para formatear fecha con nombre del mes
+    timeZone: getSystemTimezone()
 export function formatDateWithMonthName(date: string | Date | null | undefined): string {
   const parsedDate = parseDate(date);
   if (!parsedDate) return '-';

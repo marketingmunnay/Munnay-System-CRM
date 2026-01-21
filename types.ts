@@ -502,6 +502,7 @@ export interface BusinessInfo {
     email: string;
     logoUrl: string;
     loginImageUrl?: string;
+    timezone?: string;
 }
 
 export interface ClientSource {

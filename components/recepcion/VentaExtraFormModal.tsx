@@ -94,7 +94,7 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             
             const paciente = pacientes.find(p => p.id === venta.pacienteId);
             setFormData(venta);
-            setSearchTerm(venta.nHistoria);
+            setSearchTerm(venta.nHistoria || '');
             setPacienteEncontrado(paciente || null);
         } else {
             // Generar código único: VEN-YYYYMMDD-HHMMSS-RAND
@@ -120,7 +120,8 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
             setPacienteEncontrado(null);
         }
     }
-  }, [venta, pacientes, isOpen, services, products]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venta, isOpen]);
 
   const handlePatientSearch = () => {
     const term = searchTerm.trim().toLowerCase();
@@ -171,6 +172,8 @@ export const VentaExtraFormModal: React.FC<VentaExtraFormModalProps> = ({ isOpen
           precio: 0,
           montoPagado: 0,
           deuda: 0,
+          entregado: false,
+          productoId: undefined
       }));
   };
 

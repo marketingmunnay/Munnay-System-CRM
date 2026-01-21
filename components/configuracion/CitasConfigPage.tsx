@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2, X, AlertCircle } from 'lucide-react';
-import { getUsers } from '../../services/api';
-import type { User } from '../../types';
+import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2, X, AlertCircle, Save } from 'lucide-react';
+import { getUsers, getBusinessInfo, saveBusinessInfo } from '../../services/api';
+import type { User, BusinessInfo } from '../../types';
 
 interface Resource {
   id: string;
@@ -90,6 +90,33 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
 
   // Closure Dates
   const [closureDates, setClosureDates] = useState<{start: string, end: string, reason: string}[]>([]);
+  const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
+
+  useEffect(() => {
+    // Load Business Info (Timezone)
+    getBusinessInfo().then(info => {
+      setBusinessInfo(info);
+      if (info.timezone) {
+        setTimezone(info.timezone);
+        // Sync with local storage for immediate frontend use elsewhere
+        localStorage.setItem('systemTimezone', info.timezone);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handleSaveGeneral = async () => {
+      try {
+          if (!businessInfo) return;
+          const updatedInfo = { ...businessInfo, timezone };
+          await saveBusinessInfo(updatedInfo);
+          setBusinessInfo(updatedInfo);
+          localStorage.setItem('systemTimezone', timezone);
+          alert('Configuración guardada correctamente.');
+      } catch (error) {
+          console.error("Error saving config:", error);
+          alert('Error al guardar la configuración.');
+      }
+  };
 
   useEffect(() => {
     if (activeTab === 'resources') {
@@ -222,6 +249,17 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
                   </select>
                 </div>
               </div>
+              
+              <div className="mt-8 pt-6 border-t flex justify-end">
+                  <button
+                    onClick={handleSaveGeneral}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Guardar Configuración
+                  </button>
+              </div>
+
             </div>
           </div>
         )}
