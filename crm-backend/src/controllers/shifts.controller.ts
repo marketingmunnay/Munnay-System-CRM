@@ -177,26 +177,4 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     console.error('Error in recurring shifts:', error);
     res.status(500).json({ message: 'Error generating recurring shifts' });
   }
-};            },
-            update: {
-                timeBlocks: sourceShift.timeBlocks,
-                location: sourceShift.location,
-                isDayOff: sourceShift.isDayOff
-            },
-            create: {
-                userId: Number(userId),
-                date: nextDate,
-                timeBlocks: sourceShift.timeBlocks ?? [],
-                location: sourceShift.location,
-                isDayOff: sourceShift.isDayOff
-            }
-        });
-        createdShifts.push(newShift);
-    }
-
-    res.json({ message: `Generated ${createdShifts.length} shifts`, shifts: createdShifts });
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error generating recurring shifts' });
-  }
 };
