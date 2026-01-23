@@ -5,7 +5,7 @@ import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import AppointmentWizard from './AppointmentWizard';
-import { getLeads } from '../../services/api';
+import { getLeads, getAppointments, getResources as fetchResources } from '../../services/api';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -135,17 +135,36 @@ const leadToEvent = (lead: Lead): CalendarEvent | null => {
 };
 
 const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
-    const horaFin = addMinutesToTime(appointment.horaInicio, appointment.duracionMinutos || DEFAULT_LEAD_DURATION);
+    const start = new Date(appointment.startTime);
+    const end = new Date(appointment.endTime);
+    
+    const fecha = formatDateForInput(start) || '';
+    const horaInicio = `${padTime(start.getHours())}:${padTime(start.getMinutes())}`;
+    const horaFin = `${padTime(end.getHours())}:${padTime(end.getMinutes())}`;
+
+    // Mapeo inteligente del recurso visual
+    // Priority: Professional ID (como string) > Resource ID (como string)
+    // Esto asume que las columnas del calendario se configurarán con estos IDs.
+    let resourceId = 'unassigned';
+    if (appointment.professionalId) resourceId = String(appointment.professionalId);
+    else if (appointment.resourceId) resourceId = String(appointment.resourceId);
+
+    const clienteNombre = appointment.lead 
+        ? buildClienteNombre(appointment.lead.nombres, appointment.lead.apellidos)
+        : (appointment.clienteNombre || 'Cliente Externo');
+
+    const servicios = appointment.service ? [appointment.service.nombre] : (appointment.servicios?.map(s => s.nombre) || []);
+
     return {
         id: `appointment-${appointment.id}`,
         source: 'appointment',
         originId: appointment.id,
-        fecha: appointment.fecha,
-        horaInicio: appointment.horaInicio,
+        fecha,
+        horaInicio,
         horaFin,
-        resourceId: appointment.profesionalId,
-        cliente: appointment.clienteNombre,
-        servicios: appointment.servicios?.map(item => item.nombre) || [],
+        resourceId,
+        cliente: clienteNombre,
+        servicios,
         appointmentRef: appointment,
     };
 };
@@ -247,6 +266,27 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('day');
+    
+    // New States for Fresha-style backend
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [dbResources, setDbResources] = useState<{id: number, nombre: string, tipo: string}[]>([]);
+    
+    // Initial fetch of resources
+    useEffect(() => {
+        fetchResources().then(res => {
+            setDbResources(res);
+            // Auto-select all new resources
+            setVisibleResourceIds(res.map(r => String(r.id)));
+        }).catch(err => console.error("Error fetching resources:", err));
+    }, []);
+
+    const activeResources = useMemo(() => {
+        if (dbResources.length > 0) {
+             return dbResources.map(r => ({ id: String(r.id), nombre: r.nombre }));
+        }
+        return RESOURCES;
+    }, [dbResources]);
+
     const [visibleResourceIds, setVisibleResourceIds] = useState<string[]>(RESOURCES.map(resource => resource.id));
     const [visibleSources, setVisibleSources] = useState<CalendarEvent['source'][]>(FILTER_SOURCE_OPTIONS.map(option => option.id));
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -259,27 +299,58 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
 
-    const teamMembers = useMemo(() => RESOURCES.filter(resource => resource.type === 'personal'), []);
-    const sharedSpaces = useMemo(() => RESOURCES.filter(resource => resource.type !== 'personal'), []);
-    const visibleResources = useMemo(
-        () => RESOURCES.filter(resource => visibleResourceIds.includes(resource.id)),
-        [visibleResourceIds]
-    );
-
+    // Fetch appointments when date changes
     useEffect(() => {
-        setCalendarEvents(prevEvents => {
-            const appointmentEvents = prevEvents.filter(event => event.source === 'appointment');
-            const leadEvents = leads
-                .map(leadToEvent)
-                .filter((event): event is CalendarEvent => event !== null);
-            return [...leadEvents, ...appointmentEvents];
-        });
-    }, [leads]);
+        const start = new Date(currentDate);
+        start.setDate(start.getDate() - 30); // Fetch wide range
+        const end = new Date(currentDate);
+        end.setDate(end.getDate() + 30);
+        
+        getAppointments(formatDateForInput(start), formatDateForInput(end))
+            .then(data => setAppointments(data))
+            .catch(console.error);
+    }, [currentDate]);
 
+    // Update calendarEvents when leads OR appointments change
     useEffect(() => {
-        const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => window.clearInterval(timer);
+        const leadEvents = leads
+            .map(leadToEvent)
+            .filter((e): e is CalendarEvent => e !== null);
+            
+        const apptEvents = appointments.map(appointmentToEvent);
+
+        setCalendarEvents([...leadEvents, ...apptEvents]);
+    }, [leads, appointments]); // Removed dependencies that were not here before check logic
+
+    // Timer for current time line
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
     }, []);
+
+    // Override RESOURCES constant with DB resources if available
+    const activeResources = useMemo(() => {
+        if (dbResources.length > 0) {
+             return dbResources.map(r => ({ 
+                 id: String(r.id), 
+                 name: r.nombre, // Alias for legacy 'name'
+                 nombre: r.nombre,
+                 type: r.tipo === 'ROOM' ? 'espacio' : 'personal',
+                 imageUrl: r.tipo === 'ROOM' ? undefined : 'https://ui-avatars.com/api/?name=' + r.nombre // Fallback avatar
+             }));
+        }
+        // Fallback to legacy constant but adapted
+        return RESOURCES;
+    }, [dbResources]);
+
+    // Groups for UI filters (if needed)
+    const teamMembers = useMemo(() => activeResources.filter(resource => resource.type === 'personal'), [activeResources]);
+    const sharedSpaces = useMemo(() => activeResources.filter(resource => resource.type !== 'personal'), [activeResources]);
+    
+    const visibleResources = useMemo(
+        () => activeResources.filter(resource => visibleResourceIds.includes(resource.id)),
+        [activeResources, visibleResourceIds]
+    );
 
     useEffect(() => {
         if (!isViewMenuOpen) return;
@@ -745,6 +816,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                 defaultDate={wizardDefaults?.date}
                 defaultResourceId={wizardDefaults?.resourceId}
                 onAppointmentCreated={handleWizardAppointmentCreated}
+                resources={dbResources}
             />
         </div>
     );

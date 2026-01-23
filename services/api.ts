@@ -668,6 +668,18 @@ interface AvailabilityResponse {
   suggestions: Array<{ fecha: string; horaInicio: string; profesionalId?: string; ambienteId?: number }>;
 }
 
+
+export const getAppointments = (start?: string, end?: string, professionalId?: string): Promise<Appointment[]> => {
+    const params = new URLSearchParams();
+    if (start) params.append('start', start);
+    if (end) params.append('end', end);
+    if (professionalId) params.append('professionalId', professionalId);
+    return apiRequest<Appointment[]>(`/calendar/appointments?${params.toString()}`, 'GET');
+};
+
+export const getResources = (): Promise<{id: number, nombre: string, tipo: string}[]> =>
+  apiRequest<{id: number, nombre: string, tipo: string}[]>('/calendar/resources', 'GET');
+
 export const getAmbientes = (): Promise<Ambiente[]> =>
   apiRequest<Ambiente[]>('/calendar/ambientes', 'GET');
 

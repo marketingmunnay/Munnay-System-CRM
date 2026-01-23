@@ -26,6 +26,7 @@ interface AppointmentWizardProps {
     whatsapp: boolean;
     email: boolean;
   };
+  resources?: { id: number; nombre: string; tipo: string }[];
 }
 
 const stepList = [
@@ -106,7 +107,8 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   onAppointmentCreated,
   defaultDate,
   defaultResourceId,
-  channels = defaultChannels
+  channels = defaultChannels,
+  resources = []
 }) => {
   const [activeStep, setActiveStep] = useState<WizardStep>('cliente');
   const [searchQuery, setSearchQuery] = useState('');
@@ -293,11 +295,16 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   };
 
   const profesionalOptions = useMemo(() => {
+    if (resources && resources.length > 0) {
+        return resources
+            .filter(r => r.tipo === 'personal' || !r.tipo)
+            .map(r => ({ value: String(r.id), label: r.nombre }));
+    }
     const values = services
       .map(service => service.profesionalRequerido)
       .filter((value): value is string => Boolean(value));
-    return Array.from(new Set(values));
-  }, [services]);
+    return Array.from(new Set(values)).map(v => ({ value: v, label: v }));
+  }, [services, resources]);
 
   const ambientesMap = useMemo(() => {
     const map = new Map<number, Ambiente>();
@@ -429,31 +436,28 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     setError(null);
     setIsSubmitting(true);
     try {
-      // Construir la fecha y hora de agenda
-      const fechaHoraAgenda = new Date(`${selectedDate}T${startTime}:00`);
-      
-      // Obtener nombres de servicios seleccionados
-      const serviciosSeleccionados = selectedServiceIds
-        .map(id => services.find(s => s.id === id)?.nombre)
-        .filter((nombre): nombre is string => Boolean(nombre));
-
-      // Actualizar el lead con los datos de agenda
-      const updatedLead: Lead = {
-        ...selectedLead,
-        fechaHoraAgenda: fechaHoraAgenda.toISOString(),
-        recursoId: selectedProfesionalId || '',
-        servicios: serviciosSeleccionados.length > 0 ? serviciosSeleccionados : selectedLead.servicios,
-        estado: LeadStatus.Agendado,
-        notas: notas || selectedLead.notas,
-        documentType: selectedLead.documentType || leadForm.documentType,
-        documentNumber: selectedLead.documentNumber || leadForm.documentNumber || undefined,
+      // Create Appointment via new Backend API
+      const payload: CreateAppointmentPayload = {
+        leadId: selectedLead.id,
+        professionalId: selectedProfesionalId ? parseInt(selectedProfesionalId) : undefined,
+        serviceId: selectedServiceIds.length > 0 ? selectedServiceIds[0] : undefined,
+        date: selectedDate,
+        time: startTime,
+        notes: notas,
+        // Optional: map resource/ambiente if needed in future
       };
 
-      await onSaveLead(updatedLead);
+      const createdAppt = await createAppointment(payload);
+
+      if (onAppointmentCreated) {
+        onAppointmentCreated(createdAppt);
+      }
+      
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error agendando cita', err);
-      setError('No pudimos agendar la cita. Verifica los datos o intenta más tarde.');
+      // Show backend error message if available
+      setError(err?.response?.data?.message || err.message || 'No pudimos agendar la cita. Verifica los datos o intenta más tarde.');
     } finally {
       setIsSubmitting(false);
     }
@@ -677,7 +681,7 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
         >
           <option value="">Selecciona profesional</option>
           {profesionalOptions.map(pro => (
-            <option key={pro} value={pro}>{pro}</option>
+            <option key={pro.value} value={pro.value}>{pro.label}</option>
           ))}
         </select>
         <select

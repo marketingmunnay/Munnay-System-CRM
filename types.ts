@@ -565,36 +565,51 @@ export interface AppointmentServiceItem {
 
 export interface Appointment {
     id: number;
-    leadId: number;
-    clienteNombre: string;
-    clienteDocumento?: string;
-    servicios: AppointmentServiceItem[];
-    fecha: string; // YYYY-MM-DD
-    horaInicio: string; // HH:mm
-    duracionMinutos: number;
-    profesionalId: string;
-    ambienteId?: number;
-    estado: AppointmentStatus;
-    origen: string;
-    notas?: string;
-    recurrenteId?: number;
+    leadId?: number;
+    professionalId?: number;
+    serviceId?: number;
+    resourceId?: number;
+    
+    startTime: string; // ISO String from backend
+    endTime: string;   // ISO String from backend
+    status: AppointmentStatus;
+    notes?: string;
+
+    // Relaciones expandidas (opcionales dependiendo de si el backend las envía)
+    lead?: {
+        id: number;
+        nombres: string;
+        apellidos: string;
+        numero: string;
+        nHistoria?: string;
+    };
+    professional?: {
+        id: number;
+        nombres: string;
+        apellidos: string;
+        avatarUrl?: string;
+    };
+    service?: {
+        id: number;
+        nombre: string;
+        duracionMinutos: number;
+        precio: number;
+    };
+    resource?: {
+        id: number;
+        nombre: string;
+        tipo: string; // 'BOX', 'MACHINE', etc.
+    };
 }
 
 export interface CreateAppointmentPayload {
-    leadId: number;
-    servicioIds: number[];
-    fecha: string;
-    horaInicio: string;
-    duracionMinutos: number;
-    profesionalId: string;
-    ambienteId?: number;
-    estado: AppointmentStatus;
-    origen: string;
-    notas?: string;
-    confirmarPor?: Array<'whatsapp' | 'email'>;
-    emitirComprobante?: boolean;
-    documento?: DocumentType;
-    numeroDocumento?: string;
+    leadId?: number;
+    professionalId?: number;
+    serviceId?: number;
+    resourceId?: number;
+    date: string;       // YYYY-MM-DD
+    time: string;       // HH:mm
+    notes?: string;
 }
 
 export interface AvailabilityRequest {

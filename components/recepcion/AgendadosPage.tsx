@@ -1,19 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User } from '../../types';
-import { LeadStatus, ReceptionStatus } from '../../types';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User, Appointment } from '../../types';
+import { LeadStatus, ReceptionStatus, AppointmentStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
-import * as api from '../../services/api';
+import { getAppointments, updateAppointmentStatus, getLeads } from '../../services/api';
 import { parseDate } from '../../utils/time';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
-import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
-import { RESOURCES } from '../../constants';
-import StatCard from '../dashboard/StatCard';
 
 interface AgendadosPageProps {
-  leads: Lead[];
+  leads: Lead[]; // To remove mostly
   metaCampaigns: MetaCampaign[];
-    campaigns?: Campaign[];
-  onSaveLead: (lead: Lead) => void;
+  campaigns?: Campaign[];
+  onSaveLead: (lead: Lead) => void; 
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
   services: Service[];
@@ -22,34 +19,29 @@ interface AgendadosPageProps {
   comprobantes: ComprobanteElectronico[];
 }
 
-const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
-    <span className={`material-symbols-outlined ${className}`}>{name}</span>
-);
+const mapAppointmentToLead = (appt: Appointment): Partial<Lead> => ({
+    id: appt.leadId || 0,
+    nombres: appt.lead?.nombres || appt.clienteNombre || 'Sin Nombre',
+    apellidos: appt.lead?.apellidos || '',
+    numero: appt.lead?.numero || '',
+    fechaHoraAgenda: appt.startTime,
+    estadoRecepcion: mapStatusToReception(appt.status),
+    servicios: appt.service ? [appt.service.nombre] : [],
+    recursoId: appt.resourceId ? String(appt.resourceId) : (appt.professionalId ? String(appt.professionalId) : undefined),
+    montoPagado: 0 // TODO: Link payments
+});
 
-// Normalize reception status returned from backend (token or display) to UI display value
-const normalizeReception = (value?: string) => {
-    if (!value) return ReceptionStatus.Agendado;
-    const s = String(value).trim();
-    const map: Record<string, string> = {
-        'Agendado': ReceptionStatus.Agendado,
-        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
-        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
-        'PorAtender': ReceptionStatus.PorAtender,
-        'Por Atender': ReceptionStatus.PorAtender,
-        'Atendido': ReceptionStatus.Atendido,
-        'Reprogramado': ReceptionStatus.Reprogramado,
-        'Cancelado': ReceptionStatus.Cancelado,
-        'NoAsistio': ReceptionStatus.NoAsistio,
-        'No Asistió': ReceptionStatus.NoAsistio
-    };
-    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
-    return map[s] ?? ReceptionStatus.Agendado;
-};
-
-const getResourceName = (resourceId?: string) => {
-    if (!resourceId) return 'N/A';
-    const resource = RESOURCES.find(r => r.id === resourceId);
-    return resource ? resource.name : 'Desconocido';
+const mapStatusToReception = (status: AppointmentStatus): ReceptionStatus => {
+    switch (status) {
+        case 'SCHEDULED': return ReceptionStatus.Agendado;
+        case 'CONFIRMED': return ReceptionStatus.AgendadoPorLlegar;
+        case 'ARRIVED': return ReceptionStatus.PorAtender;
+        case 'IN_PROGRESS': return ReceptionStatus.PorAtender; // Or EnModulo
+        case 'COMPLETED': return ReceptionStatus.Atendido;
+        case 'CANCELLED': return ReceptionStatus.Cancelado;
+        case 'NO_SHOW': return ReceptionStatus.NoAsistio;
+        default: return ReceptionStatus.Agendado;
+    }
 };
 
 // Kanban Card Component (adapted from marketing Kanban)
@@ -195,53 +187,68 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 
 
 const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
-  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [dateRange, setDateRange] = useState({ 
+      from: new Date().toISOString().split('T')[0], 
+      to: new Date().toISOString().split('T')[0] 
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
-    const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  
+  // New State for Appointments
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
-    useEffect(() => {
-        let mounted = true;
-        api.getUsers()
-            .then(res => {
-                if (!mounted) return;
-                if (Array.isArray(res)) setUsers(res as User[]);
-            })
-            .catch(err => console.warn('Failed to load users for AgendadosPage', err));
-        return () => { mounted = false; };
-    }, []);
+  // Fetch users (legacy) and Appointments (new)
+  useEffect(() => {
+    let mounted = true;
+    api.getUsers()
+        .then(res => { if (mounted && Array.isArray(res)) setUsers(res as User[]); })
+        .catch(console.warn);
 
-    const filteredLeads = useMemo(() => {
-        let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
+    // Fetch appointments for current range
+    if (dateRange.from && dateRange.to) {
+        getAppointments(dateRange.from, dateRange.to)
+            .then(res => { if (mounted) setAppointments(res); })
+            .catch(console.error);
+    }
 
-        if (dateRange.from || dateRange.to) {
-            baseLeads = baseLeads.filter(lead => {
-                if (!lead.fechaHoraAgenda) return false;
+    return () => { mounted = false; };
+  }, [dateRange]);
 
-                // fechaHoraAgenda might be a string or a Date object depending on the source
-                let agendaDate: string | null = null;
-                try {
-                    if (typeof lead.fechaHoraAgenda === 'string') {
-                        agendaDate = lead.fechaHoraAgenda.split('T')[0];
-                    } else {
-                        const d = new Date(lead.fechaHoraAgenda as any);
-                        if (!isNaN(d.getTime())) agendaDate = d.toISOString().split('T')[0];
-                    }
-                } catch (e) {
-                    agendaDate = null;
-                }
+  // Merge legacy Leads with new Appointments
+  const filteredLeads = useMemo(() => {
+    // 1. Leads 'legacy' que vienen por props (filtrados por fecha localmente)
+    const validLeads = leads.filter(lead => {
+        if (lead.estado !== LeadStatus.Agendado || !lead.fechaHoraAgenda) return false;
+        const agendaDate = lead.fechaHoraAgenda.toString().split('T')[0];
+        if (dateRange.from && agendaDate < dateRange.from) return false;
+        if (dateRange.to && agendaDate > dateRange.to) return false;
+        return true;
+    });
 
-                if (!agendaDate) return false;
+    // 2. Map new Appointments to Lead structure
+    const appointmentLeads = appointments.map(appt => ({
+        ...mapAppointmentToLead(appt), 
+        // Ensure required Lead props for UI
+        id: appt.leadId || -(appt.id), // Negative ID if no lead connected
+        estado: LeadStatus.Agendado,
+        servicios: appt.service ? [appt.service.nombre] : [], 
+        // Default props to prevent crashes
+        montoPagado: 0,
+        categoria: 'Cita',
+        etiquetas: [],
+        tratamientos: [],
+        historialComentarios: []
+    } as unknown as Lead));
 
-                if (dateRange.from && agendaDate < dateRange.from) return false;
-                if (dateRange.to && agendaDate > dateRange.to) return false;
-                return true;
-            });
-        }
-
-        return baseLeads.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
-    }, [leads, dateRange]);
+    // 3. Combine and Deduplicate (prefer Appointment if ID matches)
+    // Actually, in transition phase, show both? Or dedup by leadId?
+    // Let's just append for now, user can see dupes if data isn't clean.
+    const combined = [...validLeads, ...appointmentLeads];
+    
+    return combined.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
+  }, [leads, appointments, dateRange]);
 
   const stats = useMemo(() => {
     const totalAgendados = filteredLeads.length;

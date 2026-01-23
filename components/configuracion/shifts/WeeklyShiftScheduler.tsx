@@ -4,21 +4,34 @@ import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, addDays, isSameDay 
 import { es } from 'date-fns/locale';
 import ShiftCell from './ShiftCell';
 import ShiftFormModal from './ShiftFormModal';
+import TeamSelectionModal from './TeamSelectionModal';
+import RecurringShiftModal from './RecurringShiftModal';
 import { apiRequest } from '../../../services/api'; 
 // Assuming apiRequest helper exists, otherwise use fetch
 
 const WeeklyShiftScheduler: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [shifts, setShifts] = useState<any[]>([]);
-    const [users, setUsers] = useState<any[]>([]); // Should fetch from API
+    const [users, setUsers] = useState<any[]>([]); // All fetched users
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Modals State
     const [modalData, setModalData] = useState<{ isOpen: boolean, userId: number | null, date: Date | null, shift: any | null }>({
         isOpen: false,
         userId: null,
         date: null,
         shift: null
     });
+    const [teamModalOpen, setTeamModalOpen] = useState(false);
+    const [recurringModalData, setRecurringModalData] = useState<{ isOpen: boolean, userId: number | null, date: Date | null }>({
+         isOpen: false,
+         userId: null,
+         date: null
+    });
+
+    // Persistent Settings
+    const [selectedTeamIds, setSelectedTeamIds] = useState<number[]>([]);
 
     // Calendar Range
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
@@ -31,8 +44,6 @@ const WeeklyShiftScheduler: React.FC = () => {
             // 1. Fetch Users
             // This endpoint might need adjustment depending on your structure
             const usersRes = await apiRequest<any[]>('/amenities/roles/users?role=all', 'GET'); 
-            // Mocking user fetch if endpoint differs:
-            // const usersRes = [{id: 1, nombres: 'Juan', apellidos: 'Perez', avatarUrl: '', position: 'Medico'}, ...];
             
             // 2. Fetch Shifts
             const startStr = format(weekStart, 'yyyy-MM-dd');
@@ -40,11 +51,20 @@ const WeeklyShiftScheduler: React.FC = () => {
             const shiftsRes = await apiRequest<any[]>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
 
             setShifts(shiftsRes || []);
-            // Use API users or fallback if tool fails
+            
             if (usersRes && Array.isArray(usersRes)) {
                  setUsers(usersRes);
+                 
+                 // Initial load of selected IDs from localStorage if available, else all
+                 const stored = localStorage.getItem('munnay_shift_team_ids');
+                 if (stored) {
+                     setSelectedTeamIds(JSON.parse(stored));
+                 } else {
+                     // Default to all users if none stored
+                     setSelectedTeamIds(usersRes.map(u => u.id));
+                 }
+
             } else {
-                 // Fallback fetch if specific endpoint fails
                  setUsers([]); 
             }
         } catch (error) {
@@ -56,14 +76,18 @@ const WeeklyShiftScheduler: React.FC = () => {
 
     // Initial Load & On Date Change
     useEffect(() => {
-        // We need to fetch real users. For now let's assume we fetch them.
-        // In a real scenario, reuse your existing users hook or context.
         const loadUsersAndShifts = async () => {
-             // Fetch users separately if needed, or rely on shifts include
-             // For grid, we need ALL users, not just those with shifts.
-             const allUsers = await apiRequest<any[]>('/users', 'GET'); // Generalized user endpoint
+             const allUsers = await apiRequest<any[]>('/amenities/roles/users?role=all', 'GET'); // Generalized user endpoint
              setUsers(allUsers || []);
              
+             // Initial load of selected IDs from localStorage
+             const stored = localStorage.getItem('munnay_shift_team_ids');
+             if (stored) {
+                 setSelectedTeamIds(JSON.parse(stored));
+             } else if (allUsers && allUsers.length > 0) {
+                 setSelectedTeamIds(allUsers.map((u: any) => u.id));
+             }
+
              const startStr = format(weekStart, 'yyyy-MM-dd');
              const endStr = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
              const shiftsRes = await apiRequest<any[]>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
@@ -71,7 +95,13 @@ const WeeklyShiftScheduler: React.FC = () => {
              setLoading(false);
         };
         loadUsersAndShifts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentDate]);
+
+    const handleSaveTeamSelection = (ids: number[]) => {
+        setSelectedTeamIds(ids);
+        localStorage.setItem('munnay_shift_team_ids', JSON.stringify(ids));
+    };
 
     // Handlers
     const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
@@ -112,22 +142,30 @@ const WeeklyShiftScheduler: React.FC = () => {
     };
 
     const handleRecurring = async (userId: number, date: Date) => {
-        const weeks = prompt("¿Repetir este turno para cuántas semanas futuras?", "4");
-        if (!weeks) return;
+        setRecurringModalData({ isOpen: true, userId, date });
+    };
+
+    const handleSaveRecurring = async (data: any) => {
         try {
-            await apiRequest('/shifts/recurring', 'POST', {
-                userId,
-                sourceDate: date,
-                weeksToRepeat: parseInt(weeks)
-            });
+            await apiRequest('/shifts/recurring', 'POST', data);
+            
+            // Refresh shifts as many new ones were created
+            const startStr = format(weekStart, 'yyyy-MM-dd');
+            const endStr = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            const shiftsRes = await apiRequest<any[]>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
+            setShifts(shiftsRes || []);
+            
             alert("Turnos generados correctamente.");
         } catch (e) {
+            console.error(e);
             alert("Error al generar recurrencia");
         }
     };
 
     // Compute derived state
-    const filteredUsers = users.filter(u => 
+    const displayableUsers = users.filter(u => selectedTeamIds.includes(u.id));
+
+    const filteredUsers = displayableUsers.filter(u => 
         (u.nombres + ' ' + u.apellidos).toLowerCase().includes(searchTerm.toLowerCase()) ||
         (u.position || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -162,7 +200,7 @@ const WeeklyShiftScheduler: React.FC = () => {
                     </h2>
                     <div className="flex bg-gray-100 rounded-lg p-1 items-center">
                         <button onClick={handlePrevWeek} className="p-1 hover:bg-white rounded-md transition-colors"><ChevronLeft size={20} /></button>
-                        <div className="px-4 font-medium text-sm w-36 text-center">
+                        <div className="px-4 font-medium text-sm w-36 text-center capitalize">
                             {format(weekStart, 'd MMM', { locale: es })} - {format(endOfWeek(currentDate || new Date(), { weekStartsOn: 1 }), 'd MMM', { locale: es })}
                         </div>
                         <button onClick={handleNextWeek} className="p-1 hover:bg-white rounded-md transition-colors"><ChevronRight size={20} /></button>
@@ -180,27 +218,47 @@ const WeeklyShiftScheduler: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                      </div>
-                     <button className="flex items-center space-x-2 px-3 py-2 border rounded-md hover:bg-gray-50 text-sm font-medium text-gray-600">
-                        <Filter size={16} />
-                        <span>Filtrar Sede</span>
-                     </button>
-                     <button className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm font-medium shadow-sm">
+                     <button 
+                        onClick={() => setTeamModalOpen(true)}
+                        className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium shadow-sm"
+                     >
                         <Users size={16} />
                         <span>Gestionar Equipo</span>
                      </button>
                 </div>
             </div>
 
+            {/* Subheader Filters */}
+            <div className="px-6 py-2 bg-white border-b flex items-center">
+                <div className="text-sm font-medium text-gray-700 mr-2">Miembro del equipo:</div>
+                <button 
+                    onClick={() => setTeamModalOpen(true)}
+                    className="text-sm text-purple-600 font-semibold hover:underline"
+                >
+                    Cambiar
+                </button>
+                <div className="ml-8 flex space-x-8 text-xs text-gray-500">
+                    {/* Add daily totals here if needed */}
+                     {weekDays.map((day, i) => (
+                        <div key={i} className="hidden">
+                             {/* Placeholder for daily totals */}
+                        </div>
+                     ))}
+                </div>
+            </div>
+
             {/* Grid Principal */}
             <div className="flex-1 overflow-x-auto overflow-y-auto">
                 <table className="w-full min-w-[1000px] border-collapse">
-                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                    <thead className="bg-white sticky top-0 z-10">
                         <tr>
-                            <th className="p-3 text-left w-64 border-r font-semibold text-gray-600 text-sm">Personal</th>
+                            <th className="p-4 text-left w-64 border-r border-b font-bold text-gray-900 text-sm">
+                                {/* Empty header for user column */}
+                            </th>
                             {weekDays.map((day, i) => (
-                                <th key={i} className={`p-3 text-center border-b font-medium text-gray-600 w-32 ${isSameDay(day, new Date()) ? 'bg-purple-50 text-purple-700' : ''}`}>
-                                    <div className="uppercase text-xs tracking-wider opacity-70">{format(day, 'EEE', { locale: es })}</div>
-                                    <div className="text-lg">{format(day, 'd')}</div>
+                                <th key={i} className={`p-3 text-center border-b border-gray-100 font-medium text-gray-600 w-32 ${isSameDay(day, new Date()) ? 'bg-purple-50 text-purple-700' : ''}`}>
+                                    <div className="capitalize text-sm font-bold">{format(day, 'EEE, d MMM', { locale: es })}</div>
+                                    <div className="text-xs font-normal text-gray-400 mt-0.5">0 h</div>
                                 </th>
                             ))}
                         </tr>
@@ -210,26 +268,31 @@ const WeeklyShiftScheduler: React.FC = () => {
                             <tr><td colSpan={8} className="p-10 text-center text-gray-500">Cargando horario...</td></tr>
                         ) : filteredUsers.map(user => (
                             <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="p-3 border-r bg-white sticky left-0 z-10 md:static">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold border border-purple-200">
-                                            {user.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full rounded-full object-cover" /> : user.nombres.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold text-gray-800">{user.nombres} {user.apellidos}</div>
-                                            <div className="text-xs text-gray-500 flex items-center justify-between w-full">
-                                                <span>{user.position || 'Personal'}</span> 
+                                <td className="p-4 border-r border-gray-100 bg-white sticky left-0 z-10 md:static">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border border-white shadow-sm">
+                                                {user.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full rounded-full object-cover" /> : <span className="text-sm">{user.nombres.charAt(0)}{user.apellidos.charAt(0)}</span>}
                                             </div>
-                                            <div className="text-[10px] bg-gray-100 inline-block px-1.5 rounded mt-1 text-gray-600">
-                                                {getTotalHoursUser(user.id)}h / semana
+                                            <div>
+                                                <div className="font-bold text-gray-900 text-sm">{user.nombres} {user.apellidos}</div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    {shifts.some(s => s.userId === user.id) ? 'Con turnos' : 'Sin turnos'}
+                                                </div>
                                             </div>
                                         </div>
+                                        <button 
+                                            onClick={() => setModalData({ isOpen: true, userId: user.id, date: null, shift: null })}
+                                            className="text-gray-400 hover:text-gray-600"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                        </button>
                                     </div>
                                 </td>
                                 {weekDays.map((day, i) => {
                                     const shift = getShiftForCell(user.id, day);
                                     return (
-                                        <td key={`${user.id}-${i}`} className="p-1 border-r border-gray-100 align-top h-28">
+                                        <td key={`${user.id}-${i}`} className="p-1 border-r border-gray-100 align-top h-24">
                                             <ShiftCell 
                                                 date={day}
                                                 userId={user.id}
@@ -254,7 +317,7 @@ const WeeklyShiftScheduler: React.FC = () => {
                 </table>
             </div>
 
-            {/* Modal */}
+            {/* Modals */}
             <ShiftFormModal 
                 isOpen={modalData.isOpen}
                 onClose={() => setModalData(prev => ({ ...prev, isOpen: false }))}
@@ -265,6 +328,25 @@ const WeeklyShiftScheduler: React.FC = () => {
                 initialBlocks={modalData.shift?.timeBlocks}
                 location={modalData.shift?.location}
             />
+
+            <TeamSelectionModal
+                isOpen={teamModalOpen}
+                onClose={() => setTeamModalOpen(false)}
+                availableUsers={users}
+                selectedUserIds={selectedTeamIds}
+                onSave={handleSaveTeamSelection}
+            />
+
+            {recurringModalData.isOpen && recurringModalData.userId && recurringModalData.date && (
+                <RecurringShiftModal 
+                    isOpen={recurringModalData.isOpen}
+                    onClose={() => setRecurringModalData({ isOpen: false, userId: null, date: null })}
+                    userId={recurringModalData.userId}
+                    userName={users.find(u => u.id === recurringModalData.userId)?.nombres || ''}
+                    startDate={recurringModalData.date}
+                    onSave={handleSaveRecurring}
+                />
+            )}
         </div>
     );
 };
