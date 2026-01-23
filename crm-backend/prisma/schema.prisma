@@ -144,21 +144,6 @@ enum GoalObjective {
   NivelStock
 }
 
-model AuditLog {
-  id        Int      @id @default(autoincrement())
-  fecha     DateTime @default(now())
-  usuario   String
-  usuarioId Int
-  user      User     @relation(fields: [usuarioId], references: [id])
-  accion    String
-  modulo    String
-  detalles  String   @db.Text
-  metadata  Json?
-  ip        String?
-  userAgent String?
-}
-
-// MODELS
 
 model Lead {
   id                     Int      @id @default(autoincrement())
@@ -490,7 +475,6 @@ model User {
   emergencyContacts          EmergencyContact[]
   reconocimientosOtorgados   Reconocimiento[]     @relation("OtorgadoPor")
   reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
-  logs                       AuditLog[]
   shifts                     Shift[]
   appointments               Appointment[]
 }
