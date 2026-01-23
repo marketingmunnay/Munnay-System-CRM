@@ -91,9 +91,8 @@ export const deleteShift = async (req: Request, res: Response) => {
 
 export const generateRecurringShifts = async (req: Request, res: Response) => {
   try {
-    const { userId, sourceDate, weeksToRepeat } = req.body;
+    const { userId, sourceDate, weeksToRepeat, mode, targetDate, untilDate } = req.body;
     
-    // Logic: Fetch the source shift, then replicate it for X weeks
     const sourceShift = await prisma.shift.findUnique({
       where: {
         userId_date: {
@@ -108,17 +107,77 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     }
 
     const createdShifts = [];
-    
-    for (let i = 1; i <= Number(weeksToRepeat); i++) {
-        const nextDate = addWeeks(new Date(sourceDate), i);
-        
-        const newShift = await prisma.shift.upsert({
+    const source = new Date(sourceDate);
+
+    // MODE: Specific Date (Copy to one specific date)
+    if (mode === 'specific_date' && targetDate) {
+         const specificDate = new Date(targetDate);
+         const newShift = await prisma.shift.upsert({
             where: {
-                userId_date: {
-                    userId: Number(userId),
-                    date: nextDate
-                }
+                userId_date: { userId: Number(userId), date: specificDate }
             },
+            update: {
+                timeBlocks: sourceShift.timeBlocks,
+                location: sourceShift.location,
+                isDayOff: sourceShift.isDayOff
+            },
+            create: {
+                userId: Number(userId),
+                date: specificDate,
+                timeBlocks: sourceShift.timeBlocks || [],
+                location: sourceShift.location || 'Principal',
+                isDayOff: sourceShift.isDayOff || false
+            }
+        });
+        createdShifts.push(newShift);
+    } 
+    // MODE: Weeks (Repeat for X weeks) OR Until Date (Calculate weeks)
+    else {
+        let iterations = 0;
+        
+        if (mode === 'until_date' && untilDate) {
+            const end = new Date(untilDate);
+            const start = new Date(sourceDate);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            iterations = Math.floor(diffDays / 7);
+        } else {
+            iterations = Number(weeksToRepeat) || 1;
+        }
+
+        for (let i = 1; i <= iterations; i++) {
+            const nextDate = addWeeks(source, i);
+            
+            const newShift = await prisma.shift.upsert({
+                where: {
+                    userId_date: {
+                        userId: Number(userId),
+                        date: nextDate
+                    }
+                },
+                update: {
+                    timeBlocks: sourceShift.timeBlocks,
+                    location: sourceShift.location,
+                    isDayOff: sourceShift.isDayOff
+                },
+                create: {
+                    userId: Number(userId),
+                    date: nextDate,
+                    timeBlocks: sourceShift.timeBlocks || [],
+                    location: sourceShift.location || 'Principal',
+                    isDayOff: sourceShift.isDayOff || false
+                }
+            });
+            createdShifts.push(newShift);
+        }
+    }
+
+    res.json({ message: 'Shifts generated', count: createdShifts.length });
+  } catch (error) {
+    console.error('Error in recurring shifts:', error);
+    res.status(500).json({ message: 'Error generating recurring shifts' });
+  }
+};            },
             update: {
                 timeBlocks: sourceShift.timeBlocks,
                 location: sourceShift.location,

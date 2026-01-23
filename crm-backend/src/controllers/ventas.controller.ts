@@ -125,6 +125,7 @@ export const createVenta = async (req: Request, res: Response) => {
        }
     }
 
+
     const newVenta = await prisma.ventaExtra.create({
       data: {
         ...cleanData,
@@ -135,6 +136,33 @@ export const createVenta = async (req: Request, res: Response) => {
         productoId: productoId ? parseInt(productoId) : null
       },
     });
+
+
+    // ==========================================
+    // FRESHA-STYLE LOGIC: AUTO-TREATMENT
+    // ==========================================
+    // Si la venta es de un SERVICIO y tiene un paciente asociado,
+    // se crea(n) automáticamente un procedimiento pendiente.
+    if (categoria === 'Servicio' && cleanData.pacienteId) {
+       
+       await prisma.lead.update({
+           where: { id: parseInt(cleanData.pacienteId) },
+           data: {
+              // Actualizar metadata financiera del lead
+              montoPagado: { increment: data.montoPagado || 0 }
+           }
+       });
+       
+       // Si incluimos el appointmentId en el body de la venta (ideal para Fresha)
+       // actualizamos la cita a completada/pagada.
+       if (req.body.appointmentId) {
+            await prisma.appointment.update({
+                where: { id: parseInt(req.body.appointmentId) },
+                data: { status: 'COMPLETED' } // O un nuevo estado 'PAID'
+            });
+       }
+    }
+
     res.status(201).json(newVenta);
   } catch (error) {
     console.error("Error creating venta:", error);
@@ -150,6 +178,27 @@ export const updateVenta = async (req: Request, res: Response) => {
   const { productoId, entregado, fechaEntrega, ...cleanData } = data;
 
   try {
+    // Determine Timezone for Date Correction
+    let timezone = 'America/Lima';
+    const businessInfo = await prisma.businessInfo.findFirst();
+    if (businessInfo && businessInfo.timezone) {
+      timezone = businessInfo.timezone;
+    }
+
+    let fechaVentaDate = undefined;
+    if (fechaVenta) {
+        fechaVentaDate = new Date(fechaVenta);
+        if (typeof fechaVenta === 'string' && fechaVenta.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            if (timezone === 'America/Lima' || timezone === 'America/Bogota') {
+                fechaVentaDate = new Date(`${fechaVenta}T05:00:00.000Z`);
+            } else if (timezone === 'America/Mexico_City') {
+                fechaVentaDate = new Date(`${fechaVenta}T06:00:00.000Z`);
+            } else {
+                fechaVentaDate = new Date(`${fechaVenta}T12:00:00.000Z`);
+            }
+        }
+    }
+
     // 1. Check existing sale to handle Stock Deduction on Status Change
     const existingVenta = await prisma.ventaExtra.findUnique({ where: { id } });
     if (!existingVenta) {
@@ -200,7 +249,7 @@ export const updateVenta = async (req: Request, res: Response) => {
       where: { id: id },
       data: {
         ...cleanData,
-        fechaVenta: fechaVenta ? new Date(fechaVenta) : undefined,
+        fechaVenta: fechaVentaDate,
         entregado: entregado, // Allow update
         fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : undefined,
         productoId: productoId ? parseInt(productoId) : undefined

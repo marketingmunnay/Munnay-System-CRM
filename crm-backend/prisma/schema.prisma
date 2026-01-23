@@ -208,6 +208,7 @@ model Lead {
   ventasExtra          VentaExtra[]
   incidencias          Incidencia[]
   pagosRecepcion       PagoRecepcion[]
+  appointments         Appointment[]
 }
 
 model PagoRecepcion {
@@ -491,6 +492,7 @@ model User {
   reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
   logs                       AuditLog[]
   shifts                     Shift[]
+  appointments               Appointment[]
 }
 
 model Address {
@@ -588,6 +590,7 @@ model Service {
   precio           Float
   duracionMinutos  Int     @default(60)
   descripcion      String? @db.Text
+  appointments     Appointment[]
 }
 
 // ENUM ACTIVADO PARA EVITAR ERROR DE PERMISOS EN PRODUCCION
@@ -611,9 +614,9 @@ model Product {
   precioCoste    Float?
   precioTotal    Float?
   
-  // CAMPOS ACTIVADOS (existen en BD de producción)
-  // createdAt      DateTime @default(now())
-  // updatedAt      DateTime @default(now()) @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
   // tipo           TipoProducto?
   // costoCompra    Float?
   // precioVenta    Float?
@@ -802,5 +805,66 @@ model Shift {
   updatedAt    DateTime @updatedAt
 
   @@unique([userId, date])
+}
+
+
+// ========================================
+// M�DULO DE CITAS Y CALENDARIO (FRESHA STYLE)
+// ========================================
+
+model Appointment {
+  id             Int               @id @default(autoincrement())
+  leadId         Int?              // Opcional para bloquear horarios sin cliente
+  lead           Lead?             @relation(fields: [leadId], references: [id])
+  
+  professionalId Int?              // El profesional asignado (User)
+  professional   User?             @relation(fields: [professionalId], references: [id])
+  
+  serviceId      Int?              // El servicio a realizar
+  service        Service?          @relation(fields: [serviceId], references: [id])
+  
+  resourceId     Int?              // Consultorio o M�quina
+  resource       Resource?         @relation(fields: [resourceId], references: [id])
+  
+  startTime      DateTime
+  endTime        DateTime
+  
+  status         AppointmentStatus @default(SCHEDULED)
+  
+  notes          String?           @db.Text
+  totalPrice     Float?            
+  
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  
+  @@index([startTime, endTime])
+}
+
+model Resource {
+  id          Int           @id @default(autoincrement())
+  name        String        
+  type        ResourceType  @default(ROOM)
+  capacity    Int           @default(1)
+  isActive    Boolean       @default(true)
+  
+  appointments Appointment[]
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  ARRIVED     
+  IN_PROGRESS 
+  COMPLETED   
+  CANCELLED
+  NO_SHOW
+}
+
+enum ResourceType {
+  ROOM
+  EQUIPMENT
 }
 

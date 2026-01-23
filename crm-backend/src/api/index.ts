@@ -18,6 +18,7 @@ import movimientosStockRouter from './movimientosStock.routes';
 import inventoryRouter from './inventory.routes';
 import auditRouter from './audit.routes';
 import shiftsRouter from './shifts.routes';
+import calendarRouter from './calendar.routes';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/ventas-extra', ventasRouter);
 router.use('/incidencias', incidenciasRouter);
 router.use('/shifts', shiftsRouter);
 router.use('/proveedores', proveedoresRouter);
+router.use('/calendar', calendarRouter);
 router.use('/users', usersRouter);
 router.use('/config', configRouter);
 router.use('/goals', goalsRouter);
