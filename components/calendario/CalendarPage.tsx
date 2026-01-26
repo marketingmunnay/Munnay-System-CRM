@@ -280,13 +280,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         }).catch(err => console.error("Error fetching resources:", err));
     }, []);
 
-    const activeResources = useMemo(() => {
-        if (dbResources.length > 0) {
-             return dbResources.map(r => ({ id: String(r.id), nombre: r.nombre }));
-        }
-        return RESOURCES;
-    }, [dbResources]);
-
     const [visibleResourceIds, setVisibleResourceIds] = useState<string[]>(RESOURCES.map(resource => resource.id));
     const [visibleSources, setVisibleSources] = useState<CalendarEvent['source'][]>(FILTER_SOURCE_OPTIONS.map(option => option.id));
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
