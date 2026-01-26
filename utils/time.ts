@@ -119,6 +119,9 @@ export function formatDateTimeForDisplay(date: string | Date | null | undefined)
     minute: '2-digit',
     hour12: true,
     timeZone: getSystemTimezone()
+  });
+}
+
 export function formatDateWithMonthName(date: string | Date | null | undefined): string {
   const parsedDate = parseDate(date);
   if (!parsedDate) return '-';
