@@ -246,7 +246,7 @@ export const checkIn = async (req: Request, res: Response) => {
     if (appointment.leadId) {
         await prisma.lead.update({
              where: { id: appointment.leadId },
-             data: { estadoRecepcion: 'Por Atender' } 
+             data: { estadoRecepcion: 'PorAtender' } 
         });
     }
 
@@ -270,7 +270,7 @@ export const startService = async (req: Request, res: Response) => {
     if (appointment.leadId) {
         await prisma.lead.update({
              where: { id: appointment.leadId },
-             data: { estadoRecepcion: 'Por Atender' } // Mantenemos estado 'Por Atender' o creamos uno nuevo 'En Modulo'
+             data: { estadoRecepcion: 'PorAtender' } // Mantenemos estado 'PorAtender' o creamos uno nuevo 'En Modulo'
         });
     }
 

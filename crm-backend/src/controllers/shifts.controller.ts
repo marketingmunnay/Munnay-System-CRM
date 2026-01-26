@@ -117,14 +117,14 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
                 userId_date: { userId: Number(userId), date: specificDate }
             },
             update: {
-                timeBlocks: sourceShift.timeBlocks,
+                timeBlocks: sourceShift.timeBlocks as any,
                 location: sourceShift.location,
                 isDayOff: sourceShift.isDayOff
             },
             create: {
                 userId: Number(userId),
                 date: specificDate,
-                timeBlocks: sourceShift.timeBlocks || [],
+                timeBlocks: sourceShift.timeBlocks as any || [],
                 location: sourceShift.location || 'Principal',
                 isDayOff: sourceShift.isDayOff || false
             }
@@ -156,14 +156,14 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
                     }
                 },
                 update: {
-                    timeBlocks: sourceShift.timeBlocks,
+                    timeBlocks: sourceShift.timeBlocks as any,
                     location: sourceShift.location,
                     isDayOff: sourceShift.isDayOff
                 },
                 create: {
                     userId: Number(userId),
                     date: nextDate,
-                    timeBlocks: sourceShift.timeBlocks || [],
+                    timeBlocks: sourceShift.timeBlocks as any || [],
                     location: sourceShift.location || 'Principal',
                     isDayOff: sourceShift.isDayOff || false
                 }
