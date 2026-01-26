@@ -183,22 +183,65 @@ export const createAppointment = async (req: Request, res: Response) => {
 export const updateAppointment = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { startTime, endTime, status, resourceId, professionalId } = req.body;
-        
-        // If changing time/resource, should re-run collision checks (simplified here)
-        
+        const { startTime, endTime, status, resourceId, professionalId, leadId, serviceId } = req.body;
+        const appointmentId = parseInt(id);
+
+        // Get current appt to merge
+        const currentAppt = await prisma.appointment.findUnique({ where: { id: appointmentId } });
+        if (!currentAppt) return res.status(404).json({ message: 'Cita no encontrada' });
+
+        const targetStart = startTime ? new Date(startTime) : currentAppt.startTime;
+        const targetEnd = endTime ? new Date(endTime) : currentAppt.endTime;
+        const targetResource = resourceId ? parseInt(resourceId) : currentAppt.resourceId;
+        const targetProfessional = professionalId ? parseInt(professionalId) : currentAppt.professionalId;
+
+        // 1. Resource Collision Check (Excluding self)
+        if (targetResource) {
+            const collision = await prisma.appointment.findFirst({
+                where: {
+                    id: { not: appointmentId },
+                    resourceId: targetResource,
+                    status: { not: 'CANCELLED' }, // Ignorar canceladas
+                    startTime: { lt: targetEnd },
+                    endTime: { gt: targetStart }
+                }
+            });
+            if (collision) {
+                return res.status(409).json({ message: 'El recurso ya está ocupado en el nuevo horario (Collision Detected).' });
+            }
+        }
+
+        // 2. Professional Collision Check (Excluding self)
+        if (targetProfessional) {
+             const collision = await prisma.appointment.findFirst({
+                where: {
+                    id: { not: appointmentId },
+                    professionalId: targetProfessional,
+                    status: { not: 'CANCELLED' },
+                    startTime: { lt: targetEnd },
+                    endTime: { gt: targetStart }
+                }
+            });
+            if (collision) {
+                 return res.status(409).json({ message: 'El profesional ya tiene una cita en el nuevo horario (Collision Detected).' });
+            }
+        }
+
         const updated = await prisma.appointment.update({
-            where: { id: parseInt(id) },
+            where: { id: appointmentId },
             data: {
-                startTime: startTime ? new Date(startTime) : undefined,
-                endTime: endTime ? new Date(endTime) : undefined,
+                startTime: targetStart,
+                endTime: targetEnd,
                 status: status as AppointmentStatus,
-                resourceId: resourceId ? parseInt(resourceId) : undefined,
-                professionalId: professionalId ? parseInt(professionalId) : undefined
+                resourceId: targetResource,
+                professionalId: targetProfessional,
+                leadId: leadId ? parseInt(leadId) : undefined,
+                serviceId: serviceId ? parseInt(serviceId) : undefined
             }
         });
         res.json(updated);
     } catch (error) {
+         console.error(error);
          res.status(500).json({ message: 'Error updating appointment' });
     }
 };
@@ -236,10 +279,10 @@ export const checkIn = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Status ARRIVED = "En Sala" / "Por Atender"
+    // Status IN_ROOM = "En Sala" / "Por Atender"
     const appointment = await prisma.appointment.update({
       where: { id: parseInt(id) },
-      data: { status: 'ARRIVED' },
+      data: { status: 'IN_ROOM' },
       include: { lead: true } 
     });
 
@@ -310,7 +353,7 @@ export const noShow = async (req: Request, res: Response) => {
       
       const appointment = await prisma.appointment.update({
         where: { id: parseInt(id) },
-        data: { status: 'NO_SHOW' }
+        data: { status: 'NOSHOW' }
       });
       
       if (appointment.leadId) {
@@ -346,4 +389,93 @@ export const getResources = async (req: Request, res: Response) => {
     } catch (error) {
         res.status(500).json({ message: 'Error fetching resources' });
     }
+};
+
+export const getAmbientes = async (req: Request, res: Response) => {
+    try {
+        const resources = await prisma.resource.findMany();
+        
+        const ambientes = resources.map(r => ({
+            id: r.id,
+            nombre: r.name,
+            tipo: r.type,
+            estado: r.isActive ? 'activo' : 'inactivo',
+            capacidad: r.capacity
+        }));
+        
+        res.json(ambientes);
+    } catch (error) {
+        console.error("Error getting ambientes:", error);
+        res.status(500).json({ message: 'Error fetching ambientes' });
+    }
+};
+
+export const moveAppointment = async (req: Request, res: Response) => {
+  try {
+    const { appointmentId, newStaffId, newStart, newEnd, newResourceId } = req.body;
+    
+    // Validar integridad básica
+    if (!appointmentId || !newStart || !newEnd) {
+        return res.status(400).json({ message: "Datos incompletos para mover la cita" });
+    }
+
+    // Convertir IDs si vienen como string
+    const targetStaffId = newStaffId ? parseInt(newStaffId) : undefined;
+    const targetResourceId = newResourceId ? parseInt(newResourceId) : undefined;
+    const apptId = typeof appointmentId === 'string' ? parseInt(appointmentId.replace('appointment-', '')) : parseInt(appointmentId);
+
+    const startDate = new Date(newStart);
+    const endDate = new Date(newEnd);
+
+    // 0. Validación de Pasado (Solicitado por UX)
+    // if (startDate < new Date()) {
+    //    return res.status(400).json({ message: "No puedes mover una cita al pasado." });
+    // }
+
+    // 1. Validar Colisión con Staff (Si aplica)
+    if (targetStaffId) {
+        const isOccupied = await prisma.appointment.findFirst({
+            where: {
+                id: { not: apptId }, // Ignore self
+                professionalId: targetStaffId,
+                status: { not: 'CANCELLED' },
+                startTime: { lt: endDate },
+                endTime: { gt: startDate }
+            }
+        });
+        if (isOccupied) return res.status(409).json({ message: "El profesional ya está ocupado en ese horario." });
+    }
+
+    // 1.1 Validar Colisión con Recurso (Si aplica)
+    if (targetResourceId) {
+         const isOccupiedResource = await prisma.appointment.findFirst({
+            where: {
+                id: { not: apptId }, // Ignore self
+                resourceId: targetResourceId,
+                status: { not: 'CANCELLED' },
+                startTime: { lt: endDate },
+                endTime: { gt: startDate }
+            }
+        });
+        if (isOccupiedResource) return res.status(409).json({ message: "El recurso/espacio ya está ocupado en ese horario." });
+    }
+
+    // 2. Actualizar
+    const updated = await prisma.appointment.update({
+        where: { id: apptId },
+        data: {
+            professionalId: targetStaffId, // Puede ser undefined si no cambió
+            resourceId: targetResourceId,
+            startTime: startDate,
+            endTime: endDate
+        },
+        include: { lead: true, service: true, professional: true } // Return full object for frontend update
+    });
+
+    res.json(updated);
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error moving appointment' });
+  }
 };

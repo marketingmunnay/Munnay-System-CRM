@@ -153,12 +153,33 @@ export const createVenta = async (req: Request, res: Response) => {
            }
        });
        
+       // Create Pending Procedure (Ticket for Clinical Area)
+       try {
+           await prisma.procedure.create({
+               data: {
+                   fechaAtencion: new Date(),
+                   personal: 'Por Asignar',
+                   horaInicio: '00:00',
+                   horaFin: '00:00',
+                   tratamientoId: BigInt(0), // Placeholder
+                   nombreTratamiento: cleanData.servicio || 'Servicio General',
+                   sesionNumero: 1,
+                   asistenciaMedica: false,
+                   status: 'PENDING_TREATMENT', 
+                   leadId: parseInt(cleanData.pacienteId)
+               }
+           });
+       } catch (procError) {
+           console.error("Error creating auto-procedure:", procError);
+           // Non-blocking error
+       }
+       
        // Si incluimos el appointmentId en el body de la venta (ideal para Fresha)
        // actualizamos la cita a completada/pagada.
        if (req.body.appointmentId) {
             await prisma.appointment.update({
                 where: { id: parseInt(req.body.appointmentId) },
-                data: { status: 'COMPLETED' } // O un nuevo estado 'PAID'
+                data: { status: 'COMPLETED' } 
             });
        }
     }

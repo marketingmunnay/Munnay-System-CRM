@@ -243,6 +243,7 @@ model Procedure {
   asistenciaMedica  Boolean
   medico            String?
   observacion       String?  @db.Text
+  status            String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
   leadId            Int
   lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
@@ -840,11 +841,13 @@ model Resource {
 enum AppointmentStatus {
   SCHEDULED
   CONFIRMED
-  ARRIVED     
-  IN_PROGRESS 
-  COMPLETED   
+  IN_ROOM
+  IN_PROGRESS
+  COMPLETED
   CANCELLED
+  NOSHOW
   NO_SHOW
+  ARRIVED // Legacy
 }
 
 enum ResourceType {

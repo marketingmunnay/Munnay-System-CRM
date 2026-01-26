@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import * as api from '../../services/api';
-import { ConfiguracionProducto, TipoMovimiento } from '../../types';
+import { ConfiguracionProducto, TipoMovimiento, Product } from '../../types';
 
 interface MovimientoInventarioModalProps {
   configuraciones: ConfiguracionProducto[];
+  productos: Product[];
   productoIdInicial: number | null;
   onClose: () => void;
   onSave: () => void;
@@ -20,6 +21,7 @@ const TIPOS_MOVIMIENTO: { value: TipoMovimiento; label: string; color: string }[
 
 export default function MovimientoInventarioModal({
   configuraciones,
+  productos,
   productoIdInicial,
   onClose,
   onSave
@@ -129,11 +131,15 @@ export default function MovimientoInventarioModal({
               required
             >
               <option value={0}>Seleccionar producto...</option>
-              {(configuraciones || []).map(config => (
-                <option key={config.id} value={config.id}>
-                  Producto ID: {config.productoId} - Stock: {config.stockActual} {config.unidadMedida}
-                </option>
-              ))}
+              {(configuraciones || []).map(config => {
+                const producto = productos.find(p => p.id === config.productoId);
+                const nombreProducto = producto ? producto.nombre : `Producto ID: ${config.productoId}`;
+                return (
+                  <option key={config.id} value={config.id}>
+                    {nombreProducto} - Stock: {config.stockActual} {config.unidadMedida}
+                  </option>
+                );
+              })}
             </select>
             {configuracionSeleccionada && (
               <div className="mt-2 p-3 bg-gray-50 rounded text-sm">

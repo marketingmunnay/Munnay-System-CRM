@@ -5,11 +5,13 @@ import {
     updateAppointment, 
     updateAppointmentStatus, 
     getResources,
+    getAmbientes,
     deleteAppointment,
     checkIn,
     startService,
     completeAppointment,
-    noShow
+    noShow,
+    moveAppointment
 } from '../controllers/calendar.controller';
 
 const router = Router();
@@ -28,7 +30,11 @@ router.patch('/appointments/:id/no-show', noShow);
 
 router.delete('/appointments/:id', deleteAppointment);
 
+// Drag & Drop
+router.patch('/appointments/move', moveAppointment);
+
 // Resources
 router.get('/resources', getResources);
+router.get('/ambientes', getAmbientes);
 
 export default router;

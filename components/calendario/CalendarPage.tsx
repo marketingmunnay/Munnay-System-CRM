@@ -292,6 +292,95 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
 
+    // DRAG AND DROP STATE
+    const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
+        setDraggedEvent(event);
+        e.dataTransfer.effectAllowed = 'move';
+        // Optional: Custom Drag Image
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = async (e: React.DragEvent, resourceId: string) => {
+        e.preventDefault();
+        if (!draggedEvent || draggedEvent.source !== 'appointment') return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        
+        // Calculate Time
+        const totalMinutesFromStart = (y / HOUR_HEIGHT) * 60;
+        const hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
+        const minute = Math.floor(totalMinutesFromStart % 60);
+        const roundedMinute = Math.round(minute / 15) * 15; // Snap to 15 min
+
+        const newStart = new Date(currentDate);
+        newStart.setHours(hour, roundedMinute, 0, 0);
+
+        // Calculate Duration to find new End
+        const [startH, startM] = draggedEvent.horaInicio.split(':').map(Number);
+        const [endH, endM] = draggedEvent.horaFin.split(':').map(Number);
+        const oldStart = new Date(); oldStart.setHours(startH, startM, 0,0);
+        const oldEnd = new Date(); oldEnd.setHours(endH, endM, 0,0);
+        const durationMs = oldEnd.getTime() - oldStart.getTime();
+
+        const newEnd = new Date(newStart.getTime() + durationMs);
+        
+        // Optimistic Update
+        const originalEvents = [...appointments];
+        const updatedEvent = { ...draggedEvent.appointmentRef!, startTime: newStart.toISOString(), endTime: newEnd.toISOString() };
+        
+        try {
+            // Find resource type to update correct ID
+            const targetResource = dbResources.find(r => String(r.id) === resourceId);
+            const isProfessional = targetResource?.tipo !== 'ROOM';
+            
+            const payload: any = {
+                appointmentId: draggedEvent.originId,
+                newStart: newStart.toISOString(),
+                newEnd: newEnd.toISOString(),
+            };
+
+            if (isProfessional) {
+                payload.newStaffId = resourceId;
+            } else {
+                payload.newResourceId = resourceId;
+            }
+
+            // Call Backend
+            // NOTE: Using a relative fetch or a service usually. Using fetch for now as in snippet.
+            // Using API_URL if defined, otherwise relative
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+            const response = await fetch(`${API_URL}/calendar/appointments/move`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                 const err = await response.json();
+                 throw new Error(err.message || "Error al mover");
+            }
+
+            const updatedAppt = await response.json();
+            
+            // Update State
+            setAppointments(prev => prev.map(a => a.id === updatedAppt.id ? updatedAppt : a));
+
+        } catch (error) {
+            console.error(error);
+            alert((error as Error).message); // Simple alert as requested toast logic not present in context
+            // Revert is handled by not updating 'appointments' if error
+        } finally {
+            setDraggedEvent(null);
+        }
+    };
+
     // Fetch appointments when date changes
     useEffect(() => {
         const start = new Date(currentDate);
@@ -533,9 +622,13 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
         return (
             <div
+                draggable={event.source === 'appointment'} // Only allow dragging new backend appointments
+                onDragStart={(e) => {
+                    if (event.source === 'appointment') handleDragStart(e, event);
+                }}
                 onClick={handleClick}
-                className={`absolute w-full rounded-2xl border text-xs shadow-sm cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-xl ${palette}`}
-                style={{ top: `${top}px`, height: `${Math.max(height, 60)}px`, left: '4px', width: 'calc(100% - 8px)', padding: '0.75rem' }}
+                className={`absolute w-full rounded-2xl border text-xs shadow-sm cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-xl ${palette} ${event.source === 'appointment' ? 'active:cursor-grabbing hover:cursor-grab' : ''}`}
+                style={{ top: `${top}px`, height: `${Math.max(height, 60)}px`, left: '4px', width: 'calc(100% - 8px)', padding: '0.75rem', zIndex: 10 }}
             >
                 <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-slate-400">
                     <span>{event.source === 'lead' ? 'Lead' : 'Cita'}</span>
@@ -747,6 +840,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                 key={resource.id}
                                 className="relative border-l border-slate-100 bg-white hover:bg-slate-50/40 transition-colors"
                                 onClick={(e) => handleSlotClick(resource.id, e)}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, resource.id)}
                             >
                                 {timeSlots.slice(0, -1).map(time => (
                                     <div key={time} style={{ height: `${HOUR_HEIGHT}px` }} className="relative border-b border-slate-100">

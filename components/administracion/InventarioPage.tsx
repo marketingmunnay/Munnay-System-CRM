@@ -761,8 +761,7 @@ export default function InventarioPage({ productos, onReload }: InventarioPagePr
 
       {showMovimientoModal && (
         <MovimientoInventarioModal
-          configuraciones={configuraciones}
-          productoIdInicial={selectedProductoId}
+          configuraciones={configuraciones}            productos={productos}          productoIdInicial={selectedProductoId}
           onClose={() => {
             setShowMovimientoModal(false);
             setSelectedProductoId(null);
