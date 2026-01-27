@@ -22,17 +22,29 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
     const [location, setLocation] = useState(initialLocation || 'Principal');
     const [note, setNote] = useState('');
+    const [selectedDate, setSelectedDate] = useState<string>('');
 
     useEffect(() => {
         if (isOpen) {
              setBlocks(initialBlocks || [{ id: Date.now().toString(), start: '09:00', end: '13:00' }]);
              setLocation(initialLocation || 'Principal');
+             
+             if (initialDate) {
+                 // Format as YYYY-MM-DD for input
+                 const yyyy = initialDate.getFullYear();
+                 const mm = String(initialDate.getMonth() + 1).padStart(2, '0');
+                 const dd = String(initialDate.getDate()).padStart(2, '0');
+                 setSelectedDate(`${yyyy}-${mm}-${dd}`);
+             } else {
+                 setSelectedDate('');
+             }
         }
-    }, [isOpen, initialBlocks, initialLocation]);
+    }, [isOpen, initialBlocks, initialLocation, initialDate]);
 
     const addBlock = () => {
         setBlocks([...blocks, { id: Date.now().toString(), start: '14:00', end: '18:00' }]);
     };
+
 
     const removeBlock = (id: string) => {
         setBlocks(blocks.filter(b => b.id !== id));
@@ -59,7 +71,15 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ userId, date: initialDate, timeBlocks: blocks, location, note });
+        if (!selectedDate) {
+            alert("Por favor seleccione una fecha");
+            return;
+        }
+        // Create date object from string (local time)
+        const [year, month, day] = selectedDate.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        
+        onSave({ userId, date: dateObj, timeBlocks: blocks, location, note });
         onClose();
     };
 
@@ -71,14 +91,26 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
         const h = Math.floor(i / 60).toString().padStart(2, '0');
         const m = (i % 60).toString().padStart(2, '0');
         timeOptions.push(`${h}:${m}`);
-    }
+    }</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        <X size={20} />
+                    </button>
+                </div>
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-                <div className="flex justify-between items-center p-4 border-b">
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-800">Editar Turno</h3>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                        <input 
+                            type="date"
+                            required
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="w-full border rounded-md p-2 bg-gray-50 text-sm"
+                            // If initialDate was provided (editing existing), maybe disable? 
+                            // But allowing change is flexible.
+                        />
+                    </div800">Editar Turno</h3>
                         <p className="text-sm text-gray-500">{userName} - {initialDate?.toLocaleDateString()}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
