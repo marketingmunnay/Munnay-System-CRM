@@ -91,7 +91,15 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
         const h = Math.floor(i / 60).toString().padStart(2, '0');
         const m = (i % 60).toString().padStart(2, '0');
         timeOptions.push(`${h}:${m}`);
-    }</p>
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                <div className="flex justify-between items-center p-4 border-b">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-800">Editar Turno</h3>
+                        <p className="text-sm text-gray-500">{userName}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X size={20} />
