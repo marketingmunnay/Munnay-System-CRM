@@ -19,6 +19,8 @@ import {
 
 const router = Router();
 
+console.log('Calendar Routes Loaded');
+
 // Appointments
 router.get('/appointments', getAppointments);
 router.post('/appointments', createAppointment);
