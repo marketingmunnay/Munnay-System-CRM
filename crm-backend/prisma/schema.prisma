@@ -432,7 +432,10 @@ model User {
   password            String
   rolId               Int
   avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
-  
+
+  // Relacion con Recursos (Muchos a Muchos)
+  resources           Resource[]
+
   // Datos Personales
   documentType        DocumentType?
   documentNumber      String?
@@ -827,13 +830,14 @@ model Appointment {
 
 model Resource {
   id          Int           @id @default(autoincrement())
-  name        String        
+  name        String
   type        ResourceType  @default(ROOM)
   capacity    Int           @default(1)
   isActive    Boolean       @default(true)
-  
+
   appointments Appointment[]
-  
+  users        User[]
+
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }

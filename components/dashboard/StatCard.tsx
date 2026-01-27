@@ -3,7 +3,7 @@
 import React from 'react';
 // Re-trigger build
 import type { StatCardData } from '../../types.ts';
-import { ArrowUpIcon, ArrowDownIcon } from '../shared/Icons.tsx';
+import { ArrowUpIcon, ArrowDownIcon } from '../shared/Icons.tsx'; // Icons used for increase/decrease indicators
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>

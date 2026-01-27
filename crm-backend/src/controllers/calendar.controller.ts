@@ -380,33 +380,163 @@ export const deleteAppointment = async (req: Request, res: Response) => {
     }
 };
 
+// ==========================================
+// RESOURCE & CONFIGURATION MANAGEMENT
+// (Refactored for Unified Personnel/Room Management)
+// ==========================================
+
 export const getResources = async (req: Request, res: Response) => {
     try {
-        const resources = await prisma.resource.findMany({
-            where: { isActive: true }
+        const dbResources = await prisma.resource.findMany({
+            where: { isActive: true },
+            include: { users: true }
         });
-        res.json(resources);
+        
+        const staff = await prisma.user.findMany({
+             // Optional: Filter by specific condition if needed
+        });
+
+        const mappedResources = dbResources.map(r => ({
+            id: `room-${r.id}`,
+            originalId: r.id,
+            title: r.name,
+            name: r.name,
+            nombre: r.name, // Legacy Compatibility
+            type: 'room',
+            capacity: r.capacity,
+            users: r.users // Pass linked users to frontend
+        }));
+
+        const mappedStaff = staff.map(u => ({
+            id: `user-${u.id}`,
+            originalId: u.id,
+            title: `${u.nombres} ${u.apellidos}`,
+            name: `${u.nombres} ${u.apellidos}`,
+            nombre: `${u.nombres} ${u.apellidos}`, // Legacy Compatibility
+            type: 'personal',
+            avatarUrl: u.avatarUrl
+        }));
+
+        res.json([...mappedStaff, ...mappedResources]);
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Error fetching resources' });
     }
 };
 
 export const getAmbientes = async (req: Request, res: Response) => {
     try {
-        const resources = await prisma.resource.findMany();
+        const resources = await prisma.resource.findMany({
+            include: { users: true }
+        });
         
         const ambientes = resources.map(r => ({
             id: r.id,
             nombre: r.name,
             tipo: r.type,
             estado: r.isActive ? 'activo' : 'inactivo',
-            capacidad: r.capacity
+            capacidad: r.capacity,
+            usuariosVinculados: r.users
         }));
         
         res.json(ambientes);
     } catch (error) {
         console.error("Error getting ambientes:", error);
         res.status(500).json({ message: 'Error fetching ambientes' });
+    }
+};
+
+export const createResource = async (req: Request, res: Response) => {
+    try {
+        const { name, type, linkedUserIds, capacity } = req.body;
+        
+        if (type === 'personal') {
+            const role = await prisma.role.findFirst({ where: { nombre: 'Profesional' }}); 
+            // Simple User Creation for 'Personal' type
+            const newUser = await prisma.user.create({
+                data: {
+                    nombres: name,
+                    apellidos: '.', 
+                    usuario: name.replace(/\s+/g, '').toLowerCase() + Date.now().toString().slice(-4),
+                    password: 'defaultPassword123',
+                    rolId: role ? role.id : 1
+                }
+            });
+            return res.json({ id: `user-${newUser.id}`, ...newUser, type: 'personal' });
+        } else {
+            // Room Creation
+            const newRes = await prisma.resource.create({
+                data: {
+                    name,
+                    type: 'ROOM',
+                    capacity: capacity ? parseInt(capacity) : 1,
+                    users: linkedUserIds && linkedUserIds.length > 0 ? {
+                        connect: linkedUserIds.map((id: any) => ({ id: parseInt(id) }))
+                    } : undefined
+                },
+                include: { users: true }
+            });
+            return res.json({ id: `room-${newRes.id}`, ...newRes, type: 'infrastructure' });
+        }
+    } catch (error) {
+        console.error("Error creating resource:", error);
+        res.status(500).json({ message: 'Error creating resource' });
+    }
+};
+
+export const updateResource = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { name, linkedUserIds, capacity } = req.body;
+        
+        if (id.startsWith('user-')) {
+            const userId = parseInt(id.replace('user-', ''));
+            const updated = await prisma.user.update({
+                where: { id: userId },
+                data: { names: name } // Assuming 'nombres' is the field, might need adjustment based on Schema
+            }).catch(async () => {
+                 return await prisma.user.update({
+                    where: { id: userId },
+                    data: { nombres: name }
+                });
+            });
+            return res.json(updated);
+        } else if (id.startsWith('room-')) {
+            const resId = parseInt(id.replace('room-', ''));
+            const updated = await prisma.resource.update({
+                where: { id: resId },
+                data: { 
+                    name,
+                    capacity: capacity ? parseInt(capacity) : undefined,
+                    users: linkedUserIds ? {
+                        set: linkedUserIds.map((uId: any) => ({ id: parseInt(uId) }))
+                    } : undefined
+                },
+                include: { users: true }
+            });
+            return res.json(updated);
+        }
+        res.status(404).json({ message: 'ID format not recognized' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating' });
+    }
+};
+
+export const deleteResource = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+         if (id.startsWith('user-')) {
+            const userId = parseInt(id.replace('user-', ''));
+            await prisma.user.delete({ where: { id: userId } });
+        } else if (id.startsWith('room-')) {
+            const resId = parseInt(id.replace('room-', ''));
+            await prisma.resource.delete({ where: { id: resId } });
+        }
+        res.json({ message: 'Deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting' });
     }
 };
 
@@ -420,17 +550,20 @@ export const moveAppointment = async (req: Request, res: Response) => {
     }
 
     // Convertir IDs si vienen como string
-    const targetStaffId = newStaffId ? parseInt(newStaffId) : undefined;
-    const targetResourceId = newResourceId ? parseInt(newResourceId) : undefined;
+    const parseId = (val: any) => {
+        if (!val) return undefined;
+        const str = String(val);
+        if (str.startsWith('user-')) return parseInt(str.replace('user-', ''));
+        if (str.startsWith('room-')) return parseInt(str.replace('room-', ''));
+        return parseInt(str);
+    };
+
+    const targetStaffId = parseId(newStaffId);
+    const targetResourceId = parseId(newResourceId);
     const apptId = typeof appointmentId === 'string' ? parseInt(appointmentId.replace('appointment-', '')) : parseInt(appointmentId);
 
     const startDate = new Date(newStart);
     const endDate = new Date(newEnd);
-
-    // 0. Validación de Pasado (Solicitado por UX)
-    // if (startDate < new Date()) {
-    //    return res.status(400).json({ message: "No puedes mover una cita al pasado." });
-    // }
 
     // 1. Validar Colisión con Staff (Si aplica)
     if (targetStaffId) {
@@ -440,7 +573,8 @@ export const moveAppointment = async (req: Request, res: Response) => {
                 professionalId: targetStaffId,
                 status: { not: 'CANCELLED' },
                 startTime: { lt: endDate },
-                endTime: { gt: startDate }
+                endTime: { gt: startDate },
+                fecha: startDate
             }
         });
         if (isOccupied) return res.status(409).json({ message: "El profesional ya está ocupado en ese horario." });
@@ -464,12 +598,13 @@ export const moveAppointment = async (req: Request, res: Response) => {
     const updated = await prisma.appointment.update({
         where: { id: apptId },
         data: {
-            professionalId: targetStaffId, // Puede ser undefined si no cambió
+            professionalId: targetStaffId, 
             resourceId: targetResourceId,
             startTime: startDate,
-            endTime: endDate
+            endTime: endDate,
+            fecha: startDate
         },
-        include: { lead: true, service: true, professional: true } // Return full object for frontend update
+        include: { lead: true, service: true, professional: true } 
     });
 
     res.json(updated);

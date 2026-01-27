@@ -11,7 +11,10 @@ import {
     startService,
     completeAppointment,
     noShow,
-    moveAppointment
+    moveAppointment,
+    createResource,
+    updateResource,
+    deleteResource
 } from '../controllers/calendar.controller';
 
 const router = Router();
@@ -36,5 +39,8 @@ router.patch('/appointments/move', moveAppointment);
 // Resources
 router.get('/resources', getResources);
 router.get('/ambientes', getAmbientes);
+router.post('/resources', createResource);
+router.put('/resources/:id', updateResource);
+router.delete('/resources/:id', deleteResource);
 
 export default router;

@@ -677,8 +677,17 @@ export const getAppointments = (start?: string, end?: string, professionalId?: s
     return apiRequest<Appointment[]>(`/calendar/appointments?${params.toString()}`, 'GET');
 };
 
-export const getResources = (): Promise<{id: number, nombre: string, tipo: string}[]> =>
-  apiRequest<{id: number, nombre: string, tipo: string}[]>('/calendar/resources', 'GET');
+export const getResources = (): Promise<{id: number|string, nombre: string, tipo: string, users?: any[]}[]> =>
+  apiRequest<{id: number|string, nombre: string, tipo: string, users?: any[]}[]>('/calendar/resources', 'GET');
+
+export const createResource = (data: any): Promise<any> =>
+  apiRequest('/calendar/resources', 'POST', data);
+
+export const updateResource = (id: string | number, data: any): Promise<any> =>
+  apiRequest(`/calendar/resources/${id}`, 'PUT', data);
+
+export const deleteResource = (id: string | number): Promise<void> =>
+  apiRequest(`/calendar/resources/${id}`, 'DELETE');
 
 export const getAmbientes = (): Promise<Ambiente[]> =>
   apiRequest<Ambiente[]>('/calendar/ambientes', 'GET');

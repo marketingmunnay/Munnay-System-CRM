@@ -42,18 +42,36 @@ const WeeklyShiftScheduler: React.FC = () => {
         setLoading(true);
         try {
             // 1. Fetch Users
-            // This endpoint might need adjustment depending on your structure
-            const usersRes = await apiRequest<any[]>('/amenities/roles/users?role=all', 'GET'); 
+            // Updated endpoint to match valid backend route and handle response structure
+            let usersData: any[] = [];
+            const usersRes = await apiRequest<any>('/users', 'GET');
             
+            if (Array.isArray(usersRes)) {
+                usersData = usersRes;
+            } else if (usersRes && Array.isArray(usersRes.data)) {
+                usersData = usersRes.data;
+            } else if (usersRes && typeof usersRes === 'object') {
+                 // Fallback if it's an object but maybe not having data property
+                 // or single user wrapped? Unlikely for /users list.
+                 // Assuming empty if not array or data array
+            }
+
             // 2. Fetch Shifts
             const startStr = format(weekStart, 'yyyy-MM-dd');
             const endStr = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            const shiftsRes = await apiRequest<any[]>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
-
-            setShifts(shiftsRes || []);
+            const shiftsRes = await apiRequest<any>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
             
-            if (usersRes && Array.isArray(usersRes)) {
-                 setUsers(usersRes);
+            let shiftsData: any[] = [];
+            if (Array.isArray(shiftsRes)) {
+                shiftsData = shiftsRes;
+            } else if (shiftsRes && Array.isArray(shiftsRes.data)) {
+                shiftsData = shiftsRes.data;
+            }
+
+            setShifts(shiftsData);
+            
+            if (usersData.length > 0) {
+                 setUsers(usersData);
                  
                  // Initial load of selected IDs from localStorage if available, else all
                  const stored = localStorage.getItem('munnay_shift_team_ids');
@@ -61,7 +79,7 @@ const WeeklyShiftScheduler: React.FC = () => {
                      setSelectedTeamIds(JSON.parse(stored));
                  } else {
                      // Default to all users if none stored
-                     setSelectedTeamIds(usersRes.map(u => u.id));
+                     setSelectedTeamIds(usersData.map(u => u.id));
                  }
 
             } else {
@@ -77,21 +95,38 @@ const WeeklyShiftScheduler: React.FC = () => {
     // Initial Load & On Date Change
     useEffect(() => {
         const loadUsersAndShifts = async () => {
-             const allUsers = await apiRequest<any[]>('/amenities/roles/users?role=all', 'GET'); // Generalized user endpoint
-             setUsers(allUsers || []);
+             // 1. Fetch Users
+            let usersData: any[] = [];
+            const usersRes = await apiRequest<any>('/users', 'GET');
+            
+            if (Array.isArray(usersRes)) {
+                usersData = usersRes;
+            } else if (usersRes && Array.isArray(usersRes.data)) {
+                usersData = usersRes.data;
+            }
+             
+             setUsers(usersData);
              
              // Initial load of selected IDs from localStorage
              const stored = localStorage.getItem('munnay_shift_team_ids');
              if (stored) {
                  setSelectedTeamIds(JSON.parse(stored));
-             } else if (allUsers && allUsers.length > 0) {
-                 setSelectedTeamIds(allUsers.map((u: any) => u.id));
+             } else if (usersData.length > 0) {
+                 setSelectedTeamIds(usersData.map((u: any) => u.id));
              }
 
              const startStr = format(weekStart, 'yyyy-MM-dd');
              const endStr = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-             const shiftsRes = await apiRequest<any[]>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
-             setShifts(shiftsRes || []);
+             const shiftsRes = await apiRequest<any>(`/shifts?start=${startStr}&end=${endStr}`, 'GET');
+             
+            let shiftsData: any[] = [];
+            if (Array.isArray(shiftsRes)) {
+                shiftsData = shiftsRes;
+            } else if (shiftsRes && Array.isArray(shiftsRes.data)) {
+                shiftsData = shiftsRes.data;
+            }
+
+             setShifts(shiftsData);
              setLoading(false);
         };
         loadUsersAndShifts();

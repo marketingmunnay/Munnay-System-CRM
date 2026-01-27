@@ -146,8 +146,12 @@ const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
     // Priority: Professional ID (como string) > Resource ID (como string)
     // Esto asume que las columnas del calendario se configurarán con estos IDs.
     let resourceId = 'unassigned';
-    if (appointment.professionalId) resourceId = String(appointment.professionalId);
-    else if (appointment.resourceId) resourceId = String(appointment.resourceId);
+    if (appointment.professionalId) resourceId = `user-${appointment.professionalId}`;
+    else if (appointment.resourceId) resourceId = `room-${appointment.resourceId}`;
+    
+    // Fallback if no ID found (should not happen for valid appts)
+    if (resourceId === 'unassigned' && appointment.resourceId) resourceId = String(appointment.resourceId);
+
 
     const clienteNombre = appointment.lead 
         ? buildClienteNombre(appointment.lead.nombres, appointment.lead.apellidos)
