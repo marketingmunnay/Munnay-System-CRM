@@ -118,15 +118,7 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
                             // If initialDate was provided (editing existing), maybe disable? 
                             // But allowing change is flexible.
                         />
-                    </div800">Editar Turno</h3>
-                        <p className="text-sm text-gray-500">{userName} - {initialDate?.toLocaleDateString()}</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación / Centro</label>
                         <select 
