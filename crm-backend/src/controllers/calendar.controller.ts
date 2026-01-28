@@ -581,12 +581,11 @@ export const moveAppointment = async (req: Request, res: Response) => {
                 professionalId: targetStaffId,
                 status: { not: 'CANCELLED' },
                 startTime: { lt: endDate },
-                endTime: { gt: startDate },
-                fecha: startDate
+                endTime: { gt: startDate }
             }
         });
-        if (isOccupied) return res.status(
-                // Removed 'fecha' check as it doesn't exist in Appointment model
+        if (isOccupied) return res.status(409).json({ message: "El profesional ya está ocupado en ese horario." });
+    }
 
     // 1.1 Validar Colisión con Recurso (Si aplica)
     if (targetResourceId) {
