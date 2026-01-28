@@ -45,9 +45,18 @@ export const getShifts = async (req: Request, res: Response) => {
 
 export const saveShift = async (req: Request, res: Response) => {
   try {
+    console.log("=== SAVE SHIFT REQUEST ===");
+    console.log("Body:", JSON.stringify(req.body, null, 2));
+
     const { userId, date, timeBlocks, location, isDayOff } = req.body;
 
     const shiftDate = new Date(date);
+    console.log("Parsed Date:", shiftDate);
+
+    if (isNaN(shiftDate.getTime())) {
+        console.error("Invalid Date parsed:", date);
+        return res.status(400).json({ message: "Invalid date format" });
+    }
 
     const shift = await prisma.shift.upsert({
       where: {
@@ -69,7 +78,8 @@ export const saveShift = async (req: Request, res: Response) => {
         isDayOff: isDayOff || false
       }
     });
-
+    
+    console.log("Shift Saved:", shift);
     res.json(shift);
   } catch (error) {
     console.error('Error saving shift:', error);

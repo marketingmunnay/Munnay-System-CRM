@@ -449,7 +449,11 @@ export const getAmbientes = async (req: Request, res: Response) => {
 
 export const createResource = async (req: Request, res: Response) => {
     try {
+        console.log("=== CREATE RESOURCE REQUEST ===");
+        console.log("Body:", req.body);
         const { name, type, linkedUserIds, capacity } = req.body;
+        
+        let newRes;
         
         if (type === 'personal') {
             const role = await prisma.role.findFirst({ where: { nombre: 'Profesional' }}); 
@@ -463,10 +467,15 @@ export const createResource = async (req: Request, res: Response) => {
                     rolId: role ? role.id : 1
                 }
             });
-            return res.json({ id: `user-${newUser.id}`, ...newUser, type: 'personal' });
+            console.log("Created User Resource:", newUser);
+            // Destructure id to avoid "specified more than once" error
+            const { id: newId, ...restUser } = newUser;
+            newRes = { id: `user-${newId}`, ...restUser, type: 'personal' };
+            return res.json(newRes);
         } else {
             // Room Creation
-            const newRes = await prisma.resource.create({
+            console.log("Creating Room/Equipment...");
+            const resource = await prisma.resource.create({
                 data: {
                     name,
                     type: 'ROOM',
@@ -477,11 +486,14 @@ export const createResource = async (req: Request, res: Response) => {
                 },
                 include: { users: true }
             });
-            return res.json({ id: `room-${newRes.id}`, ...newRes, type: 'infrastructure' });
+            console.log("Created Room Resource:", resource);
+            const { id: resId, ...restRes } = resource;
+            newRes = { id: `room-${resId}`, ...restRes, type: 'infrastructure' };
+            return res.json(newRes);
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating resource:", error);
-        res.status(500).json({ message: 'Error creating resource' });
+        res.status(500).json({ message: 'Error creating resource: ' + error.message });
     }
 };
 
@@ -492,14 +504,10 @@ export const updateResource = async (req: Request, res: Response) => {
         
         if (id.startsWith('user-')) {
             const userId = parseInt(id.replace('user-', ''));
+            // Fix: User model uses 'nombres', not 'names'
             const updated = await prisma.user.update({
                 where: { id: userId },
-                data: { names: name } // Assuming 'nombres' is the field, might need adjustment based on Schema
-            }).catch(async () => {
-                 return await prisma.user.update({
-                    where: { id: userId },
-                    data: { nombres: name }
-                });
+                data: { nombres: name }
             });
             return res.json(updated);
         } else if (id.startsWith('room-')) {
@@ -577,8 +585,8 @@ export const moveAppointment = async (req: Request, res: Response) => {
                 fecha: startDate
             }
         });
-        if (isOccupied) return res.status(409).json({ message: "El profesional ya está ocupado en ese horario." });
-    }
+        if (isOccupied) return res.status(
+                // Removed 'fecha' check as it doesn't exist in Appointment model
 
     // 1.1 Validar Colisión con Recurso (Si aplica)
     if (targetResourceId) {
@@ -601,8 +609,8 @@ export const moveAppointment = async (req: Request, res: Response) => {
             professionalId: targetStaffId, 
             resourceId: targetResourceId,
             startTime: startDate,
-            endTime: endDate,
-            fecha: startDate
+            endTime: endDate
+            // Removed 'fecha'
         },
         include: { lead: true, service: true, professional: true } 
     });
