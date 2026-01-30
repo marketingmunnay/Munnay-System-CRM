@@ -512,6 +512,45 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         setIsModalOpen(true);
     };
 
+    const [hoverInfo, setHoverInfo] = useState<{ resourceId: string, time: string, top: number } | null>(null);
+
+    const handleMouseMove = (resourceId: string, e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const totalMinutesFromStart = (y / HOUR_HEIGHT) * 60;
+        
+        // Snap to 15 minutes
+        const hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
+        const minute = Math.floor(totalMinutesFromStart % 60);
+        const roundedMinute = Math.round(minute / 15) * 15;
+        
+        // Handle minute overflow (e.g., 60 minutes)
+        const finalDate = new Date();
+        finalDate.setHours(hour, roundedMinute, 0, 0);
+        
+        const displayHour = finalDate.getHours();
+        const displayMinute = finalDate.getMinutes();
+        
+        // Calculate snap top position
+        const minutesFromStart = (displayHour - START_HOUR) * 60 + displayMinute;
+        const top = (minutesFromStart / 60) * HOUR_HEIGHT;
+
+        // Format time string (e.g., 4:00pm)
+        const ampm = displayHour >= 12 ? 'pm' : 'am';
+        const hour12 = displayHour % 12 || 12;
+        const timeStr = `${hour12}:${displayMinute.toString().padStart(2, '0')}${ampm}`;
+
+        setHoverInfo({
+            resourceId,
+            time: timeStr,
+            top
+        });
+    };
+
+    const handleMouseLeave = () => {
+        setHoverInfo(null);
+    };
+
     const handleSlotClick = (resourceId: string, e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
@@ -844,6 +883,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                 key={resource.id}
                                 className="relative border-l border-slate-100 bg-white hover:bg-slate-50/40 transition-colors"
                                 onClick={(e) => handleSlotClick(resource.id, e)}
+                                onMouseMove={(e) => handleMouseMove(resource.id, e)}
+                                onMouseLeave={handleMouseLeave}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, resource.id)}
                             >
@@ -852,6 +893,15 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                         <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
                                     </div>
                                 ))}
+
+                                {hoverInfo && hoverInfo.resourceId === resource.id && (
+                                    <div
+                                        className="absolute left-1 right-1 rounded pointer-events-none bg-indigo-50 border border-indigo-200 flex items-start pl-2 pt-1 transition-all duration-75 ease-out z-20"
+                                        style={{ top: `${hoverInfo.top}px`, height: '45px' }} 
+                                    >
+                                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-100/50 px-1 rounded">{hoverInfo.time}</span>
+                                    </div>
+                                )}
 
                                 {eventsForSelectedDate
                                     .filter(event => event.resourceId === resource.id)
