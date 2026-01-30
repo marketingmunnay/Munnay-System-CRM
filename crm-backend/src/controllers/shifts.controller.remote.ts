@@ -112,11 +112,19 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
   try {
     const { userId, sourceDate, weeksToRepeat, mode, targetDate, untilDate } = req.body;
     
+    // Normalize sourceDate same as saveShift
+    const inputDate = new Date(sourceDate);
+    const sourceDateNormalized = new Date(Date.UTC(
+         inputDate.getFullYear(), 
+         inputDate.getMonth(), 
+         inputDate.getDate()
+    ));
+
     const sourceShift = await prisma.shift.findUnique({
       where: {
         userId_date: {
             userId: Number(userId),
-            date: new Date(sourceDate)
+            date: sourceDateNormalized
         }
       }
     });
@@ -126,11 +134,17 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     }
 
     const createdShifts = [];
-    const source = new Date(sourceDate);
+    const source = new Date(sourceDateNormalized);
 
     // MODE: Specific Date (Copy to one specific date)
     if (mode === 'specific_date' && targetDate) {
-         const specificDate = new Date(targetDate);
+         const targetInput = new Date(targetDate);
+         const specificDate = new Date(Date.UTC(
+            targetInput.getFullYear(), 
+            targetInput.getMonth(), 
+            targetInput.getDate()
+         ));
+
          const newShift = await prisma.shift.upsert({
             where: {
                 userId_date: { userId: Number(userId), date: specificDate }
@@ -150,14 +164,14 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
         });
         createdShifts.push(newShift);
     } 
-    // MODE: Weeks (Repeat for X weeks) OR Until Date (Calculate weeks)
+    // MODE: Weeks Or Until
     else {
         let iterations = 0;
         
         if (mode === 'until_date' && untilDate) {
             const end = new Date(untilDate);
-            const start = new Date(sourceDate);
-            const diffTime = Math.abs(end.getTime() - start.getTime());
+            // Diff in days
+            const diffTime = Math.abs(end.getTime() - source.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             iterations = Math.floor(diffDays / 7);
         } else {
@@ -166,6 +180,8 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
 
         for (let i = 1; i <= iterations; i++) {
             const nextDate = addWeeks(source, i);
+            // Ensure nextDate is also UTC midnight? addWeeks preserves time usually. 
+            // If source is UTC midnight, nextDate should be too.
             
             const newShift = await prisma.shift.upsert({
                 where: {

@@ -836,26 +836,92 @@ model Resource {
   isActive    Boolean       @default(true)
 
   appointments Appointment[]
-  users        User[]
+  resourceUsers ResourceUser[]
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
+model ResourceUser {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  resourceId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-enum AppointmentStatus {
-  SCHEDULED
-  CONFIRMED
-  IN_ROOM
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  NOSHOW
-  NO_SHOW
-  ARRIVED // Legacy
+  @@unique([userId, resourceId])
 }
 
-enum ResourceType {
-  ROOM
-  EQUIPMENT
+// Tabla intermedia para vincular usuarios como recursos del calendario
+model ResourceUser {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  resourceId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, resourceId])
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  nombres             String
+  apellidos           String
+  usuario             String    @unique
+  password            String
+  rolId               Int
+  avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
+
+  // Relacion con Recursos del calendario (Muchos a Muchos)
+  resourceUsers       ResourceUser[]
+
+  // Datos Personales
+  documentType        DocumentType?
+  documentNumber      String?
+  birthDate           DateTime?
+  nationality         String?
+  sex                 String?
+  maritalStatus       String?
+  phone               String?
+  email               String?
+  
+  // Datos Laborales
+  position            String?
+  startDate           DateTime?
+  endDate             DateTime?
+  contractType        String?
+  workday             String?
+  workSchedule        String?
+  directBoss          String?
+  workCenter          String?
+  employeeCode        String?
+  
+  // Datos Salariales
+  salary              Float?
+  bonuses             Float?
+  currency            String?
+  bankName            String?
+  accountType         String?
+  accountNumber       String?
+  paymentMethod       String?
+  laborRegime         String?
+  afpType             String?
+  afpCode             String?
+  afpPercentage       Float?
+  healthInsurance     String?
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  rol                        Role                 @relation(fields: [rolId], references: [id])
+  addresses                  Address[]
+  emergencyContacts          EmergencyContact[]
+  reconocimientosOtorgados   Reconocimiento[]     @relation("OtorgadoPor")
+  reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
+  shifts                     Shift[]
+  appointments               Appointment[]
 }
 

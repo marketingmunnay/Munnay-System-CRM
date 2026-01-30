@@ -387,15 +387,18 @@ export const deleteAppointment = async (req: Request, res: Response) => {
 
 export const getResources = async (req: Request, res: Response) => {
     try {
+        // 1. Recursos físicos (salas, equipos)
         const dbResources = await prisma.resource.findMany({
             where: { isActive: true },
-            include: { users: true }
-        });
-        
-        const staff = await prisma.user.findMany({
-             // Optional: Filter by specific condition if needed
+            include: { resourceUsers: { include: { user: true } } }
         });
 
+        // 2. Usuarios vinculados como recursos del calendario
+        const resourceUsers = await prisma.resourceUser.findMany({
+            include: { user: true, resource: true }
+        });
+
+        // Mapear recursos físicos
         const mappedResources = dbResources.map(r => ({
             id: `room-${r.id}`,
             originalId: r.id,
@@ -404,21 +407,21 @@ export const getResources = async (req: Request, res: Response) => {
             nombre: r.name, // Legacy Compatibility
             type: 'room',
             capacity: r.capacity,
-            users: r.users // Pass linked users to frontend
+            users: r.resourceUsers.map(ru => ru.user)
         }));
 
-        const mappedStaff = staff.map(u => ({
-            id: `user-${u.id}`,
-            originalId: u.id,
-            title: `${u.nombres} ${u.apellidos}`,
-            name: `${u.nombres} ${u.apellidos}`,
-            nombre: `${u.nombres} ${u.apellidos}`, // Legacy Compatibility
+        // Mapear usuarios vinculados como recursos
+        const mappedStaff = resourceUsers.map(ru => ({
+            id: `user-${ru.user.id}`,
+            originalId: ru.user.id,
+            title: `${ru.user.nombres} ${ru.user.apellidos}`,
+            name: `${ru.user.nombres} ${ru.user.apellidos}`,
+            nombre: `${ru.user.nombres} ${ru.user.apellidos}`,
             type: 'personal',
-            avatarUrl: u.avatarUrl
+            avatarUrl: ru.user.avatarUrl
         }));
 
         res.json([...mappedStaff, ...mappedResources]);
-
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching resources' });
@@ -535,9 +538,10 @@ export const updateResource = async (req: Request, res: Response) => {
 export const deleteResource = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-         if (id.startsWith('user-')) {
+        if (id.startsWith('user-')) {
             const userId = parseInt(id.replace('user-', ''));
-            await prisma.user.delete({ where: { id: userId } });
+            // Solo desvincular de ResourceUser, no borrar usuario
+            await prisma.resourceUser.deleteMany({ where: { userId } });
         } else if (id.startsWith('room-')) {
             const resId = parseInt(id.replace('room-', ''));
             await prisma.resource.delete({ where: { id: resId } });
