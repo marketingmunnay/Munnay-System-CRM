@@ -5,6 +5,7 @@ import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteEl
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
+import Tooltip from '../shared/Tooltip';
 import AppointmentWizard from './AppointmentWizard';
 import { getLeads, getAppointments, getResources as fetchResources } from '../../services/api';
 
@@ -916,24 +917,28 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                     const isOccupied = eventsForSelectedDate.some(event => event.resourceId === resource.id && event.horaInicio <= time && event.horaFin > time);
                                     let slotClass = "relative border-b border-slate-100 bg-white transition-all duration-150";
                                     let overlay = null;
+                                    let tooltipText = "Disponible para agendar";
                                     if (isBlocked) {
                                         slotClass += " bg-red-100 opacity-70";
                                         overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-red-600 font-bold bg-white/80 rounded px-2 py-1 border border-red-200">No disponible</span></div>;
+                                        tooltipText = "Horario bloqueado o fuera del turno";
                                     } else if (isOccupied) {
                                         slotClass += " bg-yellow-100 opacity-80";
                                         overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-yellow-700 font-bold bg-white/80 rounded px-2 py-1 border border-yellow-200">Ocupado</span></div>;
+                                        tooltipText = "Ya existe una cita en este horario";
                                     }
                                     const slotKey = `${resource.id}-${time}`;
                                     return (
-                                        <div
-                                            key={time}
-                                            ref={el => (slotRefs.current[slotKey] = el)}
-                                            style={{ height: `${HOUR_HEIGHT}px` }}
-                                            className={slotClass}
-                                        >
-                                            <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
-                                            {overlay}
-                                        </div>
+                                        <Tooltip key={time} content={tooltipText}>
+                                            <div
+                                                ref={el => (slotRefs.current[slotKey] = el)}
+                                                style={{ height: `${HOUR_HEIGHT}px` }}
+                                                className={slotClass}
+                                            >
+                                                <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
+                                                {overlay}
+                                            </div>
+                                        </Tooltip>
                                     );
                                 })}
     {/* Toast visual de error */}
@@ -974,7 +979,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                 {eventsForSelectedDate
                                     .filter(event => event.resourceId === resource.id)
                                     .map(event => (
-                                        <AppointmentCard key={event.id} event={event} />
+                                        <Tooltip key={event.id} content={event.source === 'lead' ? 'Lead agendado' : 'Cita agendada'}>
+                                            <AppointmentCard event={event} />
+                                        </Tooltip>
                                     ))}
 
                                 {blocked.filter(b => b.recursoId === resource.id).map(block => (
