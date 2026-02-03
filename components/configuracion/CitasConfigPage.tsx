@@ -155,7 +155,7 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
   };
 
   const handleDeleteResource = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este recurso?')) {
+    if (window.confirm('¿Estás seguro de eliminar este recurso?\n\nEsto solo desvinculará el recurso del calendario. Los usuarios vinculados NO serán eliminados del sistema.')) {
       try {
           await deleteResource(id);
           await fetchResources();
@@ -320,7 +320,7 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {resources.map(res => (
-                <div key={res.id} className="border rounded-lg p-4 flex items-start gap-4 hover:shadow-md transition-shadow">
+                <div key={res.id} className="border rounded-lg p-4 flex items-start gap-4 hover:shadow-md transition-shadow" title="Eliminar un recurso solo lo desvincula del calendario. Los usuarios NO serán eliminados.">
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-gray-500">
                     {res.name.charAt(0)}
                   </div>

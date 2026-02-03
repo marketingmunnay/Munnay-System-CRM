@@ -26,7 +26,7 @@ interface AppointmentWizardProps {
     whatsapp: boolean;
     email: boolean;
   };
-  resources?: { id: number; nombre: string; tipo: string }[];
+  resources?: { id: number | string; nombre: string; tipo: string; type?: string }[];
 }
 
 const stepList = [
@@ -297,7 +297,7 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   const profesionalOptions = useMemo(() => {
     if (resources && resources.length > 0) {
         return resources
-            .filter(r => r.tipo === 'personal' || !r.tipo)
+            .filter(r => r.type === 'personal' || r.tipo === 'personal' || (!r.type && !r.tipo))
             .map(r => ({ value: String(r.id), label: r.nombre }));
     }
     const values = services

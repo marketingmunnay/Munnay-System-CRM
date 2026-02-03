@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useRef } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
 import { RESOURCES } from '../../constants';
@@ -273,14 +274,16 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     
     // New States for Fresha-style backend
     const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [dbResources, setDbResources] = useState<{id: number, nombre: string, tipo: string}[]>([]);
+    const [dbResources, setDbResources] = useState<any[]>([]);
     
     // Initial fetch of resources
     useEffect(() => {
         fetchResources().then(res => {
             setDbResources(res);
             // Auto-select all new resources
-            setVisibleResourceIds(res.map(r => String(r.id)));
+            if (res && res.length > 0) {
+                 setVisibleResourceIds(res.map((r: any) => String(r.id)));
+            }
         }).catch(err => console.error("Error fetching resources:", err));
     }, []);
 
@@ -342,7 +345,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         try {
             // Find resource type to update correct ID
             const targetResource = dbResources.find(r => String(r.id) === resourceId);
-            const isProfessional = targetResource?.tipo !== 'ROOM';
+            const isProfessional = targetResource ? (targetResource.type !== 'room' && targetResource.tipo !== 'ROOM') : true;
             
             const payload: any = {
                 appointmentId: draggedEvent.originId,
@@ -421,8 +424,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                  id: String(r.id), 
                  name: r.nombre, // Alias for legacy 'name'
                  nombre: r.nombre,
-                 type: r.tipo === 'ROOM' ? 'espacio' : 'personal',
-                 imageUrl: r.tipo === 'ROOM' ? undefined : 'https://ui-avatars.com/api/?name=' + r.nombre // Fallback avatar
+                 type: (r.type === 'room' || r.tipo === 'ROOM') ? 'espacio' : 'personal',
+                 imageUrl: r.avatarUrl || ((r.type === 'room' || r.tipo === 'ROOM') ? undefined : 'https://ui-avatars.com/api/?name=' + r.nombre) // Fallback avatar
              }));
         }
         // Fallback to legacy constant but adapted
@@ -551,6 +554,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         setHoverInfo(null);
     };
 
+    // Toast state
+    const [toast, setToast] = useState<string | null>(null);
+    const slotRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
     const handleSlotClick = (resourceId: string, e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
@@ -563,6 +570,22 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const clickDate = new Date(currentDate);
         clickDate.setHours(hour, roundedMinute, 0, 0);
 
+        // Determinar si el slot está bloqueado u ocupado
+        const time = `${hour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`;
+        const isBlocked = blocked.some(b => b.recursoId === resourceId && b.horaInicio <= time && b.horaFin > time);
+        const isOccupied = eventsForSelectedDate.some(event => event.resourceId === resourceId && event.horaInicio <= time && event.horaFin > time);
+        const slotKey = `${resourceId}-${time}`;
+        if (isBlocked || isOccupied) {
+            // Shake visual
+            const slotDiv = slotRefs.current[slotKey];
+            if (slotDiv) {
+                slotDiv.classList.add('animate-shake');
+                setTimeout(() => slotDiv.classList.remove('animate-shake'), 600);
+            }
+            setToast(isBlocked ? 'No puedes agendar en un horario bloqueado.' : 'Ya existe una cita en este horario.');
+            setTimeout(() => setToast(null), 2500);
+            return;
+        }
         setWizardDefaults({ date: clickDate, resourceId });
         setIsWizardOpen(true);
     };
@@ -881,18 +904,63 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                         {visibleResources.map((resource) => (
                             <div
                                 key={resource.id}
-                                className="relative border-l border-slate-100 bg-white hover:bg-slate-50/40 transition-colors"
+                                className="relative border-l border-slate-100 bg-white hover:bg-green-50 transition-colors"
                                 onClick={(e) => handleSlotClick(resource.id, e)}
                                 onMouseMove={(e) => handleMouseMove(resource.id, e)}
                                 onMouseLeave={handleMouseLeave}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, resource.id)}
                             >
-                                {timeSlots.slice(0, -1).map(time => (
-                                    <div key={time} style={{ height: `${HOUR_HEIGHT}px` }} className="relative border-b border-slate-100">
-                                        <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
-                                    </div>
-                                ))}
+                                {timeSlots.slice(0, -1).map(time => {
+                                    const isBlocked = blocked.some(b => b.recursoId === resource.id && b.horaInicio <= time && b.horaFin > time);
+                                    const isOccupied = eventsForSelectedDate.some(event => event.resourceId === resource.id && event.horaInicio <= time && event.horaFin > time);
+                                    let slotClass = "relative border-b border-slate-100 bg-white transition-all duration-150";
+                                    let overlay = null;
+                                    if (isBlocked) {
+                                        slotClass += " bg-red-100 opacity-70";
+                                        overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-red-600 font-bold bg-white/80 rounded px-2 py-1 border border-red-200">No disponible</span></div>;
+                                    } else if (isOccupied) {
+                                        slotClass += " bg-yellow-100 opacity-80";
+                                        overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-yellow-700 font-bold bg-white/80 rounded px-2 py-1 border border-yellow-200">Ocupado</span></div>;
+                                    }
+                                    const slotKey = `${resource.id}-${time}`;
+                                    return (
+                                        <div
+                                            key={time}
+                                            ref={el => (slotRefs.current[slotKey] = el)}
+                                            style={{ height: `${HOUR_HEIGHT}px` }}
+                                            className={slotClass}
+                                        >
+                                            <div className="absolute top-1/2 left-4 right-4 border-b border-dashed border-slate-100"></div>
+                                            {overlay}
+                                        </div>
+                                    );
+                                })}
+    {/* Toast visual de error */}
+    {toast && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in">
+            {toast}
+        </div>
+    )}
+/* Animación shake y fade-in para feedback visual */
+<style jsx global>{`
+@keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+}
+.animate-shake {
+    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.4s ease;
+}
+`}</style>
 
                                 {hoverInfo && hoverInfo.resourceId === resource.id && (
                                     <div

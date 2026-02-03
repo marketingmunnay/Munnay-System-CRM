@@ -5,6 +5,7 @@ import DateRangeFilter from '../shared/DateRangeFilter';
 import { getAppointments, updateAppointmentStatus, getLeads } from '../../services/api';
 import { parseDate } from '../../utils/time';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
+import StatCard from '../dashboard/StatCard';
 
 interface AgendadosPageProps {
   leads: Lead[]; // To remove mostly
