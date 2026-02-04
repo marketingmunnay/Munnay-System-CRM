@@ -953,25 +953,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                 {toast}
             </div>
         )}
-/* Animación shake y fade-in para feedback visual */
-<style jsx global>{`
-@keyframes shake {
-    10%, 90% { transform: translateX(-2px); }
-    20%, 80% { transform: translateX(4px); }
-    30%, 50%, 70% { transform: translateX(-8px); }
-    40%, 60% { transform: translateX(8px); }
-}
-.animate-shake {
-    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
-}
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-    animation: fade-in 0.4s ease;
-}
-`}</style>
 
                                 {hoverInfo && hoverInfo.resourceId === resource.id && (
                                     <div
