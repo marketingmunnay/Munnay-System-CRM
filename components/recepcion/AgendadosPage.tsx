@@ -1,3 +1,7 @@
+// GoogleIcon para íconos de StatCard
+const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
+    <span className={`material-symbols-outlined ${className}`}>{name}</span>
+);
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User, Appointment } from '../../types';
 import { LeadStatus, ReceptionStatus, AppointmentStatus } from '../../types';

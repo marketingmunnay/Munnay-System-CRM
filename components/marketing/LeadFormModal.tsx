@@ -6,6 +6,7 @@ import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguim
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
+import UnifiedAppointmentForm from '../shared/UnifiedAppointmentForm';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
@@ -32,6 +33,10 @@ interface LeadFormModalProps {
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
+
+// --- Unified Appointment Modal State ---
+const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+const [appointmentDraft, setAppointmentDraft] = useState<any>(null);
 
 // Constantes para tipos de Medico
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
@@ -2465,6 +2470,33 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     };
     
     const handleSave = async () => {
+            // Open UnifiedAppointmentForm modal
+            const handleOpenAppointmentModal = () => {
+                setAppointmentDraft({
+                    ...formData,
+                    // Pass any relevant fields for appointment creation
+                });
+                setIsAppointmentModalOpen(true);
+            };
+
+            // Handle save from UnifiedAppointmentForm
+            const handleUnifiedAppointmentSave = (data: any) => {
+                // Update formData with returned appointment info
+                setFormData(prev => ({
+                    ...prev,
+                    ...data.lead, // update lead fields if changed
+                    // Optionally update cita/appointment fields
+                    fechaHoraAgenda: data.appointment?.fecha || prev.fechaHoraAgenda,
+                    recursoId: data.appointment?.recursoId || prev.recursoId,
+                    servicios: data.appointment?.servicio ? [data.appointment.servicio] : prev.servicios,
+                    // Add more mappings as needed
+                }));
+                setIsAppointmentModalOpen(false);
+            };
+
+            const handleUnifiedAppointmentCancel = () => {
+                setIsAppointmentModalOpen(false);
+            };
         // Validar campos requeridos
         const errors: string[] = [];
         
@@ -2678,6 +2710,15 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                         )}
                     </div>
                     <div className="flex items-center space-x-2">
+                        {/* Agendar cita button */}
+                        <button
+                            type="button"
+                            onClick={handleOpenAppointmentModal}
+                            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700"
+                        >
+                            <GoogleIcon name="event" className="mr-2" />
+                            Agendar Cita
+                        </button>
                         {(formData.montoPagado || 0) > 0 && (
                             <button
                                 type="button"
@@ -2689,14 +2730,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                                 Generar Comprobante
                             </button>
                         )}
-                        
                         {showSaveMessage && (
                             <div className="flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-lg border border-green-300">
                                 <GoogleIcon name="check_circle" className="mr-2 text-green-600" />
                                 ¡Se guardó correctamente!
                             </div>
                         )}
-                        
                         <button
                             type="button"
                             onClick={handleSave}
@@ -2756,6 +2795,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     deuda: formData.deudaCita || 0,
                 }}
                 ventaType="lead"
+            />
+        )}
+
+        {/* Unified Appointment Modal */}
+        {isAppointmentModalOpen && (
+            <UnifiedAppointmentForm
+                lead={formData}
+                mode="lead"
+                onSave={handleUnifiedAppointmentSave}
+                onCancel={handleUnifiedAppointmentCancel}
             />
         )}
       </>

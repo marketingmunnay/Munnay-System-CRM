@@ -6,7 +6,7 @@ import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
-import AppointmentWizard from './AppointmentWizard';
+import UnifiedAppointmentForm from '../shared/UnifiedAppointmentForm';
 import { getLeads, getAppointments, getResources as fetchResources } from '../../services/api';
 
 interface CalendarPageProps {
@@ -298,7 +298,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
+    const [wizardDefaults, setWizardDefaults] = useState<any | null>(null);
 
     // DRAG AND DROP STATE
     const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
@@ -587,7 +587,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             setTimeout(() => setToast(null), 2500);
             return;
         }
-        setWizardDefaults({ date: clickDate, resourceId });
+        setWizardDefaults({ resourceId, fecha: clickDate });
         setIsWizardOpen(true);
     };
 
@@ -1008,20 +1008,22 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                 onSaveComprobante={onSaveComprobante}
                 comprobantes={comprobantes}
             />
-            <AppointmentWizard
-                isOpen={isWizardOpen}
-                onClose={() => {
-                    setIsWizardOpen(false);
-                    setWizardDefaults(null);
-                }}
-                services={services}
-                clientSources={clientSources}
-                onSaveLead={onSaveLead}
-                defaultDate={wizardDefaults?.date}
-                defaultResourceId={wizardDefaults?.resourceId}
-                onAppointmentCreated={handleWizardAppointmentCreated}
-                resources={dbResources}
-            />
+            {isWizardOpen && (
+                <UnifiedAppointmentForm
+                    mode="calendar"
+                    appointment={wizardDefaults}
+                    onSave={data => {
+                        // Aquí puedes llamar a la API para guardar la cita y refrescar el calendario
+                        setIsWizardOpen(false);
+                        setWizardDefaults(null);
+                        // TODO: refrescar citas
+                    }}
+                    onCancel={() => {
+                        setIsWizardOpen(false);
+                        setWizardDefaults(null);
+                    }}
+                />
+            )}
         </div>
     );
 };
