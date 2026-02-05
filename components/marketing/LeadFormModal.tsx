@@ -34,10 +34,6 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-// --- Unified Appointment Modal State ---
-const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-const [appointmentDraft, setAppointmentDraft] = useState<any>(null);
-
 // Constantes para tipos de Medico
 const MEDICO_OPTIONS: Medico[] = ['Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
@@ -2238,6 +2234,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [isFacturacionModalOpen, setIsFacturacionModalOpen] = useState(false);
     const [showSaveMessage, setShowSaveMessage] = useState(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
+    const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
@@ -2470,33 +2467,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     };
     
     const handleSave = async () => {
-            // Open UnifiedAppointmentForm modal
-            const handleOpenAppointmentModal = () => {
-                setAppointmentDraft({
-                    ...formData,
-                    // Pass any relevant fields for appointment creation
-                });
-                setIsAppointmentModalOpen(true);
-            };
-
-            // Handle save from UnifiedAppointmentForm
-            const handleUnifiedAppointmentSave = (data: any) => {
-                // Update formData with returned appointment info
-                setFormData(prev => ({
-                    ...prev,
-                    ...data.lead, // update lead fields if changed
-                    // Optionally update cita/appointment fields
-                    fechaHoraAgenda: data.appointment?.fecha || prev.fechaHoraAgenda,
-                    recursoId: data.appointment?.recursoId || prev.recursoId,
-                    servicios: data.appointment?.servicio ? [data.appointment.servicio] : prev.servicios,
-                    // Add more mappings as needed
-                }));
-                setIsAppointmentModalOpen(false);
-            };
-
-            const handleUnifiedAppointmentCancel = () => {
-                setIsAppointmentModalOpen(false);
-            };
         // Validar campos requeridos
         const errors: string[] = [];
         
@@ -2628,6 +2598,25 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     const handleCloseFacturacionModal = () => {
         setIsFacturacionModalOpen(false);
+    };
+
+    const handleOpenAppointmentModal = () => {
+        setIsAppointmentModalOpen(true);
+    };
+
+    const handleUnifiedAppointmentSave = (data: any) => {
+        setFormData(prev => ({
+            ...prev,
+            ...data.lead,
+            fechaHoraAgenda: data.appointment?.fecha || prev.fechaHoraAgenda,
+            recursoId: data.appointment?.recursoId || prev.recursoId,
+            servicios: data.appointment?.servicio ? [data.appointment.servicio] : prev.servicios,
+        }));
+        setIsAppointmentModalOpen(false);
+    };
+
+    const handleUnifiedAppointmentCancel = () => {
+        setIsAppointmentModalOpen(false);
     };
 
     const handleFacturacionSave = async (comprobante: ComprobanteElectronico) => {
