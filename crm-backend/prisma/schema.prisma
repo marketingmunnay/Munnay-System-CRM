@@ -113,6 +113,7 @@ enum NotificationType {
 enum GoalUnit {
   cantidad
   porcentaje
+  soles
 }
 
 enum GoalArea {
@@ -120,6 +121,19 @@ enum GoalArea {
   Administracion
   Recepcion
   Procedimientos
+  Marketing
+  Medico
+}
+
+enum GoalPeriod {
+  diario
+  semanal
+  mensual
+}
+
+enum GoalLevel {
+  minimo
+  optimo
 }
 
 enum GoalObjective {
@@ -142,6 +156,23 @@ enum GoalObjective {
   SeguimientosCompletados
   RotacionPersonal
   NivelStock
+  LimpiezaFacial
+  Hydrafacial
+  EvaluacionesMedicas
+  EvaluacionesEspecificas
+  PorcentajeCierre
+  CantidadCierre
+  PacientesDeudores
+  PacientesNoCerraron
+  EfectividadMotusAX
+  EfectividadExionFace
+  FidelizacionRetorno
+  MantenimientoMotusAX
+  VentasSkinCare
+  ViewsReelTiktok
+  ViewsVideoTiktok
+  VideoViralTiktok
+  MontoRecaudadoDia
 }
 
 
@@ -434,7 +465,7 @@ model User {
   avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
 
   // Relacion con Recursos (Muchos a Muchos)
-  resources           Resource[]
+  resourceUsers       ResourceUser[]
 
   // Datos Personales
   documentType        DocumentType?
@@ -533,15 +564,24 @@ model BusinessInfo {
 }
 
 model Goal {
-  id        Int          @id @default(autoincrement())
-  name      String
-  area      GoalArea
-  objective GoalObjective
-  value     Float
-  unit      GoalUnit
-  personal  String?
-  startDate DateTime
-  endDate   DateTime
+  id         Int           @id @default(autoincrement())
+  name       String
+  area       GoalArea
+  objective  GoalObjective
+  value      Float
+  unit       GoalUnit
+  personal   String?
+  startDate  DateTime
+  endDate    DateTime
+  period     GoalPeriod    @default(mensual)
+  level      GoalLevel     @default(minimo)
+  valueOptimo Float?       // Valor óptimo (para bonos)
+  currency    String?      @default("PEN") // PEN, USD
+  userId      Int?         // FK opcional al usuario asignado
+  description String?      @db.Text
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // Catálogos
@@ -797,8 +837,23 @@ model Shift {
 
 
 // ========================================
-// M�DULO DE CITAS Y CALENDARIO (FRESHA STYLE)
+// MÓDULO DE CITAS Y CALENDARIO (FRESHA STYLE)
 // ========================================
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ResourceType {
+  ROOM
+  EQUIPMENT
+  MACHINE
+}
 
 model Appointment {
   id             Int               @id @default(autoincrement())
@@ -851,77 +906,5 @@ model ResourceUser {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, resourceId])
-}
-
-// Tabla intermedia para vincular usuarios como recursos del calendario
-model ResourceUser {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  resourceId Int
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([userId, resourceId])
-}
-
-model User {
-  id                  Int       @id @default(autoincrement())
-  nombres             String
-  apellidos           String
-  usuario             String    @unique
-  password            String
-  rolId               Int
-  avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
-
-  // Relacion con Recursos del calendario (Muchos a Muchos)
-  resourceUsers       ResourceUser[]
-
-  // Datos Personales
-  documentType        DocumentType?
-  documentNumber      String?
-  birthDate           DateTime?
-  nationality         String?
-  sex                 String?
-  maritalStatus       String?
-  phone               String?
-  email               String?
-  
-  // Datos Laborales
-  position            String?
-  startDate           DateTime?
-  endDate             DateTime?
-  contractType        String?
-  workday             String?
-  workSchedule        String?
-  directBoss          String?
-  workCenter          String?
-  employeeCode        String?
-  
-  // Datos Salariales
-  salary              Float?
-  bonuses             Float?
-  currency            String?
-  bankName            String?
-  accountType         String?
-  accountNumber       String?
-  paymentMethod       String?
-  laborRegime         String?
-  afpType             String?
-  afpCode             String?
-  afpPercentage       Float?
-  healthInsurance     String?
-  
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  rol                        Role                 @relation(fields: [rolId], references: [id])
-  addresses                  Address[]
-  emergencyContacts          EmergencyContact[]
-  reconocimientosOtorgados   Reconocimiento[]     @relation("OtorgadoPor")
-  reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
-  shifts                     Shift[]
-  appointments               Appointment[]
 }
 

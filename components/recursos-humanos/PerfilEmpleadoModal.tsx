@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import type { User, Role, Lead, Goal } from '../../types.ts';
 import { LeadStatus } from '../../types.ts';
-import { formatDateForDisplay, formatDateTimeForDisplay } from '../../utils/time.ts';
+import { formatDateTimeForDisplay } from '../../utils/time.ts';
+import MetaProgressDashboard from './MetaProgressDashboard.tsx';
 
 const GoogleIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -62,12 +63,6 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
 
         return [];
     }, [user, role, leads]);
-
-    const userGoals = useMemo(() => {
-        if (!user) return [];
-        const fullName = `${user.nombres} ${user.apellidos}`;
-        return goals.filter(g => g.personal === fullName);
-    }, [user, goals]);
     
     const sortedRecognitions = useMemo(() => {
         if (!user?.reconocimientos) return [];
@@ -75,18 +70,20 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
     }, [user]);
 
     return (
-        <div className="p-6 bg-gray-50 h-full">
+        <div className="p-6 bg-gray-50 h-full overflow-y-auto">
+            {/* Cabecera del perfil */}
             <div className="flex items-start space-x-6">
-                <img src={user.avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-white shadow-lg"/>
+                <img src={user.avatarUrl} alt="Avatar" className="w-28 h-28 rounded-full border-4 border-white shadow-lg"/>
                 <div className="pt-2">
-                    <h2 className="text-3xl font-bold text-gray-900">{user.nombres} {user.apellidos}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{user.nombres} {user.apellidos}</h2>
                     <p className="text-md text-gray-600">{user.position}</p>
                     <p className="text-sm bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full mt-1 inline-block">{role?.nombre}</p>
                 </div>
             </div>
 
-            <div className="mt-8">
-                <h3 className="text-lg font-bold text-gray-800 mb-3">Indicadores Clave de Desempeño (KPIs)</h3>
+            {/* KPIs rápidos */}
+            <div className="mt-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-3">Indicadores Clave (KPIs)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {performanceKPIs.length > 0 ? (
                         performanceKPIs.map(kpi => <KPICard key={kpi.title} {...kpi} />)
@@ -96,24 +93,17 @@ const PerfilEmpleadoDetalle: React.FC<PerfilEmpleadoDetalleProps> = ({ user, rol
                 </div>
             </div>
 
+            {/* ══════════ PROGRESO DE METAS ══════════ */}
             <div className="mt-8">
-                <h3 className="text-lg font-bold text-gray-800 mb-3">Metas Asignadas</h3>
-                 {userGoals.length > 0 ? (
-                    <ul className="space-y-2">
-                        {userGoals.map(goal => (
-                            <li key={goal.id} className="bg-white p-3 rounded-md border text-sm flex justify-between">
-                                <span className="font-medium text-gray-700">{goal.name}</span>
-                                <span className="font-bold text-gray-800">{goal.value}{goal.unit === 'porcentaje' ? '%' : ''}</span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-sm text-gray-500">No hay metas asignadas.</p>
-                )}
+                <MetaProgressDashboard userId={user.id} />
             </div>
 
+            {/* Reconocimientos */}
             <div className="mt-8">
-                <h3 className="text-lg font-bold text-gray-800 mb-3">Reconocimientos Recibidos</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <GoogleIcon name="military_tech" className="text-amber-500" />
+                    Reconocimientos Recibidos
+                </h3>
                 {sortedRecognitions.length > 0 ? (
                     <div className="space-y-4">
                         {sortedRecognitions.map(r => (

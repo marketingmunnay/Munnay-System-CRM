@@ -725,6 +725,7 @@ export interface Notification {
 export enum GoalUnit {
     Cantidad = 'cantidad',
     Porcentaje = 'porcentaje',
+    Soles = 'soles',
 }
 
 export enum GoalArea {
@@ -732,6 +733,19 @@ export enum GoalArea {
     Administracion = 'Administracion',
     Recepcion = 'Recepcion',
     Procedimientos = 'Procedimientos',
+    Marketing = 'Marketing',
+    Medico = 'Medico',
+}
+
+export enum GoalPeriod {
+    Diario = 'diario',
+    Semanal = 'semanal',
+    Mensual = 'mensual',
+}
+
+export enum GoalLevel {
+    Minimo = 'minimo',
+    Optimo = 'optimo',
 }
 
 export enum GoalObjective {
@@ -761,6 +775,33 @@ export enum GoalObjective {
     // Administration
     RotacionPersonal = 'RotacionPersonal',
     NivelStock = 'NivelStock',
+
+    // Call Center
+    EvaluacionesMedicas = 'EvaluacionesMedicas',
+    LimpiezaFacial = 'LimpiezaFacial',
+    Hydrafacial = 'Hydrafacial',
+    EvaluacionesEspecificas = 'EvaluacionesEspecificas',
+
+    // Recepción
+    PorcentajeCierre = 'PorcentajeCierre',
+    CantidadCierre = 'CantidadCierre',
+    PacientesDeudores = 'PacientesDeudores',
+    PacientesNoCerraron = 'PacientesNoCerraron',
+    MontoRecaudadoDia = 'MontoRecaudadoDia',
+
+    // Procedimientos
+    EfectividadMotusAX = 'EfectividadMotusAX',
+    EfectividadExionFace = 'EfectividadExionFace',
+    FidelizacionRetorno = 'FidelizacionRetorno',
+    MantenimientoMotusAX = 'MantenimientoMotusAX',
+
+    // Médico
+    VentasSkinCare = 'VentasSkinCare',
+
+    // Marketing Digital
+    ViewsReelTiktok = 'ViewsReelTiktok',
+    ViewsVideoTiktok = 'ViewsVideoTiktok',
+    VideoViralTiktok = 'VideoViralTiktok',
 }
 
 export const GoalAreaLabels: Record<GoalArea, string> = {
@@ -768,6 +809,19 @@ export const GoalAreaLabels: Record<GoalArea, string> = {
     [GoalArea.Administracion]: 'Administración',
     [GoalArea.Recepcion]: 'Recepción',
     [GoalArea.Procedimientos]: 'Procedimientos',
+    [GoalArea.Marketing]: 'Marketing',
+    [GoalArea.Medico]: 'Médico Estético',
+};
+
+export const GoalPeriodLabels: Record<GoalPeriod, string> = {
+    [GoalPeriod.Diario]: 'Diario',
+    [GoalPeriod.Semanal]: 'Semanal',
+    [GoalPeriod.Mensual]: 'Mensual',
+};
+
+export const GoalLevelLabels: Record<GoalLevel, string> = {
+    [GoalLevel.Minimo]: 'Mínimo',
+    [GoalLevel.Optimo]: 'Óptimo',
 };
 
 export const GoalObjectiveLabels: Record<GoalObjective, string> = {
@@ -790,6 +844,23 @@ export const GoalObjectiveLabels: Record<GoalObjective, string> = {
     [GoalObjective.SeguimientosCompletados]: 'Seguimientos Completados',
     [GoalObjective.RotacionPersonal]: 'Rotación de Personal',
     [GoalObjective.NivelStock]: 'Nivel de Stock',
+    [GoalObjective.EvaluacionesMedicas]: 'Evaluaciones Médicas',
+    [GoalObjective.LimpiezaFacial]: 'Limpieza Facial',
+    [GoalObjective.Hydrafacial]: 'Hydrafacial',
+    [GoalObjective.EvaluacionesEspecificas]: 'Evaluaciones Específicas',
+    [GoalObjective.PorcentajeCierre]: '% de Cierre',
+    [GoalObjective.CantidadCierre]: 'Cantidad de Cierres E.M.',
+    [GoalObjective.PacientesDeudores]: 'Pacientes Deudores Cobrados',
+    [GoalObjective.PacientesNoCerraron]: '% Pacientes que no cerraron (recuperados)',
+    [GoalObjective.MontoRecaudadoDia]: 'Monto Recaudado por Día',
+    [GoalObjective.EfectividadMotusAX]: 'Efectividad Motus AX',
+    [GoalObjective.EfectividadExionFace]: 'Efectividad Exion Face',
+    [GoalObjective.FidelizacionRetorno]: 'Fidelización / Retorno',
+    [GoalObjective.MantenimientoMotusAX]: 'Mantenimiento Motus AX',
+    [GoalObjective.VentasSkinCare]: 'Ventas Skin Care',
+    [GoalObjective.ViewsReelTiktok]: 'Views Reel TikTok',
+    [GoalObjective.ViewsVideoTiktok]: 'Views Video TikTok',
+    [GoalObjective.VideoViralTiktok]: 'Video Viral TikTok',
 };
 
 export interface Goal {
@@ -799,9 +870,33 @@ export interface Goal {
     objective: GoalObjective;
     value: number;
     unit: GoalUnit;
-    personal?: Personal;
+    personal?: string;
     startDate: string; // YYYY-MM-DD
     endDate: string; // YYYY-MM-DD
+    period: GoalPeriod;
+    level: GoalLevel;
+    valueOptimo?: number;
+    currency?: string;
+    userId?: number;
+    description?: string;
+    isActive: boolean;
+}
+
+// Progreso calculado por el backend
+export interface GoalProgress {
+    goalId: number;
+    goal: Goal;
+    currentValue: number;
+    targetValue: number;
+    percentage: number;
+    remaining: number;
+    period: GoalPeriod;
+    // Evolución: array de puntos [{ fecha, valor }]
+    evolution: Array<{ date: string; value: number }>;
+    // Estrella: 0-5
+    stars: number;
+    isAchieved: boolean;
+    daysRemaining: number;
 }
 
 export interface EvaluacionDesempeno {

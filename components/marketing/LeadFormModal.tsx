@@ -6,7 +6,7 @@ import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguim
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
-import UnifiedAppointmentForm from '../shared/UnifiedAppointmentForm';
+import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
@@ -2245,6 +2245,26 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         return Array.from(new Set(professionals));
     }, [users]);
 
+    const appointmentProfessionals = useMemo<AppointmentActorOption[]>(() => (
+        users
+            .filter((user: User) => isProfessionalUser(user))
+            .map((user: User, index: number) => ({
+                id: String(user.id ?? user.email ?? `user-${index}`),
+                nombre: `${user.nombres || ''} ${user.apellidos || ''}`.trim() || user.email || 'Profesional',
+                rol: 'staff',
+                avatarUrl: (user as any).avatarUrl,
+            }))
+    ), [users]);
+
+    const appointmentResources = useMemo<AppointmentActorOption[]>(() => (
+        RESOURCES.map(resource => ({
+            id: String(resource.id),
+            nombre: resource.nombre || resource.name || 'Recurso',
+            rol: resource.type === 'personal' ? 'staff' : 'space',
+            avatarUrl: resource.imageUrl,
+        }))
+    ), []);
+
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
     const VENDEDOR_OPTIONS = useMemo(() => {
         const list: { value: string, label: string }[] = [];
@@ -2604,13 +2624,20 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         setIsAppointmentModalOpen(true);
     };
 
-    const handleUnifiedAppointmentSave = (data: any) => {
+    const handleUnifiedAppointmentSave = (result: AppointmentComposerResult) => {
+        const { lead: leadDraft, appointment } = result;
+        const serviceSelected = services.find(service => service.id === appointment.serviceId);
+        const professionalName = appointmentProfessionals.find(pro => pro.id === appointment.professionalId)?.nombre;
+        const timestamp = new Date(`${appointment.date}T${appointment.time}:00`);
+
         setFormData(prev => ({
             ...prev,
-            ...data.lead,
-            fechaHoraAgenda: data.appointment?.fecha || prev.fechaHoraAgenda,
-            recursoId: data.appointment?.recursoId || prev.recursoId,
-            servicios: data.appointment?.servicio ? [data.appointment.servicio] : prev.servicios,
+            ...leadDraft,
+            estado: LeadStatus.Agendado,
+            fechaHoraAgenda: Number.isNaN(timestamp.getTime()) ? prev.fechaHoraAgenda : timestamp.toISOString(),
+            recursoId: appointment.resourceId || prev.recursoId,
+            profesionalAsignado: professionalName || prev.profesionalAsignado,
+            servicios: serviceSelected ? [serviceSelected.nombre] : prev.servicios,
         }));
         setIsAppointmentModalOpen(false);
     };
@@ -2791,7 +2818,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         {isAppointmentModalOpen && (
             <UnifiedAppointmentForm
                 lead={formData}
+                services={services}
+                professionals={appointmentProfessionals}
+                resources={appointmentResources}
                 mode="lead"
+                defaultDate={formData.fechaHoraAgenda ? new Date(formData.fechaHoraAgenda) : undefined}
+                defaultTime={formData.fechaHoraAgenda ? formatTimeForInput(formData.fechaHoraAgenda) : undefined}
+                defaultResourceId={formData.recursoId ? String(formData.recursoId) : undefined}
                 onSave={handleUnifiedAppointmentSave}
                 onCancel={handleUnifiedAppointmentCancel}
             />

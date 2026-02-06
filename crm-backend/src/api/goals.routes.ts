@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal } from '../controllers/goals.controller'; // FIX: Added missing exports
+import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal, getGoalProgress } from '../controllers/goals.controller';
 
 const router = Router();
 
 router.get('/', getGoals);
 router.post('/', createGoal);
+router.get('/progress/:userId', getGoalProgress);
 router.get('/:id', getGoalById);
 router.put('/:id', updateGoal);
 router.delete('/:id', deleteGoal);

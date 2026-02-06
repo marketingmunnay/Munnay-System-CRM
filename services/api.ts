@@ -2,7 +2,7 @@ import type {
   Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, User, Role, 
   BusinessInfo, ClientSource, Service, Product, Membership, ServiceCategory,
   ProductCategory, ProductBrand, JobPosition, Publicacion, Seguidor, MetaCampaign, EgresoCategory,
-  TipoProveedor, Goal, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
+  TipoProveedor, Goal, GoalProgress, ComprobanteElectronico, ConfiguracionProducto, MovimientoInventario,
   PagoProducto, AlertaStock, InventarioReporteResponse, Ambiente, Appointment,
   CreateAppointmentPayload, AvailabilityRequest, AvailabilitySlot, RecurringSeriesRequest,
   AppointmentStatus, SystemLog
@@ -442,6 +442,13 @@ export const saveGoal = (goal: Goal): Promise<Goal> =>
     : apiRequest<Goal>('/goals', 'POST', goal);
 export const deleteGoal = (id: number): Promise<void> =>
   apiRequest<void>(`/goals/${id}`, 'DELETE');
+export const getGoalProgress = (userId: number, period?: string, date?: string): Promise<GoalProgress[]> => {
+  const params = new URLSearchParams();
+  if (period) params.set('period', period);
+  if (date) params.set('date', date);
+  const qs = params.toString();
+  return apiRequest<GoalProgress[]>(`/goals/progress/${userId}${qs ? '?' + qs : ''}`, 'GET');
+};
 
 // ====== BUSINESS INFO ======
 export const getBusinessInfo = (): Promise<BusinessInfo> => 

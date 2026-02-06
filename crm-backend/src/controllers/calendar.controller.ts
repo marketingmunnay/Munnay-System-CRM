@@ -279,10 +279,10 @@ export const checkIn = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Status IN_ROOM = "En Sala" / "Por Atender"
+    // Status CONFIRMED = "En Sala" / "Por Atender"
     const appointment = await prisma.appointment.update({
       where: { id: parseInt(id) },
-      data: { status: 'IN_ROOM' },
+      data: { status: 'CONFIRMED' },
       include: { lead: true } 
     });
 
@@ -353,7 +353,7 @@ export const noShow = async (req: Request, res: Response) => {
       
       const appointment = await prisma.appointment.update({
         where: { id: parseInt(id) },
-        data: { status: 'NOSHOW' }
+        data: { status: 'NO_SHOW' }
       });
       
       if (appointment.leadId) {
@@ -431,7 +431,7 @@ export const getResources = async (req: Request, res: Response) => {
 export const getAmbientes = async (req: Request, res: Response) => {
     try {
         const resources = await prisma.resource.findMany({
-            include: { users: true }
+            include: { resourceUsers: { include: { user: true } } }
         });
         
         const ambientes = resources.map(r => ({
@@ -440,7 +440,7 @@ export const getAmbientes = async (req: Request, res: Response) => {
             tipo: r.type,
             estado: r.isActive ? 'activo' : 'inactivo',
             capacidad: r.capacity,
-            usuariosVinculados: r.users
+            usuariosVinculados: r.resourceUsers.map(ru => ru.user)
         }));
         
         res.json(ambientes);
@@ -483,11 +483,11 @@ export const createResource = async (req: Request, res: Response) => {
                     name,
                     type: 'ROOM',
                     capacity: capacity ? parseInt(capacity) : 1,
-                    users: linkedUserIds && linkedUserIds.length > 0 ? {
-                        connect: linkedUserIds.map((id: any) => ({ id: parseInt(id) }))
+                    resourceUsers: linkedUserIds && linkedUserIds.length > 0 ? {
+                        create: linkedUserIds.map((uid: any) => ({ userId: parseInt(uid) }))
                     } : undefined
                 },
-                include: { users: true }
+                include: { resourceUsers: { include: { user: true } } }
             });
             console.log("Created Room Resource:", resource);
             const { id: resId, ...restRes } = resource;
@@ -515,16 +515,19 @@ export const updateResource = async (req: Request, res: Response) => {
             return res.json(updated);
         } else if (id.startsWith('room-')) {
             const resId = parseInt(id.replace('room-', ''));
+            if (linkedUserIds) {
+                await prisma.resourceUser.deleteMany({ where: { resourceId: resId } });
+                await prisma.resourceUser.createMany({
+                    data: linkedUserIds.map((uId: any) => ({ userId: parseInt(uId), resourceId: resId }))
+                });
+            }
             const updated = await prisma.resource.update({
                 where: { id: resId },
                 data: { 
                     name,
                     capacity: capacity ? parseInt(capacity) : undefined,
-                    users: linkedUserIds ? {
-                        set: linkedUserIds.map((uId: any) => ({ id: parseInt(uId) }))
-                    } : undefined
                 },
-                include: { users: true }
+                include: { resourceUsers: { include: { user: true } } }
             });
             return res.json(updated);
         }

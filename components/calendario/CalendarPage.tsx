@@ -6,7 +6,7 @@ import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
-import UnifiedAppointmentForm from '../shared/UnifiedAppointmentForm';
+import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
 import { getLeads, getAppointments, getResources as fetchResources } from '../../services/api';
 
 interface CalendarPageProps {
@@ -95,8 +95,10 @@ interface CalendarEvent {
 }
 
 interface WizardDefaults {
-    date: Date;
+    date?: string;
+    time?: string;
     resourceId?: string;
+    serviceId?: number;
 }
 
 const padTime = (value: number) => value.toString().padStart(2, '0');
@@ -298,7 +300,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [wizardDefaults, setWizardDefaults] = useState<any | null>(null);
+    const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
 
     // DRAG AND DROP STATE
     const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
@@ -436,6 +438,26 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     // Groups for UI filters (if needed)
     const teamMembers = useMemo(() => activeResources.filter(resource => resource.type === 'personal'), [activeResources]);
     const sharedSpaces = useMemo(() => activeResources.filter(resource => resource.type !== 'personal'), [activeResources]);
+    const professionalOptions = useMemo<AppointmentActorOption[]>(
+        () =>
+            teamMembers.map(member => ({
+                id: String(member.id),
+                nombre: member.nombre || member.name || 'Profesional',
+                rol: 'staff',
+                avatarUrl: member.imageUrl,
+            })),
+        [teamMembers]
+    );
+    const resourceOptions = useMemo<AppointmentActorOption[]>(
+        () =>
+            activeResources.map(resource => ({
+                id: String(resource.id),
+                nombre: resource.nombre || resource.name || 'Recurso',
+                rol: resource.type === 'personal' ? 'staff' : 'space',
+                avatarUrl: resource.imageUrl,
+            })),
+        [activeResources]
+    );
     
     const visibleResources = useMemo(
         () => activeResources.filter(resource => visibleResourceIds.includes(resource.id)),
@@ -507,7 +529,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const handleAddClick = () => {
         const baseDate = new Date(currentDate);
         baseDate.setHours(9, 0, 0, 0);
-        setWizardDefaults({ date: baseDate });
+        setWizardDefaults({ date: baseDate.toISOString(), time: '09:00', resourceId: visibleResources[0]?.id });
         setIsWizardOpen(true);
     };
     
@@ -587,7 +609,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             setTimeout(() => setToast(null), 2500);
             return;
         }
-        setWizardDefaults({ resourceId, fecha: clickDate });
+        setWizardDefaults({ resourceId, date: clickDate.toISOString(), time });
         setIsWizardOpen(true);
     };
 
@@ -597,6 +619,13 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             const filtered = prev.filter(event => !(event.source === 'appointment' && event.originId === appointment.id));
             return [...filtered, nextEvent];
         });
+    };
+
+    const handleWizardFormSave = async (draft: AppointmentComposerResult) => {
+        console.debug('Guardar cita desde wizard', draft);
+        setIsWizardOpen(false);
+        setWizardDefaults(null);
+        // TODO: llamar API para crear la cita real y luego ejecutar handleWizardAppointmentCreated
     };
     
     const handleSaveAndClose = async (lead: Lead) => {
@@ -1011,13 +1040,14 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             {isWizardOpen && (
                 <UnifiedAppointmentForm
                     mode="calendar"
-                    appointment={wizardDefaults}
-                    onSave={data => {
-                        // Aquí puedes llamar a la API para guardar la cita y refrescar el calendario
-                        setIsWizardOpen(false);
-                        setWizardDefaults(null);
-                        // TODO: refrescar citas
-                    }}
+                    lead={null}
+                    services={services}
+                    professionals={professionalOptions}
+                    resources={resourceOptions}
+                    defaultDate={wizardDefaults?.date ? new Date(wizardDefaults.date) : currentDate}
+                    defaultTime={wizardDefaults?.time}
+                    defaultResourceId={wizardDefaults?.resourceId}
+                    onSave={handleWizardFormSave}
                     onCancel={() => {
                         setIsWizardOpen(false);
                         setWizardDefaults(null);
