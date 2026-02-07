@@ -324,13 +324,19 @@ export const getGoalProgress = async (req: AuthenticatedRequest, res: Response) 
     const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
     const monthEnd = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
+    // Solo incluir filtro por vendedor si el nombre coincide con un valor del enum Seller
+    const validSellers = ['Vanesa', 'Liz', 'Elvira'];
+    const vendedorOrFilters: any[] = [];
+    
+    if (validSellers.includes(user.nombres)) {
+      vendedorOrFilters.push({ vendedor: user.nombres as any });
+    }
+    vendedorOrFilters.push({ profesionalAsignado: fullName });
+    vendedorOrFilters.push({ profesionalAsignado: user.nombres });
+
     const leads = await prisma.lead.findMany({
       where: {
-        OR: [
-          { vendedor: user.nombres as any },
-          { profesionalAsignado: fullName },
-          { profesionalAsignado: user.nombres },
-        ],
+        OR: vendedorOrFilters,
         fechaLead: { gte: monthStart, lte: monthEnd },
       },
     });
