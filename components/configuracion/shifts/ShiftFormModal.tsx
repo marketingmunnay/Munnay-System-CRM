@@ -75,11 +75,8 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
             alert("Por favor seleccione una fecha");
             return;
         }
-        // Create date object from string (local time)
-        const [year, month, day] = selectedDate.split('-').map(Number);
-        const dateObj = new Date(year, month - 1, day);
-        
-        onSave({ userId, date: dateObj, timeBlocks: blocks, location, note });
+        // Send date string directly "YYYY-MM-DD" to avoid timezone issues
+        onSave({ userId, date: selectedDate, timeBlocks: blocks, location, note });
         onClose();
     };
 

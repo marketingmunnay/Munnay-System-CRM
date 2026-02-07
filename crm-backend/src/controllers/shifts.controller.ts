@@ -6,9 +6,18 @@ export const getShifts = async (req: Request, res: Response) => {
   try {
     const { start, end, location } = req.query;
     
-    // Default to current week if not specified
-    const startDate = start ? new Date(start as string) : startOfWeek(new Date());
-    const endDate = end ? new Date(end as string) : endOfWeek(new Date());
+    // Helper
+    const parseToUtc = (d: string | Date | undefined, defaultDate: Date) => {
+        if (!d) return defaultDate;
+        if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+             const [y, m, day] = d.split('-').map(Number);
+             return new Date(Date.UTC(y, m - 1, day));
+        }
+        return new Date(d);
+    };
+
+    const startDate = parseToUtc(start as string, startOfWeek(new Date()));
+    const endDate = parseToUtc(end as string, endOfWeek(new Date()));
 
     const whereClause: any = {
       date: {
@@ -50,20 +59,29 @@ export const saveShift = async (req: Request, res: Response) => {
 
     const { userId, date, timeBlocks, location, isDayOff } = req.body;
 
-    // Normalizing Date to UTC Midnight to ensure consistency with @db.Date
-    const inputDate = new Date(date);
-    if (isNaN(inputDate.getTime())) {
-        console.error("Invalid Date parsed:", date);
-        return res.status(400).json({ message: "Invalid date format" });
+    let shiftDate: Date;
+
+    // Robust Date Parsing
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        // Handle "YYYY-MM-DD" string explicitly to avoid any timezone conversion
+        const [year, month, day] = date.split('-').map(Number);
+        shiftDate = new Date(Date.UTC(year, month - 1, day));
+    } else {
+        // Fallback for full ISO strings or Date objects
+        const inputDate = new Date(date);
+        if (isNaN(inputDate.getTime())) {
+            console.error("Invalid Date parsed:", date);
+            return res.status(400).json({ message: "Invalid date format" });
+        }
+        // Attempt to extract calendar date. 
+        // Note: this relies on server local time if input is ISO. 
+        // Ideally frontend always sends YYYY-MM-DD now.
+        shiftDate = new Date(Date.UTC(
+            inputDate.getFullYear(), 
+            inputDate.getMonth(), 
+            inputDate.getDate()
+        ));
     }
-    
-    // Create Date object pointing to UTC Midnight of that date
-    // This avoids timezone offsets causing the date to shift to the previous day
-    const shiftDate = new Date(Date.UTC(
-         inputDate.getFullYear(), 
-         inputDate.getMonth(), 
-         inputDate.getDate()
-    ));
 
     console.log("Normalized Date for DB:", shiftDate.toISOString());
 
@@ -112,11 +130,22 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
   try {
     const { userId, sourceDate, weeksToRepeat, mode, targetDate, untilDate } = req.body;
     
+    // Helper to ensure YYYY-MM-DD string is parsed as UTC midnight
+    const parseToUtc = (d: string | Date) => {
+        if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+             const [y, m, day] = d.split('-').map(Number);
+             return new Date(Date.UTC(y, m - 1, day));
+        }
+        return new Date(d);
+    };
+
+    const sDate = parseToUtc(sourceDate);
+
     const sourceShift = await prisma.shift.findUnique({
       where: {
         userId_date: {
             userId: Number(userId),
-            date: new Date(sourceDate)
+            date: sDate
         }
       }
     });
@@ -126,11 +155,10 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     }
 
     const createdShifts = [];
-    const source = new Date(sourceDate);
-
+    
     // MODE: Specific Date (Copy to one specific date)
     if (mode === 'specific_date' && targetDate) {
-         const specificDate = new Date(targetDate);
+         const specificDate = parseToUtc(targetDate);
          const newShift = await prisma.shift.upsert({
             where: {
                 userId_date: { userId: Number(userId), date: specificDate }
@@ -155,8 +183,8 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
         let iterations = 0;
         
         if (mode === 'until_date' && untilDate) {
-            const end = new Date(untilDate);
-            const start = new Date(sourceDate);
+            const end = parseToUtc(untilDate);
+            const start = sDate;
             const diffTime = Math.abs(end.getTime() - start.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             iterations = Math.floor(diffDays / 7);
@@ -165,7 +193,7 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
         }
 
         for (let i = 1; i <= iterations; i++) {
-            const nextDate = addWeeks(source, i);
+            const nextDate = addWeeks(sDate, i);
             
             const newShift = await prisma.shift.upsert({
                 where: {
