@@ -21,6 +21,21 @@ const RecursosHumanosPage: React.FC<RecursosHumanosPageProps> = ({ users, roles,
         setSelectedUser(user);
     };
     
+    // Check if current user is admin
+    const isAdmin = useMemo(() => {
+        if (!currentUser) return false;
+        const userRole = roles.find(r => r.id === currentUser.rolId);
+        return currentUser.rolId === 1 || 
+               (userRole && userRole.nombre.toLowerCase().includes('admin'));
+    }, [currentUser, roles]);
+
+    // Filter users based on role - non-admin only sees their own profile
+    const filteredUsers = useMemo(() => {
+        if (isAdmin) return users;
+        if (!currentUser) return [];
+        return users.filter(u => u.id === currentUser.id);
+    }, [users, currentUser, isAdmin]);
+    
     const greeting = useMemo(() => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Buenos días';
@@ -38,9 +53,11 @@ const RecursosHumanosPage: React.FC<RecursosHumanosPageProps> = ({ users, roles,
             <div className="flex-grow flex space-x-6 overflow-hidden">
                 {/* Team Members List */}
                 <div className="w-1/3 bg-white p-6 rounded-xl shadow-md overflow-y-auto">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Miembros del Equipo</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                        {isAdmin ? 'Miembros del Equipo' : 'Mi Perfil'}
+                    </h3>
                     <div className="space-y-2">
-                        {users.map(user => {
+                        {filteredUsers.map(user => {
                             const role = roles.find(r => r.id === user.rolId);
                             const isSelected = selectedUser?.id === user.id;
                             return (
