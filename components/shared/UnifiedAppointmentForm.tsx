@@ -256,14 +256,14 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
       title={mode === 'lead' ? 'Agendar cita para el lead' : 'Agendar Cita'}
       maxWidthClass="max-w-4xl"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 px-6 py-5">
         <div className="flex items-center justify-between">
           <StepIndicator />
           <span className="text-xs uppercase tracking-[0.3em] text-slate-400">Agenda moderna</span>
         </div>
 
         {step === 1 && (
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
               <label className="text-xs font-semibold text-slate-500">Nombres *</label>
               <input
@@ -442,22 +442,22 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
 
         {step === 3 && (
           <section className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {summaryItems.map(item => (
-                <div key={item.label} className="rounded-3xl border border-slate-200 bg-white/80 p-4">
+                <div key={item.label} className="rounded-2xl border border-slate-200 bg-white/80 p-4">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{item.value}</p>
                   {item.extra && <p className="text-sm text-slate-500">{item.extra}</p>}
                 </div>
               ))}
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
               <p>Al confirmar, se creará la cita y se actualizará el lead con estado "Agendado".</p>
             </div>
           </section>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 mt-2">
           <button type="button" onClick={onCancel} className="text-sm font-semibold text-slate-500 hover:text-slate-700">
             Cancelar
           </button>
