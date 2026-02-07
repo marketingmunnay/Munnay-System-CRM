@@ -1,5 +1,6 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import prisma from '../lib/prisma';
+import { AuthenticatedRequest, isAdmin } from '../middleware/auth';
 
 // ─── Helpers para calcular progreso ───────────────────────────
 
@@ -200,13 +201,16 @@ const computeCurrentValue = (
 
 // ─── CRUD ─────────────────────────────────────────────────────
 
-export const getGoals = async (req: Request, res: Response) => {
+export const getGoals = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId, area, isActive } = req.query;
     const where: any = {};
     if (userId) where.userId = parseInt(userId as string);
     if (area) where.area = area;
     if (isActive !== undefined) where.isActive = isActive === 'true';
+    if (!isAdmin(req.authUser)) {
+      where.createdById = req.authUser?.id;
+    }
     const goals = await prisma.goal.findMany({ where, orderBy: { createdAt: 'desc' } });
     res.status(200).json(goals);
   } catch (error) {
@@ -214,7 +218,7 @@ export const getGoals = async (req: Request, res: Response) => {
   }
 };
 
-export const getGoalById = async (req: Request, res: Response) => {
+export const getGoalById = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     const goal = await prisma.goal.findUnique({ where: { id } });
@@ -225,7 +229,7 @@ export const getGoalById = async (req: Request, res: Response) => {
   }
 };
 
-export const createGoal = async (req: Request, res: Response) => {
+export const createGoal = async (req: AuthenticatedRequest, res: Response) => {
   const { id, startDate, endDate, createdAt, updatedAt, ...data } = req.body;
   try {
     const newGoal = await prisma.goal.create({
@@ -236,6 +240,7 @@ export const createGoal = async (req: Request, res: Response) => {
         value: Number(data.value),
         valueOptimo: data.valueOptimo != null ? Number(data.valueOptimo) : null,
         userId: data.userId ? Number(data.userId) : null,
+        createdById: req.authUser?.id,
       },
     });
     res.status(201).json(newGoal);
@@ -245,7 +250,7 @@ export const createGoal = async (req: Request, res: Response) => {
   }
 };
 
-export const updateGoal = async (req: Request, res: Response) => {
+export const updateGoal = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   const { id: _, startDate, endDate, createdAt, updatedAt, ...data } = req.body;
   try {
@@ -267,7 +272,7 @@ export const updateGoal = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteGoal = async (req: Request, res: Response) => {
+export const deleteGoal = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     await prisma.goal.delete({ where: { id } });
@@ -285,7 +290,7 @@ export const deleteGoal = async (req: Request, res: Response) => {
  * Calcula el progreso de todas las metas asignadas a un usuario.
  * Query params: ?period=diario|semanal|mensual&date=YYYY-MM-DD
  */
-export const getGoalProgress = async (req: Request, res: Response) => {
+export const getGoalProgress = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = parseInt(req.params.userId);
     const periodFilter = (req.query.period as string) || undefined;

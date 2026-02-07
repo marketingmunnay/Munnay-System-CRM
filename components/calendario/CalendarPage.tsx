@@ -7,7 +7,7 @@ import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to n
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
-import { getLeads, getAppointments, getResources as fetchResources } from '../../services/api';
+import { getLeads, getAppointments, getResources as fetchResources, createAppointment } from '../../services/api';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -623,9 +623,25 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
     const handleWizardFormSave = async (draft: AppointmentComposerResult) => {
         console.debug('Guardar cita desde wizard', draft);
-        setIsWizardOpen(false);
-        setWizardDefaults(null);
-        // TODO: llamar API para crear la cita real y luego ejecutar handleWizardAppointmentCreated
+        try {
+            const payload = {
+                leadId: draft.lead.id,
+                professionalId: draft.appointment.professionalId ? parseInt(draft.appointment.professionalId) : undefined,
+                serviceId: draft.appointment.serviceId,
+                resourceId: draft.appointment.resourceId ? parseInt(draft.appointment.resourceId) : undefined,
+                date: draft.appointment.date,
+                time: draft.appointment.time,
+                notes: draft.appointment.notes || '',
+            };
+            const created = await createAppointment(payload);
+            handleWizardAppointmentCreated(created);
+        } catch (error: any) {
+            console.error('Error al crear cita:', error);
+            alert(error?.message || 'Error al crear la cita. Intente nuevamente.');
+        } finally {
+            setIsWizardOpen(false);
+            setWizardDefaults(null);
+        }
     };
     
     const handleSaveAndClose = async (lead: Lead) => {

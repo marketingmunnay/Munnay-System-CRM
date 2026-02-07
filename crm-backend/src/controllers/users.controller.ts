@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; 
+import { AuthenticatedRequest } from '../middleware/auth';
 // import { Address, EmergencyContact, User } from '@prisma/client';
 
 const safeUserSelect = {
@@ -27,17 +28,7 @@ const safeUserSelect = {
   sex: true,
 } as const;
 
-const extractBearerToken = (req: Request): string | null => {
-  const header = req.headers.authorization;
-  if (!header) return null;
-  const value = Array.isArray(header) ? header[0] : header;
-  if (typeof value !== 'string') return null;
-  if (!value.toLowerCase().startsWith('bearer ')) return null;
-  const token = value.slice(7).trim();
-  return token.length > 0 ? token : null;
-};
-
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       // Exclude password from the result
@@ -49,23 +40,14 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getCurrentUser = async (req: Request, res: Response) => {
-  const token = extractBearerToken(req);
-  if (!token) {
+export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.authUser) {
     return res.status(401).json({ message: 'Token de autenticación requerido' });
-  }
-
-  let payload: { id: number; rolId?: number };
-  try {
-    payload = jwt.verify(token, process.env.JWT_SECRET || 'secret_key') as { id: number; rolId?: number };
-  } catch (error) {
-    console.error('Token inválido en /users/me:', error);
-    return res.status(401).json({ message: 'Token inválido' });
   }
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: payload.id },
+      where: { id: req.authUser.id },
       select: safeUserSelect,
     });
 
@@ -94,7 +76,7 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: AuthenticatedRequest, res: Response) => {
   const { id, password, addresses, emergencyContacts, ...userData } = req.body;
   
   console.log('=== CREATE USER REQUEST ===');
@@ -175,7 +157,7 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   // Exclude id, password, addresses, emergencyContacts, createdAt, updatedAt, reconocimientosRecibidos
   const { id: _, password, addresses, emergencyContacts, createdAt, updatedAt, reconocimientosRecibidos, ...userData } = req.body;
@@ -285,7 +267,7 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (_req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 

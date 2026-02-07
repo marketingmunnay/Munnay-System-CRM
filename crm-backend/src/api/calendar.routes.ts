@@ -14,7 +14,8 @@ import {
     moveAppointment,
     createResource,
     updateResource,
-    deleteResource
+    deleteResource,
+    checkAvailability
 } from '../controllers/calendar.controller';
 
 const router = Router();
@@ -22,6 +23,7 @@ const router = Router();
 console.log('Calendar Routes Loaded');
 
 // Appointments
+router.get('/availability', checkAvailability);
 router.get('/appointments', getAppointments);
 router.post('/appointments', createAppointment);
 router.put('/appointments/:id', updateAppointment);

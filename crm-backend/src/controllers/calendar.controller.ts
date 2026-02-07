@@ -628,3 +628,158 @@ export const moveAppointment = async (req: Request, res: Response) => {
       res.status(500).json({ message: 'Error moving appointment' });
   }
 };
+
+// ==========================================
+// CHECK AVAILABILITY
+// ==========================================
+export const checkAvailability = async (req: Request, res: Response) => {
+    try {
+        const { fecha, horaInicio, duracionMinutos, servicioIds, profesionalId, ambienteId } = req.query;
+
+        if (!fecha || !horaInicio) {
+            return res.status(400).json({ message: 'fecha y horaInicio son requeridos' });
+        }
+
+        const dateStr = String(fecha);
+        const timeStr = String(horaInicio);
+        const duration = duracionMinutos ? parseInt(String(duracionMinutos)) : 60;
+
+        const start = new Date(`${dateStr}T${timeStr}:00`);
+        const end = new Date(start.getTime() + duration * 60000);
+
+        let isAvailable = true;
+        const suggestions: Array<{ fecha: string; horaInicio: string; profesionalId?: string; ambienteId?: number }> = [];
+        const slots: Array<{ profesionalId: string; ambienteId?: number; disponible: boolean; motivo?: string }> = [];
+
+        // 1. Check professional availability
+        if (profesionalId) {
+            const profId = parseInt(String(profesionalId));
+
+            // Check shift
+            const shiftDate = new Date(dateStr);
+            const shift = await prisma.shift.findUnique({
+                where: {
+                    userId_date: {
+                        userId: profId,
+                        date: shiftDate
+                    }
+                }
+            });
+
+            if (!shift || shift.isDayOff) {
+                isAvailable = false;
+                slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional no tiene turno o tiene día libre en esta fecha.' });
+            } else {
+                // Validate time blocks
+                const timeBlocks = shift.timeBlocks as any[];
+                if (timeBlocks && timeBlocks.length > 0) {
+                    const appStartMinutes = start.getHours() * 60 + start.getMinutes();
+                    const appEndMinutes = end.getHours() * 60 + end.getMinutes();
+
+                    const isWithinRange = timeBlocks.some((block: { start: string; end: string }) => {
+                        const [startH, startM] = block.start.split(':').map(Number);
+                        const [endH, endM] = block.end.split(':').map(Number);
+                        const blockStartMinutes = startH * 60 + startM;
+                        const blockEndMinutes = endH * 60 + endM;
+                        return appStartMinutes >= blockStartMinutes && appEndMinutes <= blockEndMinutes;
+                    });
+
+                    if (!isWithinRange) {
+                        isAvailable = false;
+                        slots.push({
+                            profesionalId: String(profesionalId),
+                            disponible: false,
+                            motivo: `La cita está fuera del horario laboral del profesional (${timeBlocks.map((t: any) => `${t.start}-${t.end}`).join(', ')})`
+                        });
+                    }
+                }
+
+                // Check collision with existing appointments
+                const existingAppt = await prisma.appointment.findFirst({
+                    where: {
+                        professionalId: profId,
+                        status: { not: 'CANCELLED' },
+                        startTime: { lt: end },
+                        endTime: { gt: start }
+                    }
+                });
+                if (existingAppt) {
+                    isAvailable = false;
+                    slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional ya tiene una cita en ese horario.' });
+                }
+            }
+        }
+
+        // 2. Check resource/ambiente availability
+        if (ambienteId) {
+            const resId = parseInt(String(ambienteId));
+            const existingResourceAppt = await prisma.appointment.findFirst({
+                where: {
+                    resourceId: resId,
+                    status: { not: 'CANCELLED' },
+                    startTime: { lt: end },
+                    endTime: { gt: start }
+                }
+            });
+            if (existingResourceAppt) {
+                isAvailable = false;
+                slots.push({ profesionalId: profesionalId ? String(profesionalId) : '0', ambienteId: resId, disponible: false, motivo: 'El recurso/consultorio ya está ocupado en ese horario.' });
+            }
+        }
+
+        // If not available, suggest next available slots (next 3 hours in 30min increments)
+        if (!isAvailable) {
+            for (let offset = 30; offset <= 180; offset += 30) {
+                const sugStart = new Date(start.getTime() + offset * 60000);
+                const sugEnd = new Date(sugStart.getTime() + duration * 60000);
+
+                let sugOk = true;
+
+                if (profesionalId) {
+                    const profConflict = await prisma.appointment.findFirst({
+                        where: {
+                            professionalId: parseInt(String(profesionalId)),
+                            status: { not: 'CANCELLED' },
+                            startTime: { lt: sugEnd },
+                            endTime: { gt: sugStart }
+                        }
+                    });
+                    if (profConflict) sugOk = false;
+                }
+
+                if (ambienteId && sugOk) {
+                    const resConflict = await prisma.appointment.findFirst({
+                        where: {
+                            resourceId: parseInt(String(ambienteId)),
+                            status: { not: 'CANCELLED' },
+                            startTime: { lt: sugEnd },
+                            endTime: { gt: sugStart }
+                        }
+                    });
+                    if (resConflict) sugOk = false;
+                }
+
+                if (sugOk) {
+                    const sugHH = sugStart.getHours().toString().padStart(2, '0');
+                    const sugMM = sugStart.getMinutes().toString().padStart(2, '0');
+                    suggestions.push({
+                        fecha: dateStr,
+                        horaInicio: `${sugHH}:${sugMM}`,
+                        profesionalId: profesionalId ? String(profesionalId) : undefined,
+                        ambienteId: ambienteId ? parseInt(String(ambienteId)) : undefined
+                    });
+                }
+            }
+        }
+
+        // If no professional or resource specified, always available
+        if (!profesionalId && !ambienteId) {
+            isAvailable = true;
+        }
+
+        res.json({ isAvailable, slots, suggestions });
+    } catch (error) {
+        console.error('Error checking availability:', error);
+        res.status(500).json({ message: 'Error checking availability' });
+    }
+};

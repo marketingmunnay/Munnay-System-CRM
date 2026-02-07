@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal, getGoalProgress } from '../controllers/goals.controller';
+import { requireAdmin, requireAuth, requireSelfOrAdmin } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', getGoals);
-router.post('/', createGoal);
-router.get('/progress/:userId', getGoalProgress);
-router.get('/:id', getGoalById);
-router.put('/:id', updateGoal);
-router.delete('/:id', deleteGoal);
+router.use(requireAuth);
+
+router.get('/', requireAdmin, getGoals);
+router.post('/', requireAdmin, createGoal);
+router.get('/progress/:userId', requireSelfOrAdmin('userId'), getGoalProgress);
+router.get('/:id', requireAdmin, getGoalById);
+router.put('/:id', requireAdmin, updateGoal);
+router.delete('/:id', requireAdmin, deleteGoal);
 
 export default router;

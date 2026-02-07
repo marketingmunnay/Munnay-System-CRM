@@ -213,6 +213,8 @@ model Lead {
   direccionFiscal        String?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  createdById            Int?
+  createdBy              User?    @relation("LeadCreatedBy", fields: [createdById], references: [id])
 
   registrosLlamada     RegistroLlamada[]
   tratamientos         Treatment[]
@@ -512,6 +514,8 @@ model User {
   reconocimientosRecibidos   Reconocimiento[]     @relation("RecibidoPor")
   shifts                     Shift[]
   appointments               Appointment[]
+  leadsCreados               Lead[]               @relation("LeadCreatedBy")
+  goalsCreados               Goal[]               @relation("GoalCreatedBy")
 }
 
 model Address {
@@ -582,6 +586,8 @@ model Goal {
   isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  createdById Int?
+  createdBy   User?        @relation("GoalCreatedBy", fields: [createdById], references: [id])
 }
 
 // Catálogos
