@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment, User } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
 import AppointmentWizard from './AppointmentWizard';
 import { getLeads } from '../../services/api';
+import { getUsers } from '../../services/api';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -19,17 +20,6 @@ interface CalendarPageProps {
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
 }
-
-const BLOCKED_TIMES = [
-    {
-        id: 'block-1',
-        recursoId: 'Dr. Carlos',
-        fecha: '2023-11-05',
-        horaInicio: '14:00',
-        horaFin: '17:00',
-        titulo: 'Tareas Administrativas'
-    },
-];
 
 const START_HOUR = 8;
 const END_HOUR = 21;
@@ -96,7 +86,34 @@ interface WizardDefaults {
     resourceId?: string;
 }
 
-const padTime = (value: number) => value.toString().padStart(2, '0');
+const parseWorkSchedule = (schedule: string | null) => {
+    if (!schedule) return null;
+    const match = schedule.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    if (match) {
+        return { start: match[1], end: match[2] };
+    }
+    return null;
+};
+
+const generateShifts = (users: User[], date: Date) => {
+    const dateStr = formatDateForInput(date);
+    if (!dateStr) return [];
+    const shifts = [];
+    for (const user of users) {
+        const schedule = parseWorkSchedule(user.workSchedule);
+        if (schedule) {
+            shifts.push({
+                id: `shift-${user.id}-${dateStr}`,
+                recursoId: `${user.nombres} ${user.apellidos}`,
+                fecha: dateStr,
+                horaInicio: schedule.start,
+                horaFin: schedule.end,
+                titulo: 'Turno programado'
+            });
+        }
+    }
+    return shifts;
+};
 
 const addMinutesToTime = (timeStr: string, minutes: number) => {
     const [hours, mins] = timeStr.split(':').map(Number);
@@ -245,7 +262,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('day');
-    const [visibleResourceIds, setVisibleResourceIds] = useState<string[]>(RESOURCES.map(resource => resource.id));
+    const [users, setUsers] = useState<User[]>([]);
+    const [visibleResourceIds, setVisibleResourceIds] = useState<string[]>([]);
     const [visibleSources, setVisibleSources] = useState<CalendarEvent['source'][]>(FILTER_SOURCE_OPTIONS.map(option => option.id));
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
     const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
@@ -257,11 +275,21 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [wizardDefaults, setWizardDefaults] = useState<WizardDefaults | null>(null);
 
-    const teamMembers = useMemo(() => RESOURCES.filter(resource => resource.type === 'personal'), []);
-    const sharedSpaces = useMemo(() => RESOURCES.filter(resource => resource.type !== 'personal'), []);
+    const dynamicResources = useMemo(() => {
+        const userResources = users.map(user => ({
+            id: `${user.nombres} ${user.apellidos}`,
+            name: `${user.nombres} ${user.apellidos}`,
+            type: 'personal' as const,
+            imageUrl: user.avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+        }));
+        return [...userResources, ...RESOURCES.filter(r => r.type !== 'personal')];
+    }, [users]);
+
+    const teamMembers = useMemo(() => dynamicResources.filter(resource => resource.type === 'personal'), [dynamicResources]);
+    const sharedSpaces = useMemo(() => dynamicResources.filter(resource => resource.type !== 'personal'), [dynamicResources]);
     const visibleResources = useMemo(
-        () => RESOURCES.filter(resource => visibleResourceIds.includes(resource.id)),
-        [visibleResourceIds]
+        () => dynamicResources.filter(resource => visibleResourceIds.includes(resource.id)),
+        [dynamicResources, visibleResourceIds]
     );
 
     useEffect(() => {
@@ -273,6 +301,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             return [...leadEvents, ...appointmentEvents];
         });
     }, [leads]);
+
+    useEffect(() => {
+        setVisibleResourceIds(dynamicResources.map(resource => resource.id));
+    }, [dynamicResources]);
 
     useEffect(() => {
         const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
@@ -397,8 +429,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
     const blocked = useMemo(() => {
         if (!selectedDateStr) return [];
-        return BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr && visibleResourceIds.includes(b.recursoId));
-    }, [selectedDateStr, visibleResourceIds]);
+        const shifts = generateShifts(users, currentDate);
+        return shifts.filter(b => b.fecha === selectedDateStr && visibleResourceIds.includes(b.recursoId));
+    }, [selectedDateStr, visibleResourceIds, users, currentDate]);
 
     const timeSlots = useMemo(() => {
         const slots = [];
