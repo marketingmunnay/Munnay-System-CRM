@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { 
-    getCampaigns, createCampaign, getCampaignById, updateCampaign, deleteCampaign,
-    getMetaCampaigns, createMetaCampaign, getMetaCampaignById, updateMetaCampaign, deleteMetaCampaign
+    getCampaigns, createCampaign, getCampaignById, updateCampaign, deleteCampaign, bulkCreateCampaigns,
+    getMetaCampaigns, createMetaCampaign, getMetaCampaignById, updateMetaCampaign, deleteMetaCampaign, bulkCreateMetaCampaigns
 } from '../controllers/campaigns.controller';
 
 const router = Router();
@@ -9,6 +9,7 @@ const router = Router();
 // MetaCampaigns routes
 router.get('/meta', getMetaCampaigns);
 router.post('/meta', createMetaCampaign);
+router.post('/meta/bulk', bulkCreateMetaCampaigns);
 router.get('/meta/:id', getMetaCampaignById);
 router.put('/meta/:id', updateMetaCampaign);
 router.delete('/meta/:id', deleteMetaCampaign);
@@ -16,6 +17,7 @@ router.delete('/meta/:id', deleteMetaCampaign);
 // Campaigns (Anuncios) routes
 router.get('/', getCampaigns);
 router.post('/', createCampaign);
+router.post('/bulk', bulkCreateCampaigns);
 router.get('/:id', getCampaignById);
 router.put('/:id', updateCampaign);
 router.delete('/:id', deleteCampaign);

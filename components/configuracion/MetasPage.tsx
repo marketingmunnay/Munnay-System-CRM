@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import type { Goal } from '../../types.ts';
-import { GoalArea } from '../../types.ts';
+import type { Goal, User } from '../../types.ts';
+import { GoalArea, GoalAreaLabels, GoalObjectiveLabels } from '../../types.ts';
 import GoalFormModal from './GoalFormModal.tsx';
 import { PlusIcon } from '../shared/Icons.tsx';
+import { formatDateForDisplay } from '../../utils/time.ts';
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
@@ -11,12 +12,13 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
 
 interface MetasPageProps {
     goals: Goal[];
-    onSaveGoal: (goal: Goal) => void;
-    onDeleteGoal: (goalId: number) => void;
+    users: User[];
+    onSaveGoal: (goal: Goal) => Promise<void> | void;
+    onDeleteGoal: (goalId: number) => Promise<void> | void;
     requestConfirmation: (message: string, onConfirm: () => void) => void;
 }
 
-const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, requestConfirmation }) => {
+const MetasPage: React.FC<MetasPageProps> = ({ goals, users, onSaveGoal, onDeleteGoal, requestConfirmation }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
@@ -37,15 +39,26 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, 
         setIsModalOpen(true);
     };
 
-    const handleSaveAndClose = (goal: Goal) => {
-        onSaveGoal(goal);
-        setIsModalOpen(false);
+    const handleSaveAndClose = async (goal: Goal) => {
+        try {
+            await Promise.resolve(onSaveGoal(goal));
+            setIsModalOpen(false);
+            setEditingGoal(null);
+        } catch (error) {
+            console.error('Error al guardar la meta:', error);
+            alert('No se pudo guardar la meta. Inténtalo nuevamente.');
+        }
     };
     
     const handleDeleteGoalWithConfirmation = (goal: Goal) => {
         requestConfirmation(
             `¿Estás seguro de que quieres eliminar la meta "${goal.name}"?`,
-            () => onDeleteGoal(goal.id)
+            () => {
+                Promise.resolve(onDeleteGoal(goal.id)).catch(error => {
+                    console.error('Error al eliminar la meta:', error);
+                    alert('No se pudo eliminar la meta. Inténtalo nuevamente.');
+                });
+            }
         );
     };
 
@@ -70,43 +83,43 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, 
             </div>
 
             <div className="space-y-6">
-                {Object.values(GoalArea).map(area => (
+                {(Object.values(GoalArea) as GoalArea[]).map(area => (
                     <div key={area}>
                         <h3 className="text-lg font-semibold text-black mb-3 flex items-center">
                              <GoogleIcon name={areaIcons[area]} className="mr-2 text-gray-500" />
-                             {area}
+                             {GoalAreaLabels[area]}
                         </h3>
-                        <div className="bg-white p-4 rounded-lg shadow">
-                            <table className="w-full text-sm">
+                        <div className="bg-white p-3 rounded-lg shadow">
+                            <table className="w-full text-xs">
                                 <thead className="text-left text-xs text-gray-700 uppercase bg-gray-50">
                                     <tr>
-                                        <th className="p-2">Nombre de la Meta</th>
-                                        <th className="p-2">Objetivo Medido</th>
-                                        <th className="p-2">Personal Asignado</th>
-                                        <th className="p-2">Periodo</th>
-                                        <th className="p-2">Valor</th>
-                                        <th className="p-2 w-28">Acciones</th>
+                                        <th className="px-2 py-1.5">Nombre de la Meta</th>
+                                        <th className="px-2 py-1.5">Objetivo Medido</th>
+                                        <th className="px-2 py-1.5">Personal Asignado</th>
+                                        <th className="px-2 py-1.5">Periodo</th>
+                                        <th className="px-2 py-1.5">Valor</th>
+                                        <th className="px-2 py-1.5 w-20">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {(groupedGoals[area] || []).map(goal => (
                                         <tr key={goal.id} className="border-b last:border-b-0">
-                                            <td className="p-2 font-medium text-black">{goal.name}</td>
-                                            <td className="p-2 text-gray-600">{goal.objective}</td>
-                                            <td className="p-2 text-gray-600">{goal.personal || 'General'}</td>
-                                            <td className="p-2 text-gray-600">
-                                                {new Date(goal.startDate + 'T00:00:00').toLocaleDateString('es-PE')} - {new Date(goal.endDate + 'T00:00:00').toLocaleDateString('es-PE')}
+                                            <td className="px-2 py-1.5 font-medium text-black">{goal.name}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">{GoalObjectiveLabels[goal.objective]}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">{goal.personal || 'General'}</td>
+                                            <td className="px-2 py-1.5 text-gray-600">
+                                                {goal.startDate ? formatDateForDisplay(goal.startDate) : 'N/A'} - {goal.endDate ? formatDateForDisplay(goal.endDate) : 'N/A'}
                                             </td>
-                                            <td className="p-2 text-black font-semibold">
+                                            <td className="px-2 py-1.5 text-black font-semibold">
                                                 {goal.value.toLocaleString('es-PE')} {goal.unit === 'porcentaje' ? '%' : ''}
                                             </td>
-                                            <td className="p-2">
-                                                <div className="flex items-center space-x-2">
-                                                    <button onClick={() => handleEditGoal(goal)} className="text-blue-600 hover:text-blue-800 p-1" title="Editar">
-                                                        <GoogleIcon name="edit" className="text-lg" />
+                                            <td className="px-2 py-1.5">
+                                                <div className="flex items-center space-x-1">
+                                                    <button onClick={() => handleEditGoal(goal)} className="text-blue-600 hover:text-blue-800 p-0.5" title="Editar">
+                                                        <GoogleIcon name="edit" className="text-base" />
                                                     </button>
-                                                    <button onClick={() => handleDeleteGoalWithConfirmation(goal)} className="text-red-600 hover:text-red-800 p-1" title="Eliminar">
-                                                        <GoogleIcon name="delete" className="text-lg" />
+                                                    <button onClick={() => handleDeleteGoalWithConfirmation(goal)} className="text-red-600 hover:text-red-800 p-0.5" title="Eliminar">
+                                                        <GoogleIcon name="delete" className="text-base" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -114,7 +127,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, 
                                     ))}
                                      {(!groupedGoals[area] || groupedGoals[area].length === 0) && (
                                         <tr>
-                                            <td colSpan={6} className="text-center p-4 text-gray-500">No hay metas definidas para esta área.</td>
+                                            <td colSpan={6} className="text-center py-3 text-gray-500">No hay metas definidas para esta área.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -129,6 +142,7 @@ const MetasPage: React.FC<MetasPageProps> = ({ goals, onSaveGoal, onDeleteGoal, 
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveAndClose}
                 goal={editingGoal}
+                users={users}
             />
         </div>
     );

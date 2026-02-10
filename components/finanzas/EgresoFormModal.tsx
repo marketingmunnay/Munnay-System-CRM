@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Egreso, Proveedor, EgresoCategory } from '../../types.ts';
-import { TipoComprobante, ModoPagoEgreso } from '../../types.ts';
+import { TipoComprobante, ModoPagoEgreso, TIPO_COMPROBANTE_LABELS, MODO_PAGO_EGRESO_LABELS } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 import { TrashIcon } from '../shared/Icons.tsx';
+import { formatDateForInput } from '../../utils/time.ts';
 
 interface EgresoFormModalProps {
   isOpen: boolean;
@@ -20,16 +21,46 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
+const tipoComprobanteOptions = [
+    { value: TipoComprobante.Factura, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.Factura] },
+    { value: TipoComprobante.Boleta, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.Boleta] },
+    { value: TipoComprobante.ReciboHonorarios, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.ReciboHonorarios] },
+    { value: TipoComprobante.SinComprobante, label: TIPO_COMPROBANTE_LABELS[TipoComprobante.SinComprobante] },
+];
+
+const modoPagoOptions = [
+    { value: '', label: 'Sin especificar' },
+    { value: ModoPagoEgreso.Efectivo, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Efectivo] },
+    { value: ModoPagoEgreso.Transferencia, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Transferencia] },
+    { value: ModoPagoEgreso.Tarjeta, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Tarjeta] },
+    { value: ModoPagoEgreso.Yape, label: MODO_PAGO_EGRESO_LABELS[ModoPagoEgreso.Yape] },
+];
+
 export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egreso, proveedores, egresoCategories, requestConfirmation }: EgresoFormModalProps) {
   const [formData, setFormData] = useState<Partial<Egreso>>({});
+
+  // Filtrar proveedores según la categoría seleccionada - SOLO proveedores de esa categoría
+  const filteredProveedores = formData.categoria 
+    ? proveedores.filter(p => p.categoriaEgreso === formData.categoria)
+    : proveedores;
 
   useEffect(() => {
     if (isOpen) {
         if (egreso) {
-            setFormData(egreso);
+            // Convertir fechas ISO a formato YYYY-MM-DD para inputs type="date"
+            const formatDateForInput = (dateStr?: string): string => {
+                if (!dateStr) return '';
+                // Si la fecha viene en formato ISO (2025-11-11T00:00:00.000Z), extraer solo la parte de fecha
+                return dateStr.split('T')[0];
+            };
+
+            setFormData({
+                ...egreso,
+                fechaRegistro: formatDateForInput(egreso.fechaRegistro),
+                fechaPago: formatDateForInput(egreso.fechaPago)
+            });
         } else {
             setFormData({
-                id: Date.now(),
                 fechaRegistro: new Date().toISOString().split('T')[0],
                 fechaPago: new Date().toISOString().split('T')[0],
                 categoria: egresoCategories[0]?.nombre || '',
@@ -47,6 +78,42 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
     const { name, value, type } = e.target;
     
     let newFormData = { ...formData, [name]: type === 'number' ? Number(value) : value };
+
+    if (name === 'modoPago' && value === '') {
+        newFormData.modoPago = undefined;
+    }
+
+    // Si cambia la categoría, resetear el proveedor si el actual no está en la nueva lista filtrada
+    if (name === 'categoria' && formData.proveedor) {
+        const proveedoresDisponibles = proveedores.filter(p => p.categoriaEgreso === value);
+        const proveedorActualDisponible = proveedoresDisponibles.find(p => p.razonSocial === formData.proveedor);
+        if (!proveedorActualDisponible) {
+            newFormData.proveedor = '';
+            newFormData.fechaPago = '';
+        }
+    }
+
+    // Calcular automáticamente la fecha de pago cuando se selecciona un proveedor
+    if (name === 'proveedor' && value) {
+        const proveedorSeleccionado = proveedores.find(p => p.razonSocial === value);
+        if (proveedorSeleccionado?.diasCredito && formData.fechaRegistro) {
+            const fechaRegistro = new Date(formData.fechaRegistro);
+            const fechaPago = new Date(fechaRegistro);
+            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
+            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+        }
+    }
+
+    // Recalcular fecha de pago si cambia la fecha de registro y hay un proveedor seleccionado
+    if (name === 'fechaRegistro' && formData.proveedor) {
+        const proveedorSeleccionado = proveedores.find(p => p.razonSocial === formData.proveedor);
+        if (proveedorSeleccionado?.diasCredito) {
+            const fechaRegistro = new Date(value);
+            const fechaPago = new Date(fechaRegistro);
+            fechaPago.setDate(fechaPago.getDate() + proveedorSeleccionado.diasCredito);
+            newFormData.fechaPago = fechaPago.toISOString().split('T')[0];
+        }
+    }
 
     if (name === 'montoTotal' || name === 'montoPagado') {
         const montoTotal = name === 'montoTotal' ? Number(value) : (newFormData.montoTotal || 0);
@@ -68,8 +135,8 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.proveedor || !formData.descripcion || !formData.montoTotal || !formData.fechaPago) {
-      alert('Proveedor, Descripción, Fecha de Pago y Monto Total son campos requeridos.');
+    if (!formData.proveedor || !formData.descripcion || !formData.montoTotal) {
+      alert('Proveedor, Descripción y Monto Total son campos requeridos.');
       return;
     }
     onSave(formData as Egreso);
@@ -96,7 +163,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     type={type}
                     id={name}
                     name={name}
-                    value={String(formData[name] ?? '')}
+                    value={formatDateForInput(formData[name] as string) || ''}
                     onChange={handleChange}
                     required={required}
                     className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -149,7 +216,26 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                 <legend className="text-md font-bold px-2 text-black">Información General</legend>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     {renderFormField('Fecha de Registro', 'fechaRegistro', 'date', [], true)}
-                    {renderFormField('Fecha de Pago', 'fechaPago', 'date', [], true)}
+                    <div className="flex flex-col">
+                        <label htmlFor="fechaPago" className="mb-1 text-sm font-medium text-gray-700">
+                            Fecha de Pago <span className="text-gray-400 text-xs">(Opcional)</span>
+                            {formData.proveedor && proveedores.find(p => p.razonSocial === formData.proveedor)?.diasCredito && (
+                                <span className="ml-2 text-xs text-green-600">
+                                    <GoogleIcon name="schedule" className="text-xs" /> Auto-calculada
+                                </span>
+                            )}
+                        </label>
+                        <input
+                            type="date"
+                            id="fechaPago"
+                            name="fechaPago"
+                            value={formatDateForInput(formData.fechaPago) || ''}
+                            onChange={handleChange}
+                            className="w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
+                            style={{ colorScheme: 'light' }}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Se calcula automáticamente según días de crédito del proveedor</p>
+                    </div>
                     
                     <div className="flex flex-col">
                         <label htmlFor="categoria" className="mb-1 text-sm font-medium text-gray-700">Categoría<span className="text-red-500">*</span></label>
@@ -159,7 +245,14 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                     </div>
                     
                     <div className="flex flex-col">
-                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">Proveedor<span className="text-red-500">*</span></label>
+                        <label htmlFor="proveedor" className="mb-1 text-sm font-medium text-gray-700">
+                            Proveedor<span className="text-red-500">*</span>
+                            {formData.categoria && filteredProveedores.length < proveedores.length && (
+                                <span className="ml-2 text-xs text-blue-600">
+                                    <GoogleIcon name="filter_alt" className="text-xs" /> Filtrado por categoría
+                                </span>
+                            )}
+                        </label>
                         <select 
                             id="proveedor" 
                             name="proveedor" 
@@ -169,8 +262,11 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                             className="border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
                             <option value="">Seleccionar proveedor...</option>
-                            {proveedores.map(p => <option key={p.id} value={p.razonSocial}>{p.razonSocial}</option>)}
+                            {filteredProveedores.map(p => <option key={p.id} value={p.razonSocial}>{p.razonSocial}</option>)}
                         </select>
+                        {filteredProveedores.length === 0 && formData.categoria && (
+                            <p className="mt-1 text-xs text-orange-600">No hay proveedores con esta categoría</p>
+                        )}
                     </div>
                     <div className="md:col-span-2">
                         <label htmlFor="descripcion" className="mb-1 text-sm font-medium text-gray-700">Descripción<span className="text-red-500">*</span></label>
@@ -186,7 +282,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
             <fieldset className="border p-4 rounded-md">
                  <legend className="text-md font-bold px-2 text-black">Detalles del Comprobante</legend>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                    {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', Object.values(TipoComprobante).map(v => ({ value: v, label: v})))}
+                    {renderFormField('Tipo de Comprobante', 'tipoComprobante', 'select', tipoComprobanteOptions)}
                     {renderFormField('Serie', 'serieComprobante')}
                     {renderFormField('Número', 'nComprobante')}
                  </div>
@@ -208,7 +304,7 @@ export default function EgresoFormModal({ isOpen, onClose, onSave, onDelete, egr
                         <label htmlFor="deuda" className="mb-1 text-sm font-medium text-gray-700">Deuda</label>
                         <input type="number" id="deuda" name="deuda" value={formData.deuda || 0} readOnly className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 bg-gray-100 font-bold text-red-600"/>
                     </div>
-                    {renderFormField('Modo de Pago', 'modoPago', 'select', Object.values(ModoPagoEgreso).map(v=>({value: v, label: v})))}
+                    {renderFormField('Modo de Pago', 'modoPago', 'select', modoPagoOptions)}
                  </div>
             </fieldset>
             

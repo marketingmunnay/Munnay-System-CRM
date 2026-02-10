@@ -24,53 +24,47 @@ type NavItem = {
 const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <GoogleIcon name="home" className="text-xl" />, page: 'dashboard' },
     { id: 'calendario', label: 'Calendario', icon: <GoogleIcon name="calendar_month" className="text-xl" />, page: 'calendario' },
+    { id: 'tareas', label: 'Tareas', icon: <GoogleIcon name="task" className="text-xl" />, page: 'tareas' },
     { 
         id: 'marketing', label: 'Comercial', icon: <GoogleIcon name="campaign" className="text-xl" />, subItems: [
             { id: 'marketing-campanas', label: 'Campañas', page: 'marketing-campanas' },
             { id: 'marketing-leads', label: 'Leads', page: 'marketing-leads' },
-            {
-                id: 'redes-sociales',
-                label: 'Redes Sociales',
-                subItems: [
-                    { id: 'redes-sociales-publicaciones', label: 'Publicaciones', page: 'redes-sociales-publicaciones' },
-                    { id: 'redes-sociales-seguidores', label: 'Seguidores', page: 'redes-sociales-seguidores' },
-                ]
-            },
             { id: 'procedimientos-ventas-extra', label: 'Ventas', page: 'procedimientos-ventas-extra' },
+            { id: 'redes-sociales-publicaciones', label: 'Publicaciones', page: 'redes-sociales-publicaciones' },
+            { id: 'redes-sociales-seguidores', label: 'Seguidores', page: 'redes-sociales-seguidores' },
+        ]
+    },
+    { 
+        id: 'recepcion', 
+        label: 'Recepción',
+        icon: <GoogleIcon name="meeting_room" className="text-xl" />,
+        subItems: [
+            { id: 'recepcion-agendados', label: 'Asistidos', page: 'recepcion-agendados' },
+            { id: 'recepcion-ventas-extra', label: 'Ventas Recepción', page: 'recepcion-ventas-extra' },
+            { id: 'recepcion-incidencias', label: 'Incidencias', page: 'recepcion-incidencias' },
         ]
     },
     {
-        id: 'administracion', label: 'Administración', icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />, subItems: [
-            { 
-                id: 'recepcion', 
-                label: 'Recepción', 
-                subItems: [
-                    { id: 'recepcion-agendados', label: 'Agendados', page: 'recepcion-agendados' },
-                    { id: 'recepcion-ventas-extra', label: 'Recuperados', page: 'recepcion-ventas-extra' },
-                    { id: 'recepcion-incidencias', label: 'Incidencias', page: 'recepcion-incidencias' },
-                ]
-            },
-            {
-                id: 'contabilidad',
-                label: 'Contabilidad',
-                subItems: [
-                     { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
-                     { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
-                ]
-            },
-        ]
-    },
-     {
-        id: 'rrhh', label: 'Recursos Humanos', icon: <GoogleIcon name="manage_accounts" className="text-xl" />, subItems: [
-            { id: 'rrhh-perfiles', label: 'Perfiles de Equipo', page: 'rrhh-perfiles' },
-        ]
-    },
-    {
-        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="digital_wellbeing" className="text-xl" />, subItems: [
+        id: 'procedimientos', label: 'Procedimientos', icon: <GoogleIcon name="medical_services" className="text-xl" />, subItems: [
             { id: 'procedimientos-atenciones', label: 'Atenciones Diarias', page: 'procedimientos-atenciones' },
             { id: 'procedimientos-seguimiento', label: 'Seguimiento', page: 'procedimientos-seguimiento' },
             { id: 'procedimientos-incidencias', label: 'Incidencias', page: 'procedimientos-incidencias' },
-            { id: 'pacientes-historia', label: 'Historia Pacientes', page: 'pacientes-historia' },
+            { id: 'pacientes-historia', label: 'Historia de Pacientes', page: 'pacientes-historia' },
+        ]
+    },
+    {
+        id: 'administracion',
+        label: 'Administración',
+        icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />,
+        subItems: [
+             { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
+             { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
+             { id: 'administracion-inventario', label: 'Inventario', page: 'administracion-inventario' },
+        ]
+    },
+    {
+        id: 'rrhh', label: 'Recursos Humanos', icon: <GoogleIcon name="groups" className="text-xl" />, subItems: [
+            { id: 'rrhh-perfiles', label: 'Perfil de Equipo', page: 'rrhh-perfiles' },
         ]
     },
     { id: 'informes', label: 'Informes', icon: <GoogleIcon name="bar_chart_4_bars" className="text-xl" />, page: 'informes' },
@@ -83,6 +77,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
     const filteredNavItems = useMemo(() => {
         const userPermissions = new Set(['dashboard', ...permissions]);
 
+        // Forzar que 'administracion-inventario' siempre esté visible
+        const forceVisiblePages = new Set(['administracion-inventario']);
+
         const filterRecursively = (items: NavItem[]): NavItem[] => {
             return items
                 .map(item => {
@@ -92,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                             return { ...item, subItems: filteredSubs };
                         }
                     }
-                    if (item.page && userPermissions.has(item.page)) {
+                    if (item.page && (userPermissions.has(item.page) || forceVisiblePages.has(item.page))) {
                         return item;
                     }
                     return null;
@@ -102,6 +99,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
 
         return filterRecursively(navItems);
     }, [permissions]);
+
+    const topLevelMenuIds = useMemo(
+        () => filteredNavItems.filter(item => item.subItems).map(item => item.id),
+        [filteredNavItems]
+    );
 
     const isSubItemActive = (item: NavItem): boolean => {
         if (item.page && item.page === currentPage) {
@@ -130,14 +132,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
         };
         const ancestors = findAncestors(navItems, currentPage);
         if (ancestors) {
-            setOpenMenus(prev => [...new Set([...prev, ...ancestors])]);
+            setOpenMenus(prev => {
+                const next = [...new Set([...prev, ...ancestors])];
+                const activeTopLevel = ancestors.find(id => topLevelMenuIds.includes(id));
+                if (!activeTopLevel) {
+                    return next;
+                }
+                return next.filter(menuId => !topLevelMenuIds.includes(menuId) || menuId === activeTopLevel);
+            });
         }
-    }, [currentPage]);
+    }, [currentPage, topLevelMenuIds]);
     
     const toggleMenu = (id: string) => {
-        setOpenMenus(prev => 
-            prev.includes(id) ? prev.filter(menuId => menuId !== id) : [...prev, id]
-        );
+        setOpenMenus(prev => {
+            const isOpen = prev.includes(id);
+            const isTopLevel = topLevelMenuIds.includes(id);
+
+            if (isOpen) {
+                return prev.filter(menuId => menuId !== id);
+            }
+
+            if (isTopLevel) {
+                const preservedNested = prev.filter(menuId => !topLevelMenuIds.includes(menuId));
+                return [...preservedNested, id];
+            }
+
+            return [...prev, id];
+        });
     };
 
     return (
@@ -149,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                     businessInfo?.logoUrl && <img src={businessInfo.logoUrl} alt="Logo" className="h-10" />
                 )}
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            <nav className="flex-1 overflow-y-auto p-4 pb-20 space-y-2">
                 {filteredNavItems.map(item => (
                     <React.Fragment key={item.id}>
                         {item.id === 'informes' && <hr className="!my-4 border-gray-200" />}
@@ -232,6 +253,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                     </React.Fragment>
                 ))}
             </nav>
+            
+            {/* Version info at bottom */}
+            {!isCollapsed && (
+                <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 bg-gray-50">
+                    <div className="text-xs text-gray-500">
+                        <div className="font-normal">
+                            Versión: {import.meta.env.VITE_GIT_COMMIT_HASH || '24a5a4'}
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                            {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, ' - ')}
+                        </div>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 };

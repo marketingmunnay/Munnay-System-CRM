@@ -43,7 +43,7 @@ export const createGoal = async (req: Request, res: Response) => {
 
 export const updateGoal = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { startDate, endDate, ...data } = req.body;
+  const { id: _, startDate, endDate, ...data } = req.body; // Exclude id from update data
   try {
     const updatedGoal = await prisma.goal.update({
       where: { id: id },

@@ -10,9 +10,10 @@ interface RecepcionDashboardProps {
     leads: Lead[];
     ventasExtra: VentaExtra[];
     incidencias: Incidencia[];
+    dateRange: { from: string; to: string };
 }
 
-const RecepcionDashboard: React.FC<RecepcionDashboardProps> = ({ leads, ventasExtra, incidencias }) => {
+const RecepcionDashboard: React.FC<RecepcionDashboardProps> = ({ leads, ventasExtra, incidencias, dateRange }) => {
     const stats = useMemo(() => {
         const totalIncidencias = incidencias.length;
 

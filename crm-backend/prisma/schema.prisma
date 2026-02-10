@@ -109,8 +109,8 @@ enum NotificationType {
 }
 
 enum GoalUnit {
-  Cantidad
-  Porcentaje
+  cantidad
+  porcentaje
 }
 
 enum GoalArea {
@@ -145,49 +145,65 @@ enum GoalObjective {
 // MODELS
 
 model Lead {
-  id                 Int      @id @default(autoincrement())
-  fechaLead          DateTime
-  nombres            String
-  apellidos          String
-  numero             String
-  sexo               String
-  redSocial          String
-  anuncio            String
-  vendedor           Seller
-  estado             LeadStatus
-  montoPagado        Float    @default(0)
-  metodoPago         MetodoPago?
-  fechaHoraAgenda    DateTime?
-  servicios          String[]
-  categoria          String
-  fechaVolverLlamar  DateTime?
-  horaVolverLlamar   String?
-  notas              String?  @db.Text
-  nHistoria          String?  @unique
-  aceptoTratamiento  String?
-  motivoNoCierre     String?
-  estadoRecepcion    ReceptionStatus?
-  recursoId          String?
-  birthDate          DateTime?
-  precioCita         Float?
-  deudaCita          Float?
-  metodoPagoDeuda    MetodoPago?
-  documentType       DocumentType?
-  documentNumber     String?
-  razonSocial        String?
-  direccionFiscal    String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  fechaLead              DateTime
+  nombres                String
+  apellidos              String
+  numero                 String
+  email                  String?
+  sexo                   String
+  redSocial              String
+  anuncio                String
+  vendedor               Seller
+  estado                 LeadStatus
+  montoPagado            Float    @default(0)
+  metodoPago             MetodoPago?
+  fechaHoraAgenda        DateTime?
+  servicios              String[]
+  categoria              String
+  profesionalAsignado    String?
+  observacionesGenerales String?  @db.Text
+  fechaVolverLlamar      DateTime?
+  horaVolverLlamar       String?
+  notas                  String?  @db.Text
+  nHistoria              String?  @unique
+  aceptoTratamiento      String?
+  motivoNoCierre         String?
+  estadoRecepcion        ReceptionStatus?
+  recursoId              String?
+  birthDate              DateTime?
+  precioCita             Float?
+  deudaCita              Float?
+  metodoPagoDeuda        MetodoPago?
+  documentType           DocumentType?
+  documentNumber         String?
+  razonSocial            String?
+  direccionFiscal        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   registrosLlamada     RegistroLlamada[]
   tratamientos         Treatment[]
   procedimientos       Procedure[]
   seguimientos         Seguimiento[]
   alergias             Alergia[]
-  membresiasAdquiridas Membership[]
+  membresiasAdquiridas LeadMembership[]
   comprobantes         ComprobanteElectronico[]
   ventasExtra          VentaExtra[]
   incidencias          Incidencia[]
+  pagosRecepcion       PagoRecepcion[]
+}
+
+model PagoRecepcion {
+  id          Int        @id @default(autoincrement())
+  monto       Float
+  metodoPago  MetodoPago
+  fechaPago   DateTime   @default(now())
+  observacion String?    @db.Text
+  leadId      Int
+  lead        Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model RegistroLlamada {
@@ -201,8 +217,9 @@ model RegistroLlamada {
 }
 
 model Treatment {
-  id               Int        @id @default(autoincrement())
+  id               BigInt     @id @default(autoincrement())
   nombre           String
+  tipo             String?    @default("Servicio")
   cantidadSesiones Int
   precio           Float
   montoPagado      Float
@@ -218,7 +235,7 @@ model Procedure {
   personal          String
   horaInicio        String
   horaFin           String
-  tratamientoId     Int
+  tratamientoId     BigInt
   nombreTratamiento String
   sesionNumero      Int
   asistenciaMedica  Boolean
@@ -369,7 +386,7 @@ model ComprobanteItem {
 model Egreso {
   id               Int       @id @default(autoincrement())
   fechaRegistro    DateTime
-  fechaPago        DateTime
+  fechaPago        DateTime?
   proveedor        String
   categoria        String
   descripcion      String
@@ -386,11 +403,13 @@ model Egreso {
 }
 
 model Proveedor {
-  id             Int    @id @default(autoincrement())
-  razonSocial    String @unique
-  ruc            String @unique
-  tipo           String
-  numeroContacto String
+  id              Int     @id @default(autoincrement())
+  razonSocial     String  @unique
+  ruc             String?
+  tipo            String
+  numeroContacto  String?
+  diasCredito     Int?
+  categoriaEgreso String?
 }
 
 model TipoProveedor {
@@ -405,17 +424,43 @@ model User {
   usuario             String    @unique
   password            String
   rolId               Int
-  avatarUrl String  @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
-  position            String?
+  avatarUrl           String    @default("https://cdn-icons-png.flaticon.com/512/149/149071.png")
+  
+  // Datos Personales
   documentType        DocumentType?
   documentNumber      String?
-  phone               String?
   birthDate           DateTime?
-  startDate           DateTime?
-  salary              Float?
-  contractType        String?
-  maritalStatus       String?
+  nationality         String?
   sex                 String?
+  maritalStatus       String?
+  phone               String?
+  email               String?
+  
+  // Datos Laborales
+  position            String?
+  startDate           DateTime?
+  endDate             DateTime?
+  contractType        String?
+  workday             String?
+  workSchedule        String?
+  directBoss          String?
+  workCenter          String?
+  employeeCode        String?
+  
+  // Datos Salariales
+  salary              Float?
+  bonuses             Float?
+  currency            String?
+  bankName            String?
+  accountType         String?
+  accountNumber       String?
+  paymentMethod       String?
+  laborRegime         String?
+  afpType             String?
+  afpCode             String?
+  afpPercentage       Float?
+  healthInsurance     String?
+  
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -514,24 +559,199 @@ model JobPosition {
 }
 
 model Service {
-  id        Int    @id @default(autoincrement())
-  nombre    String @unique
-  categoria String
-  precio    Float
+  id               Int     @id @default(autoincrement())
+  nombre           String  @unique
+  categoria        String
+  precio           Float
+  duracionMinutos  Int     @default(60)
+  descripcion      String? @db.Text
+}
+
+enum TipoProducto {
+  venta
+  insumo
 }
 
 model Product {
-  id        Int    @id @default(autoincrement())
-  nombre    String @unique
-  categoria String
-  precio    Float
+  id             Int      @id @default(autoincrement())
+  nombre         String   @unique
+  categoria      String
+  precio         Float
+  descripcion    String?  @db.Text
+  
+  // CAMPOS ACTIVADOS
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tipo           TipoProducto?
+  costoCompra    Float?
+  precioVenta    Float?
+  stockActual    Int?
+  stockMinimo    Int?
+  stockCritico   Int?
+  movimientos    MovimientoStock[]
 }
 
+model MovimientoStock {
+  id              Int      @id @default(autoincrement())
+  productoId      Int
+  producto        Product  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  tipoMovimiento  String   // "entrada" o "salida"
+  cantidad        Int
+  costoUnitario   Float    @default(0)
+  precioUnitario  Float    @default(0)
+  motivo          String   @db.Text
+  fecha           DateTime @default(now())
+  creadoPor       String?  // Usuario que registró el movimiento
+  ventaExtraId    Int?     // Referencia opcional a venta
+  procedimientoId Int?     // Referencia opcional a procedimiento
+  createdAt       DateTime @default(now())
+}
+
+// Catálogo de membresías disponibles (configuración global)
 model Membership {
-  id             Int    @id @default(autoincrement())
-  nombre         String @unique
+  id              Int                      @id @default(autoincrement())
+  nombre          String                   @unique
+  descripcion     String                   @db.Text
+  precioTotal     Float                    @default(0)
+  servicios       MembershipService[]      // Servicios incluidos en la membresía
+  leadMemberships LeadMembership[]         // Membresías adquiridas por leads
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+}
+
+// Servicios incluidos en una membresía
+model MembershipService {
+  id             Int        @id @default(autoincrement())
+  membershipId   Int
+  membership     Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  servicioNombre String
   precio         Float
+  precioCita     Float?
   numeroSesiones Int
-  descripcion    String
-  leads          Lead[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// Membresías adquiridas por un lead
+model LeadMembership {
+  id           Int        @id @default(autoincrement())
+  leadId       Int
+  lead         Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  membershipId Int
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  fechaCompra  DateTime   @default(now())
+  precioTotal  Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// ========================================
+// MÓDULO DE INVENTARIO INTELIGENTE
+// ========================================
+
+// Configuración de inventario del producto
+model ConfiguracionProducto {
+  id                  Int      @id @default(autoincrement())
+  productoId          Int      @unique @map("productoid")
+  stockActual         Int      @default(0) @map("stockactual")
+  stockMinimo         Int      @default(5) @map("stockminimo")
+  unidadMedida        String   @default("unidades") @map("unidadmedida") // unidades, cajas, paquetes, blister, ml, g, litros
+  equivalenciaBase    Float    @default(1) @map("equivalenciabase") // Para conversiones (ej: 1 caja = 10 unidades)
+  costoUnitario       Float    @default(0) @map("costounitario")
+  aplicaIGV           Boolean  @default(true) @map("aplicaigv")
+  igvPorcentaje       Float    @default(18) @map("igvporcentaje")
+  alertasActivas      Boolean  @default(true) @map("alertasactivas")
+  createdAt           DateTime @default(now()) @map("createdat")
+  updatedAt           DateTime @updatedAt @map("updatedat")
+
+  movimientos         MovimientoInventario[]
+  alertas             AlertaStock[]
+
+  @@map("configuracionproducto")
+}
+
+// Movimientos de entrada/salida de inventario
+model MovimientoInventario {
+  id                      Int      @id @default(autoincrement())
+  configuracionProductoId Int      @map("configuracionproductoid")
+  configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
+  
+  tipoMovimiento          String   @map("tipomovimiento") // "entrada", "salida", "ajuste", "reserva", "devolucion"
+  cantidad                Int
+  stockAnterior           Int      @map("stockanterior")
+  stockNuevo              Int      @map("stocknuevo")
+  
+  costoUnitario           Float    @default(0) @map("costounitario")
+  precioVenta             Float    @default(0) @map("precioventa")
+  
+  motivo                  String   @db.Text
+  referencia              String?  // ID de venta, compra, etc.
+  
+  creadoPor               String?  @map("creadopor")
+  createdAt               DateTime @default(now()) @map("createdat")
+
+  @@map("movimientoinventario")
+}
+
+// Pagos parciales de productos
+model PagoProducto {
+  id                Int      @id @default(autoincrement())
+  productoId        Int      @map("productoid")
+  nHistoria         String   @map("nhistoria") // Lead/Paciente
+  
+  montoTotal        Float    @map("montototal")
+  montoPagado       Float    @default(0) @map("montopagado")
+  saldoPendiente    Float    @map("saldopendiente")
+  
+  estadoPago        String   @map("estadopago") // "pendiente", "parcial", "completado", "cancelado"
+  estadoProducto    String   @map("estadoproducto") // "reservado", "pendiente_entrega", "entregado", "pendiente_stock"
+  
+  esPrepago         Boolean  @default(false) @map("esprepago") // Si es pago adelantado sin stock
+  fechaPago         DateTime @default(now()) @map("fechapago")
+  fechaEntrega      DateTime? @map("fechaentrega")
+  
+  historialPagos    HistorialPagoProducto[]
+  
+  observaciones     String?  @db.Text
+  createdAt         DateTime @default(now()) @map("createdat")
+  updatedAt         DateTime @updatedAt @map("updatedat")
+
+  @@map("pagoproducto")
+}
+
+// Historial de abonos a productos
+model HistorialPagoProducto {
+  id              Int      @id @default(autoincrement())
+  pagoProductoId  Int      @map("pagoproductoid")
+  pagoProducto    PagoProducto @relation(fields: [pagoProductoId], references: [id], onDelete: Cascade)
+  
+  montoAbonado    Float    @map("montoabonado")
+  metodoPago      String   @map("metodopago") // "Efectivo", "Transferencia", "Tarjeta", "Yape"
+  fechaPago       DateTime @default(now()) @map("fechapago")
+  registradoPor   String?  @map("registradopor")
+  observaciones   String?  @db.Text
+  
+  createdAt       DateTime @default(now()) @map("createdat")
+
+  @@map("historialpagoproducto")
+}
+
+// Alertas de stock bajo
+model AlertaStock {
+  id                      Int      @id @default(autoincrement())
+  configuracionProductoId Int      @map("configuracionproductoid")
+  configuracionProducto   ConfiguracionProducto @relation(fields: [configuracionProductoId], references: [id], onDelete: Cascade)
+  
+  tipoAlerta              String   @map("tipoalerta") // "stock_bajo", "stock_critico", "stock_cero"
+  mensaje                 String   @db.Text
+  stockActual             Int      @map("stockactual")
+  stockMinimo             Int      @map("stockminimo")
+  
+  visto                   Boolean  @default(false)
+  resuelto                Boolean  @default(false)
+  
+  createdAt               DateTime @default(now()) @map("createdat")
+  resolvidoAt             DateTime? @map("resolvidoat")
+
+  @@map("alertastock")
 }

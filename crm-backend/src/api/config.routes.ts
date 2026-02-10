@@ -3,6 +3,9 @@ import * as controller from '../controllers/config.controller';
 
 const router = Router();
 
+// Migrations
+router.post('/migrate-service-columns', controller.migrateServiceColumns);
+
 // Business Info
 router.get('/business-info', controller.getBusinessInfo);
 router.put('/business-info', controller.updateBusinessInfo);
@@ -35,6 +38,9 @@ router.delete('/memberships/:id', controller.deleteMembership);
 // Service Categories
 router.get('/service-categories', controller.getServiceCategories);
 router.post('/service-categories', controller.createServiceCategory);
+
+// Bulk import de servicios
+router.post('/services/bulk', controller.bulkImportServices);
 router.put('/service-categories/:id', controller.updateServiceCategory);
 router.delete('/service-categories/:id', controller.deleteServiceCategory);
 

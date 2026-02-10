@@ -11,6 +11,7 @@ interface RecursosHumanosDashboardProps {
     users: User[];
     roles: Role[];
     goals: Goal[];
+    dateRange: { from: string; to: string };
 }
 
 const calculateAge = (birthDate?: string): number | null => {

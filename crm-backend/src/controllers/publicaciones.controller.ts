@@ -45,7 +45,7 @@ export const createPublicacion = async (req: Request, res: Response) => {
 
 export const updatePublicacion = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fechaPost, ...data } = req.body;
+  const { id: _, fechaPost, ...data } = req.body; // Exclude id from update data
   try {
     const updatedPublicacion = await prisma.publicacion.update({
       where: { id: id },

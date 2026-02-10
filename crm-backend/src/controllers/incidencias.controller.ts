@@ -41,7 +41,7 @@ export const createIncidencia = async (req: Request, res: Response) => {
 
 export const updateIncidencia = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fecha, ...data } = req.body;
+  const { id: _, fecha, ...data } = req.body; // Exclude id from update data
   try {
     const updatedIncidencia = await prisma.incidencia.update({
       where: { id: id },

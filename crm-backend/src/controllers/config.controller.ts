@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { promises as fs } from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 // FIX: Added model types from @prisma/client
 // import { Prisma, ClientSource, Service, Product, Membership, ServiceCategory, ProductCategory, EgresoCategory, JobPosition, ComprobanteElectronico, BusinessInfo } from '@prisma/client';
 
@@ -35,8 +38,9 @@ const createCrudHandlers = (modelName: string) => {
         },
         update: async (req: Request, res: Response) => {
             const id = parseInt(req.params.id);
+            const { id: _, ...data } = req.body; // Exclude id from update data
             try {
-                const updatedItem = await typedModel.update({ where: { id: id }, data: req.body });
+                const updatedItem = await typedModel.update({ where: { id: id }, data });
                 res.status(200).json(updatedItem);
             } catch (error) {
                 res.status(500).json({ message: `Error updating ${String(modelName)}`, error: (error as Error).message });
@@ -54,52 +58,126 @@ const createCrudHandlers = (modelName: string) => {
     };
 };
 
+const DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9+.\-]+);base64,(.+)$/;
+const BRANDING_UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'branding');
+
+const ensureBrandingDir = async () => {
+    await fs.mkdir(BRANDING_UPLOAD_DIR, { recursive: true });
+};
+
+const resolvePublicBaseUrl = (req: Request): string => {
+    const configured = process.env.PUBLIC_API_URL?.trim();
+    if (configured) {
+        return configured.replace(/\/$/, '');
+    }
+    const host = req.get('host') || 'localhost';
+    const protocol = req.protocol || 'http';
+    return `${protocol}://${host}`.replace(/\/$/, '');
+};
+
+const decodeDataUrlImage = async (req: Request, dataUrl: string): Promise<string> => {
+    const match = DATA_URL_REGEX.exec(dataUrl);
+    if (!match) {
+        return dataUrl;
+    }
+
+    try {
+        const mimeType = match[1];
+        const base64 = match[2];
+        const buffer = Buffer.from(base64, 'base64');
+        const extension = (() => {
+            const mimeExtension = mimeType.split('/')[1] || 'png';
+            return mimeExtension === 'jpeg' ? 'jpg' : mimeExtension;
+        })();
+
+        await ensureBrandingDir();
+        const uniqueId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(8).toString('hex');
+        const fileName = `login-${Date.now()}-${uniqueId}.${extension}`;
+        const filePath = path.join(BRANDING_UPLOAD_DIR, fileName);
+        await fs.writeFile(filePath, buffer);
+
+        const baseUrl = resolvePublicBaseUrl(req);
+        return `${baseUrl}/uploads/branding/${fileName}`;
+    } catch (error) {
+        console.error('No se pudo procesar la imagen del login:', error);
+        return dataUrl;
+    }
+};
+
 // --- Business Info (special case) ---
 export const getBusinessInfo = async (req: Request, res: Response) => {
     try {
+        console.log('[BusinessInfo] Fetching info...');
         // Assuming there's only one record, or we fetch the first one.
         let info = await prisma.businessInfo.findFirst();
+        
         if (!info) {
+            console.log('[BusinessInfo] No info found. Creating default...');
              // Create a default if it doesn't exist
-            info = await prisma.businessInfo.create({
-                data: {
-                    id: 1, // Explicitly set ID if it's not autoincrement
-                    nombre: 'Munnay System',
-                    ruc: '12345678901',
-                    direccion: 'Av. Principal 123',
-                    telefono: '987654321',
-                    email: 'info@munnay.com',
-                    logoUrl: 'https://i.imgur.com/JmZt2eU.png',
-                    loginImageUrl: ''
-                }
-            });
+            try {
+                info = await prisma.businessInfo.create({
+                    data: {
+                        id: 1, // Explicitly set ID if it's not autoincrement
+                        nombre: 'Munnay System',
+                        ruc: '12345678901',
+                        direccion: 'Av. Principal 123',
+                        telefono: '987654321',
+                        email: 'info@munnay.com',
+                        logoUrl: 'https://i.imgur.com/JmZt2eU.png',
+                        loginImageUrl: ''
+                    }
+                });
+                console.log('[BusinessInfo] Default info created successfully.');
+            } catch (createError) {
+                console.error('[BusinessInfo] Error creating default info:', createError);
+                // Si falla la creación (ej. race condition o constraint), intentamos buscar de nuevo
+                info = await prisma.businessInfo.findFirst();
+                if (!info) throw createError;
+            }
         }
         res.status(200).json(info);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching business info', error: (error as Error).message });
+        console.error('[BusinessInfo] Critical error:', error);
+        // Enviamos el error detallado en el mensaje para que el frontend lo pueda mostrar/loguear
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        res.status(500).json({ 
+            message: `Error fetching business info: ${errorMessage}`,
+            error: errorMessage 
+        });
     }
 };
 
 export const updateBusinessInfo = async (req: Request, res: Response) => {
+    const { id: _, ...data } = req.body; // Exclude id from update data
+    console.log('=== UPDATE BUSINESS INFO ===');
+    console.log('Datos recibidos:', JSON.stringify(data, null, 2));
+    console.log('loginImageUrl recibido:', data.loginImageUrl ? `${data.loginImageUrl.substring(0, 100)}...` : 'vacío');
     try {
+        if (typeof data.loginImageUrl === 'string' && data.loginImageUrl.startsWith('data:image/')) {
+            console.log('Procesando imagen base64...');
+            data.loginImageUrl = await decodeDataUrlImage(req, data.loginImageUrl);
+            console.log('Imagen procesada, nueva URL:', data.loginImageUrl);
+        }
         // FIX: Use upsert for robustness: creates if not exists, updates if it does.
         // Assumes a single BusinessInfo entry with ID 1.
         const updatedInfo = await prisma.businessInfo.upsert({
             where: { id: 1 },
-            update: req.body,
+            update: data,
             create: { // Provide default values for create if it doesn't exist
                 id: 1,
-                nombre: req.body.nombre || 'Munnay System',
-                ruc: req.body.ruc || '12345678901',
-                direccion: req.body.direccion || 'Av. Principal 123',
-                telefono: req.body.telefono || '987654321',
-                email: req.body.email || 'info@munnay.com',
-                logoUrl: req.body.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
-                loginImageUrl: req.body.loginImageUrl || '',
+                nombre: data.nombre || 'Munnay System',
+                ruc: data.ruc || '12345678901',
+                direccion: data.direccion || 'Av. Principal 123',
+                telefono: data.telefono || '987654321',
+                email: data.email || 'info@munnay.com',
+                logoUrl: data.logoUrl || 'https://i.imgur.com/JmZt2eU.png',
+                loginImageUrl: data.loginImageUrl || '',
             },
         });
+        console.log('BusinessInfo actualizado:', updatedInfo);
         res.status(200).json(updatedInfo);
     } catch (error) {
+        console.error('ERROR actualizando BusinessInfo:', error);
         res.status(500).json({ message: 'Error updating business info', error: (error as Error).message });
     }
 };
@@ -111,27 +189,384 @@ export const createClientSource = clientSourceHandlers.create;
 export const updateClientSource = clientSourceHandlers.update;
 export const deleteClientSource = clientSourceHandlers.delete;
 
-// Services
-const serviceHandlers = createCrudHandlers('service');
-export const getServices = serviceHandlers.getAll;
-export const createService = serviceHandlers.create;
-export const updateService = serviceHandlers.update;
-export const deleteService = serviceHandlers.delete;
+// Helper para verificar si columna existe en tabla Service
+const checkServiceColumnsExist = async (): Promise<boolean> => {
+    try {
+        const result: any[] = await prisma.$queryRaw`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'Service' AND column_name = 'duracionMinutos'
+        `;
+        return result.length > 0;
+    } catch {
+        return false;
+    }
+};
 
-// Products
-const productHandlers = createCrudHandlers('product');
-export const getProducts = productHandlers.getAll;
-export const createProduct = productHandlers.create;
-export const updateProduct = productHandlers.update;
-export const deleteProduct = productHandlers.delete;
+// Migración automática para agregar columnas de Service si no existen
+// Bulk import de servicios
+export const bulkImportServices = async (req: Request, res: Response) => {
+    const servicios = req.body;
+    if (!Array.isArray(servicios)) {
+        return res.status(400).json({ message: 'Se esperaba un array de servicios' });
+    }
 
-// Memberships
-const membershipHandlers = createCrudHandlers('membership');
-export const getMemberships = membershipHandlers.getAll;
-export const createMembership = membershipHandlers.create;
-export const updateMembership = membershipHandlers.update;
-// FIX: Corrected typo 'deleteMemberships' to match the route and standard naming (plural for all)
-export const deleteMembership = membershipHandlers.delete;
+    const results: any[] = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < servicios.length; i++) {
+        const servicio = servicios[i];
+        try {
+            // Validar campos requeridos
+            if (!servicio.nombre || !servicio.categoria || servicio.precio === undefined) {
+                throw new Error('Faltan campos requeridos: nombre, categoria, precio');
+            }
+
+            // Si existen las columnas adicionales, las usamos
+            const columnsExist = await checkServiceColumnsExist?.();
+            let newService;
+            if (columnsExist) {
+                newService = await prisma.service.create({
+                    data: {
+                        nombre: servicio.nombre,
+                        categoria: servicio.categoria,
+                        precio: parseFloat(servicio.precio) || 0,
+                        duracionMinutos: parseInt(servicio.duracionMinutos) || 60,
+                        descripcion: servicio.descripcion || null,
+                    }
+                });
+            } else {
+                // Solo los campos básicos
+                const result: any[] = await prisma.$queryRaw`
+                    INSERT INTO "Service" (nombre, categoria, precio)
+                    VALUES (${servicio.nombre}, ${servicio.categoria}, ${parseFloat(servicio.precio) || 0})
+                    RETURNING id, nombre, categoria, precio
+                `;
+                newService = {
+                    ...result[0],
+                    duracionMinutos: 60,
+                    descripcion: null
+                };
+            }
+            results.push({ success: true, index: i, data: newService });
+            successCount++;
+        } catch (error) {
+            results.push({ success: false, index: i, error: (error as Error).message });
+            errorCount++;
+        }
+    }
+
+    res.status(200).json({
+        message: `Importación completada: ${successCount} exitosos, ${errorCount} errores`,
+        successCount,
+        errorCount,
+        servicios: results
+    });
+};
+export const migrateServiceColumns = async (req: Request, res: Response) => {
+    try {
+        // Verificar si las columnas ya existen
+        const columnsExist = await checkServiceColumnsExist();
+        if (columnsExist) {
+            res.status(200).json({ message: 'Columns already exist', migrated: false });
+            return;
+        }
+        
+        // Agregar columnas faltantes
+        await prisma.$executeRaw`
+            ALTER TABLE "Service" 
+            ADD COLUMN IF NOT EXISTS "duracionMinutos" INTEGER NOT NULL DEFAULT 60
+        `;
+        await prisma.$executeRaw`
+            ALTER TABLE "Service" 
+            ADD COLUMN IF NOT EXISTS "descripcion" TEXT
+        `;
+        
+        console.log('Service columns migrated successfully');
+        res.status(200).json({ message: 'Columns migrated successfully', migrated: true });
+    } catch (error) {
+        console.error('Error migrating service columns:', error);
+        res.status(500).json({ message: 'Error migrating columns', error: (error as Error).message });
+    }
+};
+
+// Services - Custom handlers con fallback para cuando columnas no existen
+export const getServices = async (req: Request, res: Response) => {
+    try {
+        const columnsExist = await checkServiceColumnsExist();
+        
+        if (columnsExist) {
+            const services = await prisma.service.findMany();
+            res.status(200).json(services);
+        } else {
+            // Fallback: query solo con columnas básicas
+            const services: any[] = await prisma.$queryRaw`
+                SELECT id, nombre, categoria, precio FROM "Service"
+            `;
+            // Agregar valores por defecto
+            const servicesWithDefaults = services.map(s => ({
+                ...s,
+                duracionMinutos: 60,
+                descripcion: null
+            }));
+            res.status(200).json(servicesWithDefaults);
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching services', error: (error as Error).message });
+    }
+};
+
+export const createService = async (req: Request, res: Response) => {
+    const { id, ...data } = req.body;
+    try {
+        const columnsExist = await checkServiceColumnsExist();
+        
+        if (columnsExist) {
+            const serviceData = {
+                nombre: data.nombre,
+                categoria: data.categoria,
+                precio: parseFloat(data.precio) || 0,
+                duracionMinutos: parseInt(data.duracionMinutos) || 60,
+                descripcion: data.descripcion || null,
+            };
+            const newService = await prisma.service.create({ data: serviceData });
+            res.status(201).json(newService);
+        } else {
+            // Fallback: insertar solo campos básicos
+            const result: any[] = await prisma.$queryRaw`
+                INSERT INTO "Service" (nombre, categoria, precio)
+                VALUES (${data.nombre}, ${data.categoria}, ${parseFloat(data.precio) || 0})
+                RETURNING id, nombre, categoria, precio
+            `;
+            const newService = {
+                ...result[0],
+                duracionMinutos: 60,
+                descripcion: null
+            };
+            res.status(201).json(newService);
+        }
+    } catch (error) {
+        console.error('Error creating service:', error);
+        res.status(500).json({ message: 'Error creating service', error: (error as Error).message });
+    }
+};
+
+export const updateService = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { id: _, ...data } = req.body;
+    try {
+        const columnsExist = await checkServiceColumnsExist();
+        
+        if (columnsExist) {
+            const updateData: any = {};
+            if (data.nombre !== undefined) updateData.nombre = data.nombre;
+            if (data.categoria !== undefined) updateData.categoria = data.categoria;
+            if (data.precio !== undefined) updateData.precio = parseFloat(data.precio) || 0;
+            if (data.duracionMinutos !== undefined) updateData.duracionMinutos = parseInt(data.duracionMinutos) || 60;
+            if (data.descripcion !== undefined) updateData.descripcion = data.descripcion || null;
+            
+            const updatedService = await prisma.service.update({ 
+                where: { id }, 
+                data: updateData 
+            });
+            res.status(200).json(updatedService);
+        } else {
+            // Fallback: actualizar solo campos básicos
+            const result: any[] = await prisma.$queryRaw`
+                UPDATE "Service" 
+                SET nombre = ${data.nombre}, 
+                    categoria = ${data.categoria}, 
+                    precio = ${parseFloat(data.precio) || 0}
+                WHERE id = ${id}
+                RETURNING id, nombre, categoria, precio
+            `;
+            const updatedService = {
+                ...result[0],
+                duracionMinutos: 60,
+                descripcion: null
+            };
+            res.status(200).json(updatedService);
+        }
+    } catch (error) {
+        console.error('Error updating service:', error);
+        res.status(500).json({ message: 'Error updating service', error: (error as Error).message });
+    }
+};
+
+export const deleteService = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    try {
+        await prisma.service.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting service', error: (error as Error).message });
+    }
+};
+
+// Products - Custom handlers para campos opcionales
+export const getProducts = async (req: Request, res: Response) => {
+    try {
+        const products = await prisma.product.findMany();
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });
+    }
+};
+
+export const createProduct = async (req: Request, res: Response) => {
+    try {
+        const { id, movimientos, ...data } = req.body;
+        
+        // Ahora usamos todos los datos recibidos
+        const newProduct = await prisma.product.create({ 
+            data: {
+                ...data,
+                precio: Number(data.precio),
+                costoCompra: data.costoCompra ? Number(data.costoCompra) : undefined,
+                precioVenta: data.precioVenta ? Number(data.precioVenta) : undefined
+            } 
+        });
+        res.status(201).json(newProduct);
+    } catch (error) {
+        console.error('Error creating product:', error);
+        res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
+    }
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { id: _, movimientos, ...data } = req.body;
+        
+        const updatedProduct = await prisma.product.update({ 
+            where: { id }, 
+            data: {
+                ...data,
+                precio: Number(data.precio),
+                costoCompra: data.costoCompra ? Number(data.costoCompra) : undefined,
+                precioVenta: data.precioVenta ? Number(data.precioVenta) : undefined
+            } 
+        });
+        res.status(200).json(updatedProduct);
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
+    }
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        await prisma.product.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting product', error: (error as Error).message });
+    }
+};
+
+// Memberships - Custom handlers to support nested MembershipService creation
+export const getMemberships = async (req: Request, res: Response) => {
+    try {
+        const memberships = await prisma.membership.findMany({
+            include: {
+                servicios: true, // Include related services
+            } as any,
+        });
+        res.status(200).json(memberships);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching memberships', error: (error as Error).message });
+    }
+};
+
+export const createMembership = async (req: Request, res: Response) => {
+    const { id, servicios, ...data } = req.body;
+    
+    console.log('=== CREATE MEMBERSHIP REQUEST ===');
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        const newMembership = await prisma.membership.create({
+            data: {
+                ...data,
+                servicios: {
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía creada exitosamente:', newMembership.id);
+        res.status(201).json(newMembership);
+    } catch (error) {
+        console.error('Error creating membership:', error);
+        console.error('Error stack:', (error as Error).stack);
+        res.status(500).json({ 
+            message: 'Error creating membership', 
+            error: (error as Error).message,
+            details: error instanceof Error ? error.stack : 'Unknown error'
+        });
+    }
+};
+
+export const updateMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { id: _, servicios, ...data } = req.body;
+    
+    console.log('=== UPDATE MEMBERSHIP REQUEST ===');
+    console.log('ID:', id);
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
+    try {
+        // Delete existing services and create new ones (simpler than selective update)
+        const updatedMembership = await prisma.membership.update({
+            where: { id: id },
+            data: {
+                ...data,
+                servicios: {
+                    deleteMany: {}, // Delete all existing services
+                    create: (servicios || []).map((servicio: any) => ({
+                        servicioNombre: servicio.servicioNombre,
+                        precio: servicio.precio,
+                        numeroSesiones: servicio.numeroSesiones,
+                    })),
+                },
+            } as any,
+            include: {
+                servicios: true,
+            } as any,
+        });
+        
+        console.log('Membresía actualizada exitosamente:', updatedMembership.id);
+        res.status(200).json(updatedMembership);
+    } catch (error) {
+        console.error('Error updating membership:', error);
+        res.status(500).json({ 
+            message: 'Error updating membership', 
+            error: (error as Error).message 
+        });
+    }
+};
+
+export const deleteMembership = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    try {
+        // Cascade delete will automatically delete related MembershipService records
+        await prisma.membership.delete({ where: { id: id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Error deleting membership', 
+            error: (error as Error).message 
+        });
+    }
+};
 
 // Service Categories
 const serviceCategoryHandlers = createCrudHandlers('serviceCategory');

@@ -1,13 +1,23 @@
 import React, { useState, useEffect, FC } from 'react';
 import Modal from '../shared/Modal';
 
+interface CatalogField {
+    name: keyof any;
+    label: string;
+    type: 'text' | 'number' | 'textarea' | 'select';
+    required?: boolean;
+    options?: { label: string; value: string | number }[];
+    valueType?: 'string' | 'number';
+    placeholder?: string;
+}
+
 interface CatalogFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (item: any) => void;
     item: any | null;
     title: string;
-    fields: { name: keyof any, label: string, type: string, required?: boolean }[];
+    fields: CatalogField[];
     itemCategories?: { id: number, nombre: string }[];
     categoryField?: string;
 }
@@ -16,21 +26,47 @@ const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, 
     const [formData, setFormData] = useState<any>(item || {});
 
     useEffect(() => {
-        setFormData(item || {});
-    }, [item]);
+        // Inicializar formData con valores por defecto para campos numéricos
+        const initialData = { ...item } || {};
+        fields.forEach(field => {
+            if (field.type === 'number' && (initialData[field.name] === undefined || initialData[field.name] === null)) {
+                // Valor por defecto para duracionMinutos
+                if (field.name === 'duracionMinutos') {
+                    initialData[field.name] = 60;
+                } else {
+                    initialData[field.name] = 0;
+                }
+            }
+        });
+        setFormData(initialData);
+    }, [item, fields]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
+    const handleFieldChange = (field: CatalogField, rawValue: string) => {
+        const shouldCastNumber = field.type === 'number' || field.valueType === 'number';
+        const parsedValue = shouldCastNumber && rawValue !== '' ? Number(rawValue) : rawValue;
+        setFormData(prev => ({ ...prev, [field.name]: parsedValue }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Basic validation
         for (const field of fields) {
-            if (field.required && (!formData[field.name] || String(formData[field.name]).trim() === '')) {
-                alert(`El campo "${field.label}" es obligatorio.`);
-                return;
+            if (field.required) {
+                const value = formData[field.name];
+                
+                // Para campos numéricos, permitir 0 como valor válido
+                if (field.type === 'number') {
+                    if (value === null || value === undefined || value === '') {
+                        alert(`El campo "${field.label}" es obligatorio.`);
+                        return;
+                    }
+                } else {
+                    // Para campos de texto, verificar que no esté vacío
+                    if (!value || String(value).trim() === '') {
+                        alert(`El campo "${field.label}" es obligatorio.`);
+                        return;
+                    }
+                }
             }
         }
         onSave(formData);
@@ -50,48 +86,68 @@ const CatalogFormModal: FC<CatalogFormModalProps> = ({ isOpen, onClose, onSave, 
             }
         >
             <form id="catalog-form" onSubmit={handleSubmit} className="p-6 space-y-4">
-                {fields.map(field => (
-                    <div key={String(field.name)}>
-                        <label htmlFor={String(field.name)} className="block text-sm font-medium text-gray-700">
-                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                        </label>
-                        {field.name === categoryField && itemCategories ? (
-                             <select
-                                id={String(field.name)}
-                                name={String(field.name)}
-                                value={formData[field.name] || ''}
-                                onChange={handleChange}
-                                required={field.required}
-                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
-                            >
-                                <option value="">Seleccionar...</option>
-                                {itemCategories.map(cat => (
-                                    <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                                ))}
-                            </select>
-                        ) : field.type === 'textarea' ? (
-                            <textarea
-                                id={String(field.name)}
-                                name={String(field.name)}
-                                value={formData[field.name] ?? ''}
-                                onChange={handleChange}
-                                required={field.required}
-                                rows={3}
-                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
-                            />
-                        ) : (
-                            <input
-                                type={field.type}
-                                id={String(field.name)}
-                                name={String(field.name)}
-                                value={formData[field.name] ?? ''}
-                                onChange={handleChange}
-                                required={field.required}
-                                className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
-                            />
-                        )}
-                    </div>
-                ))}
+                {fields.map(field => {
+                    const fieldName = String(field.name);
+                    const value = formData[field.name] ?? '';
+                    const isCategorySelect = field.name === categoryField && itemCategories;
+
+                    return (
+                        <div key={fieldName}>
+                            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700">
+                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </label>
+                            {isCategorySelect ? (
+                                <select
+                                    id={fieldName}
+                                    name={fieldName}
+                                    value={value}
+                                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                                    required={field.required}
+                                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {itemCategories!.map(cat => (
+                                        <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                                    ))}
+                                </select>
+                            ) : field.type === 'textarea' ? (
+                                <textarea
+                                    id={fieldName}
+                                    name={fieldName}
+                                    value={value}
+                                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                                    required={field.required}
+                                    rows={3}
+                                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                                />
+                            ) : field.type === 'select' ? (
+                                <select
+                                    id={fieldName}
+                                    name={fieldName}
+                                    value={value}
+                                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                                    required={field.required}
+                                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                                >
+                                    <option value="">{field.placeholder || 'Seleccionar...'}</option>
+                                    {(field.options || []).map(option => (
+                                        <option key={`${fieldName}-${option.value}`} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type={field.type}
+                                    id={fieldName}
+                                    name={fieldName}
+                                    value={value}
+                                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                                    required={field.required}
+                                    className="mt-1 block w-full border-black bg-[#f9f9fa] text-black rounded-md shadow-sm p-2"
+                                />
+                            )}
+                        </div>
+                    );
+                })}
             </form>
         </Modal>
     );

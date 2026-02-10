@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico } from '../../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User } from '../../types';
 import { LeadStatus, ReceptionStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
+import * as api from '../../services/api';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
 import { RESOURCES } from '../../constants';
@@ -10,6 +11,7 @@ import StatCard from '../dashboard/StatCard';
 interface AgendadosPageProps {
   leads: Lead[];
   metaCampaigns: MetaCampaign[];
+    campaigns?: Campaign[];
   onSaveLead: (lead: Lead) => void;
   onDeleteLead: (leadId: number) => void;
   clientSources: ClientSource[];
@@ -22,6 +24,26 @@ interface AgendadosPageProps {
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
+
+// Normalize reception status returned from backend (token or display) to UI display value
+const normalizeReception = (value?: string) => {
+    if (!value) return ReceptionStatus.Agendado;
+    const s = String(value).trim();
+    const map: Record<string, string> = {
+        'Agendado': ReceptionStatus.Agendado,
+        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
+        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
+        'PorAtender': ReceptionStatus.PorAtender,
+        'Por Atender': ReceptionStatus.PorAtender,
+        'Atendido': ReceptionStatus.Atendido,
+        'Reprogramado': ReceptionStatus.Reprogramado,
+        'Cancelado': ReceptionStatus.Cancelado,
+        'NoAsistio': ReceptionStatus.NoAsistio,
+        'No Asistió': ReceptionStatus.NoAsistio
+    };
+    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
+    return map[s] ?? ReceptionStatus.Agendado;
+};
 
 const getResourceName = (resourceId?: string) => {
     if (!resourceId) return 'N/A';
@@ -92,6 +114,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
     
     const statusText: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'Por Llegar',
+        [ReceptionStatus.AgendadoPorLlegar]: 'Por Llegar',
         [ReceptionStatus.PorAtender]: 'En Espera',
         [ReceptionStatus.Atendido]: 'Atendido',
         [ReceptionStatus.NoAsistio]: 'No Asistió'
@@ -99,6 +122,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
     
     const statusColor: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'text-blue-600 bg-blue-100',
+        [ReceptionStatus.AgendadoPorLlegar]: 'text-blue-600 bg-blue-100',
         [ReceptionStatus.PorAtender]: 'text-yellow-600 bg-yellow-100',
         [ReceptionStatus.Atendido]: 'text-green-600 bg-green-100',
         [ReceptionStatus.NoAsistio]: 'text-red-600 bg-red-100'
@@ -121,7 +145,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
                     </thead>
                     <tbody>
                         {leads.map(lead => {
-                            const status = lead.estadoRecepcion || ReceptionStatus.Agendado;
+                            const status = normalizeReception(lead.estadoRecepcion);
                             return (
                                 <tr key={lead.id} className="bg-white border-b hover:bg-gray-50">
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
@@ -157,29 +181,54 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 };
 
 
-const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
+const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+    const [users, setUsers] = useState<User[]>([]);
 
-  const filteredLeads = useMemo(() => {
-    let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
+    useEffect(() => {
+        let mounted = true;
+        api.getUsers()
+            .then(res => {
+                if (!mounted) return;
+                if (Array.isArray(res)) setUsers(res as User[]);
+            })
+            .catch(err => console.warn('Failed to load users for AgendadosPage', err));
+        return () => { mounted = false; };
+    }, []);
 
-    if (dateRange.from || dateRange.to) {
-      const fromDate = dateRange.from ? new Date(`${dateRange.from}T00:00:00`) : null;
-      const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+    const filteredLeads = useMemo(() => {
+        let baseLeads = leads.filter(lead => lead.estado === LeadStatus.Agendado && lead.fechaHoraAgenda);
 
-      baseLeads = baseLeads.filter(lead => {
-        const agendaDate = new Date(lead.fechaHoraAgenda!);
-        if (fromDate && agendaDate < fromDate) return false;
-        if (toDate && agendaDate > toDate) return false;
-        return true;
-      });
-    }
+        if (dateRange.from || dateRange.to) {
+            baseLeads = baseLeads.filter(lead => {
+                if (!lead.fechaHoraAgenda) return false;
 
-    return baseLeads.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
-  }, [leads, dateRange]);
+                // fechaHoraAgenda might be a string or a Date object depending on the source
+                let agendaDate: string | null = null;
+                try {
+                    if (typeof lead.fechaHoraAgenda === 'string') {
+                        agendaDate = lead.fechaHoraAgenda.split('T')[0];
+                    } else {
+                        const d = new Date(lead.fechaHoraAgenda as any);
+                        if (!isNaN(d.getTime())) agendaDate = d.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    agendaDate = null;
+                }
+
+                if (!agendaDate) return false;
+
+                if (dateRange.from && agendaDate < dateRange.from) return false;
+                if (dateRange.to && agendaDate > dateRange.to) return false;
+                return true;
+            });
+        }
+
+        return baseLeads.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
+    }, [leads, dateRange]);
 
   const stats = useMemo(() => {
     const totalAgendados = filteredLeads.length;
@@ -211,18 +260,40 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
     setIsModalOpen(true);
   };
 
-  const handleEditCita = (lead: Lead) => {
-    setEditingLead(lead);
-    setIsModalOpen(true);
-  };
+    const handleEditCita = async (lead: Lead) => {
+        // Try to fetch full lead details from backend before opening modal.
+        if (lead && lead.id) {
+            try {
+                const full = await api.getLead(lead.id);
+                setEditingLead(full as Lead);
+            } catch (err) {
+                console.warn('Warning: failed to fetch full lead, opening with partial data', err);
+                setEditingLead(lead);
+            }
+        } else {
+            setEditingLead(lead);
+        }
+        setIsModalOpen(true);
+    };
   
-  const handleSaveAndClose = (lead: Lead) => {
-    onSaveLead(lead);
-    setIsModalOpen(false);
+  const handleSaveAndClose = async (lead: Lead) => {
+    await onSaveLead(lead);
+    // Update editingLead with the latest data after save
+    if (lead.id && editingLead) {
+      // Find the updated lead from the leads array after the save operation
+      // This ensures the modal shows the latest data
+      setTimeout(() => {
+        const updatedLead = leads.find(l => l.id === lead.id);
+        if (updatedLead) {
+          setEditingLead(updatedLead);
+        }
+      }, 100); // Small delay to ensure the parent data is updated
+    }
   };
 
   const statusConfig: Record<string, { title: string; color: string; textColor: string; }> = {
     [ReceptionStatus.Agendado]: { title: 'Agendados (Por Llegar)', color: 'bg-sky-200', textColor: 'text-sky-800' },
+        [ReceptionStatus.AgendadoPorLlegar]: { title: 'Agendados (Por Llegar)', color: 'bg-sky-200', textColor: 'text-sky-800' },
     [ReceptionStatus.PorAtender]: { title: 'Por Atender (En Espera)', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
     [ReceptionStatus.Atendido]: { title: 'Atendido', color: 'bg-green-200', textColor: 'text-green-800' },
     [ReceptionStatus.Reprogramado]: { title: 'Reprogramado', color: 'bg-blue-200', textColor: 'text-blue-800' },
@@ -230,9 +301,17 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
     [ReceptionStatus.NoAsistio]: { title: 'No Asistió', color: 'bg-red-200', textColor: 'text-red-800' },
   };
 
-  const kanbanColumns = Object.values(ReceptionStatus);
+    // Define column groups to avoid duplicate columns with same title
+    const kanbanColumnGroups: Array<{ key: string; statuses: string[]; config: { title: string; color: string; textColor: string } }> = [
+        { key: 'agendados', statuses: [ReceptionStatus.AgendadoPorLlegar, ReceptionStatus.Agendado], config: statusConfig[ReceptionStatus.AgendadoPorLlegar] },
+        { key: 'porAtender', statuses: [ReceptionStatus.PorAtender], config: statusConfig[ReceptionStatus.PorAtender] },
+        { key: 'atendido', statuses: [ReceptionStatus.Atendido], config: statusConfig[ReceptionStatus.Atendido] },
+        { key: 'reprogramado', statuses: [ReceptionStatus.Reprogramado], config: statusConfig[ReceptionStatus.Reprogramado] },
+        { key: 'cancelado', statuses: [ReceptionStatus.Cancelado], config: statusConfig[ReceptionStatus.Cancelado] },
+        { key: 'noAsistio', statuses: [ReceptionStatus.NoAsistio], config: statusConfig[ReceptionStatus.NoAsistio] },
+    ];
 
-  return (
+    return (
     <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <h1 className="text-2xl font-bold text-black mb-4 md:mb-0">Gestión de Agendados</h1>
@@ -281,12 +360,15 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
         
          {viewMode === 'kanban' ? (
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
-                {kanbanColumns.map(status => {
-                    const leadsInColumn = filteredLeads.filter(lead => (lead.estadoRecepcion || ReceptionStatus.Agendado) === status);
-                    const config = statusConfig[status];
+                {kanbanColumnGroups.map(group => {
+                    const leadsInColumn = filteredLeads.filter(lead => {
+                        const leadStatus = normalizeReception(lead.estadoRecepcion);
+                        return group.statuses.includes(leadStatus);
+                    });
+                    const config = group.config;
                     return (
                         <KanbanColumn
-                            key={status}
+                            key={group.key}
                             title={config.title}
                             color={config.color}
                             textColor={config.textColor}
@@ -310,7 +392,11 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, metaCampaigns, onS
             onSave={handleSaveAndClose}
             onDelete={onDeleteLead}
             lead={editingLead}
+            users={users}
+            initialTab={'recepcion'}
+            disableFicha={true}
             metaCampaigns={metaCampaigns}
+            campaigns={campaigns}
             clientSources={clientSources}
             services={services}
             requestConfirmation={requestConfirmation}

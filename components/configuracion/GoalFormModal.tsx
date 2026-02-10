@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Goal, Personal } from '../../types.ts';
-import { GoalArea, GoalUnit, GoalObjective } from '../../types.ts';
+import type { Goal, Personal, User } from '../../types.ts';
+import { GoalArea, GoalUnit, GoalObjective, GoalAreaLabels, GoalObjectiveLabels } from '../../types.ts';
 import Modal from '../shared/Modal.tsx';
 
 interface GoalFormModalProps {
@@ -9,40 +9,67 @@ interface GoalFormModalProps {
     onClose: () => void;
     onSave: (goal: Goal) => void;
     goal: Goal | null;
+    users: User[];
 }
-
-const PERSONAL_OPTIONS: Personal[] = ['Vanesa', 'Elvira', 'Janela', 'Liz', 'Keila', 'Luz', 'Dra. Marilia', 'Dra. Sofía', 'Dr. Carlos'];
 
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, goal }) => {
+// Helper function to convert Date to YYYY-MM-DD string for input[type="date"]
+const formatDateForInput = (date: string | Date | undefined): string => {
+    if (!date) return '';
+    if (typeof date === 'string' && date.length === 10 && date.includes('-')) {
+        return date;
+    }
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().split('T')[0];
+};
+
+const toIsoDateString = (value: string): string => {
+    if (!value) return new Date().toISOString();
+    if (value.includes('T')) {
+        return new Date(value).toISOString();
+    }
+    return new Date(`${value}T00:00:00`).toISOString();
+};
+
+const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, goal, users }) => {
     const [formData, setFormData] = useState<Partial<Goal>>({});
 
     useEffect(() => {
         if (isOpen) {
             const today = new Date().toISOString().split('T')[0];
-            setFormData(goal ? { ...goal } : {
-                id: Date.now(),
-                name: '',
-                area: GoalArea.Comercial,
-                objective: GoalObjective.Leads,
-                value: 0,
-                unit: GoalUnit.Cantidad,
-                personal: undefined,
-                startDate: today,
-                endDate: today,
-            });
+            if (goal) {
+                // Convert dates properly when editing
+                setFormData({
+                    ...goal,
+                    startDate: formatDateForInput(goal.startDate),
+                    endDate: formatDateForInput(goal.endDate),
+                });
+            } else {
+                // New goal
+                setFormData({
+                    id: Date.now(),
+                    name: '',
+                    area: GoalArea.Comercial,
+                    objective: GoalObjective.Leads,
+                    value: 0,
+                    unit: GoalUnit.Cantidad,
+                    personal: undefined,
+                    startDate: today,
+                    endDate: today,
+                });
+            }
         }
     }, [goal, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
-        
+
         let finalValue: string | number | undefined = value;
         if (type === 'number') {
-            finalValue = Number(value);
+            finalValue = value === '' ? undefined : Number(value);
         }
         if (name === 'personal' && value === '') {
             finalValue = undefined;
@@ -50,7 +77,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
 
         setFormData(prev => ({
             ...prev,
-            [name]: finalValue
+            [name]: finalValue,
         }));
     };
 
@@ -60,7 +87,12 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
             alert('Nombre, área, fecha de inicio y fecha de fin son requeridos.');
             return;
         }
-        onSave(formData as Goal);
+        const payload: Goal = {
+            ...(formData as Goal),
+            startDate: toIsoDateString(formData.startDate as string),
+            endDate: toIsoDateString(formData.endDate as string),
+        };
+        onSave(payload);
     };
 
     return (
@@ -97,7 +129,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="startDate"
                             name="startDate"
-                            value={formData.startDate || ''}
+                            value={formData.startDate ? formatDateForInput(formData.startDate) : ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -110,7 +142,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="date"
                             id="endDate"
                             name="endDate"
-                            value={formData.endDate || ''}
+                            value={formData.endDate ? formatDateForInput(formData.endDate) : ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
@@ -129,8 +161,8 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
-                            {Object.values(GoalArea).map(area => (
-                                <option key={area} value={area}>{area}</option>
+                            {(Object.values(GoalArea) as GoalArea[]).map(area => (
+                                <option key={area} value={area}>{GoalAreaLabels[area]}</option>
                             ))}
                         </select>
                     </div>
@@ -144,8 +176,10 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                         >
                             <option value="">General</option>
-                            {PERSONAL_OPTIONS.map(p => (
-                                <option key={p} value={p}>{p}</option>
+                            {users.map(user => (
+                                <option key={user.id} value={`${user.nombres} ${user.apellidos}`}>
+                                    {user.nombres} {user.apellidos}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -160,8 +194,8 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                         required
                         className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"
                     >
-                        {Object.values(GoalObjective).map(obj => (
-                            <option key={obj} value={obj}>{obj}</option>
+                        {(Object.values(GoalObjective) as GoalObjective[]).map(obj => (
+                            <option key={obj} value={obj}>{GoalObjectiveLabels[obj]}</option>
                         ))}
                     </select>
                 </div>
@@ -172,7 +206,7 @@ const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, 
                             type="number"
                             id="value"
                             name="value"
-                            value={formData.value || 0}
+                            value={formData.value ?? ''}
                             onChange={handleChange}
                             required
                             className="mt-1 w-full border-black bg-[#f9f9fa] rounded-md shadow-sm text-sm p-2 text-black focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"

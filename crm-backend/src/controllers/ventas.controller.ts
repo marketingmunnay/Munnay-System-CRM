@@ -44,7 +44,7 @@ export const createVenta = async (req: Request, res: Response) => {
 
 export const updateVenta = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { fechaVenta, ...data } = req.body;
+  const { id: _, fechaVenta, ...data } = req.body; // Exclude id from update data
   try {
     const updatedVenta = await prisma.ventaExtra.update({
       where: { id: id },
