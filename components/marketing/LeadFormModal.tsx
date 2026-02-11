@@ -2261,24 +2261,48 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         return Array.from(new Set(professionals));
     }, [users]);
 
-    const appointmentProfessionals = useMemo<AppointmentActorOption[]>(() => (
-        users
+    const appointmentProfessionals = useMemo<AppointmentActorOption[]>(() => {
+        // Personal de users (filtrado por perfil profesional)
+        const professionalsFromUsers = users
             .filter((user: User) => isProfessionalUser(user))
             .map((user: User, index: number) => ({
                 id: String(user.id ?? user.email ?? `user-${index}`),
                 nombre: `${user.nombres || ''} ${user.apellidos || ''}`.trim() || user.email || 'Profesional',
-                rol: 'staff',
+                rol: 'staff' as const,
                 avatarUrl: (user as any).avatarUrl,
-            }))
-    ), [users]);
+            }));
+        
+        // Personal de recursos configurados (type='personal')
+        const professionalsFromResources = configuredResources
+            .filter(resource => resource.type === 'personal')
+            .map(resource => ({
+                id: String(resource.id),
+                nombre: resource.nombre || resource.name || 'Profesional',
+                rol: 'staff' as const,
+                avatarUrl: resource.avatarUrl || resource.imageUrl,
+            }));
+        
+        // Combinar y eliminar duplicados por id
+        const combined = [...professionalsFromUsers, ...professionalsFromResources];
+        const uniqueMap = new Map<string, AppointmentActorOption>();
+        combined.forEach(prof => {
+            if (!uniqueMap.has(prof.id)) {
+                uniqueMap.set(prof.id, prof);
+            }
+        });
+        
+        return Array.from(uniqueMap.values());
+    }, [users, configuredResources]);
 
     const appointmentResources = useMemo<AppointmentActorOption[]>(() => (
-        configuredResources.map(resource => ({
-            id: String(resource.id),
-            nombre: resource.nombre || resource.name || 'Recurso',
-            rol: resource.type === 'user' ? 'staff' : 'space',
-            avatarUrl: resource.imageUrl,
-        }))
+        configuredResources
+            .filter(resource => resource.type === 'room' || resource.tipo === 'ROOM') // Solo espacios/salas
+            .map(resource => ({
+                id: String(resource.id),
+                nombre: resource.nombre || resource.name || 'Recurso',
+                rol: 'space',
+                avatarUrl: resource.imageUrl,
+            }))
     ), [configuredResources]);
 
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
