@@ -652,65 +652,66 @@ export const checkAvailability = async (req: Request, res: Response) => {
         const slots: Array<{ profesionalId: string; ambienteId?: number; disponible: boolean; motivo?: string }> = [];
 
         // 1. Check professional availability
-        if (profesionalId) {
+        if (profesionalId && profesionalId !== 'undefined' && profesionalId !== '') {
             const profId = parseInt(String(profesionalId));
             
             // Validate profId is a valid number
-            if (isNaN(profId)) {
-                return res.status(400).json({ message: 'profesionalId debe ser un número válido' });
-            }
-
-            // Check shift
-            const shiftDate = new Date(dateStr);
-            const shift = await prisma.shift.findUnique({
-                where: {
-                    userId_date: {
-                        userId: profId,
-                        date: shiftDate
-                    }
-                }
-            });
-
-            if (!shift || shift.isDayOff) {
-                isAvailable = false;
-                slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional no tiene turno o tiene día libre en esta fecha.' });
+            if (isNaN(profId) || !Number.isInteger(profId) || profId <= 0) {
+                // Si no es válido pero se pasó un profesionalId, simplemente skip y no marcar como no disponible
+                console.warn(`Invalid profesionalId: ${profesionalId}, skipping professional availability check`);
             } else {
-                // Validate time blocks
-                const timeBlocks = shift.timeBlocks as any[];
-                if (timeBlocks && timeBlocks.length > 0) {
-                    const appStartMinutes = start.getHours() * 60 + start.getMinutes();
-                    const appEndMinutes = end.getHours() * 60 + end.getMinutes();
-
-                    const isWithinRange = timeBlocks.some((block: { start: string; end: string }) => {
-                        const [startH, startM] = block.start.split(':').map(Number);
-                        const [endH, endM] = block.end.split(':').map(Number);
-                        const blockStartMinutes = startH * 60 + startM;
-                        const blockEndMinutes = endH * 60 + endM;
-                        return appStartMinutes >= blockStartMinutes && appEndMinutes <= blockEndMinutes;
-                    });
-
-                    if (!isWithinRange) {
-                        isAvailable = false;
-                        slots.push({
-                            profesionalId: String(profesionalId),
-                            disponible: false,
-                            motivo: `La cita está fuera del horario laboral del profesional (${timeBlocks.map((t: any) => `${t.start}-${t.end}`).join(', ')})`
-                        });
-                    }
-                }
-
-                // Check collision with existing appointments
-                const existingAppt = await prisma.appointment.findFirst({
+                // Check shift
+                const shiftDate = new Date(dateStr);
+                const shift = await prisma.shift.findUnique({
                     where: {
-                        professionalId: profId,
-                        status: { not: 'CANCELLED' },
-                        startTime: { lt: end },
-                        endTime: { gt: start }
+                        userId_date: {
+                            userId: profId,
+                            date: shiftDate
+                        }
                     }
                 });
-                if (existingAppt) {
+
+                if (!shift || shift.isDayOff) {
                     isAvailable = false;
-                    slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional ya tiene una cita en ese horario.' });
+                    slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional no tiene turno o tiene día libre en esta fecha.' });
+                } else {
+                    // Validate time blocks
+                    const timeBlocks = shift.timeBlocks as any[];
+                    if (timeBlocks && timeBlocks.length > 0) {
+                        const appStartMinutes = start.getHours() * 60 + start.getMinutes();
+                        const appEndMinutes = end.getHours() * 60 + end.getMinutes();
+
+                        const isWithinRange = timeBlocks.some((block: { start: string; end: string }) => {
+                            const [startH, startM] = block.start.split(':').map(Number);
+                            const [endH, endM] = block.end.split(':').map(Number);
+                            const blockStartMinutes = startH * 60 + startM;
+                            const blockEndMinutes = endH * 60 + endM;
+                            return appStartMinutes >= blockStartMinutes && appEndMinutes <= blockEndMinutes;
+                        });
+
+                        if (!isWithinRange) {
+                            isAvailable = false;
+                            slots.push({
+                                profesionalId: String(profesionalId),
+                                disponible: false,
+                                motivo: `La cita está fuera del horario laboral del profesional (${timeBlocks.map((t: any) => `${t.start}-${t.end}`).join(', ')})`
+                            });
+                        }
+                    }
+
+                    // Check collision with existing appointments
+                    const existingAppt = await prisma.appointment.findFirst({
+                        where: {
+                            professionalId: profId,
+                            status: { not: 'CANCELLED' },
+                            startTime: { lt: end },
+                            endTime: { gt: start }
+                        }
+                    });
+                    if (existingAppt) {
+                        isAvailable = false;
+                        slots.push({ profesionalId: String(profesionalId), disponible: false, motivo: 'El profesional ya tiene una cita en ese horario.' });
+                    }
                 }
             }
         }
