@@ -311,7 +311,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <label className="text-sm font-medium">Recurso Asignado</label>
                         <select name="recursoId" value={formData.recursoId || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}>
                             <option value="">Seleccionar Recurso...</option>
-                            {RESOURCES.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                            {configuredResources.map(r => <option key={r.id} value={r.id}>{r.nombre || r.name}</option>)}
                         </select>
                     </div>
                 </fieldset>
