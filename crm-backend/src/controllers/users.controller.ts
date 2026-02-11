@@ -267,7 +267,7 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const deleteUser = async (_req: AuthenticatedRequest, res: Response) => {
+export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
   try {
     // Delete related records first due to cascade delete not automatically handling all relations, 
@@ -282,6 +282,66 @@ export const deleteUser = async (_req: AuthenticatedRequest, res: Response) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
+  }
+};
+
+export const getUserProfile = async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        ...safeUserSelect,
+        rol: {
+          select: {
+            id: true,
+            nombre: true,
+            permissions: true,
+            dashboardMetrics: true
+          }
+        },
+        shifts: {
+          where: {
+            date: {
+              gte: new Date(new Date().setDate(new Date().getDate() - 30)) // Últimos 30 días
+            }
+          },
+          orderBy: {
+            date: 'desc'
+          },
+          take: 50
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Obtener metas asignadas al usuario
+    const goals = await prisma.goal.findMany({
+      where: {
+        userId: id,
+        isActive: true
+      },
+      orderBy: {
+        startDate: 'desc'
+      }
+    });
+
+    const profile = {
+      ...user,
+      metas: goals
+    };
+
+    return res.status(200).json(profile);
+  } catch (error) {
+    console.error('Error obteniendo perfil de usuario:', error);
+    return res.status(500).json({ 
+      message: 'Error al obtener perfil', 
+      error: (error as Error).message 
+    });
   }
 };
 

@@ -10,357 +10,71 @@ const convertBigInts = (value: any): any => {
     return Number.isSafeInteger(num) ? num : String(value);
   }
   if (Array.isArray(value)) return value.map(v => convertBigInts(v));
-  export const bulkImportLeads = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const leads = req.body;
-
-      if (!Array.isArray(leads)) {
-        return res.status(400).json({ message: 'Los datos deben ser un array de leads' });
+  if (value && typeof value === 'object') {
+    const result: any = {};
+    for (const key in value) {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        result[key] = convertBigInts(value[key]);
       }
-
-      console.log(`📥 Iniciando importación bulk de ${leads.length} leads`);
-
-      const results = [];
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (let i = 0; i < leads.length; i++) {
-        const leadData = leads[i];
-        try {
-          // Helper function to safely parse dates for creation
-          const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
-            if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
-
-            try {
-              const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
-              // Check if date is valid
-              if (isNaN(dateValue.getTime())) return defaultValue;
-              return dateValue;
-            } catch {
-              return defaultValue;
-            }
-          };
-
-          // Helper function to normalize ReceptionStatus values to valid enum tokens or undefined
-          const normalizeEnum = (value: any): string | undefined => {
-            if (!value && value !== 0) return undefined;
-            if (typeof value !== 'string') return undefined;
-            const cleaned = value.replace(/\s+/g, '').toLowerCase();
-            const map: Record<string, string> = {
-              'agendado': 'Agendado',
-              'poratender': 'PorAtender',
-              'atendido': 'Atendido',
-              'reprogramado': 'Reprogramado',
-              'cancelado': 'Cancelado',
-              'noasistio': 'NoAsistio',
-              // Map 'agendado por llegar' to the existing 'Agendado' enum token
-              'agendadoporllegar': 'Agendado',
-              'enespera': 'PorAtender'
-            };
-            return map[cleaned] ?? undefined;
-          };
-
-          // Clean leadData: only include valid fields and omit undefined values
-          const cleanLeadData = {
-            fechaLead: parseDate(leadData.fechaLead, true, new Date()),
-            nombres: leadData.nombres || '',
-            apellidos: leadData.apellidos || '',
-            numero: leadData.numero || '',
-            email: leadData.email || undefined,
-            sexo: leadData.sexo || '',
-            redSocial: leadData.redSocial || '',
-            anuncio: leadData.anuncio || '',
-            vendedor: mapSeller(leadData.vendedor),
-            estado: mapLeadStatus(leadData.estado), // Map to valid LeadStatus
-            montoPagado: parseFloat(leadData.montoPagado) || 0,
-            metodoPago: mapMetodoPago(leadData.metodoPago) as any,
-            fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
-            servicios: Array.isArray(leadData.servicios) ? leadData.servicios : [],
-            categoria: leadData.categoria || '',
-            profesionalAsignado: leadData.profesionalAsignado || undefined,
-            observacionesGenerales: leadData.observacionesGenerales || undefined,
-            fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
-            horaVolverLlamar: leadData.horaVolverLlamar || undefined,
-            notas: leadData.notas || undefined,
-            nHistoria: leadData.nHistoria || undefined,
-            aceptoTratamiento: leadData.aceptoTratamiento || undefined,
-            motivoNoCierre: leadData.motivoNoCierre || undefined,
-            estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
-            recursoId: leadData.recursoId || undefined,
-            birthDate: parseDate(leadData.birthDate, true),
-            precioCita: leadData.precioCita ? parseFloat(leadData.precioCita) : undefined,
-            deudaCita: leadData.deudaCita ? parseFloat(leadData.deudaCita) : undefined,
-            metodoPagoDeuda: mapMetodoPago(leadData.metodoPagoDeuda) as any,
-            documentType: leadData.documentType || undefined,
-            documentNumber: leadData.documentNumber || undefined,
-            razonSocial: leadData.razonSocial || undefined,
-            direccionFiscal: leadData.direccionFiscal || undefined,
-          };
-
-          // Skip if nHistoria already exists
-          if (cleanLeadData.nHistoria) {
-            const existingLead = await prisma.lead.findUnique({
-              where: { nHistoria: cleanLeadData.nHistoria }
-            });
-            if (existingLead) {
-              console.log(`⏭️ Skipping lead ${i + 1}: nHistoria ${cleanLeadData.nHistoria} already exists`);
-              continue; // Skip this lead
-            }
-          }
-
-          // Decide final estadoRecepcion: prefer provided value, otherwise if procedimientos exist treat as 'Atendido'
-          let finalEstadoRecepcionCreate = cleanLeadData.estadoRecepcion;
-          const hasFechaHoraAgendaCreate = !!(cleanLeadData.fechaHoraAgenda);
-          if (!finalEstadoRecepcionCreate && (leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0)) {
-            finalEstadoRecepcionCreate = 'Atendido';
-          }
-
-          const newLead = await prisma.lead.create({
-            data: {
-              fechaLead: cleanLeadData.fechaLead as Date,
-              nombres: cleanLeadData.nombres,
-              apellidos: cleanLeadData.apellidos,
-              numero: cleanLeadData.numero,
-              email: cleanLeadData.email,
-              sexo: cleanLeadData.sexo,
-              redSocial: cleanLeadData.redSocial,
-              anuncio: cleanLeadData.anuncio,
-              vendedor: cleanLeadData.vendedor as any,
-              estado: cleanLeadData.estado as any,
-              montoPagado: cleanLeadData.montoPagado,
-              metodoPago: cleanLeadData.metodoPago,
-              fechaHoraAgenda: cleanLeadData.fechaHoraAgenda,
-              servicios: cleanLeadData.servicios,
-              categoria: cleanLeadData.categoria,
-              profesionalAsignado: cleanLeadData.profesionalAsignado,
-              observacionesGenerales: cleanLeadData.observacionesGenerales,
-              fechaVolverLlamar: cleanLeadData.fechaVolverLlamar,
-              horaVolverLlamar: cleanLeadData.horaVolverLlamar,
-              notas: cleanLeadData.notas,
-              nHistoria: cleanLeadData.nHistoria,
-              aceptoTratamiento: cleanLeadData.aceptoTratamiento,
-              motivoNoCierre: cleanLeadData.motivoNoCierre,
-              estadoRecepcion: finalEstadoRecepcionCreate as any,
-              recursoId: cleanLeadData.recursoId,
-              birthDate: cleanLeadData.birthDate,
-              precioCita: cleanLeadData.precioCita,
-              deudaCita: cleanLeadData.deudaCita,
-              metodoPagoDeuda: cleanLeadData.metodoPagoDeuda,
-              documentType: cleanLeadData.documentType as any,
-              documentNumber: cleanLeadData.documentNumber,
-              razonSocial: cleanLeadData.razonSocial,
-              direccionFiscal: cleanLeadData.direccionFiscal,
-              createdById: req.authUser?.id,
-              membresiasAdquiridas: {
-                connect: (leadData.membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-              },
-              tratamientos: leadData.tratamientos && Array.isArray(leadData.tratamientos) && leadData.tratamientos.length > 0 ? {
-                  create: leadData.tratamientos.map((t: any) => ({
-                  nombre: t.nombre || '',
-                  cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
-                  precio: parseFloat(t.precio) || 0,
-                  montoPagado: parseFloat(t.montoPagado) || 0,
-                    metodoPago: (mapMetodoPago(t.metodoPago) as any) ?? null,
-                  deuda: parseFloat(t.deuda) || 0
-                }))
-              } : undefined,
-              procedimientos: leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0 ? {
-                create: leadData.procedimientos.map((p: any) => ({
-                  fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-                  personal: p.personal || '',
-                  horaInicio: p.horaInicio || '',
-                  horaFin: p.horaFin || '',
-                  tratamientoId: (p.tratamientoId ? BigInt(String(p.tratamientoId)) : BigInt(0)) as any,
-                  nombreTratamiento: p.nombreTratamiento || '',
-                  sesionNumero: parseInt(p.sesionNumero) || 1,
-                  asistenciaMedica: Boolean(p.asistenciaMedica),
-                  medico: p.medico || null,
-                  observacion: p.observacion || null
-                }))
-              } : undefined,
-              registrosLlamada: leadData.registrosLlamada && Array.isArray(leadData.registrosLlamada) && leadData.registrosLlamada.length > 0 ? {
-                create: leadData.registrosLlamada.map((r: any) => ({
-                  numeroLlamada: r.numeroLlamada,
-                  duracionLlamada: r.duracionLlamada,
-                  estadoLlamada: r.estadoLlamada,
-                  observacion: r.observacion,
-                }))
-              } : undefined,
-              seguimientos: leadData.seguimientos && Array.isArray(leadData.seguimientos) && leadData.seguimientos.length > 0 ? {
-                create: leadData.seguimientos.map((s: any) => ({
-                  fecha: parseDate(s.fecha, true, new Date()),
-                  procedimientoId: s.procedimientoId,
-                  dolor: s.dolor || false,
-                  hinchazon: s.hinchazon || false,
-                  enrojecimiento: s.enrojecimiento || false,
-                  picazon: s.picazon || false,
-                  hematomas: s.hematomas || false,
-                  sensibilidad: s.sensibilidad || false,
-                  otrosSintomas: s.otrosSintomas || false,
-                  descripcionOtros: s.descripcionOtros,
-                  observaciones: s.observaciones,
-                }))
-              } : undefined,
-              alergias: leadData.alergias && Array.isArray(leadData.alergias) && leadData.alergias.length > 0 ? {
-                create: leadData.alergias.map((a: any) => ({
-                  nombreAlergia: a.nombreAlergia,
-                }))
-              } : undefined,
-              pagosRecepcion: leadData.pagosRecepcion && Array.isArray(leadData.pagosRecepcion) && leadData.pagosRecepcion.length > 0 ? {
-                create: leadData.pagosRecepcion.map((p: any) => ({
-                  monto: p.monto,
-                  metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
-                  fechaPago: parseDate(p.fechaPago) || new Date(),
-                  observacion: p.observacion,
-                }))
-              } : undefined,
-            },
-            include: {
-              tratamientos: true,
-              procedimientos: true,
-              registrosLlamada: true,
-              seguimientos: true,
-              alergias: true,
-              pagosRecepcion: true,
-              comprobantes: true,
-            }
-          });
-
-          results.push(convertBigInts(newLead));
-          successCount++;
-          if ((i + 1) % 10 === 0) {
-            console.log(`✅ Procesados ${i + 1}/${leads.length} leads`);
-          }
-        } catch (error: any) {
-          console.error(`❌ Error procesando lead ${i + 1}:`, error.message);
-          errorCount++;
-          results.push({
-            error: true,
-            index: i,
-            data: leadData,
-            errorMessage: error.message
-          });
-        }
-      }
-
-      console.log(`📊 Importación completada: ${successCount} exitosos, ${errorCount} errores`);
-      res.status(200).json({
-        message: `Se importaron ${successCount} leads exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
-        leads: results,
-        successCount,
-        errorCount
-      });
-    } catch (error: any) {
-      console.error('❌ Error en bulk import de leads:', error);
-      res.status(500).json({
-        message: 'Error en la importación bulk de leads',
-        error: error.message
-      });
     }
-    if (!finalEstadoRecepcionCreate && (procedimientos && Array.isArray(procedimientos) && procedimientos.length > 0)) {
-      finalEstadoRecepcionCreate = 'Atendido';
-    }
-    // Keep DB token as 'Agendado' even if fechaHoraAgenda exists. The frontend will display
-    // 'Agendado por llegar' when appropriate (estadoRecepcion === 'Agendado' && fechaHoraAgenda present).
-
-    const newLead = await prisma.lead.create({
-      data: {
-        ...leadData,
-        vendedor: mapSeller(leadData.vendedor),
-        metodoPago: mapMetodoPago(leadData.metodoPago) as any,
-        estadoRecepcion: finalEstadoRecepcionCreate,
-        fechaLead: parseLocalDate(leadData.fechaLead) || new Date(),
-        fechaHoraAgenda: parseDateTime(leadData.fechaHoraAgenda),
-        fechaVolverLlamar: parseLocalDate(leadData.fechaVolverLlamar),
-        birthDate: parseLocalDate(leadData.birthDate),
-        // Handle relation for memberships if needed
-        membresiasAdquiridas: {
-          connect: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-        },
-        // Create tratamientos if provided
-        tratamientos: tratamientos && tratamientos.length > 0 ? {
-            create: tratamientos.map((t: any) => ({
-            nombre: t.nombre || '',
-            cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
-            precio: parseFloat(t.precio) || 0,
-            montoPagado: parseFloat(t.montoPagado) || 0,
-              metodoPago: (mapMetodoPago(t.metodoPago) as any) ?? null,
-            deuda: parseFloat(t.deuda) || 0
-          }))
-        } : undefined,
-        // Create procedimientos if provided
-        procedimientos: procedimientos && procedimientos.length > 0 ? {
-          create: procedimientos.map((p: any) => ({
-            fechaAtencion: parseLocalDate(p.fechaAtencion) || new Date(),
-            personal: p.personal || '',
-            horaInicio: p.horaInicio || '',
-            horaFin: p.horaFin || '',
-            tratamientoId: (p.tratamientoId ? BigInt(String(p.tratamientoId)) : BigInt(0)) as any,
-            nombreTratamiento: p.nombreTratamiento || '',
-            sesionNumero: parseInt(p.sesionNumero) || 1,
-            asistenciaMedica: Boolean(p.asistenciaMedica),
-            medico: p.medico || null,
-            observacion: p.observacion || null
-          }))
-        } : undefined,
-        // Create registrosLlamada if provided
-        registrosLlamada: registrosLlamada && registrosLlamada.length > 0 ? {
-          create: registrosLlamada.map((r: any) => ({
-            numeroLlamada: r.numeroLlamada,
-            duracionLlamada: r.duracionLlamada,
-            estadoLlamada: r.estadoLlamada,
-            observacion: r.observacion,
-          }))
-        } : undefined,
-        // Create seguimientos if provided
-        seguimientos: seguimientos && seguimientos.length > 0 ? {
-          create: seguimientos.map((s: any) => ({
-            fecha: parseLocalDate(s.fecha) || new Date(),
-            procedimientoId: s.procedimientoId,
-            dolor: s.dolor || false,
-            hinchazon: s.hinchazon || false,
-            enrojecimiento: s.enrojecimiento || false,
-            picazon: s.picazon || false,
-            hematomas: s.hematomas || false,
-            sensibilidad: s.sensibilidad || false,
-            otrosSintomas: s.otrosSintomas || false,
-            descripcionOtros: s.descripcionOtros,
-            observaciones: s.observaciones,
-          }))
-        } : undefined,
-        // Create alergias if provided
-        alergias: alergias && alergias.length > 0 ? {
-          create: alergias.map((a: any) => ({
-            nombreAlergia: a.nombreAlergia,
-          }))
-        } : undefined,
-        // Create pagos de recepción if provided
-        pagosRecepcion: pagosRecepcion && pagosRecepcion.length > 0 ? {
-          create: pagosRecepcion.map((p: any) => ({
-            monto: p.monto,
-            metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
-            fechaPago: parseLocalDate(p.fechaPago) || new Date(),
-            observacion: p.observacion,
-          }))
-        } : undefined,
-        createdById: req.authUser?.id,
-      },
-      include: {
-        tratamientos: true,
-        procedimientos: true,
-        registrosLlamada: true,
-        seguimientos: true,
-        alergias: true,
-        pagosRecepcion: true,
-        comprobantes: true,
-      }
-    });
-    // Use the process helper to return formatted dates
-    res.status(201).json(processLeadForResponse(newLead));
-  } catch (error) {
-    console.error("Error creating lead:", error);
-    res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
+    return result;
   }
+  return value;
+};
+
+// Helper functions to map and parse values
+const mapSeller = (value: any): string | undefined => {
+  if (!value) return undefined;
+  const sellerMap: Record<string, string> = {
+    'vanesa': 'Vanesa',
+    'liz': 'Liz',
+    'elvira': 'Elvira'
+  };
+  const normalized = String(value).toLowerCase().trim();
+  return sellerMap[normalized] || value;
+};
+
+const mapLeadStatus = (value: any): string | undefined => {
+  if (!value) return undefined;
+  const statusMap: Record<string, string> = {
+    'nuevo': 'Nuevo',
+    'seguimiento': 'Seguimiento',
+    'porpagar': 'PorPagar',
+    'agendado': 'Agendado',
+    'perdido': 'Perdido'
+  };
+  const normalized = String(value).replace(/\s+/g, '').toLowerCase();
+  return statusMap[normalized] || value;
+};
+
+const mapMetodoPago = (value: any): string | undefined => {
+  if (!value) return undefined;
+  const pagoMap: Record<string, string> = {
+    'efectivo': 'Efectivo',
+    'tarjeta': 'Tarjeta',
+    'transferencia': 'Transferencia',
+    'transferenciabcp': 'TransferenciaBCP',
+    'transferenciainterbank': 'TransferenciaInterbank',
+    'yape': 'Yape',
+    'plin': 'Plin'
+  };
+  const normalized = String(value).replace(/\s+/g, '').toLowerCase();
+  return pagoMap[normalized] || value;
+};
+
+const parseLocalDate = (dateStr: any): Date | undefined => {
+  if (!dateStr || dateStr === 'undefined') return undefined;
+  try {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? undefined : d;
+  } catch {
+    return undefined;
+  }
+};
+
+const processLeadForResponse = (lead: any) => {
+  if (!lead) return lead;
+  return convertBigInts(lead);
 };
 
 export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
@@ -767,216 +481,6 @@ export const getNextHistoryNumber = async (req: Request, res: Response) => {
 export const bulkImportLeads = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const leads = req.body;
-    if (!Array.isArray(leads)) {
-      return res.status(400).json({ message: 'Los datos deben ser un array de leads' });
-    }
-    console.log(`📥 Iniciando importación bulk de ${leads.length} leads`);
-    const results = [];
-    let successCount = 0;
-    let errorCount = 0;
-    for (let i = 0; i < leads.length; i++) {
-      const leadData = leads[i];
-      try {
-        const parseDate = (dateStr: any, addTime: boolean = false, defaultValue: Date | null = null): Date | null => {
-          if (dateStr === null || !dateStr || dateStr === '' || dateStr === 'undefined') return defaultValue;
-          try {
-            const dateValue = addTime ? new Date(dateStr + 'T00:00:00') : new Date(dateStr);
-            if (isNaN(dateValue.getTime())) return defaultValue;
-            return dateValue;
-          } catch {
-            return defaultValue;
-          }
-        };
-        const cleanLeadData = {
-          fechaLead: parseDate(leadData.fechaLead, true, new Date()),
-          nombres: leadData.nombres || '',
-          apellidos: leadData.apellidos || '',
-          numero: leadData.numero || '',
-          email: leadData.email || undefined,
-          sexo: leadData.sexo || '',
-          redSocial: leadData.redSocial || '',
-          anuncio: leadData.anuncio || '',
-          vendedor: mapSeller(leadData.vendedor),
-          estado: mapLeadStatus(leadData.estado),
-          montoPagado: parseFloat(leadData.montoPagado) || 0,
-          metodoPago: mapMetodoPago(leadData.metodoPago) as any,
-          fechaHoraAgenda: parseDate(leadData.fechaHoraAgenda),
-          servicios: Array.isArray(leadData.servicios) ? leadData.servicios : [],
-          categoria: leadData.categoria || '',
-          profesionalAsignado: leadData.profesionalAsignado || undefined,
-          observacionesGenerales: leadData.observacionesGenerales || undefined,
-          fechaVolverLlamar: parseDate(leadData.fechaVolverLlamar),
-          horaVolverLlamar: leadData.horaVolverLlamar || undefined,
-          notas: leadData.notas || undefined,
-          nHistoria: leadData.nHistoria || undefined,
-          aceptoTratamiento: leadData.aceptoTratamiento || undefined,
-          motivoNoCierre: leadData.motivoNoCierre || undefined,
-          estadoRecepcion: normalizeEnum(leadData.estadoRecepcion),
-          recursoId: leadData.recursoId || undefined,
-          birthDate: parseDate(leadData.birthDate, true),
-          precioCita: leadData.precioCita ? parseFloat(leadData.precioCita) : undefined,
-          deudaCita: leadData.deudaCita ? parseFloat(leadData.deudaCita) : undefined,
-          metodoPagoDeuda: mapMetodoPago(leadData.metodoPagoDeuda) as any,
-          documentType: leadData.documentType || undefined,
-          documentNumber: leadData.documentNumber || undefined,
-          razonSocial: leadData.razonSocial || undefined,
-          direccionFiscal: leadData.direccionFiscal || undefined,
-        };
-        if (cleanLeadData.nHistoria) {
-          const existingLead = await prisma.lead.findUnique({
-            where: { nHistoria: cleanLeadData.nHistoria }
-          });
-          if (existingLead) {
-            console.log(`⏭️ Skipping lead ${i + 1}: nHistoria ${cleanLeadData.nHistoria} already exists`);
-            continue;
-          }
-        }
-        let finalEstadoRecepcionCreate = cleanLeadData.estadoRecepcion;
-        const hasFechaHoraAgendaCreate = !!(cleanLeadData.fechaHoraAgenda);
-        if (!finalEstadoRecepcionCreate && (leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0)) {
-          finalEstadoRecepcionCreate = 'Atendido';
-        }
-        const newLead = await prisma.lead.create({
-          data: {
-            fechaLead: cleanLeadData.fechaLead as Date,
-            nombres: cleanLeadData.nombres,
-            apellidos: cleanLeadData.apellidos,
-            numero: cleanLeadData.numero,
-            email: cleanLeadData.email,
-            sexo: cleanLeadData.sexo,
-            redSocial: cleanLeadData.redSocial,
-            anuncio: cleanLeadData.anuncio,
-            vendedor: cleanLeadData.vendedor as any,
-            estado: cleanLeadData.estado as any,
-            montoPagado: cleanLeadData.montoPagado,
-            metodoPago: cleanLeadData.metodoPago,
-            fechaHoraAgenda: cleanLeadData.fechaHoraAgenda,
-            servicios: cleanLeadData.servicios,
-            categoria: cleanLeadData.categoria,
-            profesionalAsignado: cleanLeadData.profesionalAsignado,
-            observacionesGenerales: cleanLeadData.observacionesGenerales,
-            fechaVolverLlamar: cleanLeadData.fechaVolverLlamar,
-            horaVolverLlamar: cleanLeadData.horaVolverLlamar,
-            notas: cleanLeadData.notas,
-            nHistoria: cleanLeadData.nHistoria,
-            aceptoTratamiento: cleanLeadData.aceptoTratamiento,
-            motivoNoCierre: cleanLeadData.motivoNoCierre,
-            estadoRecepcion: finalEstadoRecepcionCreate as any,
-            recursoId: cleanLeadData.recursoId,
-            birthDate: cleanLeadData.birthDate,
-            precioCita: cleanLeadData.precioCita,
-            deudaCita: cleanLeadData.deudaCita,
-            metodoPagoDeuda: cleanLeadData.metodoPagoDeuda,
-            documentType: cleanLeadData.documentType as any,
-            documentNumber: cleanLeadData.documentNumber,
-            razonSocial: cleanLeadData.razonSocial,
-            direccionFiscal: cleanLeadData.direccionFiscal,
-            createdById: req.authUser?.id,
-            membresiasAdquiridas: {
-              connect: (leadData.membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
-            },
-            tratamientos: leadData.tratamientos && Array.isArray(leadData.tratamientos) && leadData.tratamientos.length > 0 ? {
-                create: leadData.tratamientos.map((t: any) => ({
-                nombre: t.nombre || '',
-                cantidadSesiones: parseInt(t.cantidadSesiones) || 0,
-                precio: parseFloat(t.precio) || 0,
-                montoPagado: parseFloat(t.montoPagado) || 0,
-                  metodoPago: (mapMetodoPago(t.metodoPago) as any) ?? null,
-                deuda: parseFloat(t.deuda) || 0
-              }))
-            } : undefined,
-            procedimientos: leadData.procedimientos && Array.isArray(leadData.procedimientos) && leadData.procedimientos.length > 0 ? {
-              create: leadData.procedimientos.map((p: any) => ({
-                fechaAtencion: parseDate(p.fechaAtencion, true) || new Date(),
-                personal: p.personal || '',
-                horaInicio: p.horaInicio || '',
-                horaFin: p.horaFin || '',
-                tratamientoId: (p.tratamientoId ? BigInt(String(p.tratamientoId)) : BigInt(0)) as any,
-                nombreTratamiento: p.nombreTratamiento || '',
-                sesionNumero: parseInt(p.sesionNumero) || 1,
-                asistenciaMedica: Boolean(p.asistenciaMedica),
-                medico: p.medico || null,
-                observacion: p.observacion || null
-              }))
-            } : undefined,
-            registrosLlamada: leadData.registrosLlamada && Array.isArray(leadData.registrosLlamada) && leadData.registrosLlamada.length > 0 ? {
-              create: leadData.registrosLlamada.map((r: any) => ({
-                numeroLlamada: r.numeroLlamada,
-                duracionLlamada: r.duracionLlamada,
-                estadoLlamada: r.estadoLlamada,
-                observacion: r.observacion,
-              }))
-            } : undefined,
-            seguimientos: leadData.seguimientos && Array.isArray(leadData.seguimientos) && leadData.seguimientos.length > 0 ? {
-              create: leadData.seguimientos.map((s: any) => ({
-                fecha: parseDate(s.fecha, true, new Date()),
-                procedimientoId: s.procedimientoId,
-                dolor: s.dolor || false,
-                hinchazon: s.hinchazon || false,
-                enrojecimiento: s.enrojecimiento || false,
-                picazon: s.picazon || false,
-                hematomas: s.hematomas || false,
-                sensibilidad: s.sensibilidad || false,
-                otrosSintomas: s.otrosSintomas || false,
-                descripcionOtros: s.descripcionOtros,
-                observaciones: s.observaciones,
-              }))
-            } : undefined,
-            alergias: leadData.alergias && Array.isArray(leadData.alergias) && leadData.alergias.length > 0 ? {
-              create: leadData.alergias.map((a: any) => ({
-                nombreAlergia: a.nombreAlergia,
-              }))
-            } : undefined,
-            pagosRecepcion: leadData.pagosRecepcion && Array.isArray(leadData.pagosRecepcion) && leadData.pagosRecepcion.length > 0 ? {
-              create: leadData.pagosRecepcion.map((p: any) => ({
-                monto: p.monto,
-                metodoPago: (mapMetodoPago(p.metodoPago) as any) ?? undefined,
-                fechaPago: parseDate(p.fechaPago) || new Date(),
-                observacion: p.observacion,
-              }))
-            } : undefined,
-          },
-          include: {
-            tratamientos: true,
-            procedimientos: true,
-            registrosLlamada: true,
-            seguimientos: true,
-            alergias: true,
-            pagosRecepcion: true,
-            comprobantes: true,
-          }
-        });
-        results.push(convertBigInts(newLead));
-        successCount++;
-        if ((i + 1) % 10 === 0) {
-          console.log(`✅ Procesados ${i + 1}/${leads.length} leads`);
-        }
-      } catch (error: any) {
-        console.error(`❌ Error procesando lead ${i + 1}:`, error.message);
-        errorCount++;
-        results.push({
-          error: true,
-          index: i,
-          data: leadData,
-          errorMessage: error.message
-        });
-      }
-    }
-    console.log(`📊 Importación completada: ${successCount} exitosos, ${errorCount} errores`);
-    res.status(200).json({
-      message: `Se importaron ${successCount} leads exitosamente${errorCount > 0 ? `, ${errorCount} con errores` : ''}`,
-      leads: results,
-      successCount,
-      errorCount
-    });
-  } catch (error: any) {
-    console.error('❌ Error en bulk import de leads:', error);
-    res.status(500).json({
-      message: 'Error en la importación bulk de leads',
-      error: error.message
-    });
-  }
-    const leads = req.body;
 
     if (!Array.isArray(leads)) {
       return res.status(400).json({ message: 'Los datos deben ser un array de leads' });
@@ -1231,5 +735,88 @@ export const bulkImportLeads = async (req: AuthenticatedRequest, res: Response) 
       message: 'Error en la importación bulk de leads',
       error: error.message
     });
+  }
+};
+
+// Get all leads
+export const getLeads = async (req: Request, res: Response) => {
+  try {
+    const leads = await prisma.lead.findMany({
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+        pagosRecepcion: true,
+        comprobantes: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    res.status(200).json(leads.map(processLeadForResponse));
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ message: 'Error fetching leads', error: (error as Error).message });
+  }
+};
+
+// Get lead by ID
+export const getLeadById = async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  try {
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+        pagosRecepcion: true,
+        comprobantes: true,
+      }
+    });
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    res.status(200).json(processLeadForResponse(lead));
+  } catch (error) {
+    console.error('Error fetching lead:', error);
+    res.status(500).json({ message: 'Error fetching lead', error: (error as Error).message });
+  }
+};
+
+// Create lead
+export const createLead = async (req: AuthenticatedRequest, res: Response) => {
+  const leadData = req.body;
+  try {
+    const newLead = await prisma.lead.create({
+      data: {
+        ...leadData,
+        vendedor: mapSeller(leadData.vendedor),
+        estado: mapLeadStatus(leadData.estado),
+        metodoPago: mapMetodoPago(leadData.metodoPago),
+        fechaLead: parseLocalDate(leadData.fechaLead) || new Date(),
+        fechaHoraAgenda: parseLocalDate(leadData.fechaHoraAgenda),
+        fechaVolverLlamar: parseLocalDate(leadData.fechaVolverLlamar),
+        birthDate: parseLocalDate(leadData.birthDate),
+        createdById: req.authUser?.id,
+      },
+      include: {
+        tratamientos: true,
+        procedimientos: true,
+        registrosLlamada: true,
+        seguimientos: true,
+        alergias: true,
+       pagosRecepcion: true,
+        comprobantes: true,
+      }
+    });
+    res.status(201).json(processLeadForResponse(newLead));
+  } catch (error) {
+    console.error('Error creating lead:', error);
+    res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
