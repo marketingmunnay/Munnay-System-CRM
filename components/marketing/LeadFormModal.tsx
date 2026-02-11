@@ -95,7 +95,7 @@ const formatDateForInputField = (dateValue: any): string => {
     return '';
 };
 
-const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS }) => {
+const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, currentLlamada, setCurrentLlamada, handleShowAddLlamadaForm, handleSaveCurrentLlamada, handleRemoveLlamada, campaigns, metaCampaigns, clientSources, CATEGORY_OPTIONS, SERVICE_CATEGORIES, services, memberships, PERSONAL_OPTIONS, VENDEDOR_OPTIONS, configuredResources }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Columna izquierda: col-span-2 con las 3 primeras secciones */}
@@ -2721,6 +2721,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                             memberships={memberships}
                             PERSONAL_OPTIONS={PERSONAL_OPTIONS}
                             VENDEDOR_OPTIONS={VENDEDOR_OPTIONS}
+                            configuredResources={configuredResources}
                         />;
             case 'recepcion':
                 return <RecepcionTabContent 
