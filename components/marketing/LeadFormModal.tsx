@@ -7,7 +7,6 @@ import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, Documen
 import Modal from '../shared/Modal';
 import FacturacionModal from '../finanzas/FacturacionModal';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
-import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
 
@@ -2235,6 +2234,23 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const [showSaveMessage, setShowSaveMessage] = useState(false);
     const [currentLlamada, setCurrentLlamada] = useState<Partial<RegistroLlamada> | null>(null);
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+    const [configuredResources, setConfiguredResources] = useState<any[]>([]);
+
+    // Cargar recursos configurados desde la API
+    useEffect(() => {
+        const loadResources = async () => {
+            try {
+                const resources = await api.getResources();
+                setConfiguredResources(resources || []);
+            } catch (error) {
+                console.error('Error cargando recursos:', error);
+                setConfiguredResources([]);
+            }
+        };
+        if (isOpen) {
+            loadResources();
+        }
+    }, [isOpen]);
 
     // Filtrar profesionales por puesto
     const PERSONAL_OPTIONS = useMemo(() => {
@@ -2257,13 +2273,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     ), [users]);
 
     const appointmentResources = useMemo<AppointmentActorOption[]>(() => (
-        RESOURCES.map(resource => ({
+        configuredResources.map(resource => ({
             id: String(resource.id),
             nombre: resource.nombre || resource.name || 'Recurso',
-            rol: resource.type === 'personal' ? 'staff' : 'space',
+            rol: resource.type === 'user' ? 'staff' : 'space',
             avatarUrl: resource.imageUrl,
         }))
-    ), []);
+    ), [configuredResources]);
 
     // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
     const VENDEDOR_OPTIONS = useMemo(() => {
