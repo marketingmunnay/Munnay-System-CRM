@@ -19,6 +19,7 @@ import inventoryRouter from './inventory.routes';
 import auditRouter from './audit.routes';
 import shiftsRouter from './shifts.routes';
 import calendarRouter from './calendar.routes';
+import adminRouter from './admin.routes';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.use('/inventory', inventoryRouter);
 router.use('/audit', auditRouter);
 // FIX: Add comprobantes router to be handled by the API.
 router.use('/config/comprobantes', comprobantesRouter);
+router.use('/admin', adminRouter);
 
 
 export default router;
