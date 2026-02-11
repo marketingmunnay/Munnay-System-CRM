@@ -2872,3 +2872,5 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
       </>
   );
 };
+
+export default LeadFormModal;

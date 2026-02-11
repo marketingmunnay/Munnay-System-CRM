@@ -654,6 +654,11 @@ export const checkAvailability = async (req: Request, res: Response) => {
         // 1. Check professional availability
         if (profesionalId) {
             const profId = parseInt(String(profesionalId));
+            
+            // Validate profId is a valid number
+            if (isNaN(profId)) {
+                return res.status(400).json({ message: 'profesionalId debe ser un número válido' });
+            }
 
             // Check shift
             const shiftDate = new Date(dateStr);
