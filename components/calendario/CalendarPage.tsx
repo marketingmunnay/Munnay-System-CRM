@@ -701,30 +701,43 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
         const top = timeToPosition(event.horaInicio);
         const height = durationToHeight(event.horaInicio, event.horaFin);
+        const isCompact = height < 80;
         
         // Configuración de colores dinámica basada en estado
         const status = event.source === 'lead' ? event.leadRef?.estado : event.appointmentRef?.estado;
+        const estadoRecepcion = event.leadRef?.estadoRecepcion;
         const statusKey = String(status || '').toLowerCase().replace(/ /g, '_');
+        const recepcionKey = String(estadoRecepcion || '').toLowerCase().replace(/ /g, '_');
         
         const statusStyles: Record<string, string> = {
-            'nuevo': 'bg-sky-50 border-sky-200 text-sky-800',
-            'seguimiento': 'bg-yellow-50 border-yellow-200 text-yellow-800',
-            'por_pagar': 'bg-orange-50 border-orange-200 text-orange-800',
-            'agendado': 'bg-green-50 border-green-200 text-green-800',
-            'perdido': 'bg-rose-50 border-rose-200 text-rose-800',
-            'programada': 'bg-blue-50 border-blue-200 text-blue-800',
-            'confirmada': 'bg-emerald-50 border-emerald-200 text-emerald-800',
-            'en_proceso': 'bg-purple-50 border-purple-200 text-purple-800',
-            'finalizada': 'bg-gray-100 border-gray-300 text-gray-700',
-            'cancelada': 'bg-red-50 border-red-200 text-red-800',
-            'no_asistio': 'bg-red-100 border-red-300 text-red-900',
+            // Estados de Lead
+            'nuevo': 'bg-sky-50 border-sky-300 text-sky-900',
+            'seguimiento': 'bg-yellow-50 border-yellow-300 text-yellow-900',
+            'por_pagar': 'bg-orange-50 border-orange-300 text-orange-900',
+            'agendado': 'bg-cyan-50 border-cyan-400 text-cyan-900',
+            'perdido': 'bg-rose-50 border-rose-300 text-rose-900',
+            // Estados de Recepción (prioridad)
+            'atendido': 'bg-emerald-50 border-emerald-400 text-emerald-900',
+            'por_atender': 'bg-cyan-50 border-cyan-400 text-cyan-900',
+            'reprogramado': 'bg-amber-50 border-amber-400 text-amber-900',
+            'cancelado': 'bg-red-50 border-red-400 text-red-900',
+            'no_asistio': 'bg-red-100 border-red-500 text-red-950',
+            // Estados de Appointment
+            'programada': 'bg-blue-50 border-blue-300 text-blue-900',
+            'confirmada': 'bg-emerald-50 border-emerald-300 text-emerald-900',
+            'en_proceso': 'bg-purple-50 border-purple-300 text-purple-900',
+            'finalizada': 'bg-gray-100 border-gray-400 text-gray-800',
         };
 
-        const palette = statusStyles[statusKey] || (event.source === 'lead'
-            ? 'bg-gradient-to-br from-[#fff6ee] via-white to-white border-[#f5c7a5]'
-            : 'bg-gradient-to-br from-[#ecfdf3] via-white to-white border-[#b4f0ce]');
+        // Priorizar estado de recepción si existe
+        const palette = estadoRecepcion 
+            ? (statusStyles[recepcionKey] || 'bg-cyan-50 border-cyan-400 text-cyan-900')
+            : (statusStyles[statusKey] || (event.source === 'lead'
+                ? 'bg-cyan-50 border-cyan-400 text-cyan-900'
+                : 'bg-emerald-50 border-emerald-400 text-emerald-900'));
             
         const primaryService = event.servicios[0];
+        const allServices = event.servicios.join(', ') || 'Servicio pendiente';
 
         const handleClick = () => {
             if (event.source === 'lead' && event.leadRef) {
@@ -734,26 +747,66 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
         return (
             <div
-                draggable={event.source === 'appointment'} // Only allow dragging new backend appointments
+                draggable={event.source === 'appointment'}
                 onDragStart={(e) => {
                     if (event.source === 'appointment') handleDragStart(e, event);
                 }}
                 onClick={handleClick}
-                className={`absolute w-full rounded-2xl border text-xs shadow-sm cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-xl ${palette} ${event.source === 'appointment' ? 'active:cursor-grabbing hover:cursor-grab' : ''}`}
-                style={{ top: `${top}px`, height: `${Math.max(height, 60)}px`, left: '4px', width: 'calc(100% - 8px)', padding: '0.75rem', zIndex: 10 }}
+                className={`absolute rounded-lg border-2 shadow-md cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] ${palette} ${event.source === 'appointment' ? 'active:cursor-grabbing hover:cursor-grab' : ''}`}
+                style={{ 
+                    top: `${top}px`, 
+                    height: `${Math.max(height, 65)}px`, 
+                    left: '6px', 
+                    right: '6px',
+                    width: 'auto',
+                    padding: isCompact ? '0.5rem' : '0.75rem', 
+                    zIndex: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: isCompact ? '0.25rem' : '0.5rem'
+                }}
             >
-                <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                    <span>{event.source === 'lead' ? 'Lead' : 'Cita'}</span>
-                    <span className="font-semibold text-slate-600">{event.horaInicio} - {event.horaFin}</span>
+                {/* Header con horario */}
+                <div className="flex items-center justify-between gap-2 flex-shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                        {event.horaInicio} - {event.horaFin}
+                    </span>
+                    {event.source === 'lead' && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/60">
+                            Lead
+                        </span>
+                    )}
                 </div>
-                <p className="mt-2 text-sm font-semibold text-slate-900 truncate">{event.cliente}</p>
-                <p className="text-xs text-slate-600 truncate">
-                    {event.servicios.length > 0 ? event.servicios.join(', ') : 'Servicio pendiente'}
+                
+                {/* Nombre del cliente */}
+                <p className="text-sm font-bold leading-tight" style={{ 
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: isCompact ? 1 : 2,
+                    WebkitBoxOrient: 'vertical',
+                    wordBreak: 'break-word'
+                }}>
+                    {event.cliente}
                 </p>
-                {primaryService && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 mt-1 bg-white/80 px-2 py-0.5 rounded-full border border-white/60 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#aa632d]" />
-                        {primaryService}
+                
+                {/* Servicios */}
+                {!isCompact && (
+                    <p className="text-xs font-medium leading-snug opacity-90" style={{ 
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        wordBreak: 'break-word'
+                    }}>
+                        {allServices}
+                    </p>
+                )}
+                
+                {/* Badge del servicio principal */}
+                {!isCompact && primaryService && event.servicios.length > 1 && (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-md bg-white/70 border border-current/20 w-fit">
+                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                        <span className="truncate max-w-[120px]">{primaryService}</span>
                     </span>
                 )}
             </div>
