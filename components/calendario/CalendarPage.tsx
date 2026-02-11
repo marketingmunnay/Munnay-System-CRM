@@ -4,10 +4,10 @@ import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
 import { RESOURCES } from '../../constants';
 import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon } from '../shared/Icons';
+import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
-import { getLeads, getAppointments, getResources as fetchResources, createAppointment } from '../../services/api';
+import { getLeads, getAppointments, getResources as fetchResources, createAppointment, getShiftByUserAndDate } from '../../services/api';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -21,17 +21,6 @@ interface CalendarPageProps {
     onSaveComprobante: (comprobante: ComprobanteElectronico) => Promise<void>;
     comprobantes: ComprobanteElectronico[];
 }
-
-const BLOCKED_TIMES = [
-    {
-        id: 'block-1',
-        recursoId: 'Dr. Carlos',
-        fecha: '2023-11-05',
-        horaInicio: '14:00',
-        horaFin: '17:00',
-        titulo: 'Tareas Administrativas'
-    },
-];
 
 const START_HOUR = 8;
 const END_HOUR = 21;
@@ -279,6 +268,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [dbResources, setDbResources] = useState<any[]>([]);
     
+    // State for shifts data keyed by resourceId
+    const [shiftsData, setShiftsData] = useState<Record<string, any>>({});
+
     // Initial fetch of resources
     useEffect(() => {
         fetchResources().then(res => {
@@ -304,6 +296,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
     // DRAG AND DROP STATE
     const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
+    const [dragPreview, setDragPreview] = useState<{ resourceId: string; top: number; isValid: boolean } | null>(null);
 
     const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
         setDraggedEvent(event);
@@ -311,14 +304,52 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         // Optional: Custom Drag Image
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragOver = (e: React.DragEvent, resourceId: string) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        
+        if (!draggedEvent) return;
+        
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        
+        // Calculate time from position
+        const totalMinutesFromStart = (y / HOUR_HEIGHT) * 60;
+        const hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
+        const minute = Math.floor(totalMinutesFromStart % 60);
+        const roundedMinute = Math.round(minute / 15) * 15;
+        const time = `${hour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`;
+        
+        // Check if slot is valid (not blocked/occupied)
+        const isBlocked = blocked.some(b => b.recursoId === resourceId && b.horaInicio <= time && b.horaFin > time);
+        const isOccupied = eventsForSelectedDate.some(event => 
+            event.resourceId === resourceId && 
+            event.horaInicio <= time && 
+            event.horaFin > time &&
+            event.id !== draggedEvent.id
+        );
+        const isValid = !isBlocked && !isOccupied;
+        
+        // Calculate preview top position
+        const minutesFromStart = (hour - START_HOUR) * 60 + roundedMinute;
+        const top = (minutesFromStart / 60) * HOUR_HEIGHT;
+        
+        setDragPreview({ resourceId, top, isValid });
+        e.dataTransfer.dropEffect = isValid ? 'move' : 'not-allowed';
     };
 
     const handleDrop = async (e: React.DragEvent, resourceId: string) => {
         e.preventDefault();
+        setDragPreview(null);
+        
         if (!draggedEvent || draggedEvent.source !== 'appointment') return;
+        
+        // Validate the drop target
+        if (!dragPreview || !dragPreview.isValid) {
+            setToast('❌ No puedes mover la cita a este horario (bloqueado u ocupado)');
+            setTimeout(() => setToast(null), 3000);
+            setDraggedEvent(null);
+            return;
+        }
 
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
@@ -381,11 +412,16 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             
             // Update State
             setAppointments(prev => prev.map(a => a.id === updatedAppt.id ? updatedAppt : a));
+            
+            // Show success toast
+            setToast(`✅ Cita movida a ${newStart.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`);
+            setTimeout(() => setToast(null), 2500);
 
         } catch (error) {
             console.error(error);
-            alert((error as Error).message); // Simple alert as requested toast logic not present in context
-            // Revert is handled by not updating 'appointments' if error
+            const errorMsg = (error as Error).message;
+            setToast(`❌ ${errorMsg}`);
+            setTimeout(() => setToast(null), 3000);
         } finally {
             setDraggedEvent(null);
         }
@@ -402,6 +438,36 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             .then(data => setAppointments(data))
             .catch(console.error);
     }, [currentDate]);
+
+    // Load shifts for visible resources
+    useEffect(() => {
+        const loadShifts = async () => {
+            const dateStr = formatDateForInput(currentDate) ?? '';
+            if (!dateStr) return;
+
+            const shiftsByResource: Record<string, any> = {};
+            
+            for (const resourceId of visibleResourceIds) {
+                try {
+                    // Try to get shift for this resource
+                    const numId = parseInt(resourceId, 10);
+                    if (!isNaN(numId)) {
+                        const shift = await getShiftByUserAndDate(numId, dateStr);
+                        if (shift) {
+                            shiftsByResource[resourceId] = shift;
+                        }
+                    }
+                } catch (err) {
+                    // Shift not found or error - just skip
+                    console.debug(`No shift found for resource ${resourceId} on ${dateStr}`);
+                }
+            }
+            
+            setShiftsData(shiftsByResource);
+        };
+
+        loadShifts();
+    }, [currentDate, visibleResourceIds]);
 
     // Update calendarEvents when leads OR appointments change
     useEffect(() => {
@@ -672,10 +738,46 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         return calendarEvents.filter(event => event.fecha === selectedDateStr && visibleSources.includes(event.source));
     }, [calendarEvents, selectedDateStr, visibleSources]);
 
+    // Helper function to check if a time string (HH:MM) falls within any timeblock in the shift
+    const isTimeInShiftBlock = (timeStr: string, shift: any): boolean => {
+        if (!shift || !shift.timeBlocks || !Array.isArray(shift.timeBlocks)) {
+            return false;
+        }
+        
+        return shift.timeBlocks.some((block: any) => {
+            const start = block.start || block.horaInicio;
+            const end = block.end || block.horaFin;
+            return timeStr >= start && timeStr < end;
+        });
+    };
+
+    // Compute blocked/unavailable hours based on shifts
     const blocked = useMemo(() => {
-        if (!selectedDateStr) return [];
-        return BLOCKED_TIMES.filter(b => b.fecha === selectedDateStr && visibleResourceIds.includes(b.recursoId));
-    }, [selectedDateStr, visibleResourceIds]);
+        const unavailableSlots: any[] = [];
+        
+        visibleResourceIds.forEach(resourceId => {
+            const shift = shiftsData[resourceId];
+            
+            // If resource has no shift for this date, mark all hours as unavailable
+            // If resource has a shift, mark hours outside the timeBlocks as unavailable
+            timeSlots.forEach((time, index) => {
+                if (index === timeSlots.length - 1) return; // Skip last slot
+                
+                const isAvailable = shift && isTimeInShiftBlock(time, shift);
+                
+                if (!isAvailable) {
+                    unavailableSlots.push({
+                        id: `unavailable-${resourceId}-${time}`,
+                        recursoId: String(resourceId),
+                        horaInicio: time,
+                        horaFin: timeSlots[index + 1] || '21:00',
+                    });
+                }
+            });
+        });
+        
+        return unavailableSlots;
+    }, [shiftsData, visibleResourceIds, timeSlots]);
 
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -697,6 +799,25 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const secondaryDateLabel = useMemo(() => currentDate.toLocaleDateString('es-ES', { year: 'numeric' }), [currentDate]);
     const viewModeLabel = useMemo(() => VIEW_OPTIONS.find(option => option.id === viewMode)?.label ?? 'Día', [viewMode]);
     const resourceColumnCount = Math.max(visibleResources.length, 1);
+
+    // Helper function to get status icon
+    const getStatusIcon = (event: CalendarEvent) => {
+        const status = event.source === 'lead' ? event.leadRef?.estado : event.appointmentRef?.estado;
+        const estadoRecepcion = event.leadRef?.estadoRecepcion;
+        const finalStatus = String(estadoRecepcion || status || '').toLowerCase().replace(/ /g, '_');
+        
+        // Map status to icon
+        if (finalStatus.includes('atendido') || finalStatus.includes('confirmada') || finalStatus.includes('realizada')) {
+            return { icon: CheckCircleIcon, color: 'text-emerald-600', label: 'Confirmado' };
+        }
+        if (finalStatus.includes('cancelado') || finalStatus.includes('no_asistio')) {
+            return { icon: XCircleIcon, color: 'text-red-600', label: 'Cancelado' };
+        }
+        if (finalStatus.includes('pendiente') || finalStatus.includes('por_atender') || finalStatus.includes('programada')) {
+            return { icon: ClockIcon, color: 'text-amber-600', label: 'Pendiente' };
+        }
+        return { icon: ExclamationTriangleIcon, color: 'text-orange-600', label: 'Revisar' };
+    };
 
     const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
         const top = timeToPosition(event.horaInicio);
@@ -766,16 +887,27 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                     gap: isCompact ? '0.25rem' : '0.5rem'
                 }}
             >
-                {/* Header con horario */}
+                {/* Header con horario e icono de estado */}
                 <div className="flex items-center justify-between gap-2 flex-shrink-0">
                     <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">
                         {event.horaInicio} - {event.horaFin}
                     </span>
-                    {event.source === 'lead' && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/60">
-                            Lead
-                        </span>
-                    )}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                        {(() => {
+                            const statusInfo = getStatusIcon(event);
+                            const IconComponent = statusInfo.icon;
+                            return (
+                                <div className={`w-4 h-4 ${statusInfo.color}`} title={statusInfo.label}>
+                                    <IconComponent />
+                                </div>
+                            );
+                        })()}
+                        {event.source === 'lead' && (
+                            <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/60 flex-shrink-0">
+                                Lead
+                            </span>
+                        )}
+                    </div>
                 </div>
                 
                 {/* Nombre del cliente */}
@@ -789,17 +921,31 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                     {event.cliente}
                 </p>
                 
-                {/* Servicios */}
+                {/* Servicios y duración */}
                 {!isCompact && (
-                    <p className="text-xs font-medium leading-snug opacity-90" style={{ 
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        wordBreak: 'break-word'
-                    }}>
-                        {allServices}
-                    </p>
+                    <>
+                        <p className="text-xs font-medium leading-snug opacity-90" style={{ 
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            wordBreak: 'break-word'
+                        }}>
+                            {allServices}
+                        </p>
+                        {(() => {
+                            const [startH, startM] = event.horaInicio.split(':').map(Number);
+                            const [endH, endM] = event.horaFin.split(':').map(Number);
+                            const startDate = new Date(); startDate.setHours(startH, startM, 0, 0);
+                            const endDate = new Date(); endDate.setHours(endH, endM, 0, 0);
+                            const durationMin = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+                            return (
+                                <span className="text-[9px] font-semibold text-slate-600 opacity-75">
+                                    ⏱ {durationMin} min
+                                </span>
+                            );
+                        })()}
+                    </>
                 )}
                 
                 {/* Badge del servicio principal */}
@@ -809,20 +955,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                         <span className="truncate max-w-[120px]">{primaryService}</span>
                     </span>
                 )}
-            </div>
-        );
-    };
-
-    const BlockedTimeSlot: React.FC<{ block: typeof BLOCKED_TIMES[0] }> = ({ block }) => {
-        const top = timeToPosition(block.horaInicio);
-        const height = durationToHeight(block.horaInicio, block.horaFin);
-        return (
-            <div
-                key={block.id}
-                className="absolute w-full p-2 rounded-2xl text-xs bg-slate-100/80 border border-dashed border-slate-300 text-slate-500 flex items-center justify-center backdrop-blur-sm"
-                style={{ top: `${top}px`, height: `${height}px`, left: '4px', width: 'calc(100% - 8px)'}}
-            >
-                 <p className="font-semibold">{block.titulo}</p>
             </div>
         );
     };
@@ -1007,7 +1139,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                 onClick={(e) => handleSlotClick(resource.id, e)}
                                 onMouseMove={(e) => handleMouseMove(resource.id, e)}
                                 onMouseLeave={handleMouseLeave}
-                                onDragOver={handleDragOver}
+                                onDragOver={(e) => handleDragOver(e, resource.id)}
                                 onDrop={(e) => handleDrop(e, resource.id)}
                             >
                                 {timeSlots.slice(0, -1).map(time => {
@@ -1017,9 +1149,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                     let overlay = null;
                                     let tooltipText = "Disponible para agendar";
                                     if (isBlocked) {
-                                        slotClass += " bg-red-100 opacity-70";
-                                        overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-red-600 font-bold bg-white/80 rounded px-2 py-1 border border-red-200">No disponible</span></div>;
-                                        tooltipText = "Horario bloqueado o fuera del turno";
+                                        slotClass += " opacity-60";
+                                        slotClass += " cursor-not-allowed";
+                                        slotClass = slotClass.replace("bg-white", "bg-[#a4adba]");
+                                        tooltipText = "Fuera del horario de turno";
                                     } else if (isOccupied) {
                                         slotClass += " bg-yellow-100 opacity-80";
                                         overlay = <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xs text-yellow-700 font-bold bg-white/80 rounded px-2 py-1 border border-yellow-200">Ocupado</span></div>;
@@ -1068,10 +1201,33 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                                             <AppointmentCard event={event} />
                                         </Tooltip>
                                     ))}
-
-                                {blocked.filter(b => b.recursoId === resource.id).map(block => (
-                                    <BlockedTimeSlot key={block.id} block={block} />
-                                ))}
+                                    
+                                {/* Drag preview - mostrar donde caería la cita */}
+                                {dragPreview && dragPreview.resourceId === resource.id && draggedEvent && (
+                                    <div 
+                                        className={`absolute w-full rounded-lg border-2 transition-all pointer-events-none z-20 ${
+                                            dragPreview.isValid 
+                                                ? 'border-emerald-400 bg-emerald-50 opacity-50' 
+                                                : 'border-red-400 bg-red-50 opacity-40'
+                                        }`}
+                                        style={{
+                                            top: `${dragPreview.top}px`,
+                                            height: `${durationToHeight(draggedEvent.horaInicio, draggedEvent.horaFin)}px`,
+                                            left: '6px',
+                                            right: '6px'
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className={`text-xs font-semibold ${
+                                                dragPreview.isValid 
+                                                    ? 'text-emerald-700' 
+                                                    : 'text-red-700'
+                                            }`}>
+                                                {dragPreview.isValid ? '✓ Soltar aquí' : '✗ No disponible'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
 

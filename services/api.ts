@@ -737,6 +737,11 @@ export const sendAppointmentConfirmation = (
 ): Promise<{ status: string }> =>
   apiRequest<{ status: string }>(`/calendar/appointments/${appointmentId}/confirm`, 'POST', { channels });
 
+// ====== SHIFTS ======
+
+export const getShiftByUserAndDate = (userId: number, date: string): Promise<any> =>
+  apiRequest<any>(`/shifts/user/${userId}/date/${date}`, 'GET');
+
 // ====== AUDITORÍA Y LOGS ======
 
 export const getSystemLogs = (range?: 'hoy' | 'semana' | 'mes', module?: string, search?: string): Promise<SystemLog[]> => {

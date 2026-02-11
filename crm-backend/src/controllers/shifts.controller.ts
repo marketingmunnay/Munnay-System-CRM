@@ -225,3 +225,48 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error generating recurring shifts' });
   }
 };
+
+export const getShiftByUserAndDate = async (req: Request, res: Response) => {
+  try {
+    const { userId, date } = req.params;
+
+    // Parse date (YYYY-MM-DD format)
+    let shiftDate: Date;
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [year, month, day] = date.split('-').map(Number);
+      shiftDate = new Date(Date.UTC(year, month - 1, day));
+    } else {
+      return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const shift = await prisma.shift.findUnique({
+      where: {
+        userId_date: {
+          userId: Number(userId),
+          date: shiftDate,
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            avatarUrl: true,
+            position: true
+          }
+        }
+      }
+    });
+
+    if (!shift) {
+      // Return null if no shift found for this user/date
+      return res.json(null);
+    }
+
+    res.json(shift);
+  } catch (error) {
+    console.error('Error fetching shift by user and date:', error);
+    res.status(500).json({ message: 'Error fetching shift' });
+  }
+};
