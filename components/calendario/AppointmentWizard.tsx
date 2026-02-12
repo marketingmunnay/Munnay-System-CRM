@@ -28,7 +28,8 @@ import {
   Info, 
   MapPin, 
   Grid,
-  AlertTriangle 
+  AlertTriangle,
+  Briefcase 
 } from 'lucide-react';
 
 interface AppointmentWizardProps {

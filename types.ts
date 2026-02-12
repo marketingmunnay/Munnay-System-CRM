@@ -488,10 +488,11 @@ export interface SystemLog {
   fecha: string;
   usuario: string; // Nombre del usuario
   usuarioId: number;
-  accion: 'crear' | 'editar' | 'eliminar' | 'login' | 'otro';
+  accion: 'crear' | 'editar' | 'eliminar' | 'login' | 'error' | 'otro';
   modulo: string; // Ej: 'Leads', 'Ventas', 'Inventario'
   detalles: string;
   ip?: string;
+  metadata?: any; // Información adicional del log
 }
 
 export interface BusinessInfo {
