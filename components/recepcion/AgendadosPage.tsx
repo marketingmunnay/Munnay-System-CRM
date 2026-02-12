@@ -1,7 +1,3 @@
-// GoogleIcon para íconos de StatCard
-const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
-    <span className={`material-symbols-outlined ${className}`}>{name}</span>
-);
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User, Appointment } from '../../types';
 import { LeadStatus, ReceptionStatus, AppointmentStatus } from '../../types';
@@ -10,6 +6,21 @@ import { getAppointments, updateAppointmentStatus, getLeads } from '../../servic
 import { parseDate } from '../../utils/time';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
 import StatCard from '../dashboard/StatCard';
+import { LeadFormModal } from '../marketing/LeadFormModal';
+import { RESOURCES } from '../../constants';
+import * as api from '../../services/api';
+
+// GoogleIcon para íconos de StatCard
+const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
+    <span className={`material-symbols-outlined ${className}`}>{name}</span>
+);
+
+// Helper function to get resource name
+const getResourceName = (resourceId?: string): string => {
+    if (!resourceId) return 'Sin asignar';
+    const resource = RESOURCES.find(r => r.id === resourceId);
+    return resource ? resource.name : resourceId;
+};
 
 interface AgendadosPageProps {
   leads: Lead[]; // To remove mostly

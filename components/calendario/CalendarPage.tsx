@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
 import { RESOURCES } from '../../constants';
-import LeadFormModal from '../marketing/LeadFormModal';
+import { LeadFormModal } from '../marketing/LeadFormModal';
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
@@ -751,6 +751,15 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         });
     };
 
+    // Define timeSlots BEFORE using it in blocked
+    const timeSlots = useMemo(() => {
+        const slots = [];
+        for (let i = START_HOUR; i <= END_HOUR; i++) {
+            slots.push(`${i.toString().padStart(2, '0')}:00`);
+        }
+        return slots;
+    }, []);
+
     // Compute blocked/unavailable hours based on shifts
     const blocked = useMemo(() => {
         const unavailableSlots: any[] = [];
@@ -778,14 +787,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         
         return unavailableSlots;
     }, [shiftsData, visibleResourceIds, timeSlots]);
-
-    const timeSlots = useMemo(() => {
-        const slots = [];
-        for (let i = START_HOUR; i <= END_HOUR; i++) {
-            slots.push(`${i.toString().padStart(2, '0')}:00`);
-        }
-        return slots;
-    }, []);
 
     const isToday = useMemo(() => {
         const today = new Date();
