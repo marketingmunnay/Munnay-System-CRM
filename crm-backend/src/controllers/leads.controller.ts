@@ -790,7 +790,24 @@ export const getLeadById = async (req: Request, res: Response) => {
 
 // Create lead
 export const createLead = async (req: AuthenticatedRequest, res: Response) => {
-  const leadData = req.body;
+  const { 
+    id: _, // Exclude id from create data
+    createdAt, updatedAt,
+    tratamientos, procedimientos, registrosLlamada, seguimientos,
+    alergias, membresiasAdquiridas, comprobantes, ventasExtra,
+    incidencias, pagosRecepcion, appointments,
+    ...leadData
+  } = req.body;
+  
+  console.log('🔍 BACKEND: Creating new lead:', {
+    nombres: leadData.nombres,
+    apellidos: leadData.apellidos,
+    estado: leadData.estado,
+    vendedor: leadData.vendedor,
+    fechaHoraAgenda: leadData.fechaHoraAgenda,
+    servicios: leadData.servicios,
+  });
+  
   try {
     const newLead = await prisma.lead.create({
       data: {
@@ -810,13 +827,15 @@ export const createLead = async (req: AuthenticatedRequest, res: Response) => {
         registrosLlamada: true,
         seguimientos: true,
         alergias: true,
-       pagosRecepcion: true,
+        pagosRecepcion: true,
         comprobantes: true,
       }
     });
+    console.log('✅ BACKEND: Lead created successfully, ID:', newLead.id);
     res.status(201).json(processLeadForResponse(newLead));
   } catch (error) {
-    console.error('Error creating lead:', error);
+    console.error('❌ BACKEND: Error creating lead:', error);
+    console.error('❌ BACKEND: Lead data that failed:', JSON.stringify(leadData, null, 2));
     res.status(500).json({ message: 'Error creating lead', error: (error as Error).message });
   }
 };
