@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { formatDateForInput, parseDate } from '../../utils/time';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, Appointment } from '../../types';
 import { RESOURCES } from '../../constants';
-import { LeadFormModal } from '../marketing/LeadFormModal'; // FIX: Changed to named import
+import LeadFormModal from '../marketing/LeadFormModal';
 import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, FunnelIcon, CalendarDaysIcon, Cog6ToothIcon, ChevronDownIcon, XMarkIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '../shared/Icons';
 import Tooltip from '../shared/Tooltip';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
