@@ -60,6 +60,18 @@ const isProfessionalUser = (user: Partial<User>) => {
     return matchesProfessionalProfile(user.role?.nombre);
 };
 
+// Helper to extract numeric ID from prefixed IDs like "resource-123" or "user-456"
+const extractNumericId = (prefixedId?: string): number | undefined => {
+    if (!prefixedId) return undefined;
+    const match = prefixedId.match(/^(?:resource|user)-(\d+)$/);
+    if (match && match[1]) {
+        return parseInt(match[1], 10);
+    }
+    // Fallback: try to parse directly if it's already numeric
+    const parsed = parseInt(prefixedId, 10);
+    return isNaN(parsed) ? undefined : parsed;
+};
+
 // Puestos permitidos para el campo Vendedor
 const PUESTOS_VENDEDOR = ['Recepcionista', 'Call Center'];
 
@@ -2262,43 +2274,35 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     }, [users]);
 
     const appointmentProfessionals = useMemo<AppointmentActorOption[]>(() => {
-        // Personal de users (filtrado por perfil profesional)
-        const professionalsFromUsers = users
+        // Priorizar recursos configurados si existen
+        if (configuredResources && configuredResources.length > 0) {
+            // Solo usar recursos configurados con type='personal'
+            return configuredResources
+                .filter(resource => resource.type === 'personal')
+                .map(resource => ({
+                    id: `resource-${resource.id}`,
+                    nombre: resource.nombre || resource.name || 'Profesional',
+                    rol: 'staff' as const,
+                    avatarUrl: resource.avatarUrl || resource.imageUrl,
+                }));
+        }
+        
+        // Fallback: usar users solo si no hay recursos configurados
+        return users
             .filter((user: User) => isProfessionalUser(user))
             .map((user: User, index: number) => ({
-                id: String(user.id ?? user.email ?? `user-${index}`),
+                id: `user-${user.id ?? user.email ?? index}`,
                 nombre: `${user.nombres || ''} ${user.apellidos || ''}`.trim() || user.email || 'Profesional',
                 rol: 'staff' as const,
                 avatarUrl: (user as any).avatarUrl,
             }));
-        
-        // Personal de recursos configurados (type='personal')
-        const professionalsFromResources = configuredResources
-            .filter(resource => resource.type === 'personal')
-            .map(resource => ({
-                id: String(resource.id),
-                nombre: resource.nombre || resource.name || 'Profesional',
-                rol: 'staff' as const,
-                avatarUrl: resource.avatarUrl || resource.imageUrl,
-            }));
-        
-        // Combinar y eliminar duplicados por id
-        const combined = [...professionalsFromUsers, ...professionalsFromResources];
-        const uniqueMap = new Map<string, AppointmentActorOption>();
-        combined.forEach(prof => {
-            if (!uniqueMap.has(prof.id)) {
-                uniqueMap.set(prof.id, prof);
-            }
-        });
-        
-        return Array.from(uniqueMap.values());
     }, [users, configuredResources]);
 
     const appointmentResources = useMemo<AppointmentActorOption[]>(() => (
         configuredResources
             .filter(resource => resource.type === 'room' || resource.tipo === 'ROOM') // Solo espacios/salas
             .map(resource => ({
-                id: String(resource.id),
+                id: `resource-${resource.id}`,
                 nombre: resource.nombre || resource.name || 'Recurso',
                 rol: 'space',
                 avatarUrl: resource.imageUrl,
@@ -2670,12 +2674,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         const professionalName = appointmentProfessionals.find(pro => pro.id === appointment.professionalId)?.nombre;
         const timestamp = new Date(`${appointment.date}T${appointment.time}:00`);
 
+        // Extract numeric IDs from prefixed format
+        const resourceIdNumeric = extractNumericId(appointment.resourceId);
+        const professionalIdNumeric = extractNumericId(appointment.professionalId);
+
         setFormData(prev => ({
             ...prev,
             ...leadDraft,
             estado: LeadStatus.Agendado,
             fechaHoraAgenda: Number.isNaN(timestamp.getTime()) ? prev.fechaHoraAgenda : timestamp.toISOString(),
-            recursoId: appointment.resourceId || prev.recursoId,
+            recursoId: resourceIdNumeric ? String(resourceIdNumeric) : prev.recursoId,
             profesionalAsignado: professionalName || prev.profesionalAsignado,
             servicios: serviceSelected ? [serviceSelected.nombre] : prev.servicios,
         }));

@@ -105,6 +105,18 @@ const buildClienteNombre = (nombres?: string, apellidos?: string) => {
     return fullName.length > 0 ? fullName : 'Cliente sin nombre';
 };
 
+// Helper to extract numeric ID from prefixed IDs like "resource-123" or "user-456"
+const extractNumericId = (prefixedId?: string): number | undefined => {
+    if (!prefixedId) return undefined;
+    const match = prefixedId.match(/^(?:resource|user)-(\d+)$/);
+    if (match && match[1]) {
+        return parseInt(match[1], 10);
+    }
+    // Fallback: try to parse directly if it's already numeric
+    const parsed = parseInt(prefixedId, 10);
+    return isNaN(parsed) ? undefined : parsed;
+};
+
 const leadToEvent = (lead: Lead): CalendarEvent | null => {
     if (!lead.fechaHoraAgenda || !lead.recursoId) return null;
     const parsed = parseDate(lead.fechaHoraAgenda);
@@ -135,15 +147,14 @@ const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
     const horaInicio = `${padTime(start.getHours())}:${padTime(start.getMinutes())}`;
     const horaFin = `${padTime(end.getHours())}:${padTime(end.getMinutes())}`;
 
-    // Mapeo inteligente del recurso visual
-    // Priority: Professional ID (como string) > Resource ID (como string)
-    // Esto asume que las columnas del calendario se configurarán con estos IDs.
+    // Mapeo inteligente del recurso visual con prefijo "resource-"
+    // Priority: Professional ID > Resource ID
     let resourceId = 'unassigned';
-    if (appointment.professionalId) resourceId = `user-${appointment.professionalId}`;
-    else if (appointment.resourceId) resourceId = `room-${appointment.resourceId}`;
+    if (appointment.professionalId) resourceId = `resource-${appointment.professionalId}`;
+    else if (appointment.resourceId) resourceId = `resource-${appointment.resourceId}`;
     
-    // Fallback if no ID found (should not happen for valid appts)
-    if (resourceId === 'unassigned' && appointment.resourceId) resourceId = String(appointment.resourceId);
+    // Fallback if no ID found
+    if (resourceId === 'unassigned' && appointment.resourceId) resourceId = `resource-${appointment.resourceId}`;
 
 
     const clienteNombre = appointment.lead 
@@ -507,7 +518,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const professionalOptions = useMemo<AppointmentActorOption[]>(
         () =>
             teamMembers.map(member => ({
-                id: String(member.id),
+                id: `resource-${member.id}`,
                 nombre: member.nombre || member.name || 'Profesional',
                 rol: 'staff',
                 avatarUrl: member.imageUrl,
@@ -517,7 +528,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     const resourceOptions = useMemo<AppointmentActorOption[]>(
         () =>
             activeResources.map(resource => ({
-                id: String(resource.id),
+                id: `resource-${resource.id}`,
                 nombre: resource.nombre || resource.name || 'Recurso',
                 rol: resource.type === 'personal' ? 'staff' : 'space',
                 avatarUrl: resource.imageUrl,
@@ -692,9 +703,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         try {
             const payload = {
                 leadId: draft.lead.id,
-                professionalId: draft.appointment.professionalId ? parseInt(draft.appointment.professionalId) : undefined,
+                professionalId: extractNumericId(draft.appointment.professionalId),
                 serviceId: draft.appointment.serviceId,
-                resourceId: draft.appointment.resourceId ? parseInt(draft.appointment.resourceId) : undefined,
+                resourceId: extractNumericId(draft.appointment.resourceId),
                 date: draft.appointment.date,
                 time: draft.appointment.time,
                 notes: draft.appointment.notes || '',
