@@ -70,8 +70,10 @@ export const createAppointment = async (req: Request, res: Response) => {
         const end = new Date(start.getTime() + duration * 60000);
 
         // ==========================================
-        // VALIDACIÓN DE TURNOS (SHIFTS)
+        // VALIDACIÓN DE TURNOS (SHIFTS) - OPCIONAL
         // ==========================================
+        console.log('🔍 [APPOINTMENT] Validando turno para profesional:', professionalId, 'fecha:', date);
+        
         if (professionalId) {
             const shiftDate = new Date(date); // Validar la fecha exacta 'YYYY-MM-DD'
             // Consultar si el profesional tiene turno ese día
@@ -84,17 +86,21 @@ export const createAppointment = async (req: Request, res: Response) => {
                 }
             });
 
-            // 1. Si no hay turno definido o es día libre
-            if (!shift || shift.isDayOff) {
+            console.log('📅 [SHIFT] Turno encontrado:', shift ? 'SÍ' : 'NO', shift?.isDayOff ? '(Día libre)' : '');
+
+            // 1. Si es día libre explícitamente marcado, rechazar
+            if (shift && shift.isDayOff) {
+                console.log('❌ [SHIFT] Rechazado: Día libre');
                 return res.status(409).json({ 
-                    message: 'El profesional no está disponible o tiene día libre en esta fecha.' 
+                    message: 'El profesional tiene marcado día libre en esta fecha.' 
                 });
             }
 
-            // 2. Validar que la hora esté dentro de los TimeBlocks
-            // timeBlocks espera formato JSON: [ { "start": "09:00", "end": "13:00" }, ... ]
-            const timeBlocks = shift.timeBlocks as any[]; 
-            if (timeBlocks && timeBlocks.length > 0) {
+            // 2. Si HAY shift con timeBlocks, validar horarios
+            // Si NO hay shift, PERMITIR (asumimos horario completo disponible)
+            const timeBlocks = shift?.timeBlocks as any[]; 
+            if (shift && timeBlocks && timeBlocks.length > 0) {
+                console.log('⏰ [SHIFT] Validando bloques horarios:', timeBlocks);
                 const appStartMinutes = start.getHours() * 60 + start.getMinutes();
                 const appEndMinutes = end.getHours() * 60 + end.getMinutes();
 
@@ -110,15 +116,20 @@ export const createAppointment = async (req: Request, res: Response) => {
                 });
 
                 if (!isWithinRange) {
+                    console.log('❌ [SHIFT] Rechazado: Fuera de horario laboral');
                     return res.status(409).json({ 
                         message: `La cita está fuera del horario laboral del profesional (${timeBlocks.map(t => `${t.start}-${t.end}`).join(', ')})` 
                     });
                 }
+                console.log('✅ [SHIFT] Cita dentro del horario laboral');
+            } else {
+                console.log('✅ [SHIFT] No hay restricciones de horario (sin shift o sin bloques)');
             }
         }
         
         // 2. Resource Collision Check
         // If resource is Selected, check availability
+        console.log('🏢 [RESOURCE] Validando disponibilidad de recurso:', resourceId);
         if (resourceId) {
             const existingResourceAppt = await prisma.appointment.findFirst({
                 where: {
@@ -130,11 +141,14 @@ export const createAppointment = async (req: Request, res: Response) => {
             });
             
             if (existingResourceAppt) {
+                console.log('❌ [RESOURCE] Colisión detectada - Recurso ocupado');
                 return res.status(409).json({ message: 'El recurso/consultorio seleccionado ya está ocupado en ese horario.' });
             }
+            console.log('✅ [RESOURCE] Recurso disponible');
         }
         
         // 3. Professional Collision Check
+        console.log('👤 [PROFESSIONAL] Validando disponibilidad del profesional:', professionalId);
         if (professionalId) {
              const existingProfAppt = await prisma.appointment.findFirst({
                 where: {
@@ -146,11 +160,20 @@ export const createAppointment = async (req: Request, res: Response) => {
             });
             
             if (existingProfAppt) {
+                console.log('❌ [PROFESSIONAL] Colisión detectada - Profesional ocupado');
                 return res.status(409).json({ message: 'El profesional seleccionado ya tiene una cita en ese horario.' });
             }
+            console.log('✅ [PROFESSIONAL] Profesional disponible');
         }
 
         // 4. Create
+        console.log('💾 [CREATE] Creando cita con payload:', {
+            leadId, professionalId, serviceId, resourceId,
+            startTime: start.toISOString(),
+            endTime: end.toISOString(),
+            duration: `${duration} min`
+        });
+        
         const appointment = await prisma.appointment.create({
             data: {
                 leadId: leadId ? parseInt(leadId) : null,
@@ -161,17 +184,34 @@ export const createAppointment = async (req: Request, res: Response) => {
                 endTime: end,
                 notes,
                 status: 'SCHEDULED'
+            },
+            include: {
+                lead: { select: { id: true, nombres: true, apellidos: true } },
+                professional: { select: { id: true, nombres: true, apellidos: true } },
+                service: true,
+                resource: true
             }
         });
         
+        console.log('✅ [CREATE] Cita creada exitosamente:', appointment.id);
+        
         // Sync with Lead Agenda (Legacy support)
         if (leadId) {
+             console.log('🔄 [SYNC] Sincronizando con Lead:', leadId);
              await prisma.lead.update({
                  where: { id: parseInt(leadId) },
-                 data: { fechaHoraAgenda: start, estado: 'Agendado', estadoRecepcion: 'Agendado' }
-             }).catch(console.error);
+                 data: { 
+                     fechaHoraAgenda: start, 
+                     estado: 'Agendado', 
+                     estadoRecepcion: 'Agendado',
+                     recursoId: professionalId ? `resource-${professionalId}` : (resourceId ? `resource-${resourceId}` : undefined)
+                 }
+             }).catch(err => {
+                 console.error('❌ [SYNC] Error sincronizando con Lead:', err);
+             });
         }
         
+        console.log('🎉 [SUCCESS] Cita creada y retornada al frontend');
         res.status(201).json(appointment);
         
     } catch (error) {

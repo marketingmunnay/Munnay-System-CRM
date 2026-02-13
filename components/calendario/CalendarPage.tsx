@@ -150,12 +150,20 @@ const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
     // Mapeo inteligente del recurso visual con prefijo "resource-"
     // Priority: Professional ID > Resource ID
     let resourceId = 'unassigned';
-    if (appointment.professionalId) resourceId = `resource-${appointment.professionalId}`;
-    else if (appointment.resourceId) resourceId = `resource-${appointment.resourceId}`;
+    if (appointment.professionalId) {
+        resourceId = `resource-${appointment.professionalId}`;
+    } else if (appointment.resourceId) {
+        resourceId = `resource-${appointment.resourceId}`;
+    }
     
-    // Fallback if no ID found
-    if (resourceId === 'unassigned' && appointment.resourceId) resourceId = `resource-${appointment.resourceId}`;
-
+    console.log('🔄 [MAPPING] Appointment → Event:', {
+        appointmentId: appointment.id,
+        professionalId: appointment.professionalId,
+        resourceIdDB: appointment.resourceId,
+        resourceIdMapped: resourceId,
+        fecha,
+        horaInicio
+    });
 
     const clienteNombre = appointment.lead 
         ? buildClienteNombre(appointment.lead.nombres, appointment.lead.apellidos)
@@ -674,6 +682,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const time = `${hour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`;
         const isBlocked = blocked.some(b => b.recursoId === resourceId && b.horaInicio <= time && b.horaFin > time);
         const isOccupied = eventsForSelectedDate.some(event => event.resourceId === resourceId && event.horaInicio <= time && event.horaFin > time);
+        
+        console.log('🖱️ [CLICK] Slot clickeado:', { resourceId, time, isBlocked, isOccupied });
+        
         const slotKey = `${resourceId}-${time}`;
         if (isBlocked || isOccupied) {
             // Shake visual
@@ -686,6 +697,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             setTimeout(() => setToast(null), 2500);
             return;
         }
+        
+        console.log('✅ [CLICK] Abriendo wizard con:', { resourceId, date: clickDate.toISOString(), time });
         setWizardDefaults({ resourceId, date: clickDate.toISOString(), time });
         setIsWizardOpen(true);
     };
@@ -699,7 +712,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     };
 
     const handleWizardFormSave = async (draft: AppointmentComposerResult) => {
-        console.debug('Guardar cita desde wizard', draft);
+        console.log('💾 [WIZARD] Guardar cita desde wizard:', draft);
         try {
             const payload = {
                 leadId: draft.lead.id,
@@ -710,14 +723,18 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                 time: draft.appointment.time,
                 notes: draft.appointment.notes || '',
             };
+            console.log('📤 [WIZARD] Payload enviado al backend:', payload);
+            
             const created = await createAppointment(payload);
+            console.log('✅ [WIZARD] Cita creada:', created);
+            
             handleWizardAppointmentCreated(created);
-        } catch (error: any) {
-            console.error('Error al crear cita:', error);
-            alert(error?.message || 'Error al crear la cita. Intente nuevamente.');
-        } finally {
             setIsWizardOpen(false);
             setWizardDefaults(null);
+        } catch (error: any) {
+            console.error('❌ [WIZARD] Error al crear cita:', error);
+            const errorMsg = error?.response?.data?.message || error?.message || 'Error al crear la cita. Intente nuevamente.';
+            alert(errorMsg);
         }
     };
     
@@ -778,24 +795,43 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         visibleResourceIds.forEach(resourceId => {
             const shift = shiftsData[resourceId];
             
-            // If resource has no shift for this date, mark all hours as unavailable
-            // If resource has a shift, mark hours outside the timeBlocks as unavailable
-            timeSlots.forEach((time, index) => {
-                if (index === timeSlots.length - 1) return; // Skip last slot
-                
-                const isAvailable = shift && isTimeInShiftBlock(time, shift);
-                
-                if (!isAvailable) {
+            // ✅ CAMBIO: Si NO hay shift, NO bloqueamos nada (asumimos disponible 8:00-21:00)
+            // Solo bloqueamos si:
+            // 1. Hay shift Y está marcado como día libre (isDayOff = true)
+            // 2. Hay shift con timeBlocks Y el slot está fuera de esos bloques
+            
+            if (shift?.isDayOff) {
+                // Día libre explícito → bloquear TODO el día
+                timeSlots.forEach((time, index) => {
+                    if (index === timeSlots.length - 1) return;
                     unavailableSlots.push({
-                        id: `unavailable-${resourceId}-${time}`,
+                        id: `dayoff-${resourceId}-${time}`,
                         recursoId: String(resourceId),
                         horaInicio: time,
                         horaFin: timeSlots[index + 1] || '21:00',
                     });
-                }
-            });
+                });
+            } else if (shift?.timeBlocks && Array.isArray(shift.timeBlocks) && shift.timeBlocks.length > 0) {
+                // Hay bloques horarios → bloquear fuera de esos bloques
+                timeSlots.forEach((time, index) => {
+                    if (index === timeSlots.length - 1) return;
+                    
+                    const isInBlock = isTimeInShiftBlock(time, shift);
+                    
+                    if (!isInBlock) {
+                        unavailableSlots.push({
+                            id: `outside-${resourceId}-${time}`,
+                            recursoId: String(resourceId),
+                            horaInicio: time,
+                            horaFin: timeSlots[index + 1] || '21:00',
+                        });
+                    }
+                });
+            }
+            // Si NO hay shift (undefined) → NO bloqueamos nada
         });
         
+        console.log('🔒 [BLOCKED] Slots bloqueados:', unavailableSlots.length, unavailableSlots.slice(0, 3));
         return unavailableSlots;
     }, [shiftsData, visibleResourceIds, timeSlots]);
 
