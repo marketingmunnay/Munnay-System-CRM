@@ -779,14 +779,38 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         });
     };
 
+    // Calcular hora máxima visible basada en los turnos más tardíos de recursos visibles
+    const maxVisibleHour = useMemo(() => {
+        let maxHour = END_HOUR; // Default 21:00
+        
+        // Revisar todos los turnos de recursos visibles para encontrar la hora más tardía
+        visibleResourceIds.forEach(resourceId => {
+            const shift = shiftsData[resourceId];
+            if (shift?.timeBlocks && Array.isArray(shift.timeBlocks)) {
+                shift.timeBlocks.forEach((block: any) => {
+                    const endTime = block.end || block.horaFin;
+                    if (endTime) {
+                        const [endHour] = endTime.split(':').map(Number);
+                        if (endHour > maxHour) {
+                            maxHour = endHour;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Asegurar que siempre mostramos al menos hasta END_HOUR (21:00)
+        return Math.max(maxHour, END_HOUR);
+    }, [shiftsData, visibleResourceIds]);
+
     // Define timeSlots BEFORE using it in blocked
     const timeSlots = useMemo(() => {
         const slots = [];
-        for (let i = START_HOUR; i <= END_HOUR; i++) {
+        for (let i = START_HOUR; i <= maxVisibleHour; i++) {
             slots.push(`${i.toString().padStart(2, '0')}:00`);
         }
         return slots;
-    }, []);
+    }, [maxVisibleHour]);
 
     // Compute blocked/unavailable hours based on shifts
     const blocked = useMemo(() => {

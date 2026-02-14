@@ -58,10 +58,13 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
         let totalMinutes = 0;
         blocks.forEach(block => {
             if (!block.start || !block.end) return;
-            const start = new Date(`2000-01-01T${block.start}`);
-            const end = new Date(`2000-01-01T${block.end}`);
-            if (end > start) {
-                totalMinutes += (end.getTime() - start.getTime()) / 60000;
+            // Usar aritmética de strings directamente para evitar problemas de timezone
+            const [startH, startM] = block.start.split(':').map(Number);
+            const [endH, endM] = block.end.split(':').map(Number);
+            const startTotalMin = startH * 60 + startM;
+            const endTotalMin = endH * 60 + endM;
+            if (endTotalMin > startTotalMin) {
+                totalMinutes += (endTotalMin - startTotalMin);
             }
         });
         const hours = Math.floor(totalMinutes / 60);

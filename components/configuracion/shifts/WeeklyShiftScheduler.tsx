@@ -215,9 +215,12 @@ const WeeklyShiftScheduler: React.FC = () => {
         shifts.filter(s => s.userId === userId).forEach(s => {
             if (s.isDayOff || !s.timeBlocks) return;
             s.timeBlocks.forEach((b: any) => {
-                 const start = new Date(`2000-01-01T${b.start}`);
-                 const end = new Date(`2000-01-01T${b.end}`);
-                 if (end > start) totalMinutes += (end.getTime() - start.getTime()) / 60000;
+                 // Usar aritmética de strings directamente para evitar problemas de timezone
+                 const [startH, startM] = b.start.split(':').map(Number);
+                 const [endH, endM] = b.end.split(':').map(Number);
+                 const startTotalMin = startH * 60 + startM;
+                 const endTotalMin = endH * 60 + endM;
+                 if (endTotalMin > startTotalMin) totalMinutes += (endTotalMin - startTotalMin);
             });
         });
         const h = Math.floor(totalMinutes / 60);

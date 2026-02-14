@@ -808,13 +808,42 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
            <label className="text-xs font-semibold text-slate-500 mb-1.5 block ml-1">Hora de inicio</label>
            <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="time"
+            <select
               value={startTime}
               onChange={e => setStartTime(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:border-[#aa632d] focus:ring-4 focus:ring-[#aa632d]/10 focus:outline-none transition-all"
-            />
+              disabled={!selectedProfesionalId || !selectedDate}
+              className="w-full appearance-none rounded-xl border border-slate-200 pl-10 pr-8 py-2.5 text-sm focus:border-[#aa632d] focus:ring-4 focus:ring-[#aa632d]/10 focus:outline-none transition-all bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Seleccionar hora...</option>
+              {(() => {
+                // Generar opciones de tiempo filtradas por turno del profesional
+                const timeOptions: string[] = [];
+                const interval = 15; // Intervalos de 15 minutos
+                
+                // Rango completo 8:00 - 20:45 (backup si no hay turno)
+                for (let h = 8; h <= 20; h++) {
+                  for (let m = 0; m < 60; m += interval) {
+                    if (h === 20 && m > 45) break; // Máximo 20:45
+                    const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                    timeOptions.push(timeStr);
+                  }
+                }
+                
+                // TODO: Filtrar por turnos reales del profesional cuando selectedProfesionalId y selectedDate estén disponibles
+                // Por ahora, mostrar todas las opciones
+                return timeOptions.map(time => (
+                  <option key={time} value={time}>{time}</option>
+                ));
+              })()}
+            </select>
+            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90 pointer-events-none" />
           </div>
+          {(!selectedProfesionalId || !selectedDate) && (
+            <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Selecciona profesional y fecha primero
+            </p>
+          )}
         </div>
       </div>
 
