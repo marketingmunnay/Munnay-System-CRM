@@ -110,7 +110,7 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
     apellidos: lead?.apellidos || '',
     numero: lead?.numero || '',
     email: lead?.email || '',
-    redSocial: lead?.redSocial || 'Instagram',
+    redSocial: lead?.redSocial || '',
   }));
 
   const [details, setDetails] = useState<AppointmentDetails>(() => ({
@@ -134,7 +134,7 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
       email: lead?.email || prev.email,
       redSocial: lead?.redSocial || prev.redSocial,
     }));
-  }, [lead?.id]);
+  }, [lead?.id, lead?.redSocial, lead?.nombres, lead?.apellidos, lead?.numero, lead?.email]);
 
   useEffect(() => {
     if (!details.serviceId || !details.date || !details.time) return;
@@ -301,20 +301,7 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
                 placeholder="correo@ejemplo.com"
               />
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-500">Canal</label>
-              <select
-                className="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-sm focus:border-[#aa632d] focus:outline-none"
-                value={leadData.redSocial}
-                onChange={e => setLeadData(prev => ({ ...prev, redSocial: e.target.value }))}
-              >
-                {['Instagram', 'WhatsApp', 'Facebook', 'Referido'].map(option => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Canal field removed as requested */}
           </section>
         )}
 

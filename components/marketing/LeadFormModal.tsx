@@ -376,7 +376,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                <div>
                    <label className="text-sm font-medium">
                        Monto Pagado Cita 
-                       {formData.estado === LeadStatus.Agendado && <span className="text-red-500">*</span>}
+                       {/* Required indicator removed */}
                    </label>
                    <input 
                        type="number" 
@@ -2550,9 +2550,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         
         // Campos requeridos solo si el estado es "Agendado"
         if (formData.estado === LeadStatus.Agendado) {
-            if (formData.montoPagado === undefined || formData.montoPagado === null) {
-                errors.push('Monto Pagado Cita (requerido cuando está Agendado)');
-            }
+            // Monto Pagado removed from required
             if (!formData.metodoPago) {
                 errors.push('Método Pago (requerido cuando está Agendado)');
             }
