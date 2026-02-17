@@ -149,7 +149,7 @@ export interface Lead {
     sexo: 'M' | 'F';
     redSocial: string;
     anuncio: string;
-    vendedor: Seller;
+    vendedor: string;
     estado: LeadStatus;
     montoPagado: number;
     metodoPago?: MetodoPago;

@@ -186,7 +186,7 @@ model Lead {
   sexo                   String
   redSocial              String
   anuncio                String
-  vendedor               Seller
+  vendedor               String
   estado                 LeadStatus
   montoPagado            Float    @default(0)
   metodoPago             MetodoPago?

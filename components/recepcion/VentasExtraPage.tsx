@@ -29,7 +29,7 @@ interface PacienteParaLlamar {
     pago?: number;
     cantidad?: number;
     tratamientoProducto?: string;
-    vendedor?: Seller;
+    vendedor?: string;
     observacion?: string;
 }
 
