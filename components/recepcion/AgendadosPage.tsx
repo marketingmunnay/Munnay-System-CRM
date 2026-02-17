@@ -60,6 +60,26 @@ const mapStatusToReception = (status: AppointmentStatus): ReceptionStatus => {
     }
 };
 
+const normalizeReception = (value?: string) => {
+    if (!value) return ReceptionStatus.Agendado;
+    const s = String(value).trim();
+    if (Object.values(ReceptionStatus).includes(s as any)) return s as any;
+    
+    const map: Record<string, string> = {
+        'Agendado': ReceptionStatus.Agendado,
+        'AgendadoPorLlegar': ReceptionStatus.AgendadoPorLlegar,
+        'Agendado por llegar': ReceptionStatus.AgendadoPorLlegar,
+        'PorAtender': ReceptionStatus.PorAtender,
+        'Por Atender': ReceptionStatus.PorAtender,
+        'Atendido': ReceptionStatus.Atendido,
+        'Reprogramado': ReceptionStatus.Reprogramado,
+        'Cancelado': ReceptionStatus.Cancelado,
+        'NoAsistio': ReceptionStatus.NoAsistio,
+        'No Asistió': ReceptionStatus.NoAsistio
+    };
+    return map[s] ?? ReceptionStatus.Agendado;
+};
+
 // Kanban Card Component (adapted from marketing Kanban)
 interface KanbanCardProps {
   lead: Lead;

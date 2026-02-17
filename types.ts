@@ -27,7 +27,7 @@ export type Page =
 export enum LeadStatus {
     Nuevo = 'Nuevo',
     Seguimiento = 'Seguimiento',
-    PorPagar = 'Por Pagar',
+    PorPagar = 'PorPagar',
     Agendado = 'Agendado',
     Perdido = 'Perdido',
 }

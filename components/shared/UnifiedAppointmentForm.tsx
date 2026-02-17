@@ -208,7 +208,7 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
         apellidos: leadData.apellidos?.trim(),
         numero: leadData.numero.trim(),
         email: leadData.email?.trim(),
-        redSocial: leadData.redSocial,
+        redSocial: leadData.redSocial || lead?.redSocial,
       },
       appointment: {
         serviceId: serviceSelected.id,

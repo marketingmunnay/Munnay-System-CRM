@@ -216,7 +216,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                     <label className="text-sm font-medium">Estado del Lead <span className="text-red-500">*</span></label>
                     <select name="estado" value={formData.estado || ''} onChange={handleChange} className="w-full bg-[#f9f9fa] p-2" style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }} required>
                         <option value="">Seleccionar...</option>
-                        {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                        {Object.values(LeadStatus).map(s => <option key={s} value={s}>{s === LeadStatus.PorPagar ? 'Por Pagar' : s}</option>)}
                     </select>
                     {!formData.estado && <span className="text-red-500 text-xs">Este campo es requerido</span>}
                 </div>
@@ -2672,6 +2672,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         setFormData(prev => ({
             ...prev,
             ...leadDraft,
+            redSocial: leadDraft.redSocial || prev.redSocial,
             estado: LeadStatus.Agendado,
             fechaHoraAgenda: Number.isNaN(timestamp.getTime()) ? prev.fechaHoraAgenda : timestamp.toISOString(),
             recursoId: resourceIdNumeric ? String(resourceIdNumeric) : prev.recursoId,
