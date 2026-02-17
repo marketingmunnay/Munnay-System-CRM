@@ -400,7 +400,6 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                <div>
                    <label className="text-sm font-medium">
                        Método Pago 
-                       {formData.estado === LeadStatus.Agendado && <span className="text-red-500">*</span>}
                    </label>
                    <select 
                        name="metodoPago" 
@@ -408,14 +407,10 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        onChange={handleChange} 
                        className="w-full bg-[#f9f9fa] p-2"
                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
-                       required={formData.estado === LeadStatus.Agendado}
                    >
                        <option value="">Seleccionar...</option>
                        {Object.values(MetodoPago).map(mp => <option key={mp} value={mp}>{mp}</option>)}
                    </select>
-                   {formData.estado === LeadStatus.Agendado && !formData.metodoPago && (
-                       <span className="text-red-500 text-xs">Este campo es requerido</span>
-                   )}
                </div>
                <div>
                    <label className="text-sm font-medium">Deuda Cita</label>
@@ -2546,10 +2541,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         
         // Campos requeridos solo si el estado es "Agendado"
         if (formData.estado === LeadStatus.Agendado) {
-            // Monto Pagado removed from required
-            if (!formData.metodoPago) {
-                errors.push('Método Pago (requerido cuando está Agendado)');
-            }
+            // Metodo Pago removed from required
             if (!formData.profesionalAsignado?.trim()) {
                 errors.push('Profesional (requerido cuando está Agendado)');
             }
