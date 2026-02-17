@@ -10,7 +10,7 @@ router.use(requireAuth);
 
 router.get('/me', getCurrentUser);
 
-router.get('/', requireAdmin, getUsers);
+router.get('/', requireAuth, getUsers);
 router.post('/', requireAdmin, createUser);
 router.get('/:id', requireSelfOrAdmin(), getUserById);
 router.get('/:id/profile', requireAuth, getUserProfile);

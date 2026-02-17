@@ -28,11 +28,25 @@ const safeUserSelect = {
   sex: true,
 } as const;
 
-export const getUsers = async (_req: AuthenticatedRequest, res: Response) => {
+const publicUserSelect = {
+  id: true,
+  nombres: true,
+  apellidos: true,
+  usuario: true,
+  rolId: true,
+  avatarUrl: true,
+  position: true,
+  phone: true,
+  email: true,
+} as const;
+
+export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const isAdmin = req.authUser && (req.authUser.rolId === 1 || req.authUser.rolNombre?.toLowerCase() === 'administrador');
+    
     const users = await prisma.user.findMany({
-      // Exclude password from the result
-      select: safeUserSelect,
+      // Exclude sensitive data for non-admins
+      select: isAdmin ? safeUserSelect : publicUserSelect,
     });
     res.status(200).json(users);
   } catch (error) {
