@@ -2309,44 +2309,33 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             }))
     ), [configuredResources]);
 
-    // Filtrar vendedores por puesto y mapear a { value: SellerToken, label: FullName }
+    // Filtrar vendedores por puesto (Recepcionista y Call Center)
     const VENDEDOR_OPTIONS = useMemo(() => {
         const list: { value: string, label: string }[] = [];
         if (users && Array.isArray(users)) {
             users
                 .filter((user: any) => user.position && PUESTOS_VENDEDOR.includes(user.position))
                 .forEach((user: any) => {
-                    const fullName = `${user.nombres} ${user.apellidos}`;
-                    // Determine token value by simple first-name matching
-                    const first = (user.nombres || '').toLowerCase();
-                    let token = 'Vanesa';
-                    if (first.includes('vanesa') || first.includes('vanessa')) token = 'Vanesa';
-                    else if (first.includes('liz') || first.includes('liza')) token = 'Liz';
-                    else if (first.includes('elvira')) token = 'Elvira';
-                    list.push({ value: token, label: fullName });
+                    const firstName = user.nombres || '';
+                    const fullName = `${user.nombres} ${user.apellidos}`.trim();
+                    // Usar el primer nombre como value y el nombre completo como label
+                    list.push({ value: firstName, label: fullName });
                 });
         }
-        // Ensure default tokens exist even if users not provided
-        const defaultTokens = ['Vanesa', 'Liz', 'Elvira'];
-        for (const t of defaultTokens) {
-            if (!list.find(l => l.value === t)) {
-                list.push({ value: t, label: t });
-            }
+        // Si no hay usuarios, agregar valores por defecto para compatibilidad
+        if (list.length === 0) {
+            const defaultUsers = ['Vanesa', 'Liz', 'Elvira'];
+            defaultUsers.forEach(name => list.push({ value: name, label: name }));
         }
         return list;
     }, [users]);
 
-    // Frontend mapping helper: normalize any incoming vendedor string to Seller token
+    // Frontend mapping helper: normalize vendedor value (usar primer nombre con capitalización correcta)
     const mapSellerFront = (value: any): string => {
-        if (!value) return 'Vanesa';
-        const s = String(value).toLowerCase();
-        if (s.includes('vanesa') || s.includes('vanessa')) return 'Vanesa';
-        if (s.includes('liz') || s.includes('liza')) return 'Liz';
-        if (s.includes('elvira')) return 'Elvira';
-        // If already a token-like value, capitalize first letter
-        const capitalized = String(value).charAt(0).toUpperCase() + String(value).slice(1);
-        if (['Vanesa','Liz','Elvira'].includes(capitalized)) return capitalized;
-        return 'Vanesa';
+        if (!value) return 'Vanesa'; // Fallback por defecto
+        const trimmed = String(value).trim();
+        // Capitalizar primera letra
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     };
 
     // Map backend ReceptionStatus tokens (e.g. 'PorAtender', 'Agendado') to frontend display values
