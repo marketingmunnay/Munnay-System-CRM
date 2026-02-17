@@ -395,11 +395,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                        placeholder="0.00"
                        className="w-full bg-[#f9f9fa] p-2"
                        style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', borderWidth: '1px' }}
-                       required={formData.estado === LeadStatus.Agendado}
                    />
-                   {formData.estado === LeadStatus.Agendado && formData.montoPagado === undefined && (
-                       <span className="text-red-500 text-xs">Este campo es requerido</span>
-                   )}
                </div>
                <div>
                    <label className="text-sm font-medium">
