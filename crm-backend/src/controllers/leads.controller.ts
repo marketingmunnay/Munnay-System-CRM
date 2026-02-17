@@ -135,9 +135,11 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(404).json({ message: 'Lead not found' });
     }
 
-    if (!isAdmin(req.authUser) && existingLead.createdById && existingLead.createdById !== req.authUser?.id) {
-      return res.status(403).json({ message: 'No tienes permiso para editar este lead' });
-    }
+    // Permiso: Permitir a cualquier usuario autenticado editar, o restringir según lógica de negocio.
+    // Actualmente: Permitimos editar a todos los autenticados para evitar bloqueo en equipos colaborativos.
+    // if (!isAdmin(req.authUser) && existingLead.createdById && existingLead.createdById !== req.authUser?.id) {
+    //   return res.status(403).json({ message: 'No tienes permiso para editar este lead' });
+    // }
 
     const parsedFechaLead = parseLocalDate(leadData.fechaLead);
     const finalFechaLead = parsedFechaLead !== undefined ? parsedFechaLead : existingLead.fechaLead;

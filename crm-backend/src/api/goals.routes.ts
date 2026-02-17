@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(requireAuth);
 
-router.get('/', requireAdmin, getGoals);
+router.get('/', requireAuth, getGoals);
 router.post('/', requireAdmin, createGoal);
 router.get('/progress/:userId', requireSelfOrAdmin('userId'), getGoalProgress);
 router.get('/:id', requireAdmin, getGoalById);

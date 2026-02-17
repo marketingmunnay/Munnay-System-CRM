@@ -14,6 +14,7 @@ router.post('/', createLead);
 router.post('/bulk', requireAdmin, bulkImportLeads);
 router.get('/:id', getLeadById);
 router.put('/:id', updateLead);
-router.delete('/:id', requireAdmin, deleteLead);
+// Permitir eliminar leads a usuarios autenticados (previamente solo admin)
+router.delete('/:id', deleteLead);
 
 export default router;
