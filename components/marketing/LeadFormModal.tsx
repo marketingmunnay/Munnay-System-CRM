@@ -2309,25 +2309,41 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             }))
     ), [configuredResources]);
 
-    // Filtrar vendedores por puesto (Recepcionista y Call Center)
+    // Filtrar vendedores por puesto (Recepcionista y Call Center) - Mejorado para incluir variaciones de texto y fallback a todos los usuarios
     const VENDEDOR_OPTIONS = useMemo(() => {
         const list: { value: string, label: string }[] = [];
-        if (users && Array.isArray(users)) {
-            users
-                .filter((user: any) => user.position && PUESTOS_VENDEDOR.includes(user.position))
-                .forEach((user: any) => {
-                    const firstName = user.nombres || '';
-                    const fullName = `${user.nombres} ${user.apellidos}`.trim();
-                    // Usar el primer nombre como value y el nombre completo como label
+        const validPositions = ['recepcionista', 'call center', 'ventas', 'asesor', 'atención', 'counter', 'recepción'];
+        
+        if (users && Array.isArray(users) && users.length > 0) {
+            // Intentar filtrar por puesto (insensible a mayúsculas/minúsculas y parcial)
+            const filteredUsers = users.filter((user: any) => {
+                if (!user.position) return false;
+                const pos = String(user.position).toLowerCase();
+                return validPositions.some(vp => pos.includes(vp));
+            });
+            
+            // Si el filtro no devuelve nada, usar TODOS los usuarios para evitar mostrar datos falsos/vacíos
+            const usersToUse = filteredUsers.length > 0 ? filteredUsers : users;
+            
+            usersToUse.forEach((user: any) => {
+                const firstName = user.nombres || ''; // Usar nombre como ID/Value para consistencia con lógica antigua
+                const fullName = `${user.nombres} ${user.apellidos}`.trim();
+                
+                if (firstName) {
                     list.push({ value: firstName, label: fullName });
-                });
+                }
+            });
         }
-        // Si no hay usuarios, agregar valores por defecto para compatibilidad
-        if (list.length === 0) {
-            const defaultUsers = ['Vanesa', 'Liz', 'Elvira'];
-            defaultUsers.forEach(name => list.push({ value: name, label: name }));
+        
+        // Eliminar duplicados basado en 'value' (primer nombre)
+        const uniqueList = Array.from(new Map(list.map(item => [item.value, item])).values());
+
+        // Si aún así no hay usuarios (API falló o array vacío), mostrar mensaje genérico en lugar de nombres falsos
+        if (uniqueList.length === 0) {
+             uniqueList.push({ value: '', label: 'Sin usuarios disponibles' });
         }
-        return list;
+        
+        return uniqueList;
     }, [users]);
 
     // Frontend mapping helper: normalize vendedor value (usar primer nombre con capitalización correcta)
