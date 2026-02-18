@@ -226,6 +226,10 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
       console.log('🔄 Deleting existing pagosRecepcion, will recreate:', pagosRecepcion.length);
       await prisma.pagoRecepcion.deleteMany({ where: { leadId: id } });
     }
+    if (registrosLlamada !== undefined && Array.isArray(registrosLlamada)) {
+      console.log('🔄 Deleting existing registrosLlamada, will recreate:', registrosLlamada.length);
+      await prisma.registroLlamada.deleteMany({ where: { leadId: id } });
+    }
 
     // Decide final estadoRecepcion for update: prefer provided value, otherwise if procedimientos being created treat as 'Atendido'
     // Determine final estadoRecepcion for update.
@@ -268,6 +272,14 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
+        registrosLlamada: registrosLlamada && Array.isArray(registrosLlamada) && registrosLlamada.length > 0 ? {
+          create: registrosLlamada.map((r: any) => ({
+            numeroLlamada: r.numeroLlamada || 1,
+            duracionLlamada: r.duracionLlamada || '00:00:00',
+            estadoLlamada: r.estadoLlamada || 'Contesto',
+            observacion: r.observacion || ''
+          }))
+        } : undefined,
         // Note: tratamientos and procedimientos are handled outside this nested update
         // to allow more robust update/create logic and mapping of IDs.
         // seguimientos and pagosRecepcion are handled after the lead update to ensure
