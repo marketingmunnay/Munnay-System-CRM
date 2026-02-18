@@ -1,4 +1,26 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  DropAnimation,
+  defaultDropAnimationSideEffects,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User, Appointment } from '../../types';
 import { LeadStatus, ReceptionStatus, AppointmentStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
@@ -90,9 +112,13 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
     const resourceName = getResourceName(lead.recursoId);
     
     const formattedDate = useMemo(() => {
-        if (!lead.fechaHoraAgenda) return null;
+        if (!lead.fechaHoraAgenda || lead.fechaHoraAgenda === 'undefined') return null;
+        console.log('KanbanCard Debug:', lead.fechaHoraAgenda, typeof lead.fechaHoraAgenda); // Debug log
         const date = parseDate(lead.fechaHoraAgenda);
         if (!date) return 'Fecha inválida';
+        // Check if date is valid
+        if (isNaN(date.getTime())) return 'Fecha inválida';
+        
         return date.toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
     }, [lead.fechaHoraAgenda]);
 
@@ -136,22 +162,72 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
 };
 
 
+const SortableKanbanCard = ({ lead, onClick }: { lead: Lead, onClick: () => void }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ 
+        id: lead.id,
+        data: { type: 'Lead', lead }
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <KanbanCard lead={lead} onClick={onClick} />
+        </div>
+    );
+};
+
 // Kanban Column Component
-const KanbanColumn: React.FC<{ title: string; color: string; textColor: string; children: React.ReactNode; count: number }> = ({ title, color, textColor, children, count }) => (
-    <div className="bg-gray-100 rounded-lg w-full md:w-72 flex-shrink-0">
-        <div className={`p-3 flex justify-between items-center ${color} rounded-t-lg`}>
-            <h3 className={`font-semibold ${textColor} text-sm`}>{title}</h3>
-            <span className={`${textColor} text-sm font-bold bg-black/10 rounded-full px-2 py-0.5`}>{count}</span>
+const KanbanColumn: React.FC<{ 
+    id: string;
+    title: string; 
+    color: string; 
+    textColor: string; 
+    children: React.ReactNode; 
+    count: number 
+}> = ({ id, title, color, textColor, children, count }) => {
+    const { setNodeRef } = useSortable({ 
+        id: id,
+        data: {
+            type: 'Column',
+            containerId: id
+        }
+    });
+
+    return (
+        <div 
+            ref={setNodeRef}
+            className="bg-gray-100 rounded-lg w-full md:w-72 flex-shrink-0 flex flex-col h-full max-h-[calc(100vh-220px)]"
+        >
+            <div className={`p-3 flex justify-between items-center ${color} rounded-t-lg flex-shrink-0`}>
+                <h3 className={`font-semibold ${textColor} text-sm`}>{title}</h3>
+                <span className={`${textColor} text-sm font-bold bg-black/10 rounded-full px-2 py-0.5`}>{count}</span>
+            </div>
+            <div className="p-2 flex-grow overflow-y-auto min-h-[100px]">
+                {children}
+            </div>
         </div>
-        <div className="p-2 h-full overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-            {children}
-        </div>
-    </div>
-);
+    );
+};
 
 const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({ leads, onEdit }) => {
     const formatCurrency = (value: number) => `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const formatDateTime = (dateTimeString: string) => new Date(dateTimeString).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const formatDateTime = (dateTimeString: string) => {
+        const date = parseDate(dateTimeString);
+        if (!date) return '-';
+        return date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
     
     const statusText: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'Por Llegar',
@@ -367,6 +443,100 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
         { key: 'noAsistio', statuses: [ReceptionStatus.NoAsistio], config: statusConfig[ReceptionStatus.NoAsistio] },
     ];
 
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(String(event.active.id));
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        setActiveId(null);
+
+        if (!over) {
+            return;
+        }
+
+        const activeIdStr = String(active.id);
+        const overIdStr = String(over.id);
+
+        if (activeIdStr === overIdStr) {
+            return;
+        }
+
+        // Find the lead being dragged
+        const lead = filteredLeads.find(l => String(l.id) === activeIdStr);
+        if (!lead) return;
+
+        // Determine destination status
+        let newStatus: string | null = null;
+        
+        // Check if dropped on a column
+        const columnGroup = kanbanColumnGroups.find(g => g.key === overIdStr);
+        if (columnGroup) {
+            newStatus = columnGroup.statuses[0];
+        } else {
+             // Maybe dropped on another card?
+             // Resolve the container using the sortable data
+             const overData = over.data.current;
+             // Usually dnd-kit context provides sortable.containerId
+             const containerId = overData?.sortable?.containerId;
+             
+             if (containerId) {
+                 const group = kanbanColumnGroups.find(g => g.key === containerId);
+                 if (group) newStatus = group.statuses[0];
+             }
+        }
+
+        if (newStatus && normalizeReception(lead.estadoRecepcion) !== normalizeReception(newStatus)) {
+            // Optimistic update
+            const originalAppt = appointments.find(a => (a.leadId === lead.id && lead.id > 0) || (-(a.id) === lead.id && lead.id < 0));
+            
+            if (originalAppt) {
+                 let newApptStatus: AppointmentStatus | undefined;
+                 switch(newStatus) {
+                     case ReceptionStatus.Agendado: newApptStatus = 'SCHEDULED'; break;
+                     case ReceptionStatus.AgendadoPorLlegar: newApptStatus = 'CONFIRMED'; break;
+                     case ReceptionStatus.PorAtender: newApptStatus = 'ARRIVED'; break;
+                     case ReceptionStatus.Atendido: newApptStatus = 'COMPLETED'; break;
+                     case ReceptionStatus.Reprogramado: newApptStatus = 'SCHEDULED'; break;
+                     case ReceptionStatus.Cancelado: newApptStatus = 'CANCELLED'; break;
+                     case ReceptionStatus.NoAsistio: newApptStatus = 'NO_SHOW'; break;
+                 }
+                 
+                 if (newApptStatus) {
+                     // Optimistic UI update
+                     setAppointments(prev => prev.map(a => 
+                        a.id === originalAppt.id ? { ...a, status: newApptStatus! } : a
+                     ));
+
+                     try {
+                        const statusToUpdate = newApptStatus; // capture for closure
+                         await api.updateAppointmentStatus(originalAppt.id, statusToUpdate);
+                         console.log(`Updated appointment ${originalAppt.id} to ${statusToUpdate}`);
+                     } catch (error) {
+                         console.error("Failed to update status", error);
+                         // Revert
+                         setAppointments(prev => prev.map(a => 
+                            a.id === originalAppt.id ? { ...a, status: originalAppt.status } : a
+                         ));
+                         alert("Error al actualizar estado. Se ha revertido el cambio.");
+                     }
+                 }
+            }
+        }
+    };
+
     return (
     <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -415,28 +585,58 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
         </div>
         
          {viewMode === 'kanban' ? (
-            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
-                {kanbanColumnGroups.map(group => {
-                    const leadsInColumn = filteredLeads.filter(lead => {
-                        const leadStatus = normalizeReception(lead.estadoRecepcion);
-                        return group.statuses.includes(leadStatus);
-                    });
-                    const config = group.config;
-                    return (
-                        <KanbanColumn
-                            key={group.key}
-                            title={config.title}
-                            color={config.color}
-                            textColor={config.textColor}
-                            count={leadsInColumn.length}
-                        >
-                            {leadsInColumn.map(lead => (
-                                <KanbanCard key={lead.id} lead={lead} onClick={() => handleEditCita(lead)} />
-                            ))}
-                        </KanbanColumn>
-                    );
-                })}
-            </div>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 overflow-x-auto pb-4">
+                    {kanbanColumnGroups.map(group => {
+                        const leadsInColumn = filteredLeads.filter(lead => {
+                            const leadStatus = normalizeReception(lead.estadoRecepcion);
+                            return group.statuses.includes(leadStatus);
+                        });
+                        const config = group.config;
+                        return (
+                            <KanbanColumn
+                                key={group.key}
+                                id={group.key}
+                                title={config.title}
+                                color={config.color}
+                                textColor={config.textColor}
+                                count={leadsInColumn.length}
+                            >
+                                <SortableContext 
+                                    items={leadsInColumn.map(l => l.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    {leadsInColumn.map(lead => (
+                                        <SortableKanbanCard 
+                                            key={lead.id} 
+                                            lead={lead} 
+                                            onClick={() => handleEditCita(lead)} 
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </KanbanColumn>
+                        );
+                    })}
+                </div>
+                 <DragOverlay>
+                    {activeId ? (
+                        <div className="transform rotate-2 opacity-80 cursor-grabbing">
+                           {/* Re-render the card purely for visual fetch. 
+                               We format it slightly differently or reuse KanbanCard 
+                               Find the lead from activeId */}
+                           {(() => {
+                               const lead = filteredLeads.find(l => String(l.id) === activeId);
+                               return lead ? <KanbanCard lead={lead} onClick={() => {}} /> : null;
+                           })()}
+                        </div>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
         ) : (
             <AgendadosTable leads={filteredLeads} onEdit={handleEditCita} />
         )}

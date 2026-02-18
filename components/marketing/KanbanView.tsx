@@ -46,13 +46,10 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => (
                 </div>
             )}
         </div>
-        {/* Mostrar fechaLead en la tarjeta Kanban, usando la fecha actual si no existe */}
+        {/* Mostrar fechaLead en la tarjeta Kanban */}
         <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
             <ClockIcon className="mr-1.5 h-3 w-3"/>
-            <span>{(() => {
-                const date = formatDateForDisplay(lead.fechaLead);
-                return date !== '-' ? date : formatDateForDisplay(new Date());
-            })()}</span>
+            <span>{formatDateForDisplay(lead.fechaLead)}</span>
         </div>
         {lead.fechaHoraAgenda && lead.fechaHoraAgenda !== 'undefined' && (
             <div className="mt-2 flex items-center text-xs text-blue-700 font-medium bg-blue-100 p-1 rounded">

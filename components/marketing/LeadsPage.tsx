@@ -153,12 +153,19 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
                     return true;
                 });
             }
-            if (viewMode === 'table' && searchTerm) {
-                return results.filter(lead =>
-                    `${lead.nombres} ${lead.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    lead.numero.includes(searchTerm) ||
-                    lead.anuncio.toLowerCase().includes(searchTerm.toLowerCase())
-                );
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                return results.filter(lead => {
+                    const fullName = `${lead.nombres || ''} ${lead.apellidos || ''}`.toLowerCase();
+                    const phone = lead.numero ? String(lead.numero).toLowerCase() : '';
+                    const docNumber = lead.documentNumber ? String(lead.documentNumber).toLowerCase() : '';
+                    const campaign = lead.anuncio ? String(lead.anuncio).toLowerCase() : '';
+                    
+                    return fullName.includes(term) ||
+                           phone.includes(term) ||
+                           docNumber.includes(term) ||
+                           campaign.includes(term);
+                });
             }
             return results;
         }, [leads, dateFilters, viewMode, searchTerm]);
@@ -256,7 +263,7 @@ const LeadsPage: React.FC<LeadsPageProps> = ({ leads, campaigns, metaCampaigns, 
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Buscar por paciente, teléfono, campaña..."
+                            placeholder="Buscar por paciente, teléfono, DNI, campaña..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full md:w-80 bg-[#f9f9fa] border border-black/10 text-black rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-[#aa632d] focus:border-[#aa632d]"

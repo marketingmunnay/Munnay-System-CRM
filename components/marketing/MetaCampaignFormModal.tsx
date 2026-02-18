@@ -7,6 +7,7 @@ interface MetaCampaignFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (campaign: MetaCampaign) => void;
+  onDelete?: (campaignId: number) => void;
   campaign: MetaCampaign | null;
 }
 
@@ -16,7 +17,7 @@ const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, clas
     <span className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
-const MetaCampaignFormModal: React.FC<MetaCampaignFormModalProps> = ({ isOpen, onClose, onSave, campaign }) => {
+const MetaCampaignFormModal: React.FC<MetaCampaignFormModalProps> = ({ isOpen, onClose, onSave, onDelete, campaign }) => {
   const [formData, setFormData] = useState<Partial<MetaCampaign>>({});
 
   useEffect(() => {
@@ -56,7 +57,16 @@ const MetaCampaignFormModal: React.FC<MetaCampaignFormModalProps> = ({ isOpen, o
       onClose={onClose}
       title={campaign ? 'Editar Campaña Meta' : 'Registrar Nueva Campaña Meta'}
       footer={
-        <div className="space-x-2">
+        <div className="flex justify-end gap-2 w-full">
+            {campaign && onDelete && (
+                <button 
+                    type="button" 
+                    onClick={() => campaign.id && onDelete(campaign.id)} 
+                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors mr-auto"
+                >
+                    Eliminar
+                </button>
+            )}
             <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
                 Cancelar
             </button>

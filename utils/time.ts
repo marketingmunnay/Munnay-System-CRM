@@ -153,14 +153,6 @@ export function formatTimeForInput(time: string | Date | null | undefined): stri
     return time;
   }
   
-  // Si es string ISO completo, extraer solo la hora
-  if (typeof time === 'string' && time.includes('T')) {
-    const timePart = time.split('T')[1];
-    if (timePart) {
-      return timePart.split('.')[0].substring(0, 5); // HH:MM
-    }
-  }
-  
   const parsedDate = parseDate(time);
   if (!parsedDate) return '';
   

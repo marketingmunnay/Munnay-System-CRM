@@ -89,16 +89,22 @@ const formatDateForInputField = (dateValue: any): string => {
         return dateValue.split('T')[0];
     }
     
-    // If it's a Date object, format it
+    // If it's a Date object, format it using local time to prevent timezone shifts
     if (dateValue instanceof Date) {
-        return dateValue.toISOString().split('T')[0];
+        const year = dateValue.getFullYear();
+        const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+        const day = String(dateValue.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     // Try to parse as date and format
     try {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
-            return date.toISOString().split('T')[0];
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
     } catch (e) {
         // Invalid date, return empty string
@@ -119,7 +125,7 @@ const FichaTabContent: React.FC<any> = ({ formData, handleChange, setFormData, c
                         <input 
                             type="date" 
                             name="fechaLead" 
-                            value={formatDateForInputField(formData.fechaLead) || new Date().toISOString().split('T')[0]} 
+                            value={formatDateForInputField(formData.fechaLead) || formatDateForInputField(new Date())} 
                             onChange={handleChange} 
                             className="w-full bg-[#f9f9fa] p-2" 
                             style={{ borderColor: '#6b7280', borderRadius: '8px', color: 'black', colorScheme: 'light', borderWidth: '1px' }} 
@@ -2415,7 +2421,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                     ...lead, 
                     vendedor: mapSellerFront(lead.vendedor),
                     estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
-                    fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
+                    fechaLead: formatDateForInputField(lead.fechaLead) || formatDateForInputField(new Date()),
                     fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
                     birthDate: formatDateForInputField(lead.birthDate),
                     fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local
@@ -2425,7 +2431,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 // Nuevo lead: fuerza fechaLead a formato YYYY-MM-DD
                 setFormData({
                     ...initialFormData,
-                    fechaLead: new Date().toISOString().split('T')[0],
+                    fechaLead: formatDateForInputField(new Date()),
                 });
             }
             setActiveTab(initialTab || 'ficha');
@@ -2442,7 +2448,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 vendedor: mapSellerFront(lead.vendedor), 
                 estadoRecepcion: mapReceptionFront(lead.estadoRecepcion),
                 // Format date fields for input[type="date"]
-                fechaLead: formatDateForInputField(lead.fechaLead) || new Date().toISOString().split('T')[0],
+                fechaLead: formatDateForInputField(lead.fechaLead) || formatDateForInputField(new Date()),
                 fechaVolverLlamar: formatDateForInputField(lead.fechaVolverLlamar),
                 birthDate: formatDateForInputField(lead.birthDate),
                 fechaHoraAgenda: lead.fechaHoraAgenda // Keep as is for datetime-local

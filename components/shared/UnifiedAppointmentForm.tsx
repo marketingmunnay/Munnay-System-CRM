@@ -76,7 +76,13 @@ const formatDateInput = (date?: Date | string) => {
   if (!date) return '';
   const obj = typeof date === 'string' ? new Date(date) : date;
   if (Number.isNaN(obj.getTime())) return '';
-  return obj.toISOString().split('T')[0];
+  
+  // Extraer año, mes y día locales para que coincidan con la zona horaria del usuario
+  const year = obj.getFullYear();
+  const month = String(obj.getMonth() + 1).padStart(2, '0');
+  const day = String(obj.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 };
 
 const formatTimeInput = (date?: Date | string) => {

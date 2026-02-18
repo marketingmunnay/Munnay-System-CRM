@@ -142,6 +142,14 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
         handleCloseMetaModal();
     };
 
+    const handleDeleteMetaCampaign = (campaignId: number) => {
+        requestConfirmation('¿Estás seguro de eliminar esta campaña?', () => {
+             onDeleteMetaCampaign(campaignId);
+             handleCloseMetaModal();
+        });
+    };
+
+
 
     const handleApplyDateFilter = (dates: { from: string, to: string }) => {
         setDateRange(dates);
@@ -344,6 +352,7 @@ const CampaignsPage: React.FC<CampaignsPageProps> = ({
             isOpen={isMetaModalOpen}
             onClose={handleCloseMetaModal}
             onSave={handleSaveMetaCampaign}
+            onDelete={handleDeleteMetaCampaign}
             campaign={editingMetaCampaign}
         />
     </div>
