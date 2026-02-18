@@ -62,7 +62,8 @@ const mapMetodoPago = (value: any): string | undefined => {
   return pagoMap[normalized] || value;
 };
 
-const parseLocalDate = (dateStr: any): Date | undefined => {
+const parseLocalDate = (dateStr: any): Date | null | undefined => {
+  if (dateStr === null) return null;
   if (!dateStr || dateStr === 'undefined') return undefined;
   try {
     const d = new Date(dateStr);
@@ -102,7 +103,8 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
 
   try {
     // Helper to safely parse DateTime strings
-    const parseDateTime = (dateStr: any): Date | undefined => {
+    const parseDateTime = (dateStr: any): Date | null | undefined => {
+      if (dateStr === null) return null;
       if (!dateStr || dateStr === 'undefined') return undefined;
       const d = new Date(dateStr);
       return isNaN(d.getTime()) ? undefined : d;
