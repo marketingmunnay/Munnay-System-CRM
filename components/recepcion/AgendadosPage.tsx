@@ -113,11 +113,11 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
     
     const formattedDate = useMemo(() => {
         if (!lead.fechaHoraAgenda || lead.fechaHoraAgenda === 'undefined') return null;
-        console.log('KanbanCard Debug:', lead.fechaHoraAgenda, typeof lead.fechaHoraAgenda); // Debug log
+        // console.log('KanbanCard Debug:', lead.id, lead.fechaHoraAgenda, typeof lead.fechaHoraAgenda); 
         const date = parseDate(lead.fechaHoraAgenda);
-        if (!date) return 'Fecha inválida';
+        if (!date) return null;
         // Check if date is valid
-        if (isNaN(date.getTime())) return 'Fecha inválida';
+        if (isNaN(date.getTime())) return null;
         
         return date.toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
     }, [lead.fechaHoraAgenda]);

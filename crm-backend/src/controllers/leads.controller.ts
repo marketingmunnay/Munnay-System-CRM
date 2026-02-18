@@ -104,8 +104,9 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Helper to safely parse DateTime strings
     const parseDateTime = (dateStr: any): Date | null | undefined => {
-      if (dateStr === null) return null;
-      if (!dateStr || dateStr === 'undefined') return undefined;
+      // If explicit null or empty string, we might want to clear the date
+      if (dateStr === null || dateStr === '') return null;
+      if (dateStr === undefined || dateStr === 'undefined') return undefined;
       const d = new Date(dateStr);
       return isNaN(d.getTime()) ? undefined : d;
     };

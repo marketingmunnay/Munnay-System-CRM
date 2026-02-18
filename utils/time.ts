@@ -27,7 +27,9 @@ export function formatDistanceToNow(date: Date): string {
 
 // Función para parsear fechas de manera segura con zona horaria de Perú
 export function parseDate(dateStr: string | Date | null | undefined, isDateOnly = false): Date | null {
-  if (!dateStr) return null;
+  if (!dateStr || dateStr === 'undefined' || dateStr === 'null') return null;
+  // Handle empty strings
+  if (typeof dateStr === 'string' && dateStr.trim() === '') return null;
   
   try {
     // Si ya es una Date, devolverla
