@@ -8,6 +8,8 @@ import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, BuildingStorefrontIcon, Fu
 import Tooltip from '../shared/Tooltip';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
 import { getLeads, getAppointments, getResources as fetchResources, createAppointment, getShiftByUserAndDate } from '../../services/api';
+import { useDate } from '../../src/hooks/useDate';
+import { toZonedTime } from 'date-fns-tz';
 
 interface CalendarPageProps {
     leads: Lead[];
@@ -61,9 +63,11 @@ const timeToPosition = (timeStr: string) => {
 };
 
 const durationToHeight = (startStr: string, endStr: string) => {
-    const start = new Date(`1970-01-01T${startStr}`);
-    const end = new Date(`1970-01-01T${endStr}`);
-    const diffMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+    const [startH, startM] = startStr.split(':').map(Number);
+    const [endH, endM] = endStr.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    const diffMinutes = endMinutes - startMinutes;
     return (diffMinutes / 60) * HOUR_HEIGHT;
 };
 
@@ -94,10 +98,10 @@ const padTime = (value: number) => value.toString().padStart(2, '0');
 
 const addMinutesToTime = (timeStr: string, minutes: number) => {
     const [hours, mins] = timeStr.split(':').map(Number);
-    const baseline = new Date();
-    baseline.setHours(hours, mins, 0, 0);
-    baseline.setMinutes(baseline.getMinutes() + minutes);
-    return `${padTime(baseline.getHours())}:${padTime(baseline.getMinutes())}`;
+    const total = hours * 60 + mins + minutes;
+    const newH = Math.floor(total / 60);
+    const newM = total % 60;
+    return `${padTime(newH)}:${padTime(newM)}`;
 };
 
 const buildClienteNombre = (nombres?: string, apellidos?: string) => {
@@ -139,13 +143,16 @@ const leadToEvent = (lead: Lead): CalendarEvent | null => {
     };
 };
 
-const appointmentToEvent = (appointment: Appointment): CalendarEvent => {
-    const start = new Date(appointment.startTime);
-    const end = new Date(appointment.endTime);
-    
-    const fecha = formatDateForInput(start) || '';
-    const horaInicio = `${padTime(start.getHours())}:${padTime(start.getMinutes())}`;
-    const horaFin = `${padTime(end.getHours())}:${padTime(end.getMinutes())}`;
+const appointmentToEvent = (
+    appointment: Appointment,
+    opts: { toLocalDate: (value: string | Date) => Date; dateToInput: (d: Date) => string | null }
+): CalendarEvent => {
+    const startLocal = opts.toLocalDate(appointment.startTime);
+    const endLocal = opts.toLocalDate(appointment.endTime);
+
+    const fecha = opts.dateToInput(startLocal) || '';
+    const horaInicio = `${padTime(startLocal.getHours())}:${padTime(startLocal.getMinutes())}`;
+    const horaFin = `${padTime(endLocal.getHours())}:${padTime(endLocal.getMinutes())}`;
 
     // Mapeo inteligente del recurso visual con prefijo "resource-"
     // Priority: Professional ID > Resource ID
@@ -280,6 +287,15 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     onSaveComprobante,
     comprobantes,
 }) => {
+    const {
+        parse: parseUtc,
+        timezone,
+        fromInputDateTimeLocalToUTC,
+        toDateKey,
+        addDaysToDateKey,
+        getLocalDayRangeUTC,
+    } = useDate();
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('day');
     
@@ -373,14 +389,27 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
         
-        // Calculate Time
+        // Calculate Time (HH:mm en horario de negocio)
         const totalMinutesFromStart = (y / HOUR_HEIGHT) * 60;
         const hour = Math.floor(totalMinutesFromStart / 60) + START_HOUR;
         const minute = Math.floor(totalMinutesFromStart % 60);
         const roundedMinute = Math.round(minute / 15) * 15; // Snap to 15 min
 
-        const newStart = new Date(currentDate);
-        newStart.setHours(hour, roundedMinute, 0, 0);
+        const dateStr = formatDateForInput(currentDate) ?? '';
+        const hourStr = hour.toString().padStart(2, '0');
+        const minuteStr = roundedMinute.toString().padStart(2, '0');
+        const localDateTime = `${dateStr}T${hourStr}:${minuteStr}`;
+
+        // Convertir fecha/hora de negocio -> UTC usando timezone de DateConfigContext
+        const isoStart = fromInputDateTimeLocalToUTC(localDateTime);
+        if (!isoStart) {
+            setToast('❌ No se pudo interpretar la nueva hora de la cita');
+            setTimeout(() => setToast(null), 3000);
+            setDraggedEvent(null);
+            return;
+        }
+
+        const newStartUtc = new Date(isoStart);
 
         // Calculate Duration to find new End
         const [startH, startM] = draggedEvent.horaInicio.split(':').map(Number);
@@ -389,11 +418,11 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const oldEnd = new Date(); oldEnd.setHours(endH, endM, 0,0);
         const durationMs = oldEnd.getTime() - oldStart.getTime();
 
-        const newEnd = new Date(newStart.getTime() + durationMs);
+        const newEndUtc = new Date(newStartUtc.getTime() + durationMs);
         
         // Optimistic Update
         const originalEvents = [...appointments];
-        const updatedEvent = { ...draggedEvent.appointmentRef!, startTime: newStart.toISOString(), endTime: newEnd.toISOString() };
+        const updatedEvent = { ...draggedEvent.appointmentRef!, startTime: newStartUtc.toISOString(), endTime: newEndUtc.toISOString() };
         
         try {
             // Find resource type to update correct ID
@@ -402,8 +431,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             
             const payload: any = {
                 appointmentId: draggedEvent.originId,
-                newStart: newStart.toISOString(),
-                newEnd: newEnd.toISOString(),
+                newStart: newStartUtc.toISOString(),
+                newEnd: newEndUtc.toISOString(),
             };
 
             if (isProfessional) {
@@ -431,9 +460,11 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             
             // Update State
             setAppointments(prev => prev.map(a => a.id === updatedAppt.id ? updatedAppt : a));
-            
-            // Show success toast
-            setToast(`✅ Cita movida a ${newStart.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`);
+
+            // Mostrar hora en zona de negocio, no en la del navegador
+            const localStart = toZonedTime(newStartUtc, timezone);
+            const displayTime = localStart.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+            setToast(`✅ Cita movida a ${displayTime}`);
             setTimeout(() => setToast(null), 2500);
 
         } catch (error) {
@@ -448,12 +479,18 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
     // Fetch appointments when date changes
     useEffect(() => {
-        const start = new Date(currentDate);
-        start.setDate(start.getDate() - 30); // Fetch wide range
-        const end = new Date(currentDate);
-        end.setDate(end.getDate() + 30);
-        
-        getAppointments(formatDateForInput(start), formatDateForInput(end))
+        const centerKey = toDateKey(currentDate);
+        if (!centerKey) return;
+
+        const startKey = addDaysToDateKey(centerKey, -30);
+        const endKey = addDaysToDateKey(centerKey, 30);
+        if (!startKey || !endKey) return;
+
+        const startRange = getLocalDayRangeUTC(startKey);
+        const endRange = getLocalDayRangeUTC(endKey);
+        if (!startRange || !endRange) return;
+
+        getAppointments(startRange.start.toISOString(), endRange.endExclusive.toISOString())
             .then(data => setAppointments(data))
             .catch(console.error);
     }, [currentDate]);
@@ -461,7 +498,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     // Load shifts for visible resources
     useEffect(() => {
         const loadShifts = async () => {
-            const dateStr = formatDateForInput(currentDate) ?? '';
+            const dateStr = toDateKey(currentDate) ?? '';
             if (!dateStr) return;
 
             const shiftsByResource: Record<string, any> = {};
@@ -486,18 +523,34 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         };
 
         loadShifts();
-    }, [currentDate, visibleResourceIds]);
+    }, [currentDate, visibleResourceIds, toDateKey]);
 
-    // Update calendarEvents when leads OR appointments change
+    // Helper to convert UTC Date/ISO a Date local en timezone de negocio
+    const toLocalDate = useMemo(
+        () => (value: string | Date) => {
+            const parsed = typeof value === 'string' ? parseUtc(value) : value;
+            if (!parsed) return new Date(NaN);
+            // Convertir desde UTC al huso horario de negocio usando date-fns-tz
+            return toZonedTime(parsed, timezone);
+        },
+        [parseUtc, timezone]
+    );
+
+    // Update calendarEvents cuando cambian leads o appointments
     useEffect(() => {
         const leadEvents = leads
             .map(leadToEvent)
             .filter((e): e is CalendarEvent => e !== null);
-            
-        const apptEvents = appointments.map(appointmentToEvent);
+
+        const apptEvents = appointments.map(appt =>
+            appointmentToEvent(appt, {
+                toLocalDate,
+                dateToInput: (d: Date) => toDateKey(d),
+            })
+        );
 
         setCalendarEvents([...leadEvents, ...apptEvents]);
-    }, [leads, appointments]); // Removed dependencies that were not here before check logic
+    }, [leads, appointments, toLocalDate]);
 
     // Timer for current time line
     useEffect(() => {

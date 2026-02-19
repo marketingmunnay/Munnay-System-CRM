@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AppointmentStatus, Prisma } from '@prisma/client';
+import { DateService } from '../services/DateService';
 
 export const getAppointments = async (req: Request, res: Response) => {
     try {
@@ -10,11 +11,17 @@ export const getAppointments = async (req: Request, res: Response) => {
            status: { not: 'CANCELLED' } // Default filter
         };
         
+        // Fase 1: si recibimos rangos como ISO/UTC desde frontend, parseamos de forma segura.
         if (start && end) {
-            where.startTime = {
-                gte: new Date(start as string),
-                lte: new Date(end as string)
-            };
+            const from = DateService.parseFromFrontend(start as string);
+            const to = DateService.parseFromFrontend(end as string);
+
+            if (from && to) {
+                where.startTime = {
+                    gte: from,
+                    lt: to
+                };
+            }
         }
         
         if (professionalId) {
@@ -58,8 +65,8 @@ export const createAppointment = async (req: Request, res: Response) => {
         const { leadId, professionalId, serviceId, resourceId, date, time, notes } = req.body;
         
         // 1. Calculate Start/End
-        // Input expected: date "YYYY-MM-DD", time "HH:mm"
-        const start = new Date(`${date}T${time}:00`); 
+        // Input expected: date "YYYY-MM-DD", time "HH:mm" interpretados en zona de negocio
+        const start = DateService.fromZonedDateTime(date, time);
         let duration = 60;
         
         if (serviceId) {
@@ -229,9 +236,20 @@ export const updateAppointment = async (req: Request, res: Response) => {
         // Get current appt to merge
         const currentAppt = await prisma.appointment.findUnique({ where: { id: appointmentId } });
         if (!currentAppt) return res.status(404).json({ message: 'Cita no encontrada' });
+        
+        // Usar DateService para interpretar fechas provenientes del frontend (ISO/UTC)
+        const parsedStart = startTime ? DateService.parseFromFrontend(startTime) : null;
+        const parsedEnd = endTime ? DateService.parseFromFrontend(endTime) : null;
 
-        const targetStart = startTime ? new Date(startTime) : currentAppt.startTime;
-        const targetEnd = endTime ? new Date(endTime) : currentAppt.endTime;
+        if (startTime && !parsedStart) {
+            return res.status(400).json({ message: 'startTime inválido' });
+        }
+        if (endTime && !parsedEnd) {
+            return res.status(400).json({ message: 'endTime inválido' });
+        }
+
+        const targetStart = parsedStart ?? currentAppt.startTime;
+        const targetEnd = parsedEnd ?? currentAppt.endTime;
         const targetResource = resourceId ? parseInt(resourceId) : currentAppt.resourceId;
         const targetProfessional = professionalId ? parseInt(professionalId) : currentAppt.professionalId;
 
@@ -617,8 +635,12 @@ export const moveAppointment = async (req: Request, res: Response) => {
     const targetResourceId = parseId(newResourceId);
     const apptId = typeof appointmentId === 'string' ? parseInt(appointmentId.replace('appointment-', '')) : parseInt(appointmentId);
 
-    const startDate = new Date(newStart);
-    const endDate = new Date(newEnd);
+    const startDate = DateService.parseFromFrontend(String(newStart));
+    const endDate = DateService.parseFromFrontend(String(newEnd));
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Fechas de inicio/fin inválidas para mover la cita' });
+    }
 
     // 1. Validar Colisión con Staff (Si aplica)
     if (targetStaffId) {
@@ -627,8 +649,8 @@ export const moveAppointment = async (req: Request, res: Response) => {
                 id: { not: apptId }, // Ignore self
                 professionalId: targetStaffId,
                 status: { not: 'CANCELLED' },
-                startTime: { lt: endDate },
-                endTime: { gt: startDate }
+                    startTime: { lt: endDate },
+                    endTime: { gt: startDate }
             }
         });
         if (isOccupied) return res.status(409).json({ message: "El profesional ya está ocupado en ese horario." });
@@ -641,8 +663,8 @@ export const moveAppointment = async (req: Request, res: Response) => {
                 id: { not: apptId }, // Ignore self
                 resourceId: targetResourceId,
                 status: { not: 'CANCELLED' },
-                startTime: { lt: endDate },
-                endTime: { gt: startDate }
+                    startTime: { lt: endDate },
+                    endTime: { gt: startDate }
             }
         });
         if (isOccupiedResource) return res.status(409).json({ message: "El recurso/espacio ya está ocupado en ese horario." });
@@ -684,7 +706,8 @@ export const checkAvailability = async (req: Request, res: Response) => {
         const timeStr = String(horaInicio);
         const duration = duracionMinutos ? parseInt(String(duracionMinutos)) : 60;
 
-        const start = new Date(`${dateStr}T${timeStr}:00`);
+        // Interpretar fecha/hora en la zona de negocio y convertir a UTC para guardar/consultar
+        const start = DateService.fromZonedDateTime(dateStr, timeStr);
         const end = new Date(start.getTime() + duration * 60000);
 
         let isAvailable = true;
@@ -718,8 +741,11 @@ export const checkAvailability = async (req: Request, res: Response) => {
                     // Validate time blocks
                     const timeBlocks = shift.timeBlocks as any[];
                     if (timeBlocks && timeBlocks.length > 0) {
-                        const appStartMinutes = start.getHours() * 60 + start.getMinutes();
-                        const appEndMinutes = end.getHours() * 60 + end.getMinutes();
+                        // Calcular minutos en horario local de negocio para comparar con bloques
+                        const localStart = DateService.toBusinessZoned(start);
+                        const localEnd = DateService.toBusinessZoned(end);
+                        const appStartMinutes = localStart.getHours() * 60 + localStart.getMinutes();
+                        const appEndMinutes = localEnd.getHours() * 60 + localEnd.getMinutes();
 
                         const isWithinRange = timeBlocks.some((block: { start: string; end: string }) => {
                             const [startH, startM] = block.start.split(':').map(Number);
@@ -806,8 +832,10 @@ export const checkAvailability = async (req: Request, res: Response) => {
                 }
 
                 if (sugOk) {
-                    const sugHH = sugStart.getHours().toString().padStart(2, '0');
-                    const sugMM = sugStart.getMinutes().toString().padStart(2, '0');
+                    // Convertir sugerencias a horario local antes de formatear
+                    const sugLocal = DateService.toBusinessZoned(sugStart);
+                    const sugHH = sugLocal.getHours().toString().padStart(2, '0');
+                    const sugMM = sugLocal.getMinutes().toString().padStart(2, '0');
                     suggestions.push({
                         fecha: dateStr,
                         horaInicio: `${sugHH}:${sugMM}`,

@@ -1,8 +1,8 @@
 import React from 'react';
-import { formatDateForDisplay, formatDateTimeForDisplay } from '../../utils/time';
 import type { Lead } from '../../types';
 import { LeadStatus } from '../../types';
 import { ClockIcon, CurrencyDollarIcon, UserIcon } from '../shared/Icons';
+import { useDate } from '../../src/hooks/useDate';
 
 interface KanbanViewProps {
   leads: Lead[];
@@ -22,43 +22,47 @@ const statusConfig: Record<LeadStatus, { title: string, color: string, textColor
     [LeadStatus.Perdido]: { title: 'Perdido', color: 'bg-rose-200', textColor: 'text-rose-800' },
 };
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => (
-    <div 
-        onClick={onClick}
-        className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 cursor-pointer hover:shadow-md hover:border-purple-400 transition-all"
-    >
-        <div className="flex justify-between items-start">
-            <h4 className="font-bold text-gray-800 text-sm">{lead.nombres} {lead.apellidos}</h4>
-            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${lead.redSocial === 'Instagram' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
-                {lead.redSocial}
-            </span>
-        </div>
-        <p className="text-xs text-gray-500 mt-1 truncate">{lead.servicios.join(', ')}</p>
-        <div className="mt-4 flex justify-between items-center text-xs text-gray-600">
-            <div className="flex items-center">
-                <UserIcon className="mr-1 h-3 w-3" />
-                <span>{lead.vendedor}</span>
+const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
+    const { formatDateOnly, formatDateTime } = useDate();
+
+    return (
+        <div 
+            onClick={onClick}
+            className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 cursor-pointer hover:shadow-md hover:border-purple-400 transition-all"
+        >
+            <div className="flex justify-between items-start">
+                <h4 className="font-bold text-gray-800 text-sm">{lead.nombres} {lead.apellidos}</h4>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${lead.redSocial === 'Instagram' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {lead.redSocial}
+                </span>
             </div>
-            {lead.montoPagado > 0 && (
-                <div className="flex items-center font-semibold text-green-700">
-                    <CurrencyDollarIcon className="mr-1 h-3 w-3" />
-                    <span>S/ {lead.montoPagado}</span>
+            <p className="text-xs text-gray-500 mt-1 truncate">{lead.servicios.join(', ')}</p>
+            <div className="mt-4 flex justify-between items-center text-xs text-gray-600">
+                <div className="flex items-center">
+                    <UserIcon className="mr-1 h-3 w-3" />
+                    <span>{lead.vendedor}</span>
+                </div>
+                {lead.montoPagado > 0 && (
+                    <div className="flex items-center font-semibold text-green-700">
+                        <CurrencyDollarIcon className="mr-1 h-3 w-3" />
+                        <span>S/ {lead.montoPagado}</span>
+                    </div>
+                )}
+            </div>
+            {/* Mostrar fechaLead en la tarjeta Kanban */}
+            <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
+                <ClockIcon className="mr-1.5 h-3 w-3"/>
+                <span>{formatDateOnly(lead.fechaLead)}</span>
+            </div>
+            {lead.fechaHoraAgenda && lead.fechaHoraAgenda !== 'undefined' && (
+                <div className="mt-2 flex items-center text-xs text-blue-700 font-medium bg-blue-100 p-1 rounded">
+                    <ClockIcon className="mr-1.5 h-3 w-3"/>
+                    <span>{formatDateTime(lead.fechaHoraAgenda)}</span>
                 </div>
             )}
         </div>
-        {/* Mostrar fechaLead en la tarjeta Kanban */}
-        <div className="mt-2 flex items-center text-xs text-purple-700 font-medium bg-purple-100 p-1 rounded">
-            <ClockIcon className="mr-1.5 h-3 w-3"/>
-            <span>{formatDateForDisplay(lead.fechaLead)}</span>
-        </div>
-        {lead.fechaHoraAgenda && lead.fechaHoraAgenda !== 'undefined' && (
-            <div className="mt-2 flex items-center text-xs text-blue-700 font-medium bg-blue-100 p-1 rounded">
-                <ClockIcon className="mr-1.5 h-3 w-3"/>
-                <span>{formatDateTimeForDisplay(lead.fechaHoraAgenda)}</span>
-            </div>
-        )}
-    </div>
-);
+    );
+};
 
 
 const KanbanColumn: React.FC<{ title: string; color: string; textColor: string; children: React.ReactNode; count: number }> = ({ title, color, textColor, children, count }) => (

@@ -24,13 +24,13 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Lead, Campaign, ClientSource, Service, MetaCampaign, ComprobanteElectronico, User, Appointment } from '../../types';
 import { LeadStatus, ReceptionStatus, AppointmentStatus } from '../../types';
 import DateRangeFilter from '../shared/DateRangeFilter';
-import { getAppointments, updateAppointmentStatus, getLeads } from '../../services/api';
-import { parseDate } from '../../utils/time';
+import { getAppointments } from '../../services/api';
 import { PlusIcon, ClockIcon, UserIcon, EyeIcon, CurrencyDollarIcon } from '../shared/Icons';
 import StatCard from '../dashboard/StatCard';
 import { LeadFormModal } from '../marketing/LeadFormModal';
 import { RESOURCES } from '../../constants';
 import * as api from '../../services/api';
+import { useDate } from '../../src/hooks/useDate';
 
 // GoogleIcon para íconos de StatCard
 const GoogleIcon: React.FC<{ name: string, className?: string }> = ({ name, className }) => (
@@ -110,17 +110,13 @@ interface KanbanCardProps {
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick }) => {
     const resourceName = getResourceName(lead.recursoId);
+    const { formatDateTime } = useDate();
     
     const formattedDate = useMemo(() => {
         if (!lead.fechaHoraAgenda || lead.fechaHoraAgenda === 'undefined') return null;
-        // console.log('KanbanCard Debug:', lead.id, lead.fechaHoraAgenda, typeof lead.fechaHoraAgenda); 
-        const date = parseDate(lead.fechaHoraAgenda);
-        if (!date) return null;
-        // Check if date is valid
-        if (isNaN(date.getTime())) return null;
-        
-        return date.toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
-    }, [lead.fechaHoraAgenda]);
+        const value = formatDateTime(lead.fechaHoraAgenda);
+        return value && value !== '-' ? value : null;
+    }, [lead.fechaHoraAgenda, formatDateTime]);
 
     const displayName = useMemo(() => {
         const full = `${lead.nombres || ''} ${lead.apellidos || ''}`.trim();
@@ -222,12 +218,8 @@ const KanbanColumn: React.FC<{
 };
 
 const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> = ({ leads, onEdit }) => {
+    const { formatTimeOnly } = useDate();
     const formatCurrency = (value: number) => `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const formatDateTime = (dateTimeString: string) => {
-        const date = parseDate(dateTimeString);
-        if (!date) return '-';
-        return date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true });
-    };
     
     const statusText: Record<string, string> = {
         [ReceptionStatus.Agendado]: 'Por Llegar',
@@ -268,7 +260,7 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
                                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                         {lead.nombres} {lead.apellidos}
                                     </th>
-                                    <td className="px-6 py-4 font-semibold">{formatDateTime(lead.fechaHoraAgenda!)}</td>
+                                    <td className="px-6 py-4 font-semibold">{formatTimeOnly(lead.fechaHoraAgenda)}</td>
                                     <td className="px-6 py-4">{lead.servicios.join(', ')}</td>
                                     <td className="px-6 py-4">{getResourceName(lead.recursoId)}</td>
                                     <td className="px-6 py-4">{formatCurrency(lead.montoPagado)}</td>
@@ -299,10 +291,11 @@ const AgendadosTable: React.FC<{ leads: Lead[], onEdit: (lead: Lead) => void }> 
 
 
 const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCampaigns, onSaveLead, onDeleteLead, clientSources, services, requestConfirmation, onSaveComprobante, comprobantes }) => {
-  const [dateRange, setDateRange] = useState({ 
-      from: new Date().toISOString().split('T')[0], 
-      to: new Date().toISOString().split('T')[0] 
-  });
+    const { todayKey, toDateKey, parse, getLocalDayRangeUTC } = useDate();
+    const [dateRange, setDateRange] = useState(() => {
+            const today = todayKey();
+            return { from: today, to: today };
+    });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
@@ -320,9 +313,13 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
 
     // Fetch appointments for current range
     if (dateRange.from && dateRange.to) {
-        getAppointments(dateRange.from, dateRange.to)
+        const fromRange = getLocalDayRangeUTC(dateRange.from);
+        const toRange = getLocalDayRangeUTC(dateRange.to);
+        if (fromRange && toRange) {
+            getAppointments(fromRange.start.toISOString(), toRange.endExclusive.toISOString())
             .then(res => { if (mounted) setAppointments(res); })
             .catch(console.error);
+        }
     }
 
     return () => { mounted = false; };
@@ -333,7 +330,8 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
     // 1. Leads 'legacy' que vienen por props (filtrados por fecha localmente)
     const validLeads = leads.filter(lead => {
         if (lead.estado !== LeadStatus.Agendado || !lead.fechaHoraAgenda) return false;
-        const agendaDate = lead.fechaHoraAgenda.toString().split('T')[0];
+        const agendaDate = toDateKey(lead.fechaHoraAgenda);
+        if (!agendaDate) return false;
         if (dateRange.from && agendaDate < dateRange.from) return false;
         if (dateRange.to && agendaDate > dateRange.to) return false;
         return true;
@@ -358,8 +356,15 @@ const AgendadosPage: React.FC<AgendadosPageProps> = ({ leads, campaigns, metaCam
     // Actually, in transition phase, show both? Or dedup by leadId?
     // Let's just append for now, user can see dupes if data isn't clean.
     const combined = [...validLeads, ...appointmentLeads];
-    
-    return combined.sort((a, b) => new Date(a.fechaHoraAgenda!).getTime() - new Date(b.fechaHoraAgenda!).getTime());
+
+    return combined.sort((a, b) => {
+        const aDate = a.fechaHoraAgenda ? parse(a.fechaHoraAgenda) : null;
+        const bDate = b.fechaHoraAgenda ? parse(b.fechaHoraAgenda) : null;
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.getTime() - bDate.getTime();
+    });
   }, [leads, appointments, dateRange]);
 
   const stats = useMemo(() => {

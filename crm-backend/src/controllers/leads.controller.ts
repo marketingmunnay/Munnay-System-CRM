@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { DateService } from '../services/DateService';
 import { AuthenticatedRequest, isAdmin } from '../middleware/auth';
 
 // Convert BigInt values (returned by Prisma for BigInt columns) into JSON-serializable
@@ -102,13 +103,14 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
   });
 
   try {
-    // Helper to safely parse DateTime strings
+    // Helper to safely parse DateTime strings (Fase 1: centralizar lógica)
     const parseDateTime = (dateStr: any): Date | null | undefined => {
-      // If explicit null or empty string, we might want to clear the date
       if (dateStr === null || dateStr === '') return null;
       if (dateStr === undefined || dateStr === 'undefined') return undefined;
-      const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? undefined : d;
+      const parsed = typeof dateStr === 'string'
+        ? DateService.parseFromFrontend(dateStr)
+        : (dateStr instanceof Date ? dateStr : null);
+      return parsed ?? undefined;
     };
 
     // Helper function to normalize enum values (remove spaces)

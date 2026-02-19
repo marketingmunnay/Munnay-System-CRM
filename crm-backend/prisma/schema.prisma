@@ -178,7 +178,7 @@ enum GoalObjective {
 
 model Lead {
   id                     Int      @id @default(autoincrement())
-  fechaLead              DateTime
+  fechaLead              DateTime @db.Timestamptz(3)
   nombres                String
   apellidos              String
   numero                 String
@@ -190,12 +190,12 @@ model Lead {
   estado                 LeadStatus
   montoPagado            Float    @default(0)
   metodoPago             MetodoPago?
-  fechaHoraAgenda        DateTime?
+  fechaHoraAgenda        DateTime? @db.Timestamptz(3)
   servicios              String[]
   categoria              String
   profesionalAsignado    String?
   observacionesGenerales String?  @db.Text
-  fechaVolverLlamar      DateTime?
+  fechaVolverLlamar      DateTime? @db.Timestamptz(3)
   horaVolverLlamar       String?
   notas                  String?  @db.Text
   nHistoria              String?  @unique
@@ -211,8 +211,8 @@ model Lead {
   documentNumber         String?
   razonSocial            String?
   direccionFiscal        String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt              DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime @updatedAt @db.Timestamptz(3)
   createdById            Int?
   createdBy              User?    @relation("LeadCreatedBy", fields: [createdById], references: [id])
 
@@ -233,12 +233,12 @@ model PagoRecepcion {
   id          Int        @id @default(autoincrement())
   monto       Float
   metodoPago  MetodoPago
-  fechaPago   DateTime   @default(now())
+  fechaPago   DateTime   @default(now()) @db.Timestamptz(3)
   observacion String?    @db.Text
   leadId      Int
   lead        Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
 }
 
 model RegistroLlamada {
@@ -835,8 +835,8 @@ model Shift {
   timeBlocks   Json     // Array of objects: { start: string, end: string, id: string }
   location     String   @default("Principal")
   isDayOff     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([userId, date])
 }
@@ -875,16 +875,16 @@ model Appointment {
   resourceId     Int?              // Consultorio o M�quina
   resource       Resource?         @relation(fields: [resourceId], references: [id])
   
-  startTime      DateTime
-  endTime        DateTime
+  startTime      DateTime @db.Timestamptz(3)
+  endTime        DateTime @db.Timestamptz(3)
   
   status         AppointmentStatus @default(SCHEDULED)
   
   notes          String?           @db.Text
   totalPrice     Float?            
   
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
   
   @@index([startTime, endTime])
 }
@@ -899,8 +899,8 @@ model Resource {
   appointments Appointment[]
   resourceUsers ResourceUser[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(3)
 }
 model ResourceUser {
   id         Int      @id @default(autoincrement())
@@ -908,8 +908,8 @@ model ResourceUser {
   resourceId Int
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([userId, resourceId])
 }

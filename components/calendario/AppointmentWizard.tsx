@@ -3,6 +3,7 @@ import Modal from '../shared/Modal';
 import type { Lead, Service, ClientSource, Ambiente, AvailabilitySlot, Appointment } from '../../types';
 import { DocumentType, LeadStatus, Seller } from '../../types';
 import { formatDateForInput } from '../../utils/time';
+import { useDate } from '../../src/hooks/useDate';
 import {
   searchLeads,
   getAmbientes,
@@ -87,9 +88,9 @@ const defaultChannels: { whatsapp: boolean; email: boolean } = {
   email: false
 };
 
-const defaultLeadTemplate = (fecha: Date): Lead => ({
+const defaultLeadTemplate = (fechaISO: string): Lead => ({
   id: Date.now(),
-  fechaLead: formatDateForInput(fecha) ?? new Date().toISOString().split('T')[0],
+  fechaLead: fechaISO.split('T')[0],
   nombres: '',
   apellidos: '',
   numero: '',
@@ -129,6 +130,7 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   channels = defaultChannels,
   resources = []
 }) => {
+  const { toInputDateTimeLocal, fromInputDateTimeLocalToUTC } = useDate();
   const [activeStep, setActiveStep] = useState<WizardStep>('cliente');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Lead[]>([]);
@@ -353,7 +355,10 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
   };
 
   const describeSuggestionWindow = (suggestion: AvailabilitySuggestion) => {
-    const date = new Date(`${suggestion.fecha}T${suggestion.horaInicio}`);
+    // Interpretar sugerencias como hora local de negocio usando string directa
+    const [year, month, day] = suggestion.fecha.split('-').map(Number);
+    const [hour, minute] = suggestion.horaInicio.split(':').map(Number);
+    const date = new Date(year, (month ?? 1) - 1, day ?? 1, hour ?? 0, minute ?? 0);
     const dateLabel = suggestionFormatter.format(date);
     return `${dateLabel.toUpperCase()} · ${suggestion.horaInicio}`;
   };
@@ -371,7 +376,8 @@ const AppointmentWizard: React.FC<AppointmentWizardProps> = ({
     }
     setIsSavingLead(true);
     try {
-      const base = defaultLeadTemplate(new Date());
+      const nowUtcIso = new Date().toISOString();
+      const base = defaultLeadTemplate(nowUtcIso);
       const newLead: Lead = {
         ...base,
         nombres: leadForm.nombres.trim(),
