@@ -1,12 +1,16 @@
 import { Router } from 'express';
-import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal, getGoalProgress } from '../controllers/goals.controller';
+import { getGoals, createGoal, getGoalById, updateGoal, deleteGoal, getGoalProgress, getMyGoals } from '../controllers/goals.controller';
+import { requireRole } from '../middlewares/requireRole';
 import { requireAdmin, requireAuth, requireSelfOrAdmin } from '../middleware/auth';
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get('/', requireAuth, getGoals);
+// Solo admin puede ver todas las metas
+router.get('/', requireRole('Admin'), getGoals);
+// Endpoint para metas propias
+router.get('/me', getMyGoals);
 router.post('/', requireAdmin, createGoal);
 router.get('/progress/:userId', requireSelfOrAdmin('userId'), getGoalProgress);
 router.get('/:id', requireAdmin, getGoalById);

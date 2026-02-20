@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { getUsers, createUser, getUserById, updateUser, deleteUser, loginUser, getCurrentUser, getUserProfile } from '../controllers/users.controller';
+import { getUsers, createUser, getUserById, updateUser, deleteUser, loginUser, getCurrentUser, getUserProfile, getMe, getLeadSellers } from '../controllers/users.controller';
+import { requireRole } from '../middlewares/requireRole';
 import { requireAdmin, requireAuth, requireSelfOrAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -8,9 +9,11 @@ router.post('/login', loginUser); // 👈 aquí agregas el login
 
 router.use(requireAuth);
 
-router.get('/me', getCurrentUser);
+router.get('/me', getMe);
+router.get('/sellers', getLeadSellers);
 
-router.get('/', requireAuth, getUsers);
+// Solo admin puede ver todos los usuarios
+router.get('/', requireRole('Admin'), getUsers);
 router.post('/', requireAdmin, createUser);
 router.get('/:id', requireSelfOrAdmin(), getUserById);
 router.get('/:id/profile', requireAuth, getUserProfile);
