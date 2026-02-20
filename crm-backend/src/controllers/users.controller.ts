@@ -42,13 +42,26 @@ const publicUserSelect = {
 
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const isAdmin = req.authUser && (req.authUser.rolId === 1 || req.authUser.rolNombre?.toLowerCase() === 'administrador');
-    
+    const rolNombre = req.authUser?.rolNombre?.toLowerCase() || '';
+    const isAdmin = req.authUser && (req.authUser.rolId === 1 || rolNombre === 'administrador' || rolNombre === 'supervisor');
+
+    if (rolNombre === 'vendedor') {
+      // Solo devuelve el propio usuario
+      const user = await prisma.user.findUnique({
+        where: { id: req.authUser.id },
+        select: publicUserSelect,
+      });
+      if (!user) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+      return res.status(200).json([user]);
+    }
+
+    // Admins y supervisores ven todos
     const users = await prisma.user.findMany({
-      // Exclude sensitive data for non-admins
       select: isAdmin ? safeUserSelect : publicUserSelect,
     });
-    res.status(200).json(users);
+    return res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
