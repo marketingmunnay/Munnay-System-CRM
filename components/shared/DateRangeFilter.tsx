@@ -1,45 +1,49 @@
+
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, XCircleIcon } from './Icons.tsx';
-import { useDate } from '../../src/hooks/useDate';
 
 interface DateRangeFilterProps {
   onApply: (dates: { from: string; to: string }) => void;
 }
 
-type DateKey = string; // YYYY-MM-DD (zona del negocio)
+const formatDate = (date: Date | null) => {
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+  return '';
+}
+
+const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const WEEK_DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
-  const { formatDateOnly, todayKey, addDaysToDateKey } = useDate();
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const initialToday = useMemo(() => todayKey(), [todayKey]);
-
-  // Siempre trabajamos con YYYY-MM-DD en zona del negocio
-  const [startKey, setStartKey] = useState<DateKey | null>(initialToday);
-  const [endKey, setEndKey] = useState<DateKey | null>(initialToday);
-  const [hoverKey, setHoverKey] = useState<DateKey | null>(null);
-
-  // Calendarios: control por (año, mes) para evitar dependencia implícita del TZ del navegador
-  const initialYear = Number(initialToday.slice(0, 4));
-  const initialMonth = Number(initialToday.slice(5, 7)) - 1;
-  const [leftYear, setLeftYear] = useState<number>(initialYear);
-  const [leftMonth, setLeftMonth] = useState<number>(initialMonth);
-
-  const rightCalendar = useMemo(() => {
-    const month = leftMonth + 1;
-    const year = leftYear + Math.floor(month / 12);
-    return { year, month: ((month % 12) + 12) % 12 };
-  }, [leftYear, leftMonth]);
+  
+  // Inicializar con la fecha de HOY por defecto
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Always default to today if null
+  const [startDate, setStartDate] = useState<Date | null>(today);
+  const [endDate, setEndDate] = useState<Date | null>(today);
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  
+  const [leftCalendarDate, setLeftCalendarDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  
+  const rightCalendarDate = useMemo(() => {
+    return new Date(leftCalendarDate.getFullYear(), leftCalendarDate.getMonth() + 1, 1);
+  }, [leftCalendarDate]);
 
   // Aplicar fecha HOY por defecto al cargar el componente
   useEffect(() => {
-    // Aplicar HOY (zona del negocio) al cargar
-    onApply({ from: initialToday, to: initialToday });
-  }, [initialToday, onApply]);
+    onApply({ from: formatDate(today), to: formatDate(today) });
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,15 +56,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   }, [wrapperRef]);
 
   const handleApply = () => {
-    const from = startKey ?? '';
-    const to = endKey ?? from;
-    onApply({ from, to });
+    onApply({ from: formatDate(startDate), to: formatDate(endDate) });
     setIsOpen(false);
   };
   
   const handleClear = () => {
-    setStartKey(null);
-    setEndKey(null);
+    setStartDate(null);
+    setEndDate(null);
     onApply({ from: '', to: '' });
   };
 
@@ -69,109 +71,85 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
     setIsOpen(false);
   };
   
-  const handleDateClick = (dayKey: DateKey) => {
-      if (!startKey || (startKey && endKey)) {
-          setStartKey(dayKey);
-          setEndKey(null);
-          return;
-      }
-
-      if (startKey && !endKey) {
-          if (dayKey < startKey) {
-              setEndKey(startKey);
-              setStartKey(dayKey);
+  const handleDateClick = (day: Date) => {
+      if (!startDate || (startDate && endDate)) {
+          setStartDate(day);
+          setEndDate(null);
+      } else if (startDate && !endDate) {
+          if (day < startDate) {
+              setEndDate(startDate);
+              setStartDate(day);
           } else {
-              setEndKey(dayKey);
+              setEndDate(day);
           }
       }
   };
   
   const setPeriod = (period: string) => {
-    const today = todayKey();
-    let start = today;
-    let end = today;
-
-    const todayYear = Number(today.slice(0, 4));
-    const todayMonth = Number(today.slice(5, 7)) - 1;
-
-    const pad2 = (n: number) => String(n).padStart(2, '0');
-    const daysInMonth = (year: number, month0: number) => new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let start = new Date(today);
+    let end = new Date(today);
 
     switch (period) {
         case 'hoy':
             break;
         case 'ayer':
-            start = addDaysToDateKey(today, -1);
-            end = start;
+            start.setDate(start.getDate() - 1);
+            end.setDate(end.getDate() - 1);
             break;
         case 'ultimos_7_dias':
-            start = addDaysToDateKey(today, -6);
+            start.setDate(start.getDate() - 6);
             break;
         case 'este_mes':
-            start = `${todayYear}-${pad2(todayMonth + 1)}-01`;
-            end = `${todayYear}-${pad2(todayMonth + 1)}-${pad2(daysInMonth(todayYear, todayMonth))}`;
+            start = new Date(today.getFullYear(), today.getMonth(), 1);
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             break;
         case 'mes_pasado':
-            {
-              const prevMonth0 = todayMonth - 1;
-              const year = prevMonth0 < 0 ? todayYear - 1 : todayYear;
-              const month0 = (prevMonth0 + 12) % 12;
-              start = `${year}-${pad2(month0 + 1)}-01`;
-              end = `${year}-${pad2(month0 + 1)}-${pad2(daysInMonth(year, month0))}`;
-            }
+            start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            end = new Date(today.getFullYear(), today.getMonth(), 0);
             break;
         default:
             return;
     }
-
-    setStartKey(start);
-    setEndKey(end);
-
-    const newYear = Number(start.slice(0, 4));
-    const newMonth = Number(start.slice(5, 7)) - 1;
-    setLeftYear(newYear);
-    setLeftMonth(newMonth);
+    setStartDate(start);
+    setEndDate(end);
+    setLeftCalendarDate(new Date(start.getFullYear(), start.getMonth(), 1));
   };
 
 
-  const pad2 = (n: number) => String(n).padStart(2, '0');
-  const daysInMonth = (year: number, month0: number) => new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate();
+  const generateMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // 0=Lunes
 
-  const dayOfWeekIndexMonday0 = (year: number, month0: number, day: number): number => {
-    // Usar Z (zona del negocio) implícita del hook: formatDateOnly/keys ya están en TZ negocio.
-    // Para no introducir Date con TZ navegador, calculamos el índice de día ISO (1-7) desde UTC (fiable).
-    // Esto es suficiente para construir la grilla de un calendario mensual.
-    const utc = new Date(Date.UTC(year, month0, day, 12, 0, 0));
-    // getUTCDay(): 0=Dom..6=Sáb. Convertir a 0=Lun..6=Dom
-    return (utc.getUTCDay() + 6) % 7;
-  };
-
-  const generateMonth = (year: number, month0: number) => {
-    const dim = daysInMonth(year, month0);
-    const startDayOfWeek = dayOfWeekIndexMonday0(year, month0, 1); // 0=Lunes
-    const days: (DateKey | null)[] = Array(startDayOfWeek).fill(null);
-    for (let i = 1; i <= dim; i++) {
-      days.push(`${year}-${pad2(month0 + 1)}-${pad2(i)}`);
+    const days: (Date | null)[] = Array(startDayOfWeek).fill(null);
+    for (let i = 1; i <= daysInMonth; i++) {
+        days.push(new Date(year, month, i));
     }
     return days;
   };
 
   const changeMonth = (offset: number) => {
-    const raw = leftMonth + offset;
-    const year = leftYear + Math.floor(raw / 12);
-    const month = ((raw % 12) + 12) % 12;
-    setLeftYear(year);
-    setLeftMonth(month);
+      setLeftCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
   };
+  
+  const changeYear = (date: Date, year: number) => {
+      setLeftCalendarDate(new Date(year, date.getMonth(), 1));
+  }
+  
+  const changeMonthBySelect = (date: Date, month: number) => {
+      setLeftCalendarDate(new Date(date.getFullYear(), month, 1));
+  }
+  
+  const years = Array.from({length: 10}, (_, i) => new Date().getFullYear() - 5 + i);
 
-  const years = useMemo(() => {
-    const base = Number(initialToday.slice(0, 4));
-    return Array.from({ length: 10 }, (_, i) => base - 5 + i);
-  }, [initialToday]);
-
-  const renderCalendar = (calendar: { year: number; month: number }) => {
-    const monthDays = generateMonth(calendar.year, calendar.month);
-    const today = initialToday;
+  const renderCalendar = (date: Date) => {
+    const monthDays = generateMonth(date);
+    const today = new Date(); today.setHours(0,0,0,0);
     
     return (
         <div className="w-64">
@@ -179,15 +157,15 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
                 <button onClick={() => changeMonth(-1)} className="p-1 rounded-full hover:bg-gray-100"><ChevronLeftIcon className="w-5 h-5"/></button>
                 <div className="flex items-center space-x-1">
                      <select 
-                        value={calendar.month} 
-                        onChange={(e) => setLeftMonth(parseInt(e.target.value))}
+                        value={date.getMonth()} 
+                        onChange={(e) => changeMonthBySelect(date, parseInt(e.target.value))}
                         className="text-sm font-semibold text-gray-800 border-none bg-transparent focus:ring-0 p-1"
                     >
                          {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
                      </select>
                       <select 
-                        value={calendar.year} 
-                        onChange={(e) => setLeftYear(parseInt(e.target.value))}
+                        value={date.getFullYear()} 
+                        onChange={(e) => changeYear(date, parseInt(e.target.value))}
                         className="text-sm font-semibold text-gray-800 border-none bg-transparent focus:ring-0 p-1"
                     >
                          {years.map(year => <option key={year} value={year}>{year}</option>)}
@@ -199,17 +177,17 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
                 {WEEK_DAYS.map(day => <div key={day} className="w-8 h-8 flex items-center justify-center">{day}</div>)}
             </div>
              <div className="grid grid-cols-7 gap-y-1">
-                {monthDays.map((dayKey, index) => {
-                  if (!dayKey) return <div key={`empty-${index}`} />;
-
-                  const isToday = dayKey === today;
-                  const isSelectedStart = startKey && dayKey === startKey;
-                  const isSelectedEnd = endKey && dayKey === endKey;
+                {monthDays.map((day, index) => {
+                    if (!day) return <div key={`empty-${index}`} />;
                     
-                  const inRange = startKey && (
-                    (endKey && dayKey > startKey && dayKey < endKey) ||
-                    (!endKey && hoverKey && dayKey > startKey && dayKey < hoverKey)
-                  );
+                    const isToday = day.getTime() === today.getTime();
+                    const isSelectedStart = startDate && day.getTime() === startDate.getTime();
+                    const isSelectedEnd = endDate && day.getTime() === endDate.getTime();
+                    
+                    const inRange = startDate && (
+                        (endDate && day > startDate && day < endDate) ||
+                        (!endDate && hoverDate && day > startDate && day < hoverDate)
+                    );
 
                     let classes = "w-8 h-8 flex items-center justify-center rounded-full text-sm cursor-pointer ";
                     if (isToday) classes += "border border-red-500 ";
@@ -218,7 +196,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
                     else if(inRange) classes += "bg-orange-100 text-[#2f3133] rounded-none ";
                     else classes += "hover:bg-gray-100 text-[#2f3133] ";
 
-                    if (startKey && !endKey && dayKey === hoverKey) classes += "bg-orange-200 ";
+                    if (startDate && !endDate && day.getTime() === hoverDate?.getTime()) classes += "bg-orange-200 ";
                     
                     if (inRange) {
                         if (isSelectedStart) classes += "rounded-r-none ";
@@ -228,12 +206,12 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
                     return (
                         <div key={index} className="flex items-center justify-center">
                             <button
-                              onClick={() => handleDateClick(dayKey)}
-                              onMouseEnter={() => setHoverKey(dayKey)}
-                              onMouseLeave={() => setHoverKey(null)}
+                                onClick={() => handleDateClick(day)}
+                                onMouseEnter={() => setHoverDate(day)}
+                                onMouseLeave={() => setHoverDate(null)}
                                 className={classes}
                             >
-                              {Number(dayKey.slice(8, 10))}
+                                {day.getDate()}
                             </button>
                         </div>
                     );
@@ -244,21 +222,21 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
   };
 
   const displayValue = useMemo(() => {
-      if (startKey && endKey) {
-        if (startKey === endKey) {
-          return formatDateOnly(startKey);
-        }
-        return `${formatDateOnly(startKey)} - ${formatDateOnly(endKey)}`;
+      if(startDate && endDate) {
+          if (startDate.getTime() === endDate.getTime()) {
+              return formatDateForDisplay(startDate);
+          }
+          return `${formatDateForDisplay(startDate)} - ${formatDateForDisplay(endDate)}`;
       }
-      if (startKey) {
-        return formatDateOnly(startKey);
+      if(startDate) {
+          return formatDateForDisplay(startDate);
       }
       return 'Selecciona un periodo';
-    }, [startKey, endKey, formatDateOnly]);
+  }, [startDate, endDate]);
 
   return (
     <div className="relative flex items-center space-x-2" ref={wrapperRef}>
-       {(startKey || endKey) && (
+       {(startDate || endDate) && (
         <button
             onClick={handleClear}
             className="flex items-center px-3 py-2 text-sm bg-white text-gray-600 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 hover:text-gray-800 transition-colors"
@@ -280,8 +258,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
         <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 p-4">
             <div className="flex justify-between items-center mb-4">
                 <div className="text-sm">
-                <p className="text-gray-500">Fecha de inicio: <span className="font-semibold text-gray-800">{startKey ? formatDateOnly(startKey) : '-'}</span></p>
-                <p className="text-gray-500">Fecha de finalización: <span className="font-semibold text-gray-800">{(endKey ?? startKey) ? formatDateOnly(endKey ?? startKey) : '-'}</span></p>
+                    <p className="text-gray-500">Fecha de inicio: <span className="font-semibold text-gray-800">{startDate ? formatDateForDisplay(startDate) : '-'}</span></p>
+                    <p className="text-gray-500">Fecha de finalización: <span className="font-semibold text-gray-800">{endDate ? formatDateForDisplay(endDate) : '-'}</span></p>
                 </div>
                 <div>
                      <select onChange={e => setPeriod(e.target.value)} className="text-sm border-gray-300 rounded-md focus:ring-[#aa632d] focus:border-[#aa632d]">
@@ -295,8 +273,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onApply }) => {
                 </div>
             </div>
             <div className="flex space-x-4 border-t pt-4">
-                {renderCalendar({ year: leftYear, month: leftMonth })}
-                {renderCalendar(rightCalendar)}
+                {renderCalendar(leftCalendarDate)}
+                {renderCalendar(rightCalendarDate)}
             </div>
              <div className="border-t mt-4 pt-3 flex justify-end items-center space-x-2">
                 <button
