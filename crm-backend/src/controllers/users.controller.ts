@@ -43,10 +43,47 @@ const publicUserSelect = {
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const rolNombre = req.authUser?.rolNombre?.toLowerCase() || '';
-    const isAdmin = req.authUser && (req.authUser.rolId === 1 || rolNombre === 'administrador' || rolNombre === 'supervisor');
+    const isAdmin = req.authUser && (req.authUser.rolId === 1 || rolNombre === 'administrador');
 
-    if (rolNombre === 'vendedor') {
-      // Solo devuelve el propio usuario
+    // Campos públicos para usuarios normales
+    const publicUserSelect = {
+      id: true,
+      nombres: true,
+      apellidos: true,
+      position: true,
+      metas: true,
+      registroActividad: true,
+    };
+
+    // Campos completos para administradores
+    const adminUserSelect = {
+      id: true,
+      nombres: true,
+      apellidos: true,
+      usuario: true,
+      rolId: true,
+      rol: true,
+      avatarUrl: true,
+      position: true,
+      documentType: true,
+      documentNumber: true,
+      phone: true,
+      email: true,
+      birthDate: true,
+      startDate: true,
+      addresses: true,
+      emergencyContacts: true,
+      reconocimientosRecibidos: true,
+      salary: true,
+      contractType: true,
+      maritalStatus: true,
+      sex: true,
+      metas: true,
+      registroActividad: true,
+    };
+
+    if (!isAdmin) {
+      // Usuarios normales: solo su propio perfil y registroActividad
       const user = await prisma.user.findUnique({
         where: { id: req.authUser.id },
         select: publicUserSelect,
@@ -54,13 +91,17 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
       if (!user) {
         return res.status(404).json({ message: 'Usuario no encontrado' });
       }
+      // Registrar actividad: ver perfil
+      await require('../helpers/auditoria').logActividad(req.authUser.id, 'ver_perfil', 'Usuario consultó su perfil');
       return res.status(200).json([user]);
     }
 
-    // Admins y supervisores ven todos
+    // Admin: todos los usuarios con todos los campos
     const users = await prisma.user.findMany({
-      select: isAdmin ? safeUserSelect : publicUserSelect,
+      select: adminUserSelect,
     });
+    // Registrar actividad: admin consultó usuarios
+    await require('../helpers/auditoria').logActividad(req.authUser.id, 'ver_usuarios', 'Administrador consultó todos los usuarios');
     return res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
