@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Lead, Campaign, VentaExtra, Incidencia, Egreso, Goal, Seguidor, Publicacion, User, Role } from '../../types.ts';
 import GeneralDashboard from './GeneralDashboard.tsx';
@@ -44,11 +43,11 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
         return TABS.filter(tab => permissions.includes(tab.id));
     }, [permissions]);
 
-    const [activeTab, setActiveTab] = useState(visibleTabs.length > 0 ? visibleTabs[0].name : '');
+    const [activeTab, setActiveTab] = useState(visibleTabs.length > 0 ? visibleTabs[0].id : '');
 
     useEffect(() => {
-        if (visibleTabs.length > 0 && !visibleTabs.some(tab => tab.name === activeTab)) {
-            setActiveTab(visibleTabs[0].name);
+        if (visibleTabs.length > 0 && !visibleTabs.some(tab => tab.id === activeTab)) {
+            setActiveTab(visibleTabs[0].id);
         } else if (visibleTabs.length === 0) {
             setActiveTab('');
         }
@@ -69,17 +68,17 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
         }
 
         switch (activeTab) {
-            case 'General':
+            case 'general':
                 return <GeneralDashboard {...props} dateRange={dateRange} />;
-            case 'Comercial':
+            case 'marketing':
                 return <MarketingDashboard {...props} dateRange={dateRange} />;
-            case 'Administración':
+            case 'recepcion':
                 return <RecepcionDashboard {...props} dateRange={dateRange} />;
-            case 'Procedimientos':
+            case 'procedimientos':
                 return <ProcedimientosDashboard {...props} dateRange={dateRange} />;
-            case 'Finanzas':
+            case 'finanzas':
                 return <FinanzasDashboard dateRange={dateRange} />;
-            case 'Recursos Humanos':
+            case 'rrhh':
                 return <RecursosHumanosDashboard users={props.users} roles={props.roles} goals={props.goals} dateRange={dateRange} />;
             default:
                 return <GeneralDashboard {...props} dateRange={dateRange} />;
@@ -101,10 +100,10 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
                         <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                             {visibleTabs.map((tab) => (
                                 <button
-                                    key={tab.name}
-                                    onClick={() => setActiveTab(tab.name)}
-                                    className={`${
-                                        activeTab === tab.name
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`$ {
+                                        activeTab === tab.id
                                             ? 'border-[#aa632d] text-[#aa632d]'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
