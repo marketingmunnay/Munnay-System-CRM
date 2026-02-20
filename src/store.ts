@@ -1,10 +1,16 @@
-import { configureStore } from '@reduxjs/toolkit';
-// Import your reducers here
-// import someReducer from './someSlice';
+import { configureStore, createSlice } from '@reduxjs/toolkit';
+
+const dummySlice = createSlice({
+  name: 'dummy',
+  initialState: { value: 0 },
+  reducers: {
+    increment: state => { state.value += 1; },
+  },
+});
 
 export const store = configureStore({
   reducer: {
-    // some: someReducer,
+    dummy: dummySlice.reducer,
   },
 });
 
