@@ -59,31 +59,12 @@ export const saveShift = async (req: Request, res: Response) => {
 
     const { userId, date, timeBlocks, location, isDayOff } = req.body;
 
-    let shiftDate: Date;
 
-    // Robust Date Parsing
-    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        // Handle "YYYY-MM-DD" string explicitly to avoid any timezone conversion
-        const [year, month, day] = date.split('-').map(Number);
-        shiftDate = new Date(Date.UTC(year, month - 1, day));
-    } else {
-        // Fallback for full ISO strings or Date objects
-        const inputDate = new Date(date);
-        if (isNaN(inputDate.getTime())) {
-            console.error("Invalid Date parsed:", date);
-            return res.status(400).json({ message: "Invalid date format" });
-        }
-        // Attempt to extract calendar date. 
-        // Note: this relies on server local time if input is ISO. 
-        // Ideally frontend always sends YYYY-MM-DD now.
-        shiftDate = new Date(Date.UTC(
-            inputDate.getFullYear(), 
-            inputDate.getMonth(), 
-            inputDate.getDate()
-        ));
-    }
-
-    console.log("Normalized Date for DB:", shiftDate.toISOString());
+    // Normalización de fecha usando DateService para control de zona horaria
+    // Siempre fija la hora a las 12:00 para evitar problemas de desfase
+    // Requiere: import { DateService } from '../services/DateService';
+    const shiftDate = DateService.fromZonedDateTime(date, '12:00');
+    console.log("Normalized Date for DB (DateService):", shiftDate.toISOString());
 
     const shift = await prisma.shift.upsert({
       where: {

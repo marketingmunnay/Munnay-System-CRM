@@ -1,3 +1,27 @@
+// Endpoint para obtener solo usuarios con roles de vendedor (Recepcionista, CallCenter)
+export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const sellers = await prisma.user.findMany({
+      where: {
+        rol: {
+          nombre: {
+            in: ["Recepcionista", "CallCenter"]
+          }
+        }
+      },
+      select: {
+        id: true,
+        nombres: true,
+        apellidos: true,
+        position: true,
+        rol: { select: { nombre: true } },
+      }
+    });
+    return res.status(200).json(sellers);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching sellers', error: (error as Error).message });
+  }
+};
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
