@@ -58,8 +58,6 @@ const navItems: NavItem[] = [
         icon: <GoogleIcon name="admin_panel_settings" className="text-xl" />,
         subItems: [
              { id: 'finanzas-egresos', label: 'Egresos', page: 'finanzas-egresos' },
-             { id: 'finanzas-facturacion', label: 'Facturación', page: 'finanzas-facturacion' },
-             { id: 'administracion-inventario', label: 'Inventario', page: 'administracion-inventario' },
         ]
     },
     {
@@ -139,8 +137,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                 return next.filter(menuId => !topLevelMenuIds.includes(menuId) || menuId === activeTopLevel);
             });
         }
-    }, [currentPage, topLevelMenuIds]);
-    
     const toggleMenu = (id: string) => {
         setOpenMenus(prev => {
             const isOpen = prev.includes(id);

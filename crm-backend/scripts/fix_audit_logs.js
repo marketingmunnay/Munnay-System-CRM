@@ -11,29 +11,13 @@ async function main() {
     await client.connect();
     console.log('Connected to database.');
 
-    // Check for orphaned logs
-    const checkQuery = `
-      SELECT COUNT(*) 
-      FROM "AuditLog" 
-      WHERE "usuarioId" NOT IN (SELECT id FROM "User");
+    // Eliminar registros de auditoría relacionados a Inventario, Incidencias, Historia de Pacientes y Facturación
+    const deleteModulesQuery = `
+      DELETE FROM "AuditLog"
+      WHERE "accion" IN ('inventario', 'incidencia', 'historia_paciente', 'facturacion');
     `;
-    
-    const resCheck = await client.query(checkQuery);
-    const count = parseInt(resCheck.rows[0].count);
-    
-    console.log(`Found ${count} orphaned AuditLog records.`);
-
-    if (count > 0) {
-      console.log('Deleting orphaned records...');
-      const deleteQuery = `
-        DELETE FROM "AuditLog" 
-        WHERE "usuarioId" NOT IN (SELECT id FROM "User");
-      `;
-      const resDelete = await client.query(deleteQuery);
-      console.log(`Successfully deleted ${resDelete.rowCount} orphaned records.`);
-    } else {
-      console.log('No cleanup needed.');
-    }
+    const resDeleteModules = await client.query(deleteModulesQuery);
+    console.log(`Deleted ${resDeleteModules.rowCount} audit logs for removed modules.`);
 
   } catch (err) {
     console.error('Error executing script:', err);

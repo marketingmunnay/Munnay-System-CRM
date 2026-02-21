@@ -14,6 +14,9 @@ router.get('/sellers', getLeadSellers);
 
 // Solo admin puede ver todos los usuarios
 router.get('/', requireRole('Admin'), getUsers);
+
+// Endpoint para vendedores (Recepcionista, Call Center)
+router.get('/lead-sellers', getLeadSellers);
 router.post('/', requireAdmin, createUser);
 router.get('/:id', requireSelfOrAdmin(), getUserById);
 router.get('/:id/profile', requireAuth, getUserProfile);
