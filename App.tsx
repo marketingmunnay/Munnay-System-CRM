@@ -22,6 +22,8 @@ import RecursosHumanosPage from './components/recursos-humanos/RecursosHumanosPa
 import AuditLogsPage from './components/audit/AuditLogsPage';
 import { BirthdayAnimation } from './components/shared/BirthdayAnimation';
 import TasksPage from './components/tasks/TasksPage';
+import VentasExtraPage from './components/recepcion/VentasExtraPage';
+import EgresosDiariosPage from './components/finanzas/EgresosDiariosPage';
 import type { 
     Page, Lead, Campaign, VentaExtra, Incidencia, Egreso, Proveedor, Publicacion, Seguidor,
     User, Role, BusinessInfo, ClientSource, Service, Product, Membership,
