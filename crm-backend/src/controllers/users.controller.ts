@@ -1,3 +1,5 @@
+// Alias para compatibilidad con rutas que esperan getMe
+export const getMe = getCurrentUser;
 // Endpoint para obtener solo usuarios con roles de vendedor (Recepcionista, CallCenter)
 export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
   try {
