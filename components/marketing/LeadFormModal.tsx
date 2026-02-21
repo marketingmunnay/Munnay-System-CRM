@@ -5,7 +5,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership, User } from '../../types';
 import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
-import FacturacionModal from '../finanzas/FacturacionModal';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
 import * as api from '../../services/api';
 import { formatDateForInput, formatDateForDisplay, formatTimeForInput } from '../../utils/time';
