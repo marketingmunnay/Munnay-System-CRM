@@ -137,6 +137,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, i
                 return next.filter(menuId => !topLevelMenuIds.includes(menuId) || menuId === activeTopLevel);
             });
         }
+    }, [currentPage]);
+
     const toggleMenu = (id: string) => {
         setOpenMenus(prev => {
             const isOpen = prev.includes(id);
