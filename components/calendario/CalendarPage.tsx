@@ -86,6 +86,10 @@ interface CalendarEvent {
     leadRef?: Lead;
     appointmentRef?: Appointment;
 }
+        startLocal?: Date;
+        endLocal?: Date;
+        startUtc?: Date;
+        endUtc?: Date;
 
 interface WizardDefaults {
     date?: string;
@@ -142,6 +146,56 @@ const leadToEvent = (lead: Lead): CalendarEvent | null => {
         leadRef: lead,
     };
 };
+    const leadToEvent = (lead: Lead, timezone?: string): CalendarEvent | null => {
+        if (!lead.fechaHoraAgenda || !lead.recursoId) return null;
+        const parsed = parseDate(lead.fechaHoraAgenda);
+        if (!parsed) return null;
+        const fecha = formatDateForInput(parsed);
+        if (!fecha) return null;
+        const horaInicio = `${padTime(parsed.getHours())}:${padTime(parsed.getMinutes())}`;
+        // Calcular start/end tipo Date (local y UTC)
+        let startLocal = new Date(parsed);
+        let endLocal = new Date(parsed);
+        endLocal.setMinutes(endLocal.getMinutes() + DEFAULT_LEAD_DURATION);
+        // Si hay timezone, ajustar a zona de negocio
+        let startUtc = new Date(startLocal);
+        let endUtc = new Date(endLocal);
+        if (timezone) {
+            try {
+                const { zonedTimeToUtc } = require('date-fns-tz');
+                startUtc = zonedTimeToUtc(startLocal, timezone);
+                endUtc = zonedTimeToUtc(endLocal, timezone);
+            } catch {}
+        }
+        // Calcular horaFin
+        let horaFin = `${padTime(endLocal.getHours())}:${padTime(endLocal.getMinutes())}`;
+        // Guardas: si diffMinutes <= 0 o NaN, forzar duración mínima
+        const [startH, startM] = horaInicio.split(':').map(Number);
+        const [endH, endM] = horaFin.split(':').map(Number);
+        let diffMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+        if (isNaN(diffMinutes) || diffMinutes <= 0) {
+            endLocal = new Date(startLocal);
+            endLocal.setMinutes(endLocal.getMinutes() + 15);
+            horaFin = `${padTime(endLocal.getHours())}:${padTime(endLocal.getMinutes())}`;
+            diffMinutes = 15;
+        }
+        return {
+            id: `lead-${lead.id}`,
+            source: 'lead',
+            originId: lead.id,
+            fecha,
+            horaInicio,
+            horaFin,
+            resourceId: lead.recursoId,
+            cliente: buildClienteNombre(lead.nombres, lead.apellidos),
+            servicios: lead.servicios || [],
+            leadRef: lead,
+            startLocal,
+            endLocal,
+            startUtc,
+            endUtc,
+        };
+    };
 
 const appointmentToEvent = (
     appointment: Appointment,
@@ -541,6 +595,9 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
         const leadEvents = leads
             .map(leadToEvent)
             .filter((e): e is CalendarEvent => e !== null);
+    const leadEvents = leads
+        .map(lead => leadToEvent(lead, timezone))
+        .filter((e): e is CalendarEvent => e !== null);
 
         const apptEvents = appointments.map(appt =>
             appointmentToEvent(appt, {
@@ -945,8 +1002,49 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     };
 
     const AppointmentCard: React.FC<{ event: CalendarEvent }> = ({ event }) => {
-        const top = timeToPosition(event.horaInicio);
-        const height = durationToHeight(event.horaInicio, event.horaFin);
+        // Unificar cálculo para leads y appointments usando startLocal/endLocal
+        const MIN_EVENT_PX = 28;
+        let top = 0;
+        let height = 0;
+        let debug = {};
+        if (event.startLocal && event.endLocal) {
+            const startMinutes = event.startLocal.getHours() * 60 + event.startLocal.getMinutes();
+            const endMinutes = event.endLocal.getHours() * 60 + event.endLocal.getMinutes();
+            const diff = endMinutes - startMinutes;
+            top = ((startMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
+            height = Math.max((diff / 60) * HOUR_HEIGHT, MIN_EVENT_PX);
+            debug = {
+                horaInicio: event.horaInicio,
+                horaFin: event.horaFin,
+                minutesStart: startMinutes,
+                minutesEnd: endMinutes,
+                diff,
+                computedHeightPx: height,
+                startLocal: event.startLocal,
+                endLocal: event.endLocal,
+            };
+        } else {
+            const startMinutes = (() => { const [h, m] = event.horaInicio.split(':').map(Number); return h * 60 + m; })();
+            const endMinutes = (() => { const [h, m] = event.horaFin.split(':').map(Number); return h * 60 + m; })();
+            const diff = endMinutes - startMinutes;
+            top = timeToPosition(event.horaInicio);
+            height = Math.max(durationToHeight(event.horaInicio, event.horaFin), MIN_EVENT_PX);
+            debug = {
+                horaInicio: event.horaInicio,
+                horaFin: event.horaFin,
+                minutesStart,
+                minutesEnd,
+                diff,
+                computedHeightPx: height,
+                startLocal: event.startLocal,
+                endLocal: event.endLocal,
+            };
+        }
+        if (event.source === 'lead') {
+            // Solo loguear para leads
+            // eslint-disable-next-line no-console
+            console.log('[LEAD EVENT DEBUG]', debug);
+        }
         const isCompact = height < 80;
         
         // Configuración de colores dinámica basada en estado
@@ -1001,7 +1099,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                 className={`absolute rounded-lg border-2 shadow-md cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] ${palette} ${event.source === 'appointment' ? 'active:cursor-grabbing hover:cursor-grab' : ''}`}
                 style={{ 
                     top: `${top}px`, 
-                    height: `${Math.max(height, 65)}px`, 
+                    height: `${height}px`, 
                     left: '6px', 
                     right: '6px',
                     width: 'auto',
