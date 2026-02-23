@@ -85,11 +85,11 @@ interface CalendarEvent {
     servicios: string[];
     leadRef?: Lead;
     appointmentRef?: Appointment;
+    startLocal?: Date;
+    endLocal?: Date;
+    startUtc?: Date;
+    endUtc?: Date;
 }
-        startLocal?: Date;
-        endLocal?: Date;
-        startUtc?: Date;
-        endUtc?: Date;
 
 interface WizardDefaults {
     date?: string;
@@ -125,27 +125,6 @@ const extractNumericId = (prefixedId?: string): number | undefined => {
     return isNaN(parsed) ? undefined : parsed;
 };
 
-const leadToEvent = (lead: Lead): CalendarEvent | null => {
-    if (!lead.fechaHoraAgenda || !lead.recursoId) return null;
-    const parsed = parseDate(lead.fechaHoraAgenda);
-    if (!parsed) return null;
-    const fecha = formatDateForInput(parsed);
-    if (!fecha) return null;
-    const horaInicio = `${padTime(parsed.getHours())}:${padTime(parsed.getMinutes())}`;
-    const horaFin = addMinutesToTime(horaInicio, DEFAULT_LEAD_DURATION);
-    return {
-        id: `lead-${lead.id}`,
-        source: 'lead',
-        originId: lead.id,
-        fecha,
-        horaInicio,
-        horaFin,
-        resourceId: lead.recursoId,
-        cliente: buildClienteNombre(lead.nombres, lead.apellidos),
-        servicios: lead.servicios || [],
-        leadRef: lead,
-    };
-};
     const leadToEvent = (lead: Lead, timezone?: string): CalendarEvent | null => {
         if (!lead.fechaHoraAgenda || !lead.recursoId) return null;
         const parsed = parseDate(lead.fechaHoraAgenda);
@@ -593,11 +572,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
     // Update calendarEvents cuando cambian leads o appointments
     useEffect(() => {
         const leadEvents = leads
-            .map(leadToEvent)
+            .map(lead => leadToEvent(lead, timezone))
             .filter((e): e is CalendarEvent => e !== null);
-    const leadEvents = leads
-        .map(lead => leadToEvent(lead, timezone))
-        .filter((e): e is CalendarEvent => e !== null);
 
         const apptEvents = appointments.map(appt =>
             appointmentToEvent(appt, {
