@@ -11,7 +11,7 @@ interface ShiftFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: any) => void;
-    initialDate: Date | null;
+    initialDate: string | null;
     initialBlocks?: TimeBlock[]; // Array of { start: "HH:mm", end: "HH:mm" }
     userId: number | null;
     userName: string;
@@ -26,18 +26,9 @@ const ShiftFormModal: React.FC<ShiftFormModalProps> = ({ isOpen, onClose, onSave
 
     useEffect(() => {
         if (isOpen) {
-             setBlocks(initialBlocks || [{ id: Date.now().toString(), start: '09:00', end: '13:00' }]);
-             setLocation(initialLocation || 'Principal');
-             
-             if (initialDate) {
-                 // Format as YYYY-MM-DD for input
-                 const yyyy = initialDate.getFullYear();
-                 const mm = String(initialDate.getMonth() + 1).padStart(2, '0');
-                 const dd = String(initialDate.getDate()).padStart(2, '0');
-                 setSelectedDate(`${yyyy}-${mm}-${dd}`);
-             } else {
-                 setSelectedDate('');
-             }
+            setBlocks(initialBlocks || [{ id: Date.now().toString(), start: '09:00', end: '13:00' }]);
+            setLocation(initialLocation || 'Principal');
+            setSelectedDate(initialDate || '');
         }
     }, [isOpen, initialBlocks, initialLocation, initialDate]);
 

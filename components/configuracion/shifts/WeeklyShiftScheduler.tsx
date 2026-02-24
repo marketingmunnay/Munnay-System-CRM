@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Filter, Search, Users, RefreshCw } from 'lucide-react';
-import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useDate } from '../../../src/hooks/useDate';
 import ShiftCell from './ShiftCell';
 import ShiftFormModal from './ShiftFormModal';
 import TeamSelectionModal from './TeamSelectionModal';
@@ -17,7 +18,7 @@ const WeeklyShiftScheduler: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     
     // Modals State
-    const [modalData, setModalData] = useState<{ isOpen: boolean, userId: number | null, date: Date | null, shift: any | null }>({
+    const [modalData, setModalData] = useState<{ isOpen: boolean, userId: number | null, date: string | null, shift: any | null }>({
         isOpen: false,
         userId: null,
         date: null,
@@ -34,8 +35,10 @@ const WeeklyShiftScheduler: React.FC = () => {
     const [selectedTeamIds, setSelectedTeamIds] = useState<number[]>([]);
 
     // Calendar Range
+    const { toDateKey, formatDateOnly } = useDate();
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const weekDayKeys = weekDays.map(d => toDateKey(d));
 
     // Fetch Data
     const fetchData = async () => {
@@ -142,9 +145,10 @@ const WeeklyShiftScheduler: React.FC = () => {
     const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
     const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
 
-    const handleSaveShift = async (data: any) => {
+    const handleSaveShift = async (payload: any) => {
         try {
-            await apiRequest('/shifts', 'POST', data);
+            console.log('SHIFT SAVE payload:', payload);
+            await apiRequest('/shifts', 'POST', payload);
             // Refresh
             const startStr = format(weekStart, 'yyyy-MM-dd');
             const endStr = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -166,18 +170,18 @@ const WeeklyShiftScheduler: React.FC = () => {
         }
     };
 
-    const handleSetDayOff = async (userId: number, date: Date) => {
+    const handleSetDayOff = async (userId: number, dateKey: string) => {
         // Quick act to set isDayOff = true
         await handleSaveShift({
             userId,
-            date,
+            date: dateKey,
             isDayOff: true,
             timeBlocks: []
         });
     };
 
-    const handleRecurring = async (userId: number, date: Date) => {
-        setRecurringModalData({ isOpen: true, userId, date });
+    const handleRecurring = async (userId: number, dateKey: string) => {
+        setRecurringModalData({ isOpen: true, userId, date: dateKey });
     };
 
     const handleSaveRecurring = async (data: any) => {
@@ -205,8 +209,8 @@ const WeeklyShiftScheduler: React.FC = () => {
         (u.position || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const getShiftForCell = (userId: number, date: Date) => {
-        return shifts.find(s => s.userId === userId && isSameDay(new Date(s.date), date));
+    const getShiftForCell = (userId: number, dateKey: string) => {
+        return shifts.find(s => s.userId === userId && s.dateKey === dateKey);
     };
 
     const getTotalHoursUser = (userId: number) => {
@@ -294,8 +298,8 @@ const WeeklyShiftScheduler: React.FC = () => {
                                 {/* Empty header for user column */}
                             </th>
                             {weekDays.map((day, i) => (
-                                <th key={i} className={`p-3 text-center border-b border-gray-100 font-medium text-gray-600 w-32 ${isSameDay(day, new Date()) ? 'bg-purple-50 text-purple-700' : ''}`}>
-                                    <div className="capitalize text-sm font-bold">{format(day, 'EEE, d MMM', { locale: es })}</div>
+                                <th key={i} className="p-3 text-center border-b border-gray-100 font-medium text-gray-600 w-32">
+                                    <div className="capitalize text-sm font-bold">{formatDateOnly(day)}</div>
                                     <div className="text-xs font-normal text-gray-400 mt-0.5">0 h</div>
                                 </th>
                             ))}
@@ -327,24 +331,24 @@ const WeeklyShiftScheduler: React.FC = () => {
                                         </button>
                                     </div>
                                 </td>
-                                {weekDays.map((day, i) => {
-                                    const shift = getShiftForCell(user.id, day);
+                                {weekDayKeys.map((dateKey, i) => {
+                                    const shift = getShiftForCell(user.id, dateKey);
                                     return (
                                         <td key={`${user.id}-${i}`} className="p-1 border-r border-gray-100 align-top h-24">
                                             <ShiftCell 
-                                                date={day}
+                                                dateKey={dateKey}
                                                 userId={user.id}
                                                 userName={user.nombres}
                                                 shift={shift}
                                                 onEdit={() => setModalData({ 
                                                     isOpen: true, 
                                                     userId: user.id, 
-                                                    date: day,
+                                                    date: dateKey,
                                                     shift: shift 
                                                 })}
                                                 onDelete={() => shift && handleDeleteShift(shift.id)}
-                                                onSetDayOff={() => handleSetDayOff(user.id, day)}
-                                                onRecurring={() => handleRecurring(user.id, day)}
+                                                onSetDayOff={() => handleSetDayOff(user.id, dateKey)}
+                                                onRecurring={() => handleRecurring(user.id, dateKey)}
                                             />
                                         </td>
                                     );
