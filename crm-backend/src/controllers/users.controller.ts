@@ -1,5 +1,3 @@
-// Alias para compatibilidad con rutas que esperan getMe
-export const getMe = getCurrentUser;
 // Endpoint para obtener solo usuarios con roles de vendedor (Recepcionista, CallCenter)
 export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -68,6 +66,9 @@ const publicUserSelect = {
 
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!req.authUser) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
     const rolNombre = req.authUser?.rolNombre?.toLowerCase() || '';
     const isAdmin = req.authUser && (req.authUser.rolId === 1 || rolNombre === 'administrador');
 
@@ -135,26 +136,20 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.authUser) {
-    return res.status(401).json({ message: 'Token de autenticación requerido' });
-  }
-
+  if (!req.authUser) return res.status(401).json({ message: 'No autenticado' });
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.authUser.id },
       select: safeUserSelect,
     });
-
-    if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
     return res.status(200).json(user);
   } catch (error) {
-    console.error('Error al obtener el usuario autenticado:', error);
-    return res.status(500).json({ message: 'Error fetching current user', error: (error as Error).message });
+    res.status(500).json({ message: 'Error obteniendo usuario', error: (error as Error).message });
   }
 };
+// Alias para compatibilidad con rutas que esperan getMe
+export const getMe = getCurrentUser;
 
 export const getUserById = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);

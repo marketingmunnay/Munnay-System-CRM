@@ -1,6 +1,26 @@
+// Handler to get goals for the logged-in user
+import { AuthenticatedRequest, isAdmin } from '../middleware/auth';
 import { Response } from 'express';
 import prisma from '../lib/prisma';
-import { AuthenticatedRequest, isAdmin } from '../middleware/auth';
+
+export const getMyGoals = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.authUser) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    const goals = await prisma.goal.findMany({
+      where: { userId: req.authUser.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json(goals);
+  } catch (error) {
+    console.error('Error fetching my goals:', error);
+    return res.status(500).json({ message: 'Error fetching my goals' });
+  }
+};
+
 
 // ─── Helpers para calcular progreso ───────────────────────────
 

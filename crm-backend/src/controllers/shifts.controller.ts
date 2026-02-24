@@ -1,3 +1,15 @@
+// Helper: parse dateKey to UTC noon
+export function parseDateKeyToUTCNoon(dateKey: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) throw new Error('dateKey inválido');
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+}
+
+export function parseDateKeyRangeUTCNoon(startKey: string, endKey: string) {
+  const start = parseDateKeyToUTCNoon(startKey);
+  const end = parseDateKeyToUTCNoon(endKey);
+  return { start, end };
+}
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
@@ -5,31 +17,22 @@ import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
 export const getShifts = async (req: Request, res: Response) => {
   try {
     const { start, end, location } = req.query;
-    
-    // Helper
-    const parseToUtc = (d: string | Date | undefined, defaultDate: Date) => {
-        if (!d) return defaultDate;
-        if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-             const [y, m, day] = d.split('-').map(Number);
-             return new Date(Date.UTC(y, m - 1, day));
-        }
-        return new Date(d);
-    };
-
-    const startDate = parseToUtc(start as string, startOfWeek(new Date()));
-    const endDate = parseToUtc(end as string, endOfWeek(new Date()));
-
+    let startDate, endDate;
+    if (start && end && typeof start === 'string' && typeof end === 'string') {
+      ({ start: startDate, end: endDate } = parseDateKeyRangeUTCNoon(start, end));
+    } else {
+      startDate = startOfWeek(new Date());
+      endDate = endOfWeek(new Date());
+    }
     const whereClause: any = {
       date: {
         gte: startDate,
         lte: endDate,
       }
     };
-
     if (location) {
       whereClause.location = location;
     }
-
     const shifts = await prisma.shift.findMany({
       where: whereClause,
       include: {
@@ -39,13 +42,16 @@ export const getShifts = async (req: Request, res: Response) => {
             nombres: true,
             apellidos: true,
             avatarUrl: true,
-            position: true // Assuming position exists or similar
+            position: true
           }
         }
       }
     });
-
-    res.json(shifts);
+    const shiftsWithDateKey = shifts.map(s => ({
+      ...s,
+      dateKey: s.date.toISOString().slice(0, 10),
+    }));
+    res.json(shiftsWithDateKey);
   } catch (error) {
     console.error('Error fetching shifts:', error);
     res.status(500).json({ message: 'Error fetching shifts' });
@@ -60,11 +66,12 @@ export const saveShift = async (req: Request, res: Response) => {
     const { userId, date, timeBlocks, location, isDayOff } = req.body;
 
 
-    // Normalización de fecha usando DateService para control de zona horaria
-    // Siempre fija la hora a las 12:00 para evitar problemas de desfase
-    // Requiere: import { DateService } from '../services/DateService';
-    const shiftDate = DateService.fromZonedDateTime(date, '12:00');
-    console.log("Normalized Date for DB (DateService):", shiftDate.toISOString());
+    // Guardar como DATE puro (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'date inválida (esperado YYYY-MM-DD)' });
+    }
+    const shiftDate = parseDateKeyToUTCNoon(String(date));
+    console.log("Normalized Date for DB (DATE puro):", shiftDate.toISOString());
 
     const shift = await prisma.shift.upsert({
       where: {
