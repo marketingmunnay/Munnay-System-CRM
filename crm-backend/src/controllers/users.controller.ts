@@ -5,7 +5,7 @@ export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
       where: {
         rol: {
           nombre: {
-            in: ["Recepcionista", "CallCenter"]
+            in: ["Recepcionista", "Call Center", "CallCenter"]
           }
         }
       },
