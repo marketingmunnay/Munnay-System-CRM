@@ -230,7 +230,6 @@ const WeeklyShiftScheduler: React.FC = () => {
             (s.dateKey ? s.dateKey === dateKey : toDateKey(s.date) === dateKey)
         );
     };
-    };
 
     const getTotalHoursUser = (userId: number) => {
         // Calculate total hours for this user in the current view
