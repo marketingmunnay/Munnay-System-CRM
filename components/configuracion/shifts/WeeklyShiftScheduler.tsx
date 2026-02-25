@@ -410,6 +410,5 @@ const WeeklyShiftScheduler: React.FC = () => {
             )}
         </div>
     );
-};
 
 export default WeeklyShiftScheduler;
