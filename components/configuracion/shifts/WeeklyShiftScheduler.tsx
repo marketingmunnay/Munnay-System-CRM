@@ -10,7 +10,7 @@ import RecurringShiftModal from './RecurringShiftModal';
 import { apiRequest } from '../../../services/api'; 
 // Assuming apiRequest helper exists, otherwise use fetch
 
-const WeeklyShiftScheduler: React.FC = () => {
+export default function WeeklyShiftScheduler() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [shifts, setShifts] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]); // All fetched users
@@ -409,6 +409,4 @@ const WeeklyShiftScheduler: React.FC = () => {
             )}
         </div>
     );
-};
-
-export default WeeklyShiftScheduler;
+}
