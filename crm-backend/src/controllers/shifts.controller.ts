@@ -58,25 +58,27 @@ export const getShifts = async (req: Request, res: Response) => {
   }
 };
 
-export const saveShift = async (req: Request, res: Response) => {
-  try {
-    console.log("=== SAVE SHIFT REQUEST ===");
-    console.log("Body:", JSON.stringify(req.body, null, 2));
+                const shifts = await prisma.shift.findMany({
+                  where: whereClause,
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        nombres: true,
+                        apellidos: true,
+                        avatarUrl: true,
+                        position: true // Assuming position exists or similar
+                      }
+                    }
+                  }
+                });
 
-    const { userId, date, timeBlocks, location, isDayOff } = req.body;
+                const shiftsWithDateKey = shifts.map(s => ({
+                  ...s,
+                  dateKey: s.date.toISOString().slice(0, 10),
+                }));
 
-
-    // Guardar como DATE puro (YYYY-MM-DD)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return res.status(400).json({ error: 'date inválida (esperado YYYY-MM-DD)' });
-    }
-    const shiftDate = parseDateKeyToUTCNoon(String(date));
-    console.log("Normalized Date for DB (DATE puro):", shiftDate.toISOString());
-
-    const shift = await prisma.shift.upsert({
-      where: {
-        userId_date: {
-          userId: Number(userId),
+                res.json(shiftsWithDateKey);
           date: shiftDate,
         }
       },

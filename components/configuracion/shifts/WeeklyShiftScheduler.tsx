@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Filter, Search, Users, RefreshCw } from 'lucide-react';
 import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -209,8 +209,27 @@ const WeeklyShiftScheduler: React.FC = () => {
         (u.position || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Logging: cuántos shifts llegan y ejemplos (solo fuera de producción)
+    useEffect(() => {
+        if (import.meta.env.DEV && shifts.length > 0) {
+            console.log('WeeklyShiftScheduler: shifts loaded:', shifts.length);
+            console.log('Ejemplo shifts:', shifts.slice(0, 3).map(s => ({ id: s.id, userId: s.userId, date: s.date, dateKey: s.dateKey })));
+            const missingDateKey = shifts.filter(s => !s.dateKey);
+            if (missingDateKey.length > 0) {
+                console.warn('Shifts sin dateKey:', missingDateKey.map(s => s.id));
+            }
+        }
+    }, [shifts]);
+
+    // Para validar TZ en Chrome: DevTools → More tools → Sensors → Timezone
+
     const getShiftForCell = (userId: number, dateKey: string) => {
-        return shifts.find(s => s.userId === userId && s.dateKey === dateKey);
+        // Fallback: si shift.dateKey no existe, usar toDateKey(s.date) para evitar TZ del navegador
+        return shifts.find(s =>
+            String(s.userId) === String(userId) &&
+            (s.dateKey ? s.dateKey === dateKey : toDateKey(s.date) === dateKey)
+        );
+    };
     };
 
     const getTotalHoursUser = (userId: number) => {
