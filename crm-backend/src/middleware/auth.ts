@@ -33,13 +33,31 @@ const isAdminUser = (user?: AuthenticatedUserContext | null): boolean => {
 };
 
 export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    // Log JWT_SECRET for debugging
+    console.log('[AUTH] JWT_SECRET length:', process.env.JWT_SECRET?.length, 'value:', process.env.JWT_SECRET);
+  // Logs temporales para depuración
+  console.log('[AUTH] path:', req.method, req.originalUrl);
+  console.log('[AUTH] auth header:', req.headers.authorization);
+  console.log('[AUTH] cookie header:', req.headers.cookie);
+
+  const raw = req.headers.authorization || '';
+  const token = raw.startsWith('Bearer ') ? raw.slice(7).trim() : '';
+  console.log('[AUTH] token present:', Boolean(token), 'len:', token?.length);
+  console.log('[AUTH] token parts:', token ? token.split('.').length : 0);
+
   try {
-    const token = extractBearerToken(req);
-    if (!token) {
+    const tokenExtracted = extractBearerToken(req);
+    if (!tokenExtracted) {
       return res.status(401).json({ message: 'Token de autenticación requerido' });
     }
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret_key') as { id: number; rolId?: number };
+    let payload;
+    try {
+      payload = jwt.verify(tokenExtracted, process.env.JWT_SECRET || 'secret_key') as { id: number; rolId?: number };
+    } catch (e) {
+      console.log('[AUTH] jwt verify error:', e?.name, e?.message);
+      return res.status(401).json({ message: 'No autenticado' });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: payload.id },

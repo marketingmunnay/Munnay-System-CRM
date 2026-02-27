@@ -5,7 +5,7 @@ export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
       where: {
         rol: {
           nombre: {
-            in: ["Recepcionista", "Call Center", "CallCenter"]
+            in: ["Recepcionista", "Call Center"]
           }
         }
       },
@@ -17,6 +17,8 @@ export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
         rol: { select: { nombre: true } },
       }
     });
+    // Log authUser.id and seller count
+    console.log('[getSellers] authUser.id:', req.authUser?.id, 'seller count:', sellers.length);
     return res.status(200).json(sellers);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching sellers', error: (error as Error).message });
@@ -435,10 +437,21 @@ export const getUserProfile = async (req: Request, res: Response) => {
 };
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { usuario, password } = req.body;
+    // Log JWT_SECRET for debugging
+    console.log('[AUTH] JWT_SECRET length:', process.env.JWT_SECRET?.length, 'value:', process.env.JWT_SECRET);
+  const { usuario, email, password } = req.body;
+
+  if (!password || (!usuario && !email)) {
+    return res.status(400).json({ error: 'Debe enviar usuario o email y password' });
+  }
 
   try {
-    const user = await prisma.user.findUnique({ where: { usuario } });
+    let user;
+    if (email) {
+      user = await prisma.user.findUnique({ where: { email } });
+    } else if (usuario) {
+      user = await prisma.user.findUnique({ where: { usuario } });
+    }
     if (!user) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
@@ -450,7 +463,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    // 🔑 Generar token JWT
+    // Generar token JWT
     const token = jwt.sign(
       { id: user.id, rolId: user.rolId },
       process.env.JWT_SECRET || 'secret_key',

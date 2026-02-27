@@ -2309,7 +2309,14 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     const VENDEDOR_OPTIONS = useMemo(() => {
         const list: { value: string, label: string }[] = [];
         const validPositions = ['recepcionista', 'call center', 'ventas', 'asesor', 'atención', 'counter', 'recepción'];
-        
+
+        // Log sellers fetch status and payload
+        if (users) {
+            console.log('[LeadFormModal] sellers fetch: count =', users.length, 'payload =', users);
+        } else {
+            console.log('[LeadFormModal] sellers fetch: users is undefined');
+        }
+
         if (users && Array.isArray(users) && users.length > 0) {
             // Intentar filtrar por puesto (insensible a mayúsculas/minúsculas y parcial)
             const filteredUsers = users.filter((user: any) => {
@@ -2317,20 +2324,20 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 const pos = String(user.position).toLowerCase();
                 return validPositions.some(vp => pos.includes(vp));
             });
-            
+
             // Si el filtro no devuelve nada, usar TODOS los usuarios para evitar mostrar datos falsos/vacíos
             const usersToUse = filteredUsers.length > 0 ? filteredUsers : users;
-            
+
             usersToUse.forEach((user: any) => {
                 const firstName = user.nombres || ''; // Usar nombre como ID/Value para consistencia con lógica antigua
                 const fullName = `${user.nombres} ${user.apellidos}`.trim();
-                
+
                 if (firstName) {
                     list.push({ value: firstName, label: fullName });
                 }
             });
         }
-        
+
         // Eliminar duplicados basado en 'value' (primer nombre)
         const uniqueList = Array.from(new Map(list.map(item => [item.value, item])).values());
 
@@ -2338,7 +2345,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         if (uniqueList.length === 0) {
              uniqueList.push({ value: '', label: 'Sin usuarios disponibles' });
         }
-        
+
         return uniqueList;
     }, [users]);
 
