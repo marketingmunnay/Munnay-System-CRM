@@ -1,3 +1,7 @@
+// ...existing code...
+
+// Exportación agrupada al final del archivo
+// ...existing code...
 // Endpoint para obtener solo usuarios con roles de vendedor (Recepcionista, CallCenter)
 export const getSellers = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -479,4 +483,20 @@ export const loginUser = async (req: Request, res: Response) => {
     console.error('Error en login:', error);
     return res.status(500).json({ error: 'Error en el servidor' });
   }
+};
+
+// Exportación agrupada para controladores
+export {
+  getUsers,
+  createUser,
+  getUserById,
+  updateUser,
+  deleteUser,
+  loginUser,
+  getCurrentUser,
+  getUsersForProfile,
+  getStaffProfile,
+  updateStaffProfile,
+  getSellers,
+  getUserProfile
 };

@@ -79,29 +79,33 @@ export const getShifts = async (req: Request, res: Response) => {
                 }));
 
                 res.json(shiftsWithDateKey);
-          date: shiftDate,
+                // ...existing code...
+                // Aquí termina la función de consulta de shifts
+            }
         }
-      },
-      update: {
-        timeBlocks,
-        location,
-        isDayOff
-      },
-      create: {
-        userId: Number(userId),
-        date: shiftDate,
-        timeBlocks: timeBlocks || [],
-        location: location || 'Principal',
-        isDayOff: isDayOff || false
-      }
-    });
-    
-    console.log("Shift Saved:", shift);
-    res.json(shift);
-  } catch (error) {
-    console.error('Error saving shift:', error);
-    res.status(500).json({ message: 'Error saving shift' });
-  }
+        // Función para guardar shift
+        // Asegúrate de que este bloque esté dentro de una función async
+        const shift = await prisma.shift.upsert({
+            where: { userId_date: { userId: Number(userId), date: shiftDate } },
+            update: {
+                timeBlocks,
+                location,
+                isDayOff
+            },
+            create: {
+                userId: Number(userId),
+                date: shiftDate,
+                timeBlocks: timeBlocks || [],
+                location: location || 'Principal',
+                isDayOff: isDayOff || false
+            }
+        });
+        console.log("Shift Saved:", shift);
+        res.json(shift);
+    } catch (error) {
+        console.error('Error saving shift:', error);
+        res.status(500).json({ message: 'Error saving shift' });
+    }
 };
 
 export const deleteShift = async (req: Request, res: Response) => {
