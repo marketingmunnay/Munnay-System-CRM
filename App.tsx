@@ -84,6 +84,7 @@ const App: React.FC = () => {
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     const [tiposProveedor, setTiposProveedor] = useState<TipoProveedor[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]); // para configuración (solo admin lo verá)
     const [roles, setRoles] = useState<Role[]>([]);
     const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
     const [goals, setGoals] = useState<Goal[]>([]);
@@ -208,11 +209,12 @@ const App: React.FC = () => {
 
             const [
                 leadsData, campaignsData, ventasData, incidenciasData, 
-                egresosData, proveedoresData, usersData, rolesData,
+                egresosData, proveedoresData, sellersData, rolesData,
                 businessInfoData, clientSourcesData, servicesData, productsData, membershipsData,
                 serviceCategoriesData, productCategoriesData, jobPositionsData,
                 publicacionesData, seguidoresData, metaCampaignsData, egresoCategoriesData,
-                tiposProveedorData, goalsData, comprobantesData
+                tiposProveedorData, goalsData, comprobantesData,
+                allUsersData
             ] = await Promise.all([
                 safeFetch(api.getLeads, [], 'leads'),
                 safeFetch(api.getCampaigns, [], 'campaigns'),
@@ -220,7 +222,7 @@ const App: React.FC = () => {
                 safeFetch(api.getIncidencias, [], 'incidencias'),
                 safeFetch(api.getEgresos, [], 'egresos'),
                 safeFetch(api.getProveedores, [], 'proveedores'),
-                safeFetch(api.getUsers, [], 'users'),
+                safeFetch(api.getSellers, [], 'sellers'), // para leads/forms
                 safeFetch(api.getRoles, [], 'roles'),
                 safeFetch(api.getBusinessInfo, null, 'businessInfo'),
                 safeFetch(api.getClientSources, [], 'clientSources'),
@@ -236,7 +238,8 @@ const App: React.FC = () => {
                 safeFetch(api.getEgresoCategories, [], 'egresoCategories'),
                 safeFetch(api.getTiposProveedor, [], 'tiposProveedor'),
                 safeFetch(api.getGoals, [], 'goals'),
-                safeFetch(api.getComprobantes, [], 'comprobantes')
+                safeFetch(api.getComprobantes, [], 'comprobantes'),
+                safeFetch(api.getUsers, [], 'allUsers') // para configuración (solo admin lo verá)
             ]);
             setLeads(leadsData);
             setCampaigns(campaignsData);
@@ -244,7 +247,8 @@ const App: React.FC = () => {
             setIncidencias(incidenciasData);
             setEgresos(egresosData);
             setProveedores(proveedoresData);
-            setUsers(usersData);
+            setUsers(sellersData);
+            setAllUsers(allUsersData);
             setRoles(rolesData);
             setBusinessInfo(businessInfoData || { nombre: 'CRM Munnay', ruc: '', direccion: '', telefono: '', email: '', logoUrl: '' });
             setClientSources(clientSourcesData);

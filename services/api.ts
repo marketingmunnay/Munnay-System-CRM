@@ -400,6 +400,10 @@ export const bulkImportSeguidores = (seguidores: any[]): Promise<{ message: stri
 // ====== USERS ======
 export const getUsers = (): Promise<User[]> => 
   apiRequest<User[]>('/users', 'GET');
+
+// ====== SELLERS (Recepcionistas y Call Center) ======
+export const getSellers = (): Promise<User[]> => 
+  apiRequest<User[]>('/users/sellers', 'GET');
 export const saveUser = (user: User): Promise<User> =>
   user.id && user.id < 1000000
     ? apiRequest<User>(`/users/${user.id}`, 'PUT', user)
