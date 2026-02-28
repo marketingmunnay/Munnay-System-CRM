@@ -24,15 +24,10 @@ const convertBigInts = (value: any): any => {
 };
 
 // Helper functions to map and parse values
+// Ahora mapSeller solo retorna el valor recibido, permitiendo guardar el vendedor real del formulario
 const mapSeller = (value: any): string | undefined => {
   if (!value) return undefined;
-  const sellerMap: Record<string, string> = {
-    'vanesa': 'Vanesa',
-    'liz': 'Liz',
-    'elvira': 'Elvira'
-  };
-  const normalized = String(value).toLowerCase().trim();
-  return sellerMap[normalized] || value;
+  return String(value).trim();
 };
 
 const mapLeadStatus = (value: any): string | undefined => {
