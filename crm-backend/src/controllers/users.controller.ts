@@ -203,15 +203,19 @@ export const updateUser = async (req: Request, res: Response) => {
     };
     
     let updateData: any = {
-        ...userData,
-        rolId: userData.rolId ? parseInt(userData.rolId) : undefined, // Ensure rolId is integer
-        birthDate: parseDateField(userData.birthDate),
-        startDate: parseDateField(userData.startDate),
-        endDate: parseDateField(userData.endDate),
-        salary: parseNumericField(userData.salary),
-        bonuses: parseNumericField(userData.bonuses),
-        afpPercentage: parseNumericField(userData.afpPercentage),
+      ...userData,
+      rolId: userData.rolId ? parseInt(userData.rolId) : undefined, // Ensure rolId is integer
+      birthDate: parseDateField(userData.birthDate),
+      startDate: parseDateField(userData.startDate),
+      endDate: parseDateField(userData.endDate),
+      salary: parseNumericField(userData.salary),
+      bonuses: parseNumericField(userData.bonuses),
+      afpPercentage: parseNumericField(userData.afpPercentage),
     };
+    // Eliminar el campo 'rol' si existe para evitar error de Prisma
+    if (updateData.rol) {
+      delete updateData.rol;
+    }
     
     // Remove undefined, null, and empty string values to avoid Prisma errors
     Object.keys(updateData).forEach(key => {
