@@ -55,7 +55,12 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     try {
       payload = jwt.verify(tokenExtracted, process.env.JWT_SECRET || 'secret_key') as { id: number; rolId?: number };
     } catch (e) {
-      console.log('[AUTH] jwt verify error:', e?.name, e?.message);
+      if (e instanceof Error) {
+        const err = e as any;
+        console.log('[AUTH] jwt verify error:', err.name, err.message);
+      } else {
+        console.log('[AUTH] jwt verify error:', e);
+      }
       return res.status(401).json({ message: 'No autenticado' });
     }
 
