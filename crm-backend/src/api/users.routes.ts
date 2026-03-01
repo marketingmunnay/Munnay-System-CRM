@@ -10,24 +10,24 @@ import {
 	getUsersForProfile,
 	getSellers
 } from '../controllers/users.controller';
-import { requireRole } from '../middlewares/requireRole';
 import { requireAdmin, requireAuth, requireSelfOrAdmin } from '../middleware/auth';
 
 const router = Router();
 
 router.post('/login', loginUser); // 👈 aquí agregas el login
 
+router.use(requireAuth);
 
 // ✅ Ruta para combo Vendedor(a)
-router.get('/sellers', requireAuth, getSellers);
-router.get('/me', requireAuth, getCurrentUser);
+router.get('/sellers', getSellers);
+router.get('/me', getCurrentUser);
 
 // Solo admin puede ver todos los usuarios
-router.get('/', requireRole('Admin'), getUsers);
+router.get('/', requireAdmin, getUsers);
 
 router.post('/', requireAdmin, createUser);
 // Move /:id and /:id/profile routes below /sellers
-router.get('/:id/profile', requireAuth, getUsersForProfile);
+router.get('/:id/profile', getUsersForProfile);
 router.get('/:id', requireSelfOrAdmin(), getUserById);
 router.put('/:id', requireSelfOrAdmin(), updateUser);
 router.delete('/:id', requireAdmin, deleteUser);

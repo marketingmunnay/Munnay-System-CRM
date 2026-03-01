@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '../shared/Modal';
 import type { Lead, Service, ClientSource, Ambiente, AvailabilitySlot, Appointment } from '../../types';
-import { DocumentType, LeadStatus, Seller } from '../../types';
+import { DocumentType, LeadStatus } from '../../types';
 import { formatDateForInput } from '../../utils/time';
 import { useDate } from '../../src/hooks/useDate';
 import {
@@ -98,7 +98,7 @@ const defaultLeadTemplate = (fechaISO: string): Lead => ({
   sexo: 'F',
   redSocial: 'Calendario',
   anuncio: '',
-  vendedor: Seller.Vanesa,
+  vendedor: '',
   estado: LeadStatus.Nuevo,
   montoPagado: 0,
   servicios: [],

@@ -2,7 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 
-const ADMIN_ROLE_NAME = 'Administrador';
+const ADMIN_ROLE_NAMES = ['Administrador', 'Admin'];
+
+export const normalizeRoleName = (value?: string | null): string => {
+  if (!value) return '';
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+};
 
 export interface AuthenticatedUserContext {
   id: number;
@@ -24,9 +33,12 @@ const extractBearerToken = (req: Request): string | null => {
   return token.length > 0 ? token : null;
 };
 
+const ADMIN_ROLE_TOKENS = new Set(ADMIN_ROLE_NAMES.map(normalizeRoleName));
+
 const isAdminUser = (user?: AuthenticatedUserContext | null): boolean => {
   if (!user) return false;
-  if (user.rolNombre && user.rolNombre.toLowerCase() === ADMIN_ROLE_NAME.toLowerCase()) {
+  const normalizedRole = normalizeRoleName(user.rolNombre);
+  if (normalizedRole && ADMIN_ROLE_TOKENS.has(normalizedRole)) {
     return true;
   }
   return user.rolId === 1; // Fallback mientras se parametriza el rol administrador

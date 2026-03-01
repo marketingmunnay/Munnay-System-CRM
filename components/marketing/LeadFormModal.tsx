@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 // Moved formatFechaHora to top-level scope
                                                     {/* formatFechaHora ahora solo se llama desde JSX, definida en el scope superior */}
 import type { Lead, MetaCampaign, Treatment, Procedure, Personal, Medico, Seguimiento, RegistroLlamada, ClientSource, Service, ComprobanteElectronico, Campaign, Membership, User } from '../../types';
-import { LeadStatus, Seller, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
+import { LeadStatus, MetodoPago, ReceptionStatus, EstadoLlamada, DocumentType, TipoComprobanteElectronico, SunatStatus } from '../../types';
 import Modal from '../shared/Modal';
 import UnifiedAppointmentForm, { AppointmentComposerResult, AppointmentActorOption } from '../shared/UnifiedAppointmentForm';
 import * as api from '../../services/api';
@@ -2307,10 +2307,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     // Filtrar vendedores por puesto (Recepcionista y Call Center) - Mejorado para incluir variaciones de texto y fallback a todos los usuarios
     const VENDEDOR_OPTIONS = useMemo(() => {
-        const list: { value: string, label: string }[] = [];
+        const list: { value: string; label: string }[] = [];
         const validPositions = ['recepcionista', 'call center', 'ventas', 'asesor', 'atención', 'counter', 'recepción'];
 
-        // Log sellers fetch status and payload
         if (users) {
             console.log('[LeadFormModal] sellers fetch: count =', users.length, 'payload =', users);
         } else {
@@ -2318,32 +2317,30 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         }
 
         if (users && Array.isArray(users) && users.length > 0) {
-            // Intentar filtrar por puesto (insensible a mayúsculas/minúsculas y parcial)
             const filteredUsers = users.filter((user: any) => {
                 if (!user.position) return false;
                 const pos = String(user.position).toLowerCase();
                 return validPositions.some(vp => pos.includes(vp));
             });
 
-            // Si el filtro no devuelve nada, usar TODOS los usuarios para evitar mostrar datos falsos/vacíos
             const usersToUse = filteredUsers.length > 0 ? filteredUsers : users;
 
-            usersToUse.forEach((user: any) => {
-                const firstName = user.nombres || ''; // Usar nombre como ID/Value para consistencia con lógica antigua
-                const fullName = `${user.nombres} ${user.apellidos}`.trim();
-
-                if (firstName) {
-                    list.push({ value: firstName, label: fullName });
+            usersToUse.forEach((user: any, index: number) => {
+                const fullName = `${user.nombres || ''} ${user.apellidos || ''}`.trim();
+                const fallback = user.usuario || user.email || user.nombres || `user-${index}`;
+                const value = fullName || fallback;
+                if (value) {
+                    list.push({ value, label: fullName || fallback });
                 }
             });
         }
 
-        // Eliminar duplicados basado en 'value' (primer nombre)
-        const uniqueList = Array.from(new Map(list.map(item => [item.value, item])).values());
+        const uniqueList = Array.from(
+            new Map(list.map(item => [item.value.toLowerCase(), item])).values()
+        );
 
-        // Si aún así no hay usuarios (API falló o array vacío), mostrar mensaje genérico en lugar de nombres falsos
         if (uniqueList.length === 0) {
-             uniqueList.push({ value: '', label: 'Sin usuarios disponibles' });
+            uniqueList.push({ value: '', label: 'Sin usuarios disponibles' });
         }
 
         return uniqueList;
@@ -2351,10 +2348,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
     // Frontend mapping helper: normalize vendedor value (usar primer nombre con capitalización correcta)
     const mapSellerFront = (value: any): string => {
-        if (!value) return 'Vanesa'; // Fallback por defecto
+        if (value === null || value === undefined) return '';
         const trimmed = String(value).trim();
-        // Capitalizar primera letra
-        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+        if (!trimmed) return '';
+        return trimmed
+            .split(/\s+/)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
     };
 
     // Map backend ReceptionStatus tokens (e.g. 'PorAtender', 'Agendado') to frontend display values
@@ -2403,7 +2403,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         sexo: 'F' as 'F' | 'M',
         redSocial: 'Instagram',
         anuncio: '',
-        vendedor: Seller.Vanesa,
+        vendedor: '',
         estado: LeadStatus.Nuevo,
         montoPagado: undefined,
         servicios: [],

@@ -356,6 +356,43 @@ export const updateStaffProfile = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "updateStaffProfile placeholder" });
 };
 
-export const getSellers = async (req: Request, res: Response) => {
-  return res.status(200).json({ message: "getSellers placeholder" });
+export const getSellers = async (_req: Request, res: Response) => {
+  try {
+    const keywordPositions = ['recepcionista', 'call center', 'ventas', 'asesor'];
+    const sellerRoles = ['Recepcionista', 'Call Center'];
+
+    const sellers = await prisma.user.findMany({
+      where: {
+        OR: [
+          ...keywordPositions.map(keyword => ({
+            position: {
+              contains: keyword,
+              mode: 'insensitive'
+            }
+          })),
+          ...sellerRoles.map(roleName => ({
+            rol: {
+              nombre: {
+                equals: roleName,
+                mode: 'insensitive'
+              }
+            }
+          }))
+        ]
+      },
+      select: safeUserSelect,
+      orderBy: [
+        { nombres: 'asc' },
+        { apellidos: 'asc' }
+      ]
+    });
+
+    return res.status(200).json(sellers);
+  } catch (error) {
+    console.error('Error fetching sellers:', error);
+    return res.status(500).json({
+      message: 'Error fetching sellers',
+      error: (error as Error).message
+    });
+  }
 };
