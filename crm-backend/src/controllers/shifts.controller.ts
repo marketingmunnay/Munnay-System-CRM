@@ -1,8 +1,8 @@
-// --- MISSING FUNCTION STUB ---
-export const saveShift = async (req: Request, res: Response) => {
-  return res.status(200).json({ message: "saveShift placeholder" });
-};
-// Helper: parse dateKey to UTC noon
+import { Request, Response } from 'express';
+import prisma from '../lib/prisma';
+import { startOfWeek, endOfWeek, addWeeks } from 'date-fns';
+
+// Helper: parse dateKey to UTC noon to avoid timezone offset issues with @db.Date
 export function parseDateKeyToUTCNoon(dateKey: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) throw new Error('dateKey inválido');
   const [y, m, d] = dateKey.split('-').map(Number);
@@ -14,9 +14,44 @@ export function parseDateKeyRangeUTCNoon(startKey: string, endKey: string) {
   const end = parseDateKeyToUTCNoon(endKey);
   return { start, end };
 }
-import { Request, Response } from 'express';
-import prisma from '../lib/prisma';
-import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
+
+export const saveShift = async (req: Request, res: Response) => {
+  try {
+    const { userId, date, timeBlocks, location, isDayOff } = req.body;
+
+    if (!userId || !date) {
+      return res.status(400).json({ message: 'userId y date son requeridos' });
+    }
+
+    const shiftDate = parseDateKeyToUTCNoon(date);
+
+    const shift = await prisma.shift.upsert({
+      where: {
+        userId_date: {
+          userId: Number(userId),
+          date: shiftDate,
+        },
+      },
+      update: {
+        timeBlocks: timeBlocks || [],
+        location: location || 'Principal',
+        isDayOff: isDayOff || false,
+      },
+      create: {
+        userId: Number(userId),
+        date: shiftDate,
+        timeBlocks: timeBlocks || [],
+        location: location || 'Principal',
+        isDayOff: isDayOff || false,
+      },
+    });
+
+    res.status(200).json(shift);
+  } catch (error) {
+    console.error('Error saving shift:', error);
+    res.status(500).json({ message: 'Error saving shift', error: (error as Error).message });
+  }
+};
 
 export const getShifts = async (req: Request, res: Response) => {
   try {
@@ -51,7 +86,7 @@ export const getShifts = async (req: Request, res: Response) => {
         }
       }
     });
-    const shiftsWithDateKey = shifts.map(s => ({
+    const shiftsWithDateKey = shifts.map((s: any) => ({
       ...s,
       dateKey: s.date.toISOString().slice(0, 10),
     }));
@@ -61,8 +96,6 @@ export const getShifts = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error fetching shifts' });
   }
 };
-
-// ...existing code...
 
 export const deleteShift = async (req: Request, res: Response) => {
   try {
@@ -79,12 +112,11 @@ export const deleteShift = async (req: Request, res: Response) => {
 export const generateRecurringShifts = async (req: Request, res: Response) => {
   try {
     const { userId, sourceDate, weeksToRepeat, mode, targetDate, untilDate } = req.body;
-    
-    // Helper to ensure YYYY-MM-DD string is parsed as UTC midnight
+
+    // Helper to ensure YYYY-MM-DD string is parsed as UTC noon to avoid timezone offset
     const parseToUtc = (d: string | Date) => {
         if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-             const [y, m, day] = d.split('-').map(Number);
-             return new Date(Date.UTC(y, m - 1, day));
+             return parseDateKeyToUTCNoon(d);
         }
         return new Date(d);
     };
@@ -105,8 +137,7 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
     }
 
     const createdShifts = [];
-    
-    // MODE: Specific Date (Copy to one specific date)
+
     if (mode === 'specific_date' && targetDate) {
          const specificDate = parseToUtc(targetDate);
          const newShift = await prisma.shift.upsert({
@@ -127,11 +158,9 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
             }
         });
         createdShifts.push(newShift);
-    } 
-    // MODE: Weeks (Repeat for X weeks) OR Until Date (Calculate weeks)
-    else {
+    } else {
         let iterations = 0;
-        
+
         if (mode === 'until_date' && untilDate) {
             const end = parseToUtc(untilDate);
             const start = sDate;
@@ -144,7 +173,7 @@ export const generateRecurringShifts = async (req: Request, res: Response) => {
 
         for (let i = 1; i <= iterations; i++) {
             const nextDate = addWeeks(sDate, i);
-            
+
             const newShift = await prisma.shift.upsert({
                 where: {
                     userId_date: {
@@ -180,11 +209,9 @@ export const getShiftByUserAndDate = async (req: Request, res: Response) => {
   try {
     const { userId, date } = req.params;
 
-    // Parse date (YYYY-MM-DD format)
     let shiftDate: Date;
     if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const [year, month, day] = date.split('-').map(Number);
-      shiftDate = new Date(Date.UTC(year, month - 1, day));
+      shiftDate = parseDateKeyToUTCNoon(date);
     } else {
       return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD' });
     }
@@ -210,7 +237,6 @@ export const getShiftByUserAndDate = async (req: Request, res: Response) => {
     });
 
     if (!shift) {
-      // Return null if no shift found for this user/date
       return res.json(null);
     }
 

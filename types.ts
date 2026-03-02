@@ -50,14 +50,8 @@ export enum AtencionStatus {
 }
 
 
-export enum Seller {
-    Vanesa = 'Vanesa',
-    Liz = 'Liz',
-    Elvira = 'Elvira'
-}
-
-export type Personal = 'Vanesa' | 'Elvira' | 'Janela' | 'Liz' | 'Keila' | 'Luz' | 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
-export type Medico = 'Dra. Marilia' | 'Dra. Sofía' | 'Dr. Carlos';
+export type Personal = string;
+export type Medico = string;
 
 export enum MetodoPago {
     Efectivo = 'Efectivo',

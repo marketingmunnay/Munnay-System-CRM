@@ -22,8 +22,8 @@ router.use(requireAuth);
 router.get('/sellers', getSellers);
 router.get('/me', getCurrentUser);
 
-// Solo admin puede ver todos los usuarios
-router.get('/', requireAdmin, getUsers);
+// Cualquier usuario autenticado puede listar el equipo
+router.get('/', getUsers);
 
 router.post('/', requireAdmin, createUser);
 // Move /:id and /:id/profile routes below /sellers

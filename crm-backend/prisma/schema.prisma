@@ -32,11 +32,6 @@ enum AtencionStatus {
   SeguimientoHecho
 }
 
-enum Seller {
-  Vanesa
-  Liz
-  Elvira
-}
 
 enum MetodoPago {
   Efectivo

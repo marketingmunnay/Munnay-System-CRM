@@ -76,22 +76,41 @@ const processLeadForResponse = (lead: any) => {
 
 export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
   const id = parseInt(req.params.id);
-  const { 
-    id: _, // Exclude id from update data
-    createdAt, updatedAt, 
-    tratamientos, procedimientos, registrosLlamada, seguimientos, 
-    alergias, membresiasAdquiridas, comprobantes, 
-    pagosRecepcion, // Extract pagosRecepcion to prevent it from going to leadData
-    ...leadData
-  } = req.body;
+  const body = req.body;
+
+  // Extract relation arrays handled separately
+  const tratamientos = body.tratamientos;
+  const procedimientos = body.procedimientos;
+  const registrosLlamada = body.registrosLlamada;
+  const seguimientos = body.seguimientos;
+  const membresiasAdquiridas = body.membresiasAdquiridas;
+  const pagosRecepcion = body.pagosRecepcion;
+
+  // Whitelist: only pick scalar fields that exist in the Lead model
+  const leadData: Record<string, any> = {};
+  const LEAD_SCALAR_FIELDS = [
+    'nombres', 'apellidos', 'numero', 'email', 'sexo',
+    'redSocial', 'anuncio', 'vendedor', 'estado', 'montoPagado',
+    'metodoPago', 'fechaHoraAgenda', 'servicios', 'categoria',
+    'profesionalAsignado', 'observacionesGenerales', 'fechaVolverLlamar',
+    'horaVolverLlamar', 'notas', 'nHistoria', 'aceptoTratamiento',
+    'motivoNoCierre', 'estadoRecepcion', 'recursoId', 'birthDate',
+    'precioCita', 'deudaCita', 'metodoPagoDeuda', 'documentType',
+    'documentNumber', 'razonSocial', 'direccionFiscal', 'fechaLead',
+  ];
+  for (const key of LEAD_SCALAR_FIELDS) {
+    if (body[key] !== undefined) {
+      leadData[key] = body[key];
+    }
+  }
 
   console.log('🔍 DEBUGGING: UpdateLead received:', {
     leadId: id,
-    fechaHoraAgenda: req.body.fechaHoraAgenda,
-    recursoId: req.body.recursoId,
+    vendedor: body.vendedor,
+    fechaHoraAgenda: body.fechaHoraAgenda,
+    recursoId: body.recursoId,
     procedimientos: procedimientos ? procedimientos.length : 'undefined',
-    procedimientosData: procedimientos,
-    estadoRecepcion: req.body.estadoRecepcion,
+    estadoRecepcion: body.estadoRecepcion,
     hasTratamientos: tratamientos ? tratamientos.length : 0,
     hasSeguimientos: seguimientos ? seguimientos.length : 0,
     hasPagosRecepcion: pagosRecepcion ? pagosRecepcion.length : 0
@@ -254,19 +273,24 @@ export const updateLead = async (req: AuthenticatedRequest, res: Response) => {
       type: typeof leadData.fechaHoraAgenda
     });
 
+    // Build safe data object with only whitelisted scalar fields + normalized overrides
+    const safeLeadData: Record<string, any> = { ...leadData };
+    // Override fields that must be normalized/mapped
+    safeLeadData.vendedor = leadData.vendedor ? mapSeller(leadData.vendedor) : existingLead?.vendedor;
+    safeLeadData.metodoPago = leadData.metodoPago !== undefined ? (mapMetodoPago(leadData.metodoPago) as any) : existingLead?.metodoPago;
+    safeLeadData.fechaLead = finalFechaLead;
+    safeLeadData.fechaHoraAgenda = parsedFechaHoraAgenda;
+    safeLeadData.fechaVolverLlamar = parseLocalDate(leadData.fechaVolverLlamar);
+    safeLeadData.birthDate = parseLocalDate(leadData.birthDate);
+    safeLeadData.estadoRecepcion = finalEstadoRecepcionUpdate;
+
+    console.log('💾 DEBUGGING: Saving vendedor =', safeLeadData.vendedor);
+
     // Update lead with all data including relations
     const updatedLead = await prisma.lead.update({
       where: { id: id },
       data: {
-        // Spread incoming data but override fields that must be normalized/mapped
-        ...leadData,
-        vendedor: leadData.vendedor ? mapSeller(leadData.vendedor) : existingLead?.vendedor,
-        metodoPago: leadData.metodoPago !== undefined ? (mapMetodoPago(leadData.metodoPago) as any) : existingLead?.metodoPago,
-        fechaLead: finalFechaLead,
-        fechaHoraAgenda: parsedFechaHoraAgenda,
-        fechaVolverLlamar: parseLocalDate(leadData.fechaVolverLlamar),
-        birthDate: parseLocalDate(leadData.birthDate),
-        estadoRecepcion: finalEstadoRecepcionUpdate,
+        ...safeLeadData,
         membresiasAdquiridas: {
           set: (membresiasAdquiridas as {id: number}[])?.map((m: {id: number}) => ({id: m.id})) || []
         },
@@ -804,15 +828,26 @@ export const getLeadById = async (req: Request, res: Response) => {
 
 // Create lead
 export const createLead = async (req: AuthenticatedRequest, res: Response) => {
-  const { 
-    id: _, // Exclude id from create data
-    createdAt, updatedAt,
-    tratamientos, procedimientos, registrosLlamada, seguimientos,
-    alergias, membresiasAdquiridas, comprobantes, ventasExtra,
-    incidencias, pagosRecepcion, appointments,
-    ...leadData
-  } = req.body;
-  
+  const body = req.body;
+
+  // Whitelist: only pick scalar fields that exist in the Lead model
+  const leadData: Record<string, any> = {};
+  const LEAD_SCALAR_FIELDS = [
+    'nombres', 'apellidos', 'numero', 'email', 'sexo',
+    'redSocial', 'anuncio', 'vendedor', 'estado', 'montoPagado',
+    'metodoPago', 'fechaHoraAgenda', 'servicios', 'categoria',
+    'profesionalAsignado', 'observacionesGenerales', 'fechaVolverLlamar',
+    'horaVolverLlamar', 'notas', 'nHistoria', 'aceptoTratamiento',
+    'motivoNoCierre', 'estadoRecepcion', 'recursoId', 'birthDate',
+    'precioCita', 'deudaCita', 'metodoPagoDeuda', 'documentType',
+    'documentNumber', 'razonSocial', 'direccionFiscal', 'fechaLead',
+  ];
+  for (const key of LEAD_SCALAR_FIELDS) {
+    if (body[key] !== undefined) {
+      leadData[key] = body[key];
+    }
+  }
+
   console.log('🔍 BACKEND: Creating new lead:', {
     nombres: leadData.nombres,
     apellidos: leadData.apellidos,
@@ -821,7 +856,7 @@ export const createLead = async (req: AuthenticatedRequest, res: Response) => {
     fechaHoraAgenda: leadData.fechaHoraAgenda,
     servicios: leadData.servicios,
   });
-  
+
   try {
     const newLead = await prisma.lead.create({
       data: {

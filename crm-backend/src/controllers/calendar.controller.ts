@@ -82,7 +82,9 @@ export const createAppointment = async (req: Request, res: Response) => {
         console.log('🔍 [APPOINTMENT] Validando turno para profesional:', professionalId, 'fecha:', date);
         
         if (professionalId) {
-            const shiftDate = new Date(date); // Validar la fecha exacta 'YYYY-MM-DD'
+            // Parse date as UTC noon to match how shifts are stored (avoid timezone offset)
+            const [y, m, d] = date.split('-').map(Number);
+            const shiftDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
             // Consultar si el profesional tiene turno ese día
             const shift = await prisma.shift.findUnique({
                 where: {

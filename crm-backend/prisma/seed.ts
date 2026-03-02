@@ -1,4 +1,4 @@
-import { PrismaClient, DocumentType, MetodoPago, Seller, LeadStatus } from '@prisma/client'
+import { PrismaClient, DocumentType, MetodoPago, LeadStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -164,7 +164,7 @@ async function main() {
       sexo: 'M',
       redSocial: 'Facebook',
       anuncio: 'Campaña Verano',
-      vendedor: Seller.Vanesa,
+      vendedor: 'Seed User',
       estado: LeadStatus.Nuevo,
       categoria: 'Faciales',
       tratamientos: {

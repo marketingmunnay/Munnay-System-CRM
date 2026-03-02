@@ -535,11 +535,12 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
             if (!dateStr) return;
 
             const shiftsByResource: Record<string, any> = {};
-            
+
             for (const resourceId of visibleResourceIds) {
                 try {
-                    // Try to get shift for this resource
-                    const numId = parseInt(resourceId, 10);
+                    // Extract numeric user ID from resource ID formats: "user-5", "5", "resource-5"
+                    const match = resourceId.match(/(\d+)/);
+                    const numId = match ? parseInt(match[1], 10) : NaN;
                     if (!isNaN(numId)) {
                         const shift = await getShiftByUserAndDate(numId, dateStr);
                         if (shift) {
@@ -551,7 +552,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
                     console.debug(`No shift found for resource ${resourceId} on ${dateStr}`);
                 }
             }
-            
+
             setShiftsData(shiftsByResource);
         };
 
@@ -791,7 +792,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({
 
     const handleWizardAppointmentCreated = (appointment: Appointment) => {
         setCalendarEvents(prev => {
-            const nextEvent = appointmentToEvent(appointment);
+            const nextEvent = appointmentToEvent(appointment, {
+                toLocalDate,
+                dateToInput: (d: Date) => toDateKey(d),
+            });
             const filtered = prev.filter(event => !(event.source === 'appointment' && event.originId === appointment.id));
             return [...filtered, nextEvent];
         });

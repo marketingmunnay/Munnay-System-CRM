@@ -2305,16 +2305,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             }))
     ), [configuredResources]);
 
-    // Filtrar vendedores por puesto (Recepcionista y Call Center) - Mejorado para incluir variaciones de texto y fallback a todos los usuarios
+    // Filtrar vendedores por puesto (Recepcionista y Call Center)
     const VENDEDOR_OPTIONS = useMemo(() => {
         const list: { value: string; label: string }[] = [];
         const validPositions = ['recepcionista', 'call center', 'ventas', 'asesor', 'atención', 'counter', 'recepción'];
-
-        if (users) {
-            console.log('[LeadFormModal] sellers fetch: count =', users.length, 'payload =', users);
-        } else {
-            console.log('[LeadFormModal] sellers fetch: users is undefined');
-        }
 
         if (users && Array.isArray(users) && users.length > 0) {
             const filteredUsers = users.filter((user: any) => {
@@ -2339,12 +2333,22 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             new Map(list.map(item => [item.value.toLowerCase(), item])).values()
         );
 
+        // Si el lead tiene un vendedor guardado que no coincide con ninguna opción actual,
+        // agregarlo como opción para que el select no quede vacío
+        const currentVendedor = formData.vendedor ? String(formData.vendedor).trim() : '';
+        if (currentVendedor) {
+            const exists = uniqueList.some(opt => opt.value.toLowerCase() === currentVendedor.toLowerCase());
+            if (!exists) {
+                uniqueList.unshift({ value: currentVendedor, label: `${currentVendedor} (anterior)` });
+            }
+        }
+
         if (uniqueList.length === 0) {
             uniqueList.push({ value: '', label: 'Sin usuarios disponibles' });
         }
 
         return uniqueList;
-    }, [users]);
+    }, [users, formData.vendedor]);
 
     // Frontend mapping helper: normalize vendedor value (usar primer nombre con capitalización correcta)
     const mapSellerFront = (value: any): string => {
