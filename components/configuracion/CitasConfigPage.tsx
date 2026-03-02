@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2, X, AlertCircle, Save } from 'lucide-react';
-import { getUsers, getBusinessInfo, saveBusinessInfo, getResources, createResource, updateResource, deleteResource } from '../../services/api';
-import type { User, BusinessInfo } from '../../types';
+import { Clock, Users, Calendar, Ban, Globe, Check, Plus, Trash2, Edit2, X, AlertCircle, Save, Settings } from 'lucide-react';
+import { getUsers, getBusinessInfo, saveBusinessInfo, getResources, createResource, updateResource, deleteResource, getServices, getServiceProfessionals, setServiceProfessionals, getServiceResources, setServiceResources } from '../../services/api';
+import type { User, BusinessInfo, Service } from '../../types';
 
 interface Resource {
   id: string;
@@ -84,6 +84,14 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
   // Online Booking
   const [onlineBookingEnabled, setOnlineBookingEnabled] = useState(false);
 
+  // Service Authorization Config
+  const [allServices, setAllServices] = useState<any[]>([]);
+  const [allResourcesRaw, setAllResourcesRaw] = useState<any[]>([]);
+  const [expandedServiceId, setExpandedServiceId] = useState<number | null>(null);
+  const [svcProfessionals, setSvcProfessionals] = useState<number[]>([]);
+  const [svcResources, setSvcResources] = useState<number[]>([]);
+  const [savingAuth, setSavingAuth] = useState(false);
+
   // Closure Dates
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
 
@@ -117,9 +125,13 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
   };
 
   useEffect(() => {
-    if (activeTab === 'resources') {
+    if (activeTab === 'resources' || activeTab === 'services') {
       getUsers().then(setUsers).catch(console.error);
       fetchResources();
+    }
+    if (activeTab === 'services') {
+      getServices().then(setAllServices).catch(console.error);
+      getResources().then(setAllResourcesRaw).catch(console.error);
     }
   }, [activeTab]);
 
@@ -201,6 +213,7 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
   // UI Setup for Tabs
   const tabs = [
     { id: 'general', label: 'Hora y Calendario', icon: Clock },
+    { id: 'services', label: 'Servicios y Autorizaciones', icon: Settings },
     { id: 'resources', label: 'Recursos', icon: Users },
     { id: 'statuses', label: 'Estados y Cancelaciones', icon: Calendar },
     { id: 'blocks', label: 'Bloqueos y Reservas', icon: Ban },
@@ -294,6 +307,177 @@ export default function CitasConfigPage({ initialTab = 'general' }: { initialTab
                   </button>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* SERVICES & AUTHORIZATIONS TAB */}
+        {activeTab === 'services' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Servicios y Autorizaciones</h3>
+              <p className="text-sm text-gray-500">Configure qué profesionales y salas pueden realizar cada servicio. Si un servicio no tiene profesionales asignados, no podrá agendarse.</p>
+            </div>
+
+            <div className="space-y-3">
+              {allServices.map((service: any) => {
+                const isExpanded = expandedServiceId === service.id;
+                const currentProfs: any[] = service.authorizedProfessionals?.map((ap: any) => ap.user) || [];
+                const currentRess: any[] = service.allowedResources?.map((ar: any) => ar.resource) || [];
+
+                return (
+                  <div key={service.id} className="border rounded-lg overflow-hidden">
+                    <button
+                      onClick={async () => {
+                        if (isExpanded) {
+                          setExpandedServiceId(null);
+                          return;
+                        }
+                        setExpandedServiceId(service.id);
+                        try {
+                          const [profs, ress] = await Promise.all([
+                            getServiceProfessionals(service.id),
+                            getServiceResources(service.id),
+                          ]);
+                          setSvcProfessionals(profs.map((p: any) => p.id));
+                          setSvcResources(ress.map((r: any) => r.id));
+                        } catch {
+                          setSvcProfessionals([]);
+                          setSvcResources([]);
+                        }
+                      }}
+                      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left"
+                    >
+                      <div>
+                        <h4 className="font-medium text-gray-900">{service.nombre}</h4>
+                        <p className="text-sm text-gray-500">{service.categoria} · {service.duracionMinutos} min · S/ {service.precio}</p>
+                        <div className="flex gap-2 mt-1">
+                          {currentProfs.length > 0 ? (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              {currentProfs.length} profesional{currentProfs.length !== 1 ? 'es' : ''}
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Sin profesionales</span>
+                          )}
+                          {currentRess.length > 0 ? (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              {currentRess.length} sala{currentRess.length !== 1 ? 's' : ''}
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Sin salas</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-gray-400">{isExpanded ? '▲' : '▼'}</span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t p-4 bg-gray-50 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Profesionales autorizados */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Profesionales autorizados</label>
+                            <div className="border rounded-md p-2 max-h-48 overflow-y-auto bg-white">
+                              {users.filter(u => u.position && /medic|doctor|enfer|proced|asesor|tec/i.test(u.position)).length === 0 && users.length > 0 && (
+                                <p className="text-xs text-gray-400 p-1">Mostrando todos los usuarios</p>
+                              )}
+                              {users.map(u => (
+                                <div key={u.id} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded">
+                                  <input
+                                    type="checkbox"
+                                    checked={svcProfessionals.includes(u.id)}
+                                    onChange={() => {
+                                      setSvcProfessionals(prev =>
+                                        prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                                      );
+                                    }}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm text-gray-700">{u.nombres} {u.apellidos}</span>
+                                  {u.position && <span className="text-xs text-gray-400">({u.position})</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Salas permitidas */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Salas / Espacios permitidos</label>
+                            <div className="border rounded-md p-2 max-h-48 overflow-y-auto bg-white">
+                              {allResourcesRaw.filter((r: any) => r.tipo === 'ROOM' || r.type === 'room').length === 0 && (
+                                <p className="text-xs text-gray-400 p-1">No hay salas configuradas. Cree recursos en la pestaña Recursos.</p>
+                              )}
+                              {allResourcesRaw.map((r: any) => {
+                                const resId = typeof r.id === 'string' && r.id.includes('-') ? parseInt(r.id.split('-')[1]) : typeof r.id === 'number' ? r.id : parseInt(r.id);
+                                const isRoom = r.tipo === 'ROOM' || r.type === 'room' || r.type === 'infrastructure';
+                                if (!isRoom) return null;
+                                return (
+                                  <div key={r.id} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded">
+                                    <input
+                                      type="checkbox"
+                                      checked={svcResources.includes(resId)}
+                                      onChange={() => {
+                                        setSvcResources(prev =>
+                                          prev.includes(resId) ? prev.filter(id => id !== resId) : [...prev, resId]
+                                        );
+                                      }}
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-700">{r.name || r.nombre}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedServiceId(null)}
+                            className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingAuth}
+                            onClick={async () => {
+                              setSavingAuth(true);
+                              try {
+                                await Promise.all([
+                                  setServiceProfessionals(service.id, svcProfessionals),
+                                  setServiceResources(service.id, svcResources),
+                                ]);
+                                // Refresh services list
+                                const updated = await getServices();
+                                setAllServices(updated);
+                                setExpandedServiceId(null);
+                              } catch (err) {
+                                console.error('Error saving authorizations:', err);
+                                alert('Error al guardar las autorizaciones');
+                              } finally {
+                                setSavingAuth(false);
+                              }
+                            }}
+                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            {savingAuth ? 'Guardando...' : 'Guardar autorizaciones'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {allServices.length === 0 && (
+                <div className="p-8 text-center text-gray-400">
+                  <p>No hay servicios configurados.</p>
+                  <p className="text-sm">Cree servicios desde Configuración → Servicios primero.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Modal from '../shared/Modal';
 import type { Appointment, Lead, Service } from '../../types';
-import { getAvailability } from '../../services/api';
+import { getAvailability, getServiceProfessionals, getServiceResources } from '../../services/api';
 
 type Mode = 'calendar' | 'lead' | 'edit';
 
@@ -131,6 +131,73 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
 
   const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle', isAvailable: true, suggestions: [] });
 
+  // Filtered professionals and resources based on service authorization
+  const [authorizedProfIds, setAuthorizedProfIds] = useState<Set<number> | null>(null);
+  const [allowedResIds, setAllowedResIds] = useState<Set<number> | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Load authorized professionals and allowed resources when service changes
+  useEffect(() => {
+    if (!details.serviceId) {
+      setAuthorizedProfIds(null);
+      setAllowedResIds(null);
+      return;
+    }
+    let cancelled = false;
+    setAuthLoading(true);
+    Promise.all([
+      getServiceProfessionals(details.serviceId).catch(() => null),
+      getServiceResources(details.serviceId).catch(() => null),
+    ]).then(([profs, ress]) => {
+      if (cancelled) return;
+      // If arrays returned, use them as filter; if null/error, show all (graceful fallback)
+      setAuthorizedProfIds(profs ? new Set(profs.map((p: any) => p.id)) : null);
+      setAllowedResIds(ress ? new Set(ress.map((r: any) => r.id)) : null);
+      setAuthLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [details.serviceId]);
+
+  // Filtered lists: only show authorized options (restrictive mode)
+  const filteredProfessionals = useMemo(() => {
+    if (authorizedProfIds === null || authorizedProfIds.size === 0) return [];
+    return professionals.filter(p => {
+      const numId = parseInt(p.id.replace(/\D/g, ''), 10);
+      return !isNaN(numId) && authorizedProfIds.has(numId);
+    });
+  }, [professionals, authorizedProfIds]);
+
+  const filteredResources = useMemo(() => {
+    if (allowedResIds === null || allowedResIds.size === 0) return [];
+    return resources.filter(r => {
+      const numId = parseInt(r.id.replace(/\D/g, ''), 10);
+      return !isNaN(numId) && allowedResIds.has(numId);
+    });
+  }, [resources, allowedResIds]);
+
+  // Auto-select first valid professional/resource when filtered lists change
+  useEffect(() => {
+    if (filteredProfessionals.length > 0) {
+      const currentValid = filteredProfessionals.some(p => p.id === details.professionalId);
+      if (!currentValid) {
+        setDetails(prev => ({ ...prev, professionalId: filteredProfessionals[0].id }));
+      }
+    } else if (details.professionalId) {
+      setDetails(prev => ({ ...prev, professionalId: undefined }));
+    }
+  }, [filteredProfessionals]);
+
+  useEffect(() => {
+    if (filteredResources.length > 0) {
+      const currentValid = filteredResources.some(r => r.id === details.resourceId);
+      if (!currentValid) {
+        setDetails(prev => ({ ...prev, resourceId: filteredResources[0].id }));
+      }
+    } else if (details.resourceId) {
+      setDetails(prev => ({ ...prev, resourceId: undefined }));
+    }
+  }, [filteredResources]);
+
   useEffect(() => {
     setLeadData(prev => ({
       id: lead?.id,
@@ -171,12 +238,15 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
 
   const canContinueStep1 = leadData.nombres.trim().length > 1 && leadData.numero.trim().length >= 9;
   const serviceSelected = services.find(service => service.id === details.serviceId);
-  const canContinueStep2 = Boolean(details.serviceId && details.date && details.time && serviceSelected);
+  const canContinueStep2 = Boolean(
+    details.serviceId && details.date && details.time && serviceSelected &&
+    details.professionalId && filteredProfessionals.length > 0
+  );
 
   const summaryItems = useMemo(() => {
     const serviceName = serviceSelected?.nombre || 'Servicio por definir';
-    const professionalName = professionals.find(p => p.id === details.professionalId)?.nombre || 'Sin profesional';
-    const resourceName = resources.find(r => r.id === details.resourceId)?.nombre || 'Sin ambiente';
+    const professionalName = filteredProfessionals.find(p => p.id === details.professionalId)?.nombre || 'Sin profesional';
+    const resourceName = filteredResources.find(r => r.id === details.resourceId)?.nombre || 'Sin ambiente';
     return [
       {
         label: 'Paciente',
@@ -334,14 +404,16 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500">Profesional</label>
+                <label className="text-xs font-semibold text-slate-500">Profesional {authLoading && <span className="text-slate-400">(cargando...)</span>}</label>
                 <select
                   className="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-sm focus:border-[#aa632d] focus:outline-none"
                   value={details.professionalId}
                   onChange={e => handleDetailChange('professionalId', e.target.value || undefined)}
                 >
-                  {professionals.length === 0 && <option>No hay personal configurado</option>}
-                  {professionals.map(pro => (
+                  {filteredProfessionals.length === 0 && (
+                    <option value="">Sin profesionales autorizados para este servicio</option>
+                  )}
+                  {filteredProfessionals.map(pro => (
                     <option key={pro.id} value={pro.id}>
                       {pro.nombre}
                     </option>
@@ -349,14 +421,16 @@ const UnifiedAppointmentForm: React.FC<UnifiedAppointmentFormProps> = ({
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500">Espacio</label>
+                <label className="text-xs font-semibold text-slate-500">Espacio {authLoading && <span className="text-slate-400">(cargando...)</span>}</label>
                 <select
                   className="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-sm focus:border-[#aa632d] focus:outline-none"
                   value={details.resourceId}
                   onChange={e => handleDetailChange('resourceId', e.target.value || undefined)}
                 >
-                  {resources.length === 0 && <option>No hay ambientes configurados</option>}
-                  {resources.map(resource => (
+                  {filteredResources.length === 0 && (
+                    <option value="">Sin salas permitidas para este servicio</option>
+                  )}
+                  {filteredResources.map(resource => (
                     <option key={resource.id} value={resource.id}>
                       {resource.nombre}
                     </option>

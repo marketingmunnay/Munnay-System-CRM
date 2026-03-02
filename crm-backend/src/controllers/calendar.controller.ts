@@ -77,7 +77,43 @@ export const createAppointment = async (req: Request, res: Response) => {
         const end = new Date(start.getTime() + duration * 60000);
 
         // ==========================================
-        // VALIDACIÓN DE TURNOS (SHIFTS) - OPCIONAL
+        // VALIDACIÓN R1: Profesional autorizado para el servicio
+        // ==========================================
+        if (serviceId && professionalId) {
+            const svcId = parseInt(serviceId);
+            const profId = parseInt(professionalId);
+            const authorized = await prisma.serviceProfessional.findUnique({
+                where: { serviceId_userId: { serviceId: svcId, userId: profId } }
+            });
+            if (!authorized) {
+                const service = await prisma.service.findUnique({ where: { id: svcId }, select: { nombre: true } });
+                const prof = await prisma.user.findUnique({ where: { id: profId }, select: { nombres: true, apellidos: true } });
+                return res.status(409).json({
+                    message: `${prof?.nombres || 'El profesional'} ${prof?.apellidos || ''} no está autorizado(a) para realizar "${service?.nombre || 'este servicio'}". Configure la relación en Servicios.`
+                });
+            }
+        }
+
+        // ==========================================
+        // VALIDACIÓN R2: Sala permitida para el servicio
+        // ==========================================
+        if (serviceId && resourceId) {
+            const svcId = parseInt(serviceId);
+            const resId = parseInt(resourceId);
+            const allowed = await prisma.serviceResource.findUnique({
+                where: { serviceId_resourceId: { serviceId: svcId, resourceId: resId } }
+            });
+            if (!allowed) {
+                const service = await prisma.service.findUnique({ where: { id: svcId }, select: { nombre: true } });
+                const resource = await prisma.resource.findUnique({ where: { id: resId }, select: { name: true } });
+                return res.status(409).json({
+                    message: `La sala "${resource?.name || 'seleccionada'}" no está permitida para "${service?.nombre || 'este servicio'}". Configure la relación en Servicios.`
+                });
+            }
+        }
+
+        // ==========================================
+        // VALIDACIÓN DE TURNOS (SHIFTS)
         // ==========================================
         console.log('🔍 [APPOINTMENT] Validando turno para profesional:', professionalId, 'fecha:', date);
         

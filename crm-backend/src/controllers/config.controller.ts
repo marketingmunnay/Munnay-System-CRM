@@ -281,7 +281,16 @@ export const getServices = async (req: Request, res: Response) => {
         const columnsExist = await checkServiceColumnsExist();
         
         if (columnsExist) {
-            const services = await prisma.service.findMany();
+            const services = await prisma.service.findMany({
+                include: {
+                    authorizedProfessionals: {
+                        include: { user: { select: { id: true, nombres: true, apellidos: true, avatarUrl: true } } }
+                    },
+                    allowedResources: {
+                        include: { resource: { select: { id: true, name: true, type: true } } }
+                    }
+                }
+            });
             res.status(200).json(services);
         } else {
             // Fallback: query solo con columnas básicas
@@ -695,3 +704,86 @@ export const getComprobantes = comprobanteElectronicoHandlers.getAll;
 export const createComprobante = comprobanteElectronicoHandlers.create;
 export const updateComprobante = comprobanteElectronicoHandlers.update;
 export const deleteComprobante = comprobanteElectronicoHandlers.delete;
+
+// ==========================================
+// SERVICE ↔ PROFESSIONAL / RESOURCE RELATIONSHIPS
+// ==========================================
+
+export const getServiceProfessionals = async (req: Request, res: Response) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const relations = await prisma.serviceProfessional.findMany({
+      where: { serviceId },
+      include: {
+        user: { select: { id: true, nombres: true, apellidos: true, position: true, avatarUrl: true } }
+      }
+    });
+    res.json(relations.map(r => r.user));
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching service professionals', error: (error as Error).message });
+  }
+};
+
+export const setServiceProfessionals = async (req: Request, res: Response) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const { userIds } = req.body as { userIds: number[] };
+
+    // Delete existing and recreate (replace strategy)
+    await prisma.serviceProfessional.deleteMany({ where: { serviceId } });
+    if (userIds && userIds.length > 0) {
+      await prisma.serviceProfessional.createMany({
+        data: userIds.map(userId => ({ serviceId, userId }))
+      });
+    }
+
+    const updated = await prisma.serviceProfessional.findMany({
+      where: { serviceId },
+      include: {
+        user: { select: { id: true, nombres: true, apellidos: true, position: true, avatarUrl: true } }
+      }
+    });
+    res.json(updated.map(r => r.user));
+  } catch (error) {
+    res.status(500).json({ message: 'Error setting service professionals', error: (error as Error).message });
+  }
+};
+
+export const getServiceResources = async (req: Request, res: Response) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const relations = await prisma.serviceResource.findMany({
+      where: { serviceId },
+      include: {
+        resource: { select: { id: true, name: true, type: true, capacity: true, isActive: true } }
+      }
+    });
+    res.json(relations.map(r => r.resource));
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching service resources', error: (error as Error).message });
+  }
+};
+
+export const setServiceResources = async (req: Request, res: Response) => {
+  try {
+    const serviceId = parseInt(req.params.id);
+    const { resourceIds } = req.body as { resourceIds: number[] };
+
+    await prisma.serviceResource.deleteMany({ where: { serviceId } });
+    if (resourceIds && resourceIds.length > 0) {
+      await prisma.serviceResource.createMany({
+        data: resourceIds.map(resourceId => ({ serviceId, resourceId }))
+      });
+    }
+
+    const updated = await prisma.serviceResource.findMany({
+      where: { serviceId },
+      include: {
+        resource: { select: { id: true, name: true, type: true, capacity: true, isActive: true } }
+      }
+    });
+    res.json(updated.map(r => r.resource));
+  } catch (error) {
+    res.status(500).json({ message: 'Error setting service resources', error: (error as Error).message });
+  }
+};

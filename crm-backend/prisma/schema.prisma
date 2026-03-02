@@ -511,6 +511,7 @@ model User {
   appointments               Appointment[]
   leadsCreados               Lead[]               @relation("LeadCreatedBy")
   goalsCreados               Goal[]               @relation("GoalCreatedBy")
+  authorizedServices         ServiceProfessional[]
 }
 
 model Address {
@@ -620,6 +621,26 @@ model Service {
   duracionMinutos  Int     @default(60)
   descripcion      String? @db.Text
   appointments     Appointment[]
+  authorizedProfessionals ServiceProfessional[]
+  allowedResources        ServiceResource[]
+}
+
+model ServiceProfessional {
+  id        Int     @id @default(autoincrement())
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([serviceId, userId])
+}
+
+model ServiceResource {
+  id         Int      @id @default(autoincrement())
+  serviceId  Int
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  @@unique([serviceId, resourceId])
 }
 
 // ENUM ACTIVADO PARA EVITAR ERROR DE PERMISOS EN PRODUCCION
@@ -893,6 +914,7 @@ model Resource {
 
   appointments Appointment[]
   resourceUsers ResourceUser[]
+  allowedServices ServiceResource[]
 
   createdAt   DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime      @updatedAt @db.Timestamptz(3)

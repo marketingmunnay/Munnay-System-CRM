@@ -39,6 +39,12 @@ router.delete('/memberships/:id', controller.deleteMembership);
 router.get('/service-categories', controller.getServiceCategories);
 router.post('/service-categories', controller.createServiceCategory);
 
+// Service-Professional and Service-Resource relationships
+router.get('/services/:id/professionals', controller.getServiceProfessionals);
+router.put('/services/:id/professionals', controller.setServiceProfessionals);
+router.get('/services/:id/resources', controller.getServiceResources);
+router.put('/services/:id/resources', controller.setServiceResources);
+
 // Bulk import de servicios
 router.post('/services/bulk', controller.bulkImportServices);
 router.put('/service-categories/:id', controller.updateServiceCategory);

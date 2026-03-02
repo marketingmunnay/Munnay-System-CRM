@@ -483,6 +483,16 @@ export const saveService = (service: Service): Promise<Service> =>
     : apiRequest<Service>('/config/services', 'POST', service);
 export const deleteService = (id: number): Promise<void> =>
   apiRequest<void>(`/config/services/${id}`, 'DELETE');
+
+// Service ↔ Professional / Resource relationships
+export const getServiceProfessionals = (serviceId: number): Promise<any[]> =>
+  apiRequest<any[]>(`/config/services/${serviceId}/professionals`, 'GET');
+export const setServiceProfessionals = (serviceId: number, userIds: number[]): Promise<any[]> =>
+  apiRequest<any[]>(`/config/services/${serviceId}/professionals`, 'PUT', { userIds });
+export const getServiceResources = (serviceId: number): Promise<any[]> =>
+  apiRequest<any[]>(`/config/services/${serviceId}/resources`, 'GET');
+export const setServiceResources = (serviceId: number, resourceIds: number[]): Promise<any[]> =>
+  apiRequest<any[]>(`/config/services/${serviceId}/resources`, 'PUT', { resourceIds });
 export const bulkImportServices = (services: any[]): Promise<{ message: string; services: Service[] }> =>
   apiRequest<{ message: string; services: Service[] }>('/config/services/bulk', 'POST', services);
 

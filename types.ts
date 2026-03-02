@@ -539,6 +539,8 @@ export interface Service {
     descripcion?: string;
     profesionalRequerido?: string;
     notas?: string;
+    authorizedProfessionals?: { user: { id: number; nombres: string; apellidos: string; avatarUrl?: string } }[];
+    allowedResources?: { resource: { id: number; name: string; type: string } }[];
 }
 
 export interface Ambiente {
