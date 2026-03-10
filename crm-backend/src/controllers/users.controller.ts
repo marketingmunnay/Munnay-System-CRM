@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; 
+import type { Prisma } from '@prisma/client';
 // import { Address, EmergencyContact, User } from '@prisma/client';
 
 const safeUserSelect = {
@@ -360,25 +361,24 @@ export const getSellers = async (_req: Request, res: Response) => {
   try {
     const keywordPositions = ['recepcionista', 'call center', 'ventas', 'asesor'];
     const sellerRoles = ['Recepcionista', 'Call Center'];
+    const keywordPositionFilters: Prisma.UserWhereInput[] = keywordPositions.map((keyword) => ({
+      position: {
+        contains: keyword,
+        mode: 'insensitive',
+      },
+    }));
+    const sellerRoleFilters: Prisma.UserWhereInput[] = sellerRoles.map((roleName) => ({
+      rol: {
+        nombre: {
+          equals: roleName,
+          mode: 'insensitive',
+        },
+      },
+    }));
 
     const sellers = await prisma.user.findMany({
       where: {
-        OR: [
-          ...keywordPositions.map(keyword => ({
-            position: {
-              contains: keyword,
-              mode: 'insensitive'
-            }
-          })),
-          ...sellerRoles.map(roleName => ({
-            rol: {
-              nombre: {
-                equals: roleName,
-                mode: 'insensitive'
-              }
-            }
-          }))
-        ]
+        OR: [...keywordPositionFilters, ...sellerRoleFilters],
       },
       select: safeUserSelect,
       orderBy: [
