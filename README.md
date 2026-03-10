@@ -4,7 +4,17 @@ Sistema de gestión de relaciones con clientes (CRM) para Munnay Medicina Estét
 
 ## 🚀 Deployment
 
-### Render.com (Recomendado)
+### Vercel (Frontend)
+
+1. Conecta tu repositorio a Vercel
+2. Configura las siguientes variables de entorno en Vercel:
+   - `VITE_API_URL`: URL del backend API (ej: `https://api.munnaymedicinaestetica.com/api`)
+3. Deploy automático en cada push
+
+**Comando de build:** `npm run build`
+**Directorio de output:** `dist`
+
+### Render.com (Backend - Recomendado)
 
 1. Fork este repositorio en GitHub
 2. Conecta tu repositorio a Render.com

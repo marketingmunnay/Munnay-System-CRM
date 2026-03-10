@@ -35,8 +35,10 @@ interface RefreshResponse {
   expiresIn?: number;
 }
 
-// URL del backend - usa variable de entorno o fallback al VPS
-const API_URL = import.meta.env.VITE_API_URL || "http://157.173.119.186:4000/api";
+// URL del backend - usa variable de entorno o fallback
+// Para desarrollo local: http://localhost:4000/api
+// Para producción: debe configurarse VITE_API_URL en Vercel
+const API_URL = import.meta.env.VITE_API_URL || "https://api.munnaymedicinaestetica.com/api";
 
 const AUTH_TOKEN_KEY = 'munnay.authToken';
 const AUTH_TOKEN_EXP_KEY = 'munnay.authTokenExpiresAt';
